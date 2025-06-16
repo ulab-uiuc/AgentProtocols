@@ -1,0 +1,37 @@
+core:
+  type: "openai"  # "local" or "openai"
+  name: "gpt-4o"
+  temperature: 0.0
+  # For local models
+  base_url: "http://localhost:8000/v1"
+  port: 8000
+  # For OpenAI models (uncomment the section below if using OpenAI)
+  openai_api_key: "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"
+  openai_base_url: "https://api.openai.com/v1"
+
+network:
+  topology: "star"  # Network topology type, choose "star" or "mesh"
+  health_check_interval: 5  # Health check interval in seconds
+  message_timeout: 30  # Message timeout in seconds
+
+qa:
+  coordinator:
+    count: 1          # Define the number of coordinators
+    start_port: 9998   # Coordinator starting port
+    data_file: "data/top1000_simplified.jsonl"  # Question file path
+    result_file: "data/qa_results.json"  # Result storage file path
+    batch_size: 50  # Number of questions to dispatch per round
+    first_50: true  # Whether to process only the first 50 questions
+  worker:
+    count: 4          # Define the number of worker agents
+    start_port: 10001  # Worker agent starting port
+  network:
+    topology: "star"   # Network topology, supports "star" or "mesh"
+  health_check_interval: 5  # Health check interval in seconds
+  max_retries: 3  # Maximum number of retries
+  batch_size: 5  # Number of questions per batch
+  response_timeout: 60  # Answer timeout in seconds
+  metrics:
+    - latency
+    - accuracy
+    - throughput
