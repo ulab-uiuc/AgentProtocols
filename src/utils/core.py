@@ -223,5 +223,3 @@ class Core:
                     time.sleep(10)
                     if rounds > threshold:
                         raise Exception(f"Function call generation failed too many times. Last error: {str(e)}")
-
-    

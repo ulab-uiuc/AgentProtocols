@@ -107,3 +107,71 @@ requests.post(f"http://localhost:8000/ap/v1/agent/tasks/{task_id}/steps")
 - 确保端口8000未被占用
 - 检查数据文件路径是否正确
 - 验证agent-protocol包版本兼容性
+
+Agent Protocol 文档如下：
+
+---
+# Agent Protocol
+
+The reason for creating the Agent Protocol was to provide a standardized way how interact with the agents. This is useful for automation, agent to agent communication, general UIs or dev tools.
+
+## Description
+The Agent Protocol is a OpenAPI specification v3 based protocol. The protocol is meant to be simple and general, so it can be adopted by any agent.
+
+The base objects of the protocol are `Tasks`, `Steps` and `Artifacts`.
+
+## Task
+A `Task` denotes one specific goal for the agent, it can be specific like:
+
+```
+Create a file named `hello.txt` and write `World` to it.
+```
+
+or very broad as:
+
+```
+Book a flight from Berlin to New York next week, optimize for price and duration.
+```
+
+The `Task` object has the following properties:
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `task_id` | string | The ID of the task. |
+| `input` | string | Input prompt for the task. |
+| `additional_input` | object | Additional input for the task. |
+| `steps` | array[Step] | The steps of the task. |
+| `artifacts` | array[Artifact] | A list of artifacts that the task has produced. |
+
+## Step
+A `Step` is a single action that the agent should perform. Each step is triggered by calling the step endpoint of the agent. The `Step` object has the following properties:
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `task_id` | string | The ID of the task. |
+| `step_id` | string | The ID of the step. |
+| `input` | string | Input prompt for the step. |
+| `additional_input` | object | Additional input for the step. |
+| `name` | string | The name of the step. |
+| `status` | enum | The status of the step. Possible values are `created` and `completed`. |
+| `output` | string | Output of the step. |
+| `additional_output` | object | Additional output of the step. |
+| `artifacts` | array[Artifact] | A list of artifacts that the step has produced. |
+| `is_last` | boolean | Whether this is the last step in the task. |
+
+## Artifact
+An `Artifact` is a file that the agent has worked with. The `Artifact` object has the following properties:
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `artifact_id` | string | The ID of the artifact. |
+| `file_name` | string | Filename of the artifact. |
+| `relative_path` | string | Relative path of the artifact in the agent's workspace. |
+
+## Endpoints
+The Agent Protocol has two main endpoints:
+
+*   `POST /ap/v1/agent/tasks` - This endpoint is used to create a new task for the agent.
+*   `POST /ap/v1/agent/tasks/{task_id}/steps` - This endpoint is used to trigger next step of the task.
+
+To see all endpoints and their descriptions, please refer to the Endpoints.
