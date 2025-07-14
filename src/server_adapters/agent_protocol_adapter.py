@@ -8,6 +8,7 @@ import logging
 import time
 from typing import Any, Dict, Tuple, Optional, List
 from uuid import uuid4
+import uvicorn
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse, Response, FileResponse
 from starlette.routing import Route
@@ -489,24 +490,56 @@ class AgentProtocolStarletteApplication:
 class AgentProtocolServerAdapter(BaseServerAdapter):
     """Agent Protocol 服务器适配器"""
     
-    def build(self, agent_card: Dict[str, Any], executor: Any) -> Starlette:
+    protocol_name = "AgentProtocol"
+    
+    def build(
+        self,
+        host: str,
+        port: int,
+        agent_id: str,
+        executor: Any,
+        **kwargs
+    ) -> Tuple[uvicorn.Server, Dict[str, Any]]:
         """
-        构建 Agent Protocol 服务器应用
+        构建 Agent Protocol 服务器实例
         
         Parameters
         ----------
-        agent_card : Dict[str, Any]
-            智能体卡片
+        host : str
+            服务器主机地址
+        port : int
+            服务器端口
+        agent_id : str
+            智能体ID
         executor : Any
             智能体执行器
+        **kwargs : dict
+            额外的配置参数
             
         Returns
         -------
-        Starlette
-            配置好的 Starlette 应用
+        Tuple[uvicorn.Server, Dict[str, Any]]
+            服务器实例和智能体卡片
         """
+        import uvicorn
+        
+        # 生成默认智能体卡片
+        agent_card = self.get_default_agent_card(agent_id, host, port)
+        
+        # 创建 Agent Protocol Starlette 应用
         app_builder = AgentProtocolStarletteApplication(agent_card, executor)
-        return app_builder.build()
+        app = app_builder.build()
+        
+        # 配置 uvicorn 服务器
+        config = uvicorn.Config(
+            app,
+            host=host,
+            port=port,
+            log_level="error"  # 最小化服务器日志
+        )
+        server = uvicorn.Server(config)
+        
+        return server, agent_card
     
     def get_default_agent_card(self, agent_id: str, host: str, port: int) -> Dict[str, Any]:
         """
