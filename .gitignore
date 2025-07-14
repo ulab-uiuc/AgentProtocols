@@ -7,8 +7,7 @@ streaming_queue/data/*
 __pycache__/
 *.py[cod]
 *$py.class
-Qwen2.5-7B-Instruct
-vllm_log/
+debug/
 
 # Virtual environment
 venv/

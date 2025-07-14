@@ -23,7 +23,7 @@ try:
 except ImportError:
     # 如果无法导入，创建一个简单的基类
     class BaseServerAdapter:
-        def build_app(self, agent_card: Dict[str, Any], executor: Any) -> Starlette:
+        def build(self, agent_card: Dict[str, Any], executor: Any) -> Starlette:
             raise NotImplementedError
         
         def get_default_agent_card(self, agent_id: str, host: str, port: int) -> Dict[str, Any]:
@@ -489,7 +489,7 @@ class AgentProtocolStarletteApplication:
 class AgentProtocolServerAdapter(BaseServerAdapter):
     """Agent Protocol 服务器适配器"""
     
-    def build_app(self, agent_card: Dict[str, Any], executor: Any) -> Starlette:
+    def build(self, agent_card: Dict[str, Any], executor: Any) -> Starlette:
         """
         构建 Agent Protocol 服务器应用
         

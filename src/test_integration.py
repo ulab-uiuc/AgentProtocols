@@ -42,7 +42,7 @@ async def simple_test():
     
     try:
         # 导入集成组件
-        from agent_protocol_integration.agent_protocol_server_adapter import (
+        from server_adapters.agent_protocol_adapter import (
             AgentProtocolServerAdapter, 
             AgentProtocolTask,
             AgentProtocolStep
