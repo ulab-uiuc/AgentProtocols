@@ -444,22 +444,67 @@ class AgentProtocolStarletteApplication:
             )
     
     async def handle_a2a_message(self, request: Request) -> JSONResponse:
-        """处理 A2A 消息（兼容性端点）"""
+        """处理 A2A 消息（兼容性端点）- 直接执行LLM并返回响应"""
         try:
             message_data = await request.json()
             
             # 从 A2A 消息中提取内容
             message_content = message_data.get("params", {}).get("message", {})
             
-            # 将 A2A 消息转换为 Agent Protocol 任务
+            # 提取文本内容
             if isinstance(message_content, dict):
-                input_text = message_content.get("input", str(message_content))
+                # 尝试多种格式
+                if "parts" in message_content and message_content["parts"]:
+                    # A2A格式：{"parts": [{"type": "text", "text": "question"}]}
+                    input_text = message_content["parts"][0].get("text", str(message_content))
+                else:
+                    # 直接格式：{"input": "question"} 或其他
+                    input_text = message_content.get("input", str(message_content))
                 additional_input = message_content.get("additional_input", {})
             else:
                 input_text = str(message_content)
                 additional_input = {}
             
-            # 创建任务
+            # 如果有执行器，直接调用LLM进行回答
+            if hasattr(self.executor, 'execute_step'):
+                try:
+                    # 创建临时步骤对象
+                    class TempStep:
+                        def __init__(self, input_text):
+                            self.input = input_text
+                            self.step_id = str(uuid4())
+                    
+                    step = TempStep(input_text)
+                    
+                    # 直接执行步骤获取LLM响应
+                    result = await self.executor.execute_step(step)
+                    
+                    # 提取输出文本
+                    output_text = result.get("output", "No response") if isinstance(result, dict) else str(result)
+                    
+                    # 返回 Agent Protocol 格式响应，包含LLM的回答
+                    return JSONResponse({
+                        "id": message_data.get("id", str(uuid4())),
+                        "result": {
+                            "output": output_text,
+                            "status": "completed",
+                            "response_type": "agent_protocol"
+                        }
+                    })
+                    
+                except Exception as e:
+                    logger.error(f"Error executing LLM: {e}")
+                    # 如果LLM执行失败，返回错误信息
+                    return JSONResponse({
+                        "id": message_data.get("id", str(uuid4())),
+                        "result": {
+                            "output": f"Error processing request: {str(e)}",
+                            "status": "failed",
+                            "response_type": "agent_protocol"
+                        }
+                    })
+            
+            # 如果没有执行器，创建任务（保持原有逻辑作为后备）
             task_id = str(uuid4())
             task = AgentProtocolTask(
                 task_id=task_id,
@@ -469,13 +514,14 @@ class AgentProtocolStarletteApplication:
             
             self.tasks[task_id] = task
             
-            # 返回 A2A 格式响应
+            # 返回 Agent Protocol 格式响应
             return JSONResponse({
                 "id": message_data.get("id", str(uuid4())),
                 "result": {
+                    "output": f"Task created: {task.task_id}",
+                    "status": "created",
                     "task_id": task.task_id,
-                    "status": task.status,
-                    "message": f"Task created: {task.task_id}"
+                    "response_type": "agent_protocol"
                 }
             })
             

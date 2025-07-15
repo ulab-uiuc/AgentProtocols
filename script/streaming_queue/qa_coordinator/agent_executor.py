@@ -173,10 +173,17 @@ class QACoordinator:
                     
                     # First, try Agent Protocol format (for AP workers)
                     if isinstance(response, dict):
+                        # Check for Agent Protocol result format
+                        if "result" in response and isinstance(response["result"], dict):
+                            result = response["result"]
+                            if "output" in result:
+                                answer = result["output"]
+                            elif "text" in result:
+                                answer = result["text"]
                         # Check for Agent Protocol step response format
-                        if "output" in response:
+                        elif "output" in response:
                             answer = response["output"]
-                        # Check for Agent Protocol events format
+                        # Check for Agent Protocol events format (legacy A2A compatibility)
                         elif "events" in response and response["events"]:
                             for event in response["events"]:
                                 if isinstance(event, dict):
@@ -190,7 +197,7 @@ class QACoordinator:
                                             answer = event["parts"][0]["text"]
                                             break
                         # Check for direct text response
-                        elif "result" in response:
+                        elif "result" in response and isinstance(response["result"], str):
                             answer = response["result"]
                         # Check for simple text field
                         elif "text" in response:

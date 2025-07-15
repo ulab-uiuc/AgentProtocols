@@ -202,20 +202,54 @@ class AgentProtocolExecutor:
                     "is_last": True
                 }
         else:
-            return {
-                "output": f"Processed coordinator command: {step.input}",
-                "status": "completed",
-                "is_last": True
-            }
+            # 对于其他输入，使用 LLM 进行回答
+            if hasattr(self.qa_executor, 'coordinator') and hasattr(self.qa_executor.coordinator, 'agent'):
+                try:
+                    # 使用协调器的 LLM 进行回答
+                    result = await self.qa_executor.coordinator.agent.invoke(step.input)
+                    return {
+                        "output": result,
+                        "status": "completed",
+                        "is_last": True
+                    }
+                except Exception as e:
+                    return {
+                        "output": f"LLM response failed: {str(e)}",
+                        "status": "failed",
+                        "is_last": True
+                    }
+            else:
+                return {
+                    "output": f"Processed coordinator command: {step.input}",
+                    "status": "completed",
+                    "is_last": True
+                }
     
     async def _execute_worker_step(self, step):
         """执行工作器步骤"""
-        # 工作器的简单响应
-        return {
-            "output": f"Worker processed: {step.input}",
-            "status": "completed",
-            "is_last": True
-        }
+        # 检查是否有可用的 QA Agent
+        if hasattr(self.qa_executor, 'agent'):
+            try:
+                # 使用 QA Agent 的 LLM 进行回答
+                result = await self.qa_executor.agent.invoke(step.input)
+                return {
+                    "output": result,
+                    "status": "completed",
+                    "is_last": True
+                }
+            except Exception as e:
+                return {
+                    "output": f"LLM response failed: {str(e)}",
+                    "status": "failed",
+                    "is_last": True
+                }
+        else:
+            # 回退到简单响应
+            return {
+                "output": f"Worker processed: {step.input}",
+                "status": "completed",
+                "is_last": True
+            }
 
 
 class RealAgentNetworkDemo:
