@@ -1,0 +1,462 @@
+{
+  "metadata": {
+    "total_questions": 50,
+    "successful_questions": 50,
+    "failed_questions": 0,
+    "average_response_time": 2.6799047422409057,
+    "timestamp": 1752493550.6526973,
+    "network_type": "real_a2a_agent_network"
+  },
+  "results": [
+    {
+      "question_id": 2,
+      "question": "where is the federal penitentiary in ind",
+      "worker": "Worker-2",
+      "answer": "The federal penitentiary in Indiana is the **United States Penitentiary, Terre Haute (USP Terre Haute)**. It is located in Terre Haute, Indiana, and is part of the Federal Bureau of Prisons system. The facility houses high-security male inmates and also includes a federal death row for male inmates.",
+      "response_time": 2.489685297012329,
+      "timestamp": 1752493518.4749541,
+      "status": "success"
+    },
+    {
+      "question_id": 1,
+      "question": "what does the golgi apparatus do to the proteins and lipids once they arrive ?",
+      "worker": "Worker-1",
+      "answer": "The Golgi apparatus modifies, sorts, and packages proteins and lipids received from the endoplasmic reticulum. It adds chemical groups (e.g., carbohydrates or phosphates) to modify them, ensuring they are functional and properly labeled for their destination. The Golgi then sorts these molecules and packages them into vesicles for transport to their final locations, such as the cell membrane, lysosomes, or secretion outside the cell.",
+      "response_time": 3.287205219268799,
+      "timestamp": 1752493519.2721415,
+      "status": "success"
+    },
+    {
+      "question_id": 5,
+      "question": "what is the endocrine system responsible for?",
+      "worker": "Worker-2",
+      "answer": "The endocrine system is responsible for producing and regulating hormones, which are chemical messengers that control various bodily functions. These include growth, metabolism, reproduction, mood, stress response, and maintaining homeostasis (balance in the body). It consists of glands such as the pituitary, thyroid, adrenal glands, pancreas, and reproductive organs, which release hormones into the bloodstream to target specific organs or tissues.",
+      "response_time": 2.0996289253234863,
+      "timestamp": 1752493520.5746992,
+      "status": "success"
+    },
+    {
+      "question_id": 3,
+      "question": "health benefits of eating vegetarian",
+      "worker": "Worker-3",
+      "answer": "Eating vegetarian offers several health benefits, including:\n\n1. **Heart Health**: Lower risk of heart disease due to reduced saturated fat and cholesterol intake.\n2. **Weight Management**: Often lower in calories, aiding in weight control.\n3. **Lower Blood Pressure**: Associated with reduced hypertension risk.\n4. **Reduced Risk of Chronic Diseases**: Lower risk of type 2 diabetes, certain cancers, and obesity.\n5. **Improved Digestion**: High fiber intake promotes gut health and regular bowel movements.\n6. **Better Nutrient Intake**: Rich in vitamins, minerals, and antioxidants from fruits, vegetables, and whole grains.\n7. **Lower Cholesterol**: Plant-based diets can reduce LDL (bad cholesterol) levels.\n\nA well-planned vegetarian diet can provide all essential nutrients while promoting overall health.",
+      "response_time": 4.597580671310425,
+      "timestamp": 1752493520.5831258,
+      "status": "success"
+    },
+    {
+      "question_id": 4,
+      "question": "what foods are good if you have gout?",
+      "worker": "Worker-4",
+      "answer": "If you have gout, focus on foods that are low in purines to help reduce uric acid levels. Good options include:\n\n1. **Fruits**: Cherries, berries, apples, and citrus fruits.\n2. **Vegetables**: Leafy greens, broccoli, zucchini, and bell peppers (avoid high-purine veggies like asparagus and spinach in excess).\n3. **Whole Grains**: Brown rice, oats, and whole-grain bread.\n4. **Low-Fat Dairy**: Milk, yogurt, and cheese.\n5. **Legumes**: Lentils, beans, and tofu.\n6. **Nuts and Seeds**: Almonds, walnuts, and flaxseeds.\n7. **Healthy Fats**: Olive oil and avocados.\n8. **Hydration**: Drink plenty of water to flush uric acid.\n\nAvoid high-purine foods like red meat, organ meats, shellfish, and alcohol (especially beer). Limit sugary drinks and processed foods. Always consult a doctor or dietitian for personalized advice.",
+      "response_time": 5.303430795669556,
+      "timestamp": 1752493521.2892342,
+      "status": "success"
+    },
+    {
+      "question_id": 7,
+      "question": "definition for daring",
+      "worker": "Worker-2",
+      "answer": "Daring refers to the willingness to take risks or face danger with boldness, courage, or audacity. It can describe both actions and a person's fearless or adventurous nature.",
+      "response_time": 0.9939746856689453,
+      "timestamp": 1752493521.568769,
+      "status": "success"
+    },
+    {
+      "question_id": 6,
+      "question": "what is the nutritional value of oatmeal",
+      "worker": "Worker-1",
+      "answer": "Oatmeal is highly nutritious and provides the following per 1 cup (240g) of cooked oats:\n\n- **Calories**: ~154  \n- **Carbohydrates**: ~27g  \n- **Protein**: ~6g  \n- **Fat**: ~3g  \n- **Fiber**: ~4g  \n- **Sugar**: ~1g  \n\nIt is rich in vitamins and minerals, including manganese, phosphorus, magnesium, iron, zinc, and B vitamins. Oatmeal is also a good source of antioxidants, particularly avenanthramides, which have anti-inflammatory properties. Its high fiber content, especially beta-glucan, supports heart health, lowers cholesterol, and promotes digestion.",
+      "response_time": 2.520615816116333,
+      "timestamp": 1752493521.7928855,
+      "status": "success"
+    },
+    {
+      "question_id": 8,
+      "question": "is dhgate a scam",
+      "worker": "Worker-3",
+      "answer": "No, DHgate is not a scam; it is a legitimate online marketplace based in China. However, it connects buyers with individual sellers, so the quality and authenticity of products can vary. Some sellers are trustworthy, while others may sell counterfeit or low-quality items. To avoid scams, check seller ratings, reviews, and return policies before purchasing. Use caution, especially with branded or high-value items.",
+      "response_time": 1.4343795776367188,
+      "timestamp": 1752493522.0178597,
+      "status": "success"
+    },
+    {
+      "question_id": 11,
+      "question": "how far deep to plant beet early wonder",
+      "worker": "Worker-1",
+      "answer": "Plant \"Early Wonder\" beet seeds about **1/2 inch deep** in the soil. Space the seeds **1-2 inches apart** in rows that are **12-18 inches apart**. Once seedlings emerge, thin them to about **3-4 inches apart** to allow room for growth.",
+      "response_time": 1.6718926429748535,
+      "timestamp": 1752493523.4648685,
+      "status": "success"
+    },
+    {
+      "question_id": 10,
+      "question": "what study for mets to brain",
+      "worker": "Worker-2",
+      "answer": "To evaluate metastases to the brain, the primary imaging study is **MRI with contrast**. It provides high sensitivity and specificity for detecting brain metastases, their size, number, and location. If MRI is unavailable or contraindicated, **CT with contrast** can be used, though it is less sensitive.\n\nAdditional studies may include:\n- **PET-CT**: To assess for systemic metastases.\n- **Biopsy**: If the diagnosis is uncertain.\n- **Lumbar puncture**: Rarely, for leptomeningeal disease.",
+      "response_time": 2.3952531814575195,
+      "timestamp": 1752493523.9641237,
+      "status": "success"
+    },
+    {
+      "question_id": 9,
+      "question": "how to become a teacher assistant",
+      "worker": "Worker-4",
+      "answer": "To become a teacher assistant, follow these steps:\n\n1. **Earn a High School Diploma or GED**: This is the minimum requirement for most teacher assistant positions.\n2. **Pursue Relevant Education**: Some positions may require an associate degree or coursework in education, child development, or a related field.\n3. **Gain Experience**: Volunteer or work with children in schools, daycare centers, or community programs to build experience.\n4. **Obtain Certification (if required)**: Some states or schools require paraprofessional certification, such as the ParaPro Assessment.\n5. **Apply for Jobs**: Search for teacher assistant positions in schools, childcare centers, or special education programs.\n6. **Pass Background Checks**: Schools typically require background checks and fingerprinting.\n7. **Develop Key Skills**: Focus on communication, patience, organization, and teamwork to succeed in the role.\n\nCheck local requirements, as they vary by state or country.",
+      "response_time": 3.4607791900634766,
+      "timestamp": 1752493524.7501047,
+      "status": "success"
+    },
+    {
+      "question_id": 14,
+      "question": "when was niagara falls created",
+      "worker": "Worker-2",
+      "answer": "Niagara Falls was formed around **12,000 years ago** during the last Ice Age. As glaciers melted, water from the Great Lakes carved a path through the Niagara Escarpment, creating the falls.",
+      "response_time": 1.02531099319458,
+      "timestamp": 1752493524.989536,
+      "status": "success"
+    },
+    {
+      "question_id": 16,
+      "question": "where is the graphic card located in the cpu",
+      "worker": "Worker-2",
+      "answer": "The graphics card is not located inside the CPU (Central Processing Unit). It is either:\n\n1. **Integrated Graphics**: Built into the CPU itself, sharing system memory.\n2. **Dedicated Graphics Card**: A separate component installed in the PCIe (Peripheral Component Interconnect Express) slot on the motherboard.\n\nIf your system has a dedicated GPU, it will be a distinct card connected to the motherboard, typically near the CPU.",
+      "response_time": 2.3815672397613525,
+      "timestamp": 1752493527.3712015,
+      "status": "success"
+    },
+    {
+      "question_id": 12,
+      "question": "ways to stop diarrhea in my pupply",
+      "worker": "Worker-3",
+      "answer": "To help stop diarrhea in your puppy:\n\n1. **Withhold Food (12-24 Hours):** Give their digestive system a rest, but ensure they have access to water to prevent dehydration.\n2. **Hydration:** Provide fresh water or an electrolyte solution (e.g., unflavored Pedialyte) to prevent dehydration.\n3. **Bland Diet:** After fasting, feed small portions of boiled chicken (no seasoning) and plain white rice.\n4. **Probiotics:** Use vet-approved probiotics to restore gut health.\n5. **Pumpkin:** Add a small amount of plain, canned pumpkin (not pie filling) to their food to firm stools.\n6. **Monitor:** Watch for signs of dehydration, lethargy, or blood in stool.\n\nIf diarrhea persists beyond 24-48 hours, or if your puppy shows other symptoms (vomiting, fever, etc.), consult a veterinarian immediately. Puppies can dehydrate quickly, so prompt care is essential.",
+      "response_time": 5.992314338684082,
+      "timestamp": 1752493528.0102887,
+      "status": "success"
+    },
+    {
+      "question_id": 17,
+      "question": "where is the graphic card located in the cpu",
+      "worker": "Worker-2",
+      "answer": "The graphics card is not located inside the CPU (Central Processing Unit). It is either:\n\n1. **Integrated Graphics**: Built into the CPU itself, sharing system memory.\n2. **Dedicated Graphics Card**: A separate component installed in the PCIe (Peripheral Component Interconnect Express) slot on the motherboard.\n\nIf your system has a dedicated GPU, it will be a distinct card connected to the motherboard, typically near the CPU.",
+      "response_time": 1.5658817291259766,
+      "timestamp": 1752493528.937196,
+      "status": "success"
+    },
+    {
+      "question_id": 13,
+      "question": "what disease do roof rats cause",
+      "worker": "Worker-1",
+      "answer": "Roof rats can spread several diseases to humans, either directly through contact with their urine, feces, or saliva, or indirectly via fleas, ticks, or mites they carry. Common diseases include:\n\n1. **Leptospirosis** - Spread through contact with contaminated water or surfaces.\n2. **Salmonellosis** - Caused by consuming food or water contaminated with rat feces.\n3. **Hantavirus** - Transmitted through inhalation of dust contaminated with rat droppings or urine.\n4. **Rat-bite fever** - Spread through bites, scratches, or contact with rat saliva.\n5. **Plague** - Transmitted by fleas that feed on infected rats.\n\nProper sanitation, sealing entry points, and pest control can help prevent these risks.",
+      "response_time": 5.666253089904785,
+      "timestamp": 1752493529.1312313,
+      "status": "success"
+    },
+    {
+      "question_id": 19,
+      "question": "property premises meaning",
+      "worker": "Worker-2",
+      "answer": "\"Property premises\" refers to a specific piece of real estate, including the land and any buildings or structures on it. It typically denotes the physical location or area owned, rented, or occupied by an individual or business. For example, in a lease agreement, \"premises\" refers to the property being leased.",
+      "response_time": 1.3637199401855469,
+      "timestamp": 1752493530.3010123,
+      "status": "success"
+    },
+    {
+      "question_id": 15,
+      "question": "what is the difference between a medical doctor and a doctor of osteopathic",
+      "worker": "Worker-4",
+      "answer": "The main difference between a Medical Doctor (MD) and a Doctor of Osteopathic Medicine (DO) lies in their training and approach to care:\n\n1. **Training**: Both MDs and DOs complete medical school, residency, and licensing exams. However, DOs receive additional training in osteopathic manipulative treatment (OMT), a hands-on technique to diagnose and treat conditions.\n\n2. **Philosophy**: DOs emphasize a holistic approach, focusing on the body's ability to heal itself and the connection between structure and function. MDs typically follow a more traditional, allopathic approach to medicine.\n\n3. **Practice**: Both MDs and DOs are fully licensed physicians who can practice in all specialties. However, DOs are more likely to work in primary care and rural areas.\n\nIn practice, the differences are minimal, and both provide high-quality care.",
+      "response_time": 6.478692293167114,
+      "timestamp": 1752493531.228901,
+      "status": "success"
+    },
+    {
+      "question_id": 18,
+      "question": "what are hamitic peoples",
+      "worker": "Worker-3",
+      "answer": "The term \"Hamitic peoples\" is an outdated and discredited concept from 19th and early 20th-century anthropology. It was based on the now-rejected \"Hamitic hypothesis,\" which classified certain African groups, particularly in North and East Africa, as descendants of the biblical Ham. This theory falsely claimed that these groups, such as the Berbers, Cushites, and others, were racially distinct from sub-Saharan Africans and responsible for any advanced civilizations in Africa.\n\nModern anthropology and genetics have debunked this idea, recognizing it as rooted in Eurocentric and racist ideologies. Today, African populations are understood in terms of linguistic, cultural, and genetic diversity without reliance on outdated racial classifications.",
+      "response_time": 3.4113118648529053,
+      "timestamp": 1752493531.4216938,
+      "status": "success"
+    },
+    {
+      "question_id": 20,
+      "question": "does ichigo lose his powers",
+      "worker": "Worker-1",
+      "answer": "Yes, Ichigo Kurosaki temporarily loses his powers in *Bleach*. After using the Final Getsuga Tenshō technique to defeat Aizen during the \"Fake Karakura Town\" arc, Ichigo sacrifices all his Soul Reaper powers. However, he later regains them during the \"Fullbring\" arc when Rukia and other Soul Reapers restore his powers using a special sword infused with their energy.",
+      "response_time": 2.482163906097412,
+      "timestamp": 1752493531.6134858,
+      "status": "success"
+    },
+    {
+      "question_id": 21,
+      "question": "what structure are located in the abdominal  cavity?",
+      "worker": "Worker-2",
+      "answer": "The abdominal cavity contains several vital structures, including:\n\n1. **Digestive organs**: Stomach, small intestine, large intestine (colon), liver, gallbladder, pancreas.\n2. **Excretory organs**: Kidneys, ureters.\n3. **Circulatory structures**: Abdominal aorta, inferior vena cava.\n4. **Lymphatic structures**: Spleen, lymph nodes.\n5. **Reproductive organs (in females)**: Ovaries, fallopian tubes, uterus (partially).\n\nIt is lined by the peritoneum, a protective membrane.",
+      "response_time": 2.6525282859802246,
+      "timestamp": 1752493532.953633,
+      "status": "success"
+    },
+    {
+      "question_id": 24,
+      "question": "who discovered the element carbon",
+      "worker": "Worker-1",
+      "answer": "Carbon was not \"discovered\" in the traditional sense, as it has been known since ancient times in forms like charcoal and soot. However, it was first recognized as an element in 1789 by French chemist Antoine Lavoisier, who included it in his list of elements.",
+      "response_time": 3.9507861137390137,
+      "timestamp": 1752493535.5643737,
+      "status": "success"
+    },
+    {
+      "question_id": 22,
+      "question": "does flomax cause liver damage",
+      "worker": "Worker-4",
+      "answer": "Flomax (tamsulosin) is not commonly associated with liver damage. It is primarily metabolized in the liver, but significant liver toxicity is rare. However, in very rare cases, it may cause elevated liver enzymes. If you have liver concerns or experience symptoms like jaundice, consult your doctor.",
+      "response_time": 4.384141445159912,
+      "timestamp": 1752493535.6131337,
+      "status": "success"
+    },
+    {
+      "question_id": 27,
+      "question": "what is one role of the element phosphorus?",
+      "worker": "Worker-4",
+      "answer": "Phosphorus is essential for energy transfer in living organisms, as it is a key component of ATP (adenosine triphosphate), the molecule that stores and provides energy for cellular processes.",
+      "response_time": 1.293597936630249,
+      "timestamp": 1752493536.9068215,
+      "status": "success"
+    },
+    {
+      "question_id": 26,
+      "question": "lewiston idaho fedex express phone number",
+      "worker": "Worker-1",
+      "answer": "FedEx does not provide direct phone numbers for individual locations. To contact FedEx Express in Lewiston, ID, call the main customer service line at **1-800-463-3339 (1-800-GO-FEDEX)**. They can assist with location-specific inquiries.",
+      "response_time": 1.5917634963989258,
+      "timestamp": 1752493537.1562402,
+      "status": "success"
+    },
+    {
+      "question_id": 23,
+      "question": "what is printing mechanism",
+      "worker": "Worker-3",
+      "answer": "A printing mechanism refers to the hardware and processes within a printer that transfer text or images onto a medium, such as paper. It includes components like print heads, ink or toner delivery systems, and paper feeders. Common types of printing mechanisms include:\n\n1. **Inkjet**: Sprays tiny droplets of liquid ink onto paper.\n2. **Laser**: Uses a laser beam to create an electrostatic image on a drum, which attracts toner and transfers it to paper.\n3. **Dot Matrix**: Uses a print head with pins that strike an ink ribbon to form characters.\n4. **Thermal**: Applies heat to special paper or ribbons to create an image.\n\nEach mechanism is designed for specific applications, balancing speed, quality, and cost.",
+      "response_time": 5.991345167160034,
+      "timestamp": 1752493537.4131289,
+      "status": "success"
+    },
+    {
+      "question_id": 28,
+      "question": "what is the empirical formula for phosphorus selenide",
+      "worker": "Worker-4",
+      "answer": "The empirical formula for phosphorus selenide is **P₂Se₅**.",
+      "response_time": 0.9601030349731445,
+      "timestamp": 1752493537.86704,
+      "status": "success"
+    },
+    {
+      "question_id": 29,
+      "question": "what is abbreviated dialing",
+      "worker": "Worker-1",
+      "answer": "Abbreviated dialing is a telecommunication feature that allows users to dial a short code or sequence of numbers instead of a full phone number to quickly connect to a specific contact, service, or function. Examples include speed dialing (e.g., pressing a single digit to call a saved contact) or emergency numbers like 911. It simplifies dialing for frequently used numbers or services.",
+      "response_time": 2.1212258338928223,
+      "timestamp": 1752493539.2775614,
+      "status": "success"
+    },
+    {
+      "question_id": 25,
+      "question": "is the hawb the tracking number",
+      "worker": "Worker-2",
+      "answer": "No, the House Air Waybill (HAWB) is not the same as a tracking number, but it can often be used to track a shipment. The HAWB is a document issued by a freight forwarder or logistics company that includes shipment details. Some carriers use the HAWB number as the tracking number, but this depends on the specific shipping company. Always confirm with your carrier.",
+      "response_time": 6.703622102737427,
+      "timestamp": 1752493539.6573586,
+      "status": "success"
+    },
+    {
+      "question_id": 30,
+      "question": "fastest cell phone processor",
+      "worker": "Worker-3",
+      "answer": "As of 2023, the **Apple A17 Pro** (used in the iPhone 15 Pro and Pro Max) is considered the fastest smartphone processor. It is built on a 3nm process, offering exceptional performance and efficiency, particularly for gaming and AI tasks.\n\nFor Android, the **Qualcomm Snapdragon 8 Gen 2** and **MediaTek Dimensity 9200+** are top contenders, delivering high performance in flagship devices. The Snapdragon 8 Gen 3 is expected to launch soon, potentially surpassing current processors.",
+      "response_time": 2.668910503387451,
+      "timestamp": 1752493540.0821333,
+      "status": "success"
+    },
+    {
+      "question_id": 33,
+      "question": "what were the brothers grimm names",
+      "worker": "Worker-2",
+      "answer": "The Brothers Grimm were Jacob Grimm and Wilhelm Grimm.",
+      "response_time": 0.6530427932739258,
+      "timestamp": 1752493540.310496,
+      "status": "success"
+    },
+    {
+      "question_id": 31,
+      "question": "what are the three monetary policy tools of the fed",
+      "worker": "Worker-4",
+      "answer": "The Federal Reserve (Fed) uses three primary monetary policy tools:\n\n1. **Open Market Operations (OMO):** The buying and selling of government securities in the open market to influence the money supply and interest rates.\n\n2. **Discount Rate:** The interest rate the Fed charges commercial banks for short-term loans, which affects borrowing costs and liquidity.\n\n3. **Reserve Requirements:** The percentage of deposits that banks must hold in reserve, either in their vaults or at the Fed, impacting the amount of money banks can lend.",
+      "response_time": 2.5045204162597656,
+      "timestamp": 1752493540.3716567,
+      "status": "success"
+    },
+    {
+      "question_id": 36,
+      "question": "where does spermatogenesis occur?",
+      "worker": "Worker-4",
+      "answer": "Spermatogenesis occurs in the seminiferous tubules of the testes.",
+      "response_time": 0.7603068351745605,
+      "timestamp": 1752493541.1320531,
+      "status": "success"
+    },
+    {
+      "question_id": 32,
+      "question": "what did maria theresa do for the serfs",
+      "worker": "Worker-1",
+      "answer": "Maria Theresa, the Habsburg Empress (1740–1780), implemented reforms to improve the lives of serfs in her empire. She introduced the **Robot Patent** (1771), which limited the amount of unpaid labor (robot) that serfs owed to their landlords. This reform aimed to reduce exploitation and provide serfs with more time for their own farming. Additionally, she improved legal protections for serfs, ensuring they could not be arbitrarily evicted or excessively taxed. However, her reforms stopped short of abolishing serfdom entirely, as she sought to balance the interests of both serfs and the nobility.",
+      "response_time": 2.717026472091675,
+      "timestamp": 1752493541.994692,
+      "status": "success"
+    },
+    {
+      "question_id": 34,
+      "question": "what is an insta pot?",
+      "worker": "Worker-3",
+      "answer": "An Instant Pot is a multi-functional electric pressure cooker that combines several kitchen appliances into one. It can pressure cook, slow cook, sauté, steam, warm, and even make yogurt, depending on the model. Known for its convenience and efficiency, it cooks food faster than traditional methods while retaining flavor and nutrients. It's popular for preparing soups, stews, rice, beans, meats, and more.",
+      "response_time": 2.054936408996582,
+      "timestamp": 1752493542.1371756,
+      "status": "success"
+    },
+    {
+      "question_id": 37,
+      "question": "where is baby beach hi",
+      "worker": "Worker-4",
+      "answer": "Baby Beach in Hawaii typically refers to two locations:\n\n1. **Baby Beach, Lahaina** - Located on the west side of Maui near Lahaina, it is a calm, shallow beach protected by an offshore reef, making it ideal for young children.\n\n2. **Baby Beach, Poipu** - Found on the south shore of Kauai near Poipu, it is another family-friendly beach with gentle waters.\n\nBoth are great for families and beginner swimmers.",
+      "response_time": 1.6842272281646729,
+      "timestamp": 1752493542.816371,
+      "status": "success"
+    },
+    {
+      "question_id": 35,
+      "question": "side effects for diclofenac topical",
+      "worker": "Worker-2",
+      "answer": "Common side effects of diclofenac topical include:\n\n- Skin irritation (redness, itching, rash, or dryness)\n- Burning or stinging at the application site\n- Peeling or scaling of the skin\n\nLess common but serious side effects may include:\n\n- Allergic reactions (hives, swelling, or difficulty breathing)\n- Severe skin reactions (blistering or severe rash)\n- Liver or kidney issues (yellowing of the skin/eyes, dark urine, or unusual fatigue)\n- Stomach issues (nausea, vomiting, or stomach pain)\n\nContact a healthcare provider if severe or unusual side effects occur. Avoid applying to broken skin or using with other NSAIDs.",
+      "response_time": 2.610689640045166,
+      "timestamp": 1752493542.9212813,
+      "status": "success"
+    },
+    {
+      "question_id": 39,
+      "question": "how many milligrams of ritalin should an adult take",
+      "worker": "Worker-3",
+      "answer": "The appropriate dosage of Ritalin (methylphenidate) for adults depends on individual needs, medical history, and the condition being treated. Typically:\n\n- Immediate-release: 5-20 mg taken 2-3 times daily, with a maximum daily dose of 60 mg.\n- Extended-release (e.g., Ritalin LA): 10-60 mg once daily.\n\nAlways follow a doctor's prescription, as dosages are tailored to the individual. Misuse or overuse can lead to serious side effects. Consult your healthcare provider for guidance.",
+      "response_time": 1.7922701835632324,
+      "timestamp": 1752493543.9295406,
+      "status": "success"
+    },
+    {
+      "question_id": 41,
+      "question": "what county is mitchell south dakota in",
+      "worker": "Worker-2",
+      "answer": "Mitchell, South Dakota, is in **Davison County**.",
+      "response_time": 1.050619125366211,
+      "timestamp": 1752493543.9719937,
+      "status": "success"
+    },
+    {
+      "question_id": 40,
+      "question": "who is dakota meyer",
+      "worker": "Worker-4",
+      "answer": "Dakota Meyer is a former U.S. Marine and Medal of Honor recipient. Born on June 26, 1988, in Columbia, Kentucky, he was awarded the Medal of Honor in 2011 for his heroic actions during the Battle of Ganjgal in Afghanistan on September 8, 2009. Meyer repeatedly entered a kill zone under heavy enemy fire to rescue wounded comrades and recover the bodies of fallen soldiers. He is the first living Marine to receive the Medal of Honor since the Vietnam War. Meyer is also an author, public speaker, and advocate for veterans' issues.",
+      "response_time": 2.3345706462860107,
+      "timestamp": 1752493545.151045,
+      "status": "success"
+    },
+    {
+      "question_id": 38,
+      "question": "what cleans your liver and kidneys",
+      "worker": "Worker-1",
+      "answer": "Your liver and kidneys naturally detoxify your body, and maintaining their health involves a balanced diet, hydration, and healthy lifestyle choices. Foods and habits that support liver and kidney health include:\n\n1. **Hydration**: Drink plenty of water to help flush toxins.\n2. **Fruits and Vegetables**: Leafy greens, berries, citrus fruits, and cruciferous vegetables (e.g., broccoli) support detoxification.\n3. **Herbs**: Milk thistle and dandelion root may support liver health.\n4. **Healthy Fats**: Avocados, nuts, and olive oil promote overall organ health.\n5. **Limit Alcohol and Processed Foods**: These can strain the liver and kidneys.\n6. **Green Tea**: Contains antioxidants that may support liver function.\n7. **Exercise**: Promotes circulation and organ health.\n\nAlways consult a healthcare provider before making significant dietary or lifestyle changes.",
+      "response_time": 3.1883835792541504,
+      "timestamp": 1752493545.1831887,
+      "status": "success"
+    },
+    {
+      "question_id": 42,
+      "question": "who is the judge michael day district court of south dakota",
+      "worker": "Worker-3",
+      "answer": "As of my last update in October 2023, Michael Day serves as a judge in the Second Judicial Circuit Court in South Dakota, not the federal District Court. The Second Judicial Circuit covers Minnehaha and Lincoln Counties. If you're referring to a federal judge or need more specific details, please clarify or consult updated local court records.",
+      "response_time": 1.6072087287902832,
+      "timestamp": 1752493545.5368516,
+      "status": "success"
+    },
+    {
+      "question_id": 43,
+      "question": "where is wild creek reservoir",
+      "worker": "Worker-2",
+      "answer": "Wild Creek Reservoir is located in Carbon County, Pennsylvania, near the town of Jim Thorpe. It is part of the water supply system for the city of Bethlehem, Pennsylvania. The reservoir is situated in a scenic area within the Pocono Mountains and is surrounded by forested land. Public access is restricted to protect the water supply.",
+      "response_time": 1.5863008499145508,
+      "timestamp": 1752493545.5583813,
+      "status": "success"
+    },
+    {
+      "question_id": 47,
+      "question": "lakegirl address",
+      "worker": "Worker-2",
+      "answer": "Could you clarify what you mean by \"lakegirl address\"? Are you referring to the address of a company, brand, or something else?",
+      "response_time": 1.0175015926361084,
+      "timestamp": 1752493546.5759726,
+      "status": "success"
+    },
+    {
+      "question_id": 44,
+      "question": "what make up the pistil in the female flower",
+      "worker": "Worker-4",
+      "answer": "The pistil, the female reproductive part of a flower, is made up of three main components:\n\n1. **Stigma**: The sticky top part that captures pollen.\n2. **Style**: The tube-like structure that connects the stigma to the ovary.\n3. **Ovary**: The enlarged base that contains ovules, which develop into seeds after fertilization. \n\nTogether, these structures enable reproduction in flowering plants.",
+      "response_time": 1.5915095806121826,
+      "timestamp": 1752493546.7426686,
+      "status": "success"
+    },
+    {
+      "question_id": 45,
+      "question": "where is metro ny distribution center",
+      "worker": "Worker-1",
+      "answer": "The Metro NY Distribution Center is a USPS (United States Postal Service) facility located in the New York metropolitan area. Its exact address is not publicly disclosed, as it is primarily a mail processing hub. It handles sorting and distribution for mail and packages in the region. If you're tracking a package and see this location, it means your item is being processed before moving to its next destination.",
+      "response_time": 1.6501305103302002,
+      "timestamp": 1752493546.833413,
+      "status": "success"
+    },
+    {
+      "question_id": 48,
+      "question": "shopko kennewick address",
+      "worker": "Worker-2",
+      "answer": "Shopko in Kennewick, WA, permanently closed in 2019. Its former address was 867 N Columbia Center Blvd, Kennewick, WA 99336.",
+      "response_time": 1.1535255908966064,
+      "timestamp": 1752493547.7295902,
+      "status": "success"
+    },
+    {
+      "question_id": 46,
+      "question": "how to find device ip",
+      "worker": "Worker-3",
+      "answer": "To find a device's IP address:\n\n### On Windows:\n1. Open **Command Prompt** (search \"cmd\").\n2. Type `ipconfig` and press Enter.\n3. Look for \"IPv4 Address\" under your active network connection.\n\n### On macOS:\n1. Go to **System Preferences** > **Network**.\n2. Select your active connection (Wi-Fi or Ethernet).\n3. Your IP address is displayed on the right.\n\n### On Android:\n1. Go to **Settings** > **About Phone** > **Status** > **IP Address**.\n\n### On iPhone:\n1. Go to **Settings** > **Wi-Fi**.\n2. Tap the connected network, and your IP address is listed.\n\n### On a Router:\n1. Log in to your router's admin page (usually `192.168.1.1` or `192.168.0.1`).\n2. Check the connected devices list for IPs.\n\nFor public IP, search \"What is my IP\" in a browser.",
+      "response_time": 3.464404582977295,
+      "timestamp": 1752493549.0013502,
+      "status": "success"
+    },
+    {
+      "question_id": 49,
+      "question": "how to change ip address on netgear router",
+      "worker": "Worker-4",
+      "answer": "To change the IP address on a Netgear router:\n\n1. **Log in to the Router**:\n   - Open a web browser and go to `http://192.168.1.1` or `http://routerlogin.net`.\n   - Enter your admin username and password (default: `admin` and `password` unless changed).\n\n2. **Access LAN Settings**:\n   - Navigate to **Advanced > Setup > LAN Setup**.\n\n3. **Change the IP Address**:\n   - Locate the \"IP Address\" field under LAN TCP/IP Setup.\n   - Enter the new IP address (e.g., `192.168.0.1`).\n\n4. **Save Changes**:\n   - Click **Apply** to save. The router will restart, and you'll need to use the new IP to log in.\n\nEnsure the new IP is within the same subnet as your network and doesn’t conflict with other devices.",
+      "response_time": 3.8164539337158203,
+      "timestamp": 1752493550.5592148,
+      "status": "success"
+    },
+    {
+      "question_id": 50,
+      "question": "how do i find my Ip address",
+      "worker": "Worker-1",
+      "answer": "Here’s how to find your IP address:\n\n**On Windows:**\n1. Press `Windows + R`, type `cmd`, and press Enter.\n2. In the Command Prompt, type `ipconfig` and press Enter.\n3. Look for \"IPv4 Address\" under your active network connection.\n\n**On Mac:**\n1. Go to `System Preferences` > `Network`.\n2. Select your active network (Wi-Fi or Ethernet).\n3. Your IP address will be displayed.\n\n**On iPhone/iPad:**\n1. Go to `Settings` > `Wi-Fi`.\n2. Tap the connected network.\n3. Your IP address is listed under \"IP Address.\"\n\n**On Android:**\n1. Go to `Settings` > `Network & Internet` > `Wi-Fi`.\n2. Tap your connected network and look for \"IP address.\"\n\n**Public IP Address:**\nSearch \"What is my IP\" on Google to find your public IP.",
+      "response_time": 3.8179430961608887,
+      "timestamp": 1752493550.651448,
+      "status": "success"
+    }
+  ]
+}

@@ -43,7 +43,7 @@ class QACoordinator:
 
         self.batch_size = coordinator_config.get('batch_size', 50)
         self.first_50 = coordinator_config.get('first_50', True)
-        self.data_path = coordinator_config.get('data_file', 'data/top1000_simplified.jsonl')
+        self.data_path = coordinator_config.get('data_file', 'script/streaming_queue/data/top1000_simplified.jsonl')
         self.worker_ids: List[str] = []
         self.agent_network = None
         self.coordinator_id = "Coordinator-1"
@@ -168,15 +168,44 @@ class QACoordinator:
                     response = await self.agent_network.route_message(self.coordinator_id, worker_id, payload)
                     end_time = time.time()
                     
-                    # Extract answer from A2A response format
+                    # Extract answer from response - handle both A2A and Agent Protocol formats
                     answer = "No answer received"
-                    if "events" in response and response["events"]:
-                        for event in response["events"]:
-                            if event.get("kind") == "message" and "parts" in event:
-                                # Answer is in parts[0]["text"]
-                                if event["parts"] and "text" in event["parts"][0]:
-                                    answer = event["parts"][0]["text"]
-                                    break
+                    
+                    # First, try Agent Protocol format (for AP workers)
+                    if isinstance(response, dict):
+                        # Check for Agent Protocol result format
+                        if "result" in response and isinstance(response["result"], dict):
+                            result = response["result"]
+                            if "output" in result:
+                                answer = result["output"]
+                            elif "text" in result:
+                                answer = result["text"]
+                        # Check for Agent Protocol step response format
+                        elif "output" in response:
+                            answer = response["output"]
+                        # Check for Agent Protocol events format (legacy A2A compatibility)
+                        elif "events" in response and response["events"]:
+                            for event in response["events"]:
+                                if isinstance(event, dict):
+                                    # Agent Protocol event format
+                                    if event.get("type") == "agent_text_message" and "data" in event:
+                                        answer = event["data"]
+                                        break
+                                    # A2A event format (fallback compatibility)
+                                    elif event.get("kind") == "message" and "parts" in event:
+                                        if event["parts"] and "text" in event["parts"][0]:
+                                            answer = event["parts"][0]["text"]
+                                            break
+                        # Check for direct text response
+                        elif "result" in response and isinstance(response["result"], str):
+                            answer = response["result"]
+                        # Check for simple text field
+                        elif "text" in response:
+                            answer = response["text"]
+                    
+                    # If still no answer, try string conversion
+                    if answer == "No answer received" and response:
+                        answer = str(response)
                     
                     # Build result record
                     result_record = {
@@ -282,7 +311,7 @@ class QACoordinator:
     async def save_results(self, results):
         """Save results to file"""
         try:
-            result_file = self.config.get('qa', {}).get('coordinator', {}).get('result_file', 'data/qa_results.json')
+            result_file = self.config.get('qa', {}).get('coordinator', {}).get('result_file', './data/qa_result.json')
             result_path = Path(result_file)
             result_path.parent.mkdir(parents=True, exist_ok=True)
             

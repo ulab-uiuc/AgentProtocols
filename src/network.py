@@ -67,6 +67,7 @@ class AgentNetwork:
             
             # Create A2A adapter for this connection
             from agent_adapters.a2a_adapter import A2AAdapter
+            
             adapter = A2AAdapter(
                 httpx_client=src_agent._httpx_client,
                 base_url=dst_address

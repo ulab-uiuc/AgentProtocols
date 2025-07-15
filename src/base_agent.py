@@ -17,14 +17,16 @@ try:
     # Try package-style imports first
     from .agent_adapters.base_adapter import BaseProtocolAdapter
     from .agent_adapters.a2a_adapter import A2AAdapter
+    from .agent_adapters.agent_protocol_adapter import AgentProtocolAdapter
     from .metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
-    from .server_adapters import BaseServerAdapter, A2AServerAdapter
+    from .server_adapters import BaseServerAdapter, A2AServerAdapter, AgentProtocolServerAdapter
 except ImportError:
     # Fallback to direct imports for standalone execution
     from agent_adapters.base_adapter import BaseProtocolAdapter
     from agent_adapters.a2a_adapter import A2AAdapter
+    from agent_adapters.agent_protocol_adapter import AgentProtocolAdapter
     from metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
-    from server_adapters import BaseServerAdapter, A2AServerAdapter
+    from server_adapters import BaseServerAdapter, A2AServerAdapter, AgentProtocolServerAdapter
 
 # Module-level constants for better reusability
 DEFAULT_SERVER_STARTUP_TIMEOUT = 10.0
@@ -119,7 +121,8 @@ class BaseAgent:
             s.listen(1)
             port = s.getsockname()[1]
         return port
-
+    
+    # ----------- Factory Methods ----------- 
     @classmethod
     async def create_a2a(
         cls,
@@ -183,6 +186,61 @@ class BaseAgent:
         agent._initialized = True
         return agent
 
+    @classmethod
+    async def create_ap(
+        cls,
+        agent_id: str,
+        host: str = "0.0.0.0",
+        port: Optional[int] = None,
+        executor: Optional[Any] = None,
+        httpx_client: Optional[httpx.AsyncClient] = None
+    ) -> "BaseAgent":
+        """
+        Create BaseAgent with Agent Protocol server capability.
+        
+        Parameters
+        ----------
+        agent_id : str
+            Unique agent identifier
+        host : str
+            Server listening host
+        port : Optional[int]
+            Server listening port (auto-assigned if None)
+        executor : Optional[Any]
+            Agent Protocol executor
+        httpx_client : Optional[httpx.AsyncClient]
+            Shared HTTP client for connection pooling
+        
+        Returns
+        -------
+        BaseAgent
+            Initialized BaseAgent with running Agent Protocol server
+        """
+        # Validate executor (executor is required for Agent Protocol)
+        if executor is None:
+            raise ValueError("executor parameter is required for Agent Protocol")
+        
+        # Create Agent Protocol server adapter
+        server_adapter = AgentProtocolServerAdapter()
+        
+        # Create BaseAgent instance
+        agent = cls(
+            agent_id=agent_id,
+            host=host,
+            port=port,
+            httpx_client=httpx_client,
+            server_adapter=server_adapter
+        )
+        
+        # Start server with executor
+        await agent._start_server(executor)
+        
+        # Fetch self agent card
+        await agent._fetch_self_card()
+        
+        agent._initialized = True
+        return agent
+
     async def _start_server(self, executor: Any) -> None:
         """Start the internal server using pluggable adapter."""
         # Use server adapter to build server and agent card
@@ -232,6 +290,7 @@ class BaseAgent:
                 "error": f"Failed to fetch card: {e}"
             }
 
+    # ----------- Agent Skills and Cards -----------
     @classmethod
     async def from_a2a(
         cls,
@@ -272,6 +331,52 @@ class BaseAgent:
         agent._initialized = True
         return agent
 
+    @classmethod
+    async def from_ap(
+        cls,
+        agent_id: str,
+        base_url: str,
+        httpx_client: Optional[httpx.AsyncClient] = None
+    ) -> "BaseAgent":
+        """
+        Create Agent Protocol client-only agent from existing AP server endpoint.
+        
+        Parameters
+        ----------
+        agent_id : str
+            Agent identifier
+        base_url : str
+            Agent Protocol server endpoint URL
+        httpx_client : Optional[httpx.AsyncClient]
+            Shared HTTP client for connection pooling
+            
+        Returns
+        -------
+        BaseAgent
+            Created Agent Protocol client agent instance
+        """
+        # Create client-only BaseAgent
+        client = httpx_client or httpx.AsyncClient(timeout=30.0)
+        
+        # Parse the base URL to get host/port (for compatibility)
+        parsed = urlparse(base_url)
+        host = parsed.hostname or "localhost"
+        port = parsed.port or 8080
+        
+        agent = cls(
+            agent_id=agent_id,
+            host=host,
+            port=port,
+            httpx_client=client
+        )
+        
+        # Add a single outbound adapter to mimic old behavior
+        adapter = AgentProtocolAdapter(httpx_client=client, base_url=base_url)
+        await adapter.initialize()
+        agent._outbound["default"] = adapter
+        
+        agent._initialized = True
+        return agent
     @classmethod
     async def from_ioa(
         cls,
@@ -498,4 +603,4 @@ class BaseAgent:
             f"outbound_adapters={len(self._outbound)}, "
             f"server_running={self.is_server_running()}, "
             f"initialized={self._initialized})"
-        ) 
+        )
