@@ -4,5 +4,6 @@
 
 from .base_adapter import BaseProtocolAdapter
 from .a2a_adapter import A2AAdapter
+from .acp_adapter import ACPAdapter
 
-__all__ = ["BaseProtocolAdapter", "A2AAdapter"] 
+__all__ = ["BaseProtocolAdapter", "A2AAdapter", "ACPAdapter"]

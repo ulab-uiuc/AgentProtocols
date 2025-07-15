@@ -8,16 +8,29 @@ protocol-specific logic.
 Available adapters:
 - BaseServerAdapter: Abstract base class for all adapters
 - A2AServerAdapter: Agent-to-Agent protocol adapter
+- ACPServerAdapter: Agent Communication Protocol adapter
 - DummyServerAdapter: Testing adapter
 """
 
 from .base_adapter import BaseServerAdapter
-from .a2a_adapter import A2AServerAdapter, A2AStarletteApplication
-from .dummy_adapter import DummyServerAdapter
 
-__all__ = [
-    "BaseServerAdapter",
-    "A2AServerAdapter", 
-    "A2AStarletteApplication",
-    "DummyServerAdapter",
-] 
+# Try to import adapters, but handle missing dependencies gracefully
+__all__ = ["BaseServerAdapter"]
+
+try:
+    from .a2a_adapter import A2AServerAdapter, A2AStarletteApplication
+    __all__.extend(["A2AServerAdapter", "A2AStarletteApplication"])
+except ImportError:
+    pass
+
+try:
+    from .acp_adapter import ACPServerAdapter, ACPStarletteApplication
+    __all__.extend(["ACPServerAdapter", "ACPStarletteApplication"])
+except ImportError:
+    pass
+
+try:
+    from .dummy_adapter import DummyServerAdapter
+    __all__.append("DummyServerAdapter")
+except ImportError:
+    pass
