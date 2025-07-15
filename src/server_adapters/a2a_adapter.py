@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import time
+import inspect
 from typing import Any, Dict, Tuple
 import uvicorn
 from starlette.applications import Starlette
@@ -17,11 +18,40 @@ from .base_adapter import BaseServerAdapter
 
 logger = logging.getLogger(__name__)
 
+async def _safe_call(handler, *args, **kwargs):
+    """Call handler; await only if it's awaitable."""
+    try:
+        res = handler(*args, **kwargs)
+        if inspect.isawaitable(res):
+            return await res
+        else:
+            return res
+    except Exception as e:
+        logger.exception("Handler error: %s", e)
+        raise
+
+async def _safe_enqueue(event_queue, event):
+    """Safely enqueue event, handling both sync and async event queues."""
+    try:
+        res = event_queue.enqueue_event(event)
+        if inspect.isawaitable(res):
+            return await res
+        else:
+            return res
+    except Exception as e:
+        logger.exception("Event queue error: %s", e)
+        raise
+
 # A2A SDK imports
 
 from a2a.server.agent_execution import RequestContext
 from a2a.server.events import EventQueue
-from a2a.utils import new_agent_text_message
+from a2a.utils import new_agent_text_message as _original_new_agent_text_message
+
+def new_agent_text_message(text, role="user"):
+    """Wrapper for new_agent_text_message that ensures compatibility"""
+    # A2A SDK's new_agent_text_message only takes text parameter
+    return _original_new_agent_text_message(text)
 
 
 
@@ -80,12 +110,12 @@ class A2AStarletteApplication:
                 ctx = RequestContext(params)
             else:
                 # Fallback: create a simple text message
-                from a2a.utils import new_agent_text_message
-                from a2a.types import Role
+                # Use our wrapped function that ensures no Role enum issues
                 
                 # Extract text from body or use default
                 text = body.get('text', str(body))
-                message = new_agent_text_message(text, role=Role.user)
+                # Use our wrapper function that ensures role is string
+                message = new_agent_text_message(text, role="user")
                 params = MessageSendParams(message=message)
                 ctx = RequestContext(params)
             
@@ -93,7 +123,12 @@ class A2AStarletteApplication:
             queue = EventQueue()
             
             # === Call SDK native executor interface ===
-            await self.executor.execute(ctx, queue)
+            # Use safe_call to handle both sync and async executors
+            try:
+                await _safe_call(self.executor.execute, ctx, queue)
+            except Exception as e:
+                logger.error(f"Error in executor.execute: {e}")
+                raise
             # ==========================================
             
             # Check if client wants streaming response
@@ -162,19 +197,23 @@ class A2AStarletteApplication:
         try:
             # Try pydantic v2 model_dump() first (SDK ≥0.3)
             if hasattr(event, 'model_dump'):
-                return event.model_dump()
+                raw_dict = event.model_dump()
             # Fallback to pydantic v1 dict() method
             elif hasattr(event, 'dict'):
-                return event.dict()
+                raw_dict = event.dict()
             # For dict-like objects
             elif isinstance(event, dict):
-                return event
+                raw_dict = event
             # Last resort: manual conversion
             else:
-                return {
+                raw_dict = {
                     "type": getattr(event, "type", event.__class__.__name__),
                     "data": getattr(event, "data", str(event))
                 }
+            
+            # Ensure all values are JSON serializable (convert Role enums to strings)
+            return self._sanitize_for_json(raw_dict)
+            
         except Exception as e:
             # Fallback for any serialization errors
             return {
@@ -182,6 +221,27 @@ class A2AStarletteApplication:
                 "data": str(event),
                 "error": f"Serialization failed: {e}"
             }
+    
+    def _sanitize_for_json(self, obj: Any) -> Any:
+        """Recursively sanitize object to ensure JSON serializability"""
+        if obj is None or isinstance(obj, (str, int, float, bool)):
+            return obj
+        elif isinstance(obj, list):
+            return [self._sanitize_for_json(item) for item in obj]
+        elif isinstance(obj, dict):
+            return {str(k): self._sanitize_for_json(v) for k, v in obj.items()}
+        elif hasattr(obj, '__dict__'):
+            # Handle objects with attributes
+            return {str(k): self._sanitize_for_json(v) for k, v in obj.__dict__.items()}
+        elif hasattr(obj, 'value'):
+            # Handle enums (like Role.USER -> "USER")
+            return str(obj.value)
+        elif hasattr(obj, 'name'):
+            # Handle enums without value attribute
+            return str(obj.name)
+        else:
+            # Convert everything else to string
+            return str(obj)
 
 
 class A2AServerAdapter(BaseServerAdapter):

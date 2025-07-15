@@ -31,7 +31,7 @@ except ImportError:
         RESET_ALL = ""
 
 # Add paths to import AgentNetwork and protocols
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))  # Add root directory
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src")) # Add root directory
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from network import AgentNetwork
 from base_agent import BaseAgent

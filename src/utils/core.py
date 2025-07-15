@@ -1,5 +1,5 @@
 import time
-from openai import OpenAI
+import os
 
 
 class Core:
@@ -13,49 +13,83 @@ class Core:
         
         if self.config["model"]["type"] == "local":
             base_url = self.config.get("base_url") or f"http://localhost:{self.config.get('port', 8000)}/v1"
-            self.client = OpenAI(api_key="dummy", base_url=base_url)
-            self.model  = self.client
+            
+            # Import OpenAI locally to avoid conflicts
+            try:
+                from openai import OpenAI
+                self.client = OpenAI(api_key="dummy", base_url=base_url)
+                self.model = self.client
+            except Exception as e:
+                print(f"[Core] Failed to initialize local OpenAI client: {e}")
+                raise
 
             # ---------- HARD-CODED name mapping ----------
             hard_map = {
                 "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo": "Llama-3.1-70B-Instruct"
             }
             # if not in map, fall back to first model id served by vLLM
-            self._local_model_id = hard_map.get(self.model_name) or self.client.models.list().data[0].id
+            try:
+                self._local_model_id = hard_map.get(self.model_name) or self.client.models.list().data[0].id
+            except Exception as e:
+                print(f"[Core] Warning: Could not get model list, using default model name: {e}")
+                self._local_model_id = self.model_name
             # ---------------------------------------------
 
             print(f"[Core] Local endpoint → {base_url} | served_model_id = {self._local_model_id}")
 
-        
-
         elif self.config["model"]["type"] == "openai":
-            client = OpenAI(
-                api_key=self.config["model"]["openai_api_key"],
-                base_url=self.config["model"].get("openai_base_url", "https://api.openai.com/v1"),
-            )
-            self.model = client
-            self.client = client
+            # Import OpenAI locally to avoid conflicts
+            try:
+                from openai import OpenAI
+                
+                # Get configuration
+                api_key = self.config["model"]["openai_api_key"]
+                base_url = self.config["model"].get("openai_base_url", "https://api.openai.com/v1")
+                
+                if not api_key:
+                    raise ValueError("OpenAI API key is required but not provided")
+                
+                # Create client with only supported parameters
+                client_kwargs = {
+                    "api_key": api_key,
+                    "base_url": base_url
+                }
+                
+                # Remove any None values
+                client_kwargs = {k: v for k, v in client_kwargs.items() if v is not None}
+                
+                self.client = OpenAI(**client_kwargs)
+                self.model = self.client
+                
+                print(f"[Core] OpenAI client initialized with base_url: {base_url}")
+                
+            except Exception as e:
+                print(f"[Core] Failed to initialize OpenAI client: {e}")
+                raise
     
     
     def execute(self, messages):
         if self.config["model"]["type"] == "local":
-            response = self.client.chat.completions.create(
-                model=self.client.models.list().data[0].id,
-                messages=messages,
-                temperature=0.3, # self.config["model"]["temperature"],
-                max_tokens=8192,
-                n=1,
-            )
-            output = response.choices[0].message.content
-            
-            # Parse for Qwen
-            if "</think>" in output:
-                output = output.split("</think>")[-1].strip()
-            
-            return output
+            try:
+                response = self.client.chat.completions.create(
+                    model=self._local_model_id,
+                    messages=messages,
+                    temperature=0.3, # self.config["model"]["temperature"],
+                    max_tokens=8192,
+                    n=1,
+                )
+                output = response.choices[0].message.content
+                
+                # Parse for Qwen
+                if "</think>" in output:
+                    output = output.split("</think>")[-1].strip()
+                
+                return output
+            except Exception as e:
+                print(f"[Core] Local chat generation error: {e}")
+                return f"Error in local chat generation: {str(e)}"
         
         elif self.config["model"]["type"] == "openai":
-            # truncated_messages = self._sanitize_for_gemini(truncated_messages)
             rounds = 0
             threshold = 3
             while True:
@@ -70,10 +104,10 @@ class Core:
                     content = response.choices[0].message.content
                     return content.strip()
                 except Exception as e:
-                    print(f"Chat Generation Error: {e}")
+                    print(f"[Core] OpenAI chat generation error: {e}")
                     time.sleep(10)
                     if rounds > threshold:
-                        return "Error in chat generation"
+                        return f"Error in OpenAI chat generation: {str(e)}"
         
                         
 
@@ -125,26 +159,26 @@ class Core:
         
         
         if self.config["model"]["type"] == "local":
-
-            for _ in range(2):
+            for attempt in range(2):
                 try:
                     response = self.client.chat.completions.create(
-                        model       = self.client.models.list().data[0].id,
-                        messages    = truncated_messages,
-                        tools       =     [                       
-                                        {
-                                            "type": "function",
-                                            "function": functions[0]
-                                        }
-                                    ],
-                        tool_choice = "auto",
-                        temperature = self.config["model"]["temperature"],
-                        n           = 1,
+                        model=self._local_model_id,
+                        messages=truncated_messages,
+                        tools=[                       
+                            {
+                                "type": "function",
+                                "function": functions[0]
+                            }
+                        ],
+                        tool_choice="auto",
+                        temperature=self.config["model"]["temperature"],
+                        n=1,
                     )
                     return response
                 except Exception as e:
-                    print(f"[local] tool_choice='auto' failed: {e}")
-            raise RuntimeError("Local function_call failed twice")
+                    print(f"[Core] Local function call attempt {attempt + 1} failed: {e}")
+                    if attempt == 1:  # Last attempt
+                        raise RuntimeError(f"Local function_call failed twice: {str(e)}")
 
                             
         elif self.config["model"]["type"] == "openai":
@@ -220,8 +254,14 @@ class Core:
                     
                     return response
                 except Exception as e:
+                    print(f"[Core] OpenAI function call error (round {rounds}): {e}")
                     time.sleep(10)
                     if rounds > threshold:
                         raise Exception(f"Function call generation failed too many times. Last error: {str(e)}")
+
+    def _sanitize_for_gemini(self, messages):
+        """Sanitize messages for Gemini compatibility"""
+        # This is a placeholder - implement if needed for specific model compatibility
+        return messages
 
     

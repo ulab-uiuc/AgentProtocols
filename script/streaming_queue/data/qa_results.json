@@ -1,462 +1,512 @@
 {
   "metadata": {
     "total_questions": 50,
-    "successful_questions": 50,
-    "failed_questions": 0,
-    "average_response_time": 2.9337880611419678,
-    "timestamp": 1750130636.090305,
+    "successful_questions": 0,
+    "failed_questions": 50,
+    "average_response_time": 0,
+    "timestamp": 1752071666.3148825,
     "network_type": "real_a2a_agent_network"
   },
   "results": [
     {
-      "question_id": 2,
-      "question": "where is the federal penitentiary in ind",
-      "worker": "Worker-2",
-      "answer": "The federal penitentiary in Indiana is the United States Penitentiary, Terre Haute. It is located in Terre Haute, Indiana. This facility is part of the Federal Bureau of Prisons and houses male inmates.",
-      "response_time": 3.047109365463257,
-      "timestamp": 1750130600.648963,
-      "status": "success"
-    },
-    {
       "question_id": 1,
       "question": "what does the golgi apparatus do to the proteins and lipids once they arrive ?",
       "worker": "Worker-1",
-      "answer": "The Golgi apparatus modifies, sorts, and packages proteins and lipids that arrive from the endoplasmic reticulum. It processes proteins by adding carbohydrate groups to form glycoproteins, modifies lipid molecules, and ensures proper folding and functionality. The Golgi apparatus then sorts these molecules and packages them into vesicles for transport to their final destinations, such as the cell membrane, lysosomes, or secretion outside the cell. This organelle plays a crucial role in the post-translational modification and trafficking of cellular molecules.",
-      "response_time": 4.228246450424194,
-      "timestamp": 1750130601.8296576,
-      "status": "success"
-    },
-    {
-      "question_id": 4,
-      "question": "what foods are good if you have gout?",
-      "worker": "Worker-4",
-      "answer": "If you have gout, it's beneficial to focus on a diet that helps reduce uric acid levels. Here are some foods that are generally considered good for managing gout:\n\n1. **Low-fat dairy products**: Milk, yogurt, and cheese can help lower uric acid levels.\n2. **Fruits**: Cherries, strawberries, blueberries, and other fruits high in vitamin C can be beneficial.\n3. **Vegetables**: Leafy greens, bell peppers, and other non-starchy vegetables are good choices.\n4. **Whole grains**: Brown rice, oats, and whole grain bread can be included in your diet.\n5. **Nuts and seeds**: Almonds, walnuts, and flaxseeds are good options.\n6. **Legumes**: Lentils, beans, and chickpeas are protein-rich and low in purines.\n7. **Water**: Staying well-hydrated helps flush uric acid from the body.\n\nAvoid high-purine foods like red meat, organ meats, and certain seafood, and limit alcohol and sugary drinks.",
-      "response_time": 6.07051157951355,
-      "timestamp": 1750130603.6732028,
-      "status": "success"
-    },
-    {
-      "question_id": 5,
-      "question": "what is the endocrine system responsible for?",
-      "worker": "Worker-2",
-      "answer": "The endocrine system is responsible for regulating a wide range of bodily functions through the release of hormones. These hormones are chemical messengers that travel through the bloodstream to target organs and tissues, influencing processes such as metabolism, growth and development, tissue function, sexual function, reproduction, sleep, and mood. The system includes glands such as the pituitary, thyroid, adrenal, and pancreas, among others. By maintaining hormonal balance, the endocrine system plays a crucial role in homeostasis, ensuring the body's internal environment remains stable and responsive to changes.",
-      "response_time": 3.3810770511627197,
-      "timestamp": 1750130604.0308666,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071623.430778,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-1: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 2732d622-4749-490e-9ec3-fcad94b2c184)"
     },
     {
       "question_id": 3,
       "question": "health benefits of eating vegetarian",
       "worker": "Worker-3",
-      "answer": "Eating a vegetarian diet can offer several health benefits, including:\n\n1. **Heart Health**: Vegetarian diets are often lower in saturated fats and cholesterol, which can reduce the risk of heart disease. They are typically rich in fiber, antioxidants, and healthy fats.\n\n2. **Weight Management**: Vegetarians often have lower body mass indexes (BMIs) and may find it easier to maintain a healthy weight due to a diet rich in fruits, vegetables, and whole grains.\n\n3. **Reduced Risk of Chronic Diseases**: A vegetarian diet can lower the risk of developing type 2 diabetes, hypertension, and certain cancers due to its high content of plant-based nutrients.\n\n4. **Improved Digestion**: High fiber intake from fruits, vegetables, and whole grains promotes healthy digestion and regular bowel movements.\n\n5. **Nutrient-Rich**: Vegetarian diets can be rich in essential nutrients like vitamins C and E, folic acid, magnesium, and phytochemicals.\n\nIt's important for vegetarians to ensure they get enough protein, iron, calcium, vitamin B12, and omega-3 fatty acids, which may require careful dietary planning or supplementation.",
-      "response_time": 7.704561710357666,
-      "timestamp": 1750130605.306939,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071624.6077433,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-3: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: cc548b8b-a103-4fd0-b7f3-9a68e21b94ab)"
+    },
+    {
+      "question_id": 2,
+      "question": "where is the federal penitentiary in ind",
+      "worker": "Worker-2",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071624.8528996,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-2: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: c73c58d1-b53f-4eff-b3b8-2ea06cde64cf)"
+    },
+    {
+      "question_id": 4,
+      "question": "what foods are good if you have gout?",
+      "worker": "Worker-4",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071626.113902,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-4: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: a2a76955-79fd-4cd0-a990-a52a70d87f1c)"
     },
     {
       "question_id": 7,
       "question": "definition for daring",
-      "worker": "Worker-4",
-      "answer": "\"Daring\" refers to the willingness to take risks or engage in bold, adventurous, or unconventional actions. It often implies courage and a lack of fear in facing challenges or trying new things.",
-      "response_time": 1.6364493370056152,
-      "timestamp": 1750130605.310032,
-      "status": "success"
+      "worker": "Worker-2",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071626.5178423,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-2: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 8891805e-17df-45ec-b57c-c85b9de9af41)"
     },
     {
-      "question_id": 6,
-      "question": "what is the nutritional value of oatmeal",
+      "question_id": 5,
+      "question": "what is the endocrine system responsible for?",
       "worker": "Worker-1",
-      "answer": "Oatmeal is a nutritious whole grain food that provides a variety of essential nutrients. A typical 1-cup serving of cooked oatmeal (about 154 grams) contains approximately:\n\n- Calories: 154\n- Protein: 6 grams\n- Carbohydrates: 27 grams\n- Dietary Fiber: 4 grams\n- Sugars: 1 gram\n- Fat: 3 grams\n- Saturated Fat: 0.5 grams\n\nOatmeal is also a good source of vitamins and minerals, including:\n\n- Manganese: 63% of the Daily Value (DV)\n- Phosphorus: 13% of the DV\n- Magnesium: 13% of the DV\n- Copper: 18% of the DV\n- Iron: 10% of the DV\n- Zinc: 10% of the DV\n- Folate: 3% of the DV\n- Vitamin B1 (Thiamin): 15% of the DV\n\nOatmeal is high in beta-glucan, a type of soluble fiber that can help lower cholesterol levels and improve heart health.",
-      "response_time": 4.03171706199646,
-      "timestamp": 1750130605.8617525,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071627.8110273,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-1: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: b55b7500-ea54-4d87-8085-4e15e8bcd4ed)"
     },
     {
       "question_id": 8,
       "question": "is dhgate a scam",
-      "worker": "Worker-2",
-      "answer": "DHgate is not a scam; it is a legitimate online marketplace based in China that connects buyers with sellers, primarily for wholesale goods. However, like any large marketplace, the quality and authenticity of products can vary significantly between sellers. Some sellers may offer counterfeit or low-quality items, so it's important to research sellers thoroughly before making a purchase. Check reviews, ratings, and product descriptions carefully. Use secure payment methods and be aware of the platform's buyer protection policies to safeguard your transactions.",
-      "response_time": 2.8653149604797363,
-      "timestamp": 1750130606.8965414,
-      "status": "success"
+      "worker": "Worker-4",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071628.02862,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-4: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: cbae1baf-2eba-4b7f-a806-6d6dfc9d04e3)"
+    },
+    {
+      "question_id": 6,
+      "question": "what is the nutritional value of oatmeal",
+      "worker": "Worker-3",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071629.4857814,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-3: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 8c70888d-a7dc-4eb4-8f3d-b2f852cfbcbb)"
     },
     {
       "question_id": 11,
       "question": "how far deep to plant beet early wonder",
-      "worker": "Worker-1",
-      "answer": "When planting \"Early Wonder\" beets, sow the seeds about 1/2 inch deep in the soil. Space the seeds approximately 1 to 2 inches apart in rows that are about 12 to 18 inches apart. Once the seedlings emerge and reach a few inches in height, thin them to about 3 to 4 inches apart to allow room for the roots to develop properly. This spacing helps ensure healthy growth and optimal beet size.",
-      "response_time": 2.3562240600585938,
-      "timestamp": 1750130608.2184687,
-      "status": "success"
-    },
-    {
-      "question_id": 9,
-      "question": "how to become a teacher assistant",
-      "worker": "Worker-3",
-      "answer": "To become a teacher assistant, follow these steps:\n\n1. **Education**: Obtain a high school diploma or GED. Some positions may require an associate degree or coursework in education or a related field.\n\n2. **Experience**: Gain experience working with children, such as volunteering at schools, tutoring, or working in childcare.\n\n3. **Skills**: Develop strong communication, organizational, and interpersonal skills. Patience and creativity are also important.\n\n4. **Certification**: Check if your state requires certification. Some states require passing the ParaPro Assessment or a similar exam.\n\n5. **Apply**: Search for teacher assistant positions at local schools, online job boards, or school district websites. Tailor your resume and cover letter to highlight relevant experience and skills.\n\n6. **Interview**: Prepare for interviews by understanding the school’s needs and demonstrating your ability to support teachers and students effectively.",
-      "response_time": 5.119154453277588,
-      "timestamp": 1750130610.4270248,
-      "status": "success"
+      "worker": "Worker-4",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071630.5991125,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-4: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 27841e73-ec76-4819-8fc5-310e064a4e4e)"
     },
     {
       "question_id": 10,
       "question": "what study for mets to brain",
-      "worker": "Worker-4",
-      "answer": "When studying metastases to the brain, focus on the following areas:\n\n1. **Pathophysiology**: Understand how cancer cells spread to the brain, commonly from primary sites like the lung, breast, melanoma, kidney, and colon.\n\n2. **Diagnosis**: Learn about imaging techniques such as MRI and CT scans, which are crucial for detecting brain metastases. Familiarize yourself with the role of biopsy in certain cases.\n\n3. **Symptoms**: Study the common symptoms, including headaches, seizures, cognitive changes, and neurological deficits.\n\n4. **Treatment Options**: Review treatment modalities like surgery, radiation therapy (including stereotactic radiosurgery), chemotherapy, targeted therapy, and immunotherapy.\n\n5. **Prognosis and Management**: Understand factors affecting prognosis, such as the number and location of metastases, and the patient's overall health. Learn about palliative care approaches for symptom management.\n\n6. **Research and Advances**: Stay updated on new treatments and clinical trials exploring innovative therapies for brain metastases.",
-      "response_time": 5.230888366699219,
-      "timestamp": 1750130610.5412788,
-      "status": "success"
-    },
-    {
-      "question_id": 12,
-      "question": "ways to stop diarrhea in my pupply",
-      "worker": "Worker-2",
-      "answer": "To help stop diarrhea in your puppy, consider the following steps:\n\n1. **Fasting**: Withhold food for 12-24 hours to allow your puppy's digestive system to rest. Ensure they have access to fresh water to prevent dehydration.\n\n2. **Bland Diet**: After fasting, introduce a bland diet such as boiled chicken (no skin or bones) and white rice in small, frequent meals.\n\n3. **Hydration**: Ensure your puppy stays hydrated. You can offer an electrolyte solution designed for pets.\n\n4. **Probiotics**: Consider giving your puppy a probiotic supplement to help restore healthy gut bacteria.\n\n5. **Veterinary Consultation**: If diarrhea persists for more than 24 hours, or if your puppy shows signs of dehydration, lethargy, or vomiting, consult a veterinarian.\n\n6. **Preventive Care**: Ensure your puppy is up-to-date on vaccinations and deworming, as parasites and infections can cause diarrhea.",
-      "response_time": 4.488737344741821,
-      "timestamp": 1750130611.385684,
-      "status": "success"
-    },
-    {
-      "question_id": 15,
-      "question": "what is the difference between a medical doctor and a doctor of osteopathic",
-      "worker": "Worker-4",
-      "answer": "A Medical Doctor (MD) and a Doctor of Osteopathic Medicine (DO) are both fully licensed physicians, but they have different training philosophies. MDs follow the allopathic approach, focusing on diagnosing and treating diseases primarily through medication and surgery. DOs, on the other hand, receive additional training in osteopathic manipulative treatment (OMT) and emphasize a holistic approach, considering the body's musculoskeletal system and its impact on overall health. Both MDs and DOs can specialize in any area of medicine, prescribe medications, and perform surgeries. The main difference lies in their training and approach to patient care, with DOs incorporating a more holistic perspective.",
-      "response_time": 2.28481125831604,
-      "timestamp": 1750130612.8271177,
-      "status": "success"
-    },
-    {
-      "question_id": 13,
-      "question": "what disease do roof rats cause",
       "worker": "Worker-1",
-      "answer": "Roof rats can carry and transmit several diseases to humans, including:\n\n1. **Leptospirosis**: Spread through contact with water or soil contaminated with infected rat urine.\n2. **Salmonellosis**: Transmitted through consumption of food or water contaminated with rat feces.\n3. **Rat-bite fever**: Can occur from bites or scratches from infected rats, or by consuming food or water contaminated with rat droppings.\n4. **Hantavirus**: Though more commonly associated with deer mice, roof rats can also carry this virus, which is transmitted through inhalation of dust contaminated with rodent urine or droppings.\n5. **Plague**: Roof rats can carry fleas that are vectors for the plague bacterium, Yersinia pestis.\n\nPreventing infestations and maintaining good hygiene can help reduce the risk of these diseases.",
-      "response_time": 4.8070642948150635,
-      "timestamp": 1750130613.0260632,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071631.6300023,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-1: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 3aca5418-a05c-4778-bbbb-53d7bb4930ff)"
+    },
+    {
+      "question_id": 9,
+      "question": "how to become a teacher assistant",
+      "worker": "Worker-2",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071632.2611928,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-2: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 1808463f-c25f-4839-88da-a413841aa942)"
     },
     {
       "question_id": 14,
       "question": "when was niagara falls created",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071634.1615882,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-1: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 67a110b5-791d-4870-888a-0d2c3266668d)"
+    },
+    {
+      "question_id": 15,
+      "question": "what is the difference between a medical doctor and a doctor of osteopathic",
+      "worker": "Worker-2",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071635.323504,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-2: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: cc0409d6-7aa5-4336-951e-a94d0d53a156)"
+    },
+    {
+      "question_id": 12,
+      "question": "ways to stop diarrhea in my pupply",
       "worker": "Worker-3",
-      "answer": "Niagara Falls was formed around 12,000 years ago, at the end of the last Ice Age. As the glaciers receded, they released vast amounts of water, which carved out the Great Lakes and the Niagara River. The falls themselves were created as the water flowed over the Niagara Escarpment, eroding the rock and forming the iconic waterfalls we see today.",
-      "response_time": 2.7356624603271484,
-      "timestamp": 1750130613.1631973,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071636.1920636,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-3: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 322f86dd-8ca0-4183-9732-9924365fe1bc)"
+    },
+    {
+      "question_id": 13,
+      "question": "what disease do roof rats cause",
+      "worker": "Worker-4",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071637.3631792,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-4: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: dc605050-c9e7-4f93-a90a-68b2698f4090)"
     },
     {
       "question_id": 19,
       "question": "property premises meaning",
-      "worker": "Worker-3",
-      "answer": "\"Property premises\" refers to the land and buildings that are owned or rented by an individual or organization. It encompasses the physical location, including any structures, facilities, or improvements on the land. In legal and business contexts, \"premises\" often denotes the specific area where business activities are conducted or where a property is situated.",
-      "response_time": 1.4479377269744873,
-      "timestamp": 1750130614.611672,
-      "status": "success"
-    },
-    {
-      "question_id": 16,
-      "question": "where is the graphic card located in the cpu",
-      "worker": "Worker-2",
-      "answer": "The term \"CPU\" typically refers to the central processing unit, which is a component of a computer. However, if you're asking about the location of a graphics card in a computer system, it is usually installed in a PCI Express (PCIe) slot on the motherboard inside the computer case. \n\nIn desktop computers, the graphics card is a separate component that can be easily identified and replaced. In laptops, the graphics processing unit (GPU) might be integrated into the motherboard or the CPU itself, making it less accessible. If you're referring to integrated graphics, these are part of the CPU or motherboard and not a separate card.",
-      "response_time": 4.1162660121917725,
-      "timestamp": 1750130615.5023766,
-      "status": "success"
-    },
-    {
-      "question_id": 17,
-      "question": "where is the graphic card located in the cpu",
       "worker": "Worker-4",
-      "answer": "The term \"CPU\" typically refers to the central processing unit, which is a component of a computer. However, if you're asking about the location of a graphics card in a computer system, it is usually installed in a PCI Express (PCIe) slot on the motherboard inside the computer case. \n\nIn desktop computers, the graphics card is a separate component that can be easily identified and replaced. In laptops, the graphics processing unit (GPU) is often integrated into the motherboard or the CPU itself, making it less accessible for upgrades. If you're referring to integrated graphics, they are part of the CPU or motherboard chipset.",
-      "response_time": 2.739342451095581,
-      "timestamp": 1750130615.5669014,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071639.5979133,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-4: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: ad14a123-f91e-4694-baec-2552fdaa014c)"
     },
     {
       "question_id": 18,
       "question": "what are hamitic peoples",
-      "worker": "Worker-1",
-      "answer": "The term \"Hamitic peoples\" is an outdated and discredited classification that was historically used to describe certain groups in Africa. It originated from the \"Hamitic hypothesis,\" which suggested that a group of people, supposedly descended from Ham, a biblical figure, were responsible for any advanced cultural achievements in Africa. This theory was used to categorize North African and some East African populations, such as the Berbers and Cushitic-speaking peoples, as distinct from sub-Saharan Africans. The concept was rooted in racial biases and has been rejected by modern anthropology and genetics, which recognize the diversity and complexity of African populations without such simplistic and erroneous classifications.",
-      "response_time": 3.6886181831359863,
-      "timestamp": 1750130616.7149937,
-      "status": "success"
+      "worker": "Worker-3",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071639.768954,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-3: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 129b0b40-b139-471b-9f01-28ee653e1787)"
     },
     {
-      "question_id": 22,
-      "question": "does flomax cause liver damage",
-      "worker": "Worker-4",
-      "answer": "Flomax (tamsulosin) is primarily used to treat benign prostatic hyperplasia (BPH). It is not commonly associated with liver damage. However, like any medication, it can have side effects, and liver issues, although rare, could potentially occur. If you have concerns about liver health while taking Flomax, it's important to discuss them with your healthcare provider. They can monitor your liver function and adjust your treatment if necessary. Always report any unusual symptoms to your doctor.",
-      "response_time": 1.587846040725708,
-      "timestamp": 1750130617.1552799,
-      "status": "success"
+      "question_id": 16,
+      "question": "where is the graphic card located in the cpu",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071640.9470022,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-1: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: c741361e-90eb-4ec7-9a18-1a06dbcb0bc2)"
+    },
+    {
+      "question_id": 17,
+      "question": "where is the graphic card located in the cpu",
+      "worker": "Worker-2",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071641.513139,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-2: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 79739981-5df5-4a8a-931c-80a96f8b7f5e)"
     },
     {
       "question_id": 20,
       "question": "does ichigo lose his powers",
-      "worker": "Worker-3",
-      "answer": "Yes, Ichigo Kurosaki loses his powers at the end of the \"Fake Karakura Town\" arc in the anime and manga series \"Bleach.\" After using the Final Getsuga Tenshō technique to defeat Sōsuke Aizen, Ichigo's Soul Reaper powers are completely depleted. However, he later regains his powers during the \"Fullbring\" arc with the help of his friends and the Soul Society.",
-      "response_time": 3.8199212551116943,
-      "timestamp": 1750130618.431938,
-      "status": "success"
+      "worker": "Worker-4",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071642.6785934,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-4: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 3c860062-e02f-479e-806e-d95319114373)"
     },
     {
       "question_id": 21,
       "question": "what structure are located in the abdominal  cavity?",
-      "worker": "Worker-2",
-      "answer": "The abdominal cavity contains several vital organs and structures, including:\n\n1. **Stomach** - involved in digestion.\n2. **Liver** - processes nutrients and detoxifies substances.\n3. **Gallbladder** - stores bile produced by the liver.\n4. **Pancreas** - produces enzymes and hormones like insulin.\n5. **Spleen** - filters blood and supports the immune system.\n6. **Small Intestine** - absorbs nutrients from digested food.\n7. **Large Intestine (Colon)** - absorbs water and forms waste.\n8. **Kidneys** - filter blood to produce urine.\n9. **Adrenal Glands** - produce hormones like adrenaline.\n10. **Appendix** - a small, tube-like structure attached to the large intestine.\n\nThese organs are supported by blood vessels, nerves, and connective tissues, and are protected by the abdominal muscles and the peritoneum, a membrane lining the cavity.",
-      "response_time": 3.64410138130188,
-      "timestamp": 1750130619.1468823,
-      "status": "success"
-    },
-    {
-      "question_id": 23,
-      "question": "what is printing mechanism",
-      "worker": "Worker-1",
-      "answer": "A printing mechanism refers to the method or technology used to transfer ink or toner onto a substrate, typically paper, to produce text and images. Common printing mechanisms include:\n\n1. **Inkjet Printing**: Uses tiny nozzles to spray liquid ink onto paper. It's versatile and suitable for both text and high-quality images.\n\n2. **Laser Printing**: Uses a laser beam to produce an image on a drum, which is then transferred to paper using toner. It's fast and efficient for high-volume text printing.\n\n3. **Dot Matrix Printing**: Uses a print head that moves back and forth, striking an ink-soaked ribbon against the paper to form characters. It's durable and used for multipart forms.\n\n4. **Thermal Printing**: Uses heat to transfer an image onto thermal paper. It's common in receipt printers.\n\n5. **Offset Printing**: Involves transferring ink from a plate to a rubber blanket, then onto paper. It's used for high-volume commercial printing.",
-      "response_time": 3.6843369007110596,
-      "timestamp": 1750130620.399679,
-      "status": "success"
-    },
-    {
-      "question_id": 26,
-      "question": "lewiston idaho fedex express phone number",
-      "worker": "Worker-2",
-      "answer": "I don't have access to real-time databases or the internet to provide current phone numbers. However, you can find the FedEx Express phone number for Lewiston, Idaho, by visiting the official FedEx website or using an online directory. Alternatively, you can call FedEx's general customer service line at 1-800-463-3339 for assistance.",
-      "response_time": 1.5573527812957764,
-      "timestamp": 1750130620.704776,
-      "status": "success"
-    },
-    {
-      "question_id": 25,
-      "question": "is the hawb the tracking number",
       "worker": "Worker-3",
-      "answer": "The House Air Waybill (HAWB) is not the same as a tracking number, but it can be used for tracking purposes. The HAWB is a document issued by a freight forwarder to a shipper, detailing the shipment of goods and serving as a receipt. It includes information such as the shipper's and consignee's details, a description of the goods, and the terms of the shipment. While the HAWB number can be used to track a shipment, it is specific to air freight and is different from a standard tracking number provided by courier services.",
-      "response_time": 2.3145389556884766,
-      "timestamp": 1750130620.7470095,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071643.7843692,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-3: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: b6bd70af-55ae-4633-af8a-28120a747797)"
+    },
+    {
+      "question_id": 22,
+      "question": "does flomax cause liver damage",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071644.8881342,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-1: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 1f5991fd-1fc3-49ee-8152-1d01335833f5)"
     },
     {
       "question_id": 24,
       "question": "who discovered the element carbon",
       "worker": "Worker-4",
-      "answer": "Carbon has been known since ancient times and was not \"discovered\" by a single individual. It has been used in the form of charcoal and soot for thousands of years. The recognition of carbon as an element came with the development of modern chemistry in the late 18th century, particularly through the work of Antoine Lavoisier, who helped to establish the concept of chemical elements.",
-      "response_time": 3.6639442443847656,
-      "timestamp": 1750130620.819728,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071645.0327806,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-4: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: f957c371-1dba-4e17-8166-eacf34396eb1)"
+    },
+    {
+      "question_id": 23,
+      "question": "what is printing mechanism",
+      "worker": "Worker-2",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071645.0934002,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-2: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: cf7dd6e1-313f-41e5-99d4-dcbc1fdb6394)"
+    },
+    {
+      "question_id": 25,
+      "question": "is the hawb the tracking number",
+      "worker": "Worker-3",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071647.240485,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-3: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 01c26790-b902-40f6-aa7e-2b5d187e9f24)"
+    },
+    {
+      "question_id": 26,
+      "question": "lewiston idaho fedex express phone number",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071647.3403065,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-1: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 73eb7f93-6aa6-4809-ad7a-18fa71fc4aeb)"
     },
     {
       "question_id": 28,
       "question": "what is the empirical formula for phosphorus selenide",
       "worker": "Worker-2",
-      "answer": "The empirical formula for phosphorus selenide is typically represented as \\( \\text{P}_2\\text{Se}_3 \\). This formula indicates the simplest whole-number ratio of phosphorus (P) to selenium (Se) atoms in the compound.",
-      "response_time": 1.2651426792144775,
-      "timestamp": 1750130621.9702706,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071647.9297993,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-2: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 5d655832-ab37-409b-a9dc-7842611bc097)"
     },
     {
       "question_id": 27,
       "question": "what is one role of the element phosphorus?",
-      "worker": "Worker-1",
-      "answer": "Phosphorus plays a crucial role in the formation of DNA and RNA, which are essential for genetic information storage and transfer in living organisms. It is a key component of the phosphate backbone of these nucleic acids. Additionally, phosphorus is vital for energy transfer within cells, as it is a part of adenosine triphosphate (ATP), the primary energy carrier in biological systems.",
-      "response_time": 2.594395399093628,
-      "timestamp": 1750130622.994422,
-      "status": "success"
+      "worker": "Worker-4",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071648.3497055,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-4: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 707b8a2b-fb53-4fab-9c7c-694e9e8f1f5f)"
     },
     {
       "question_id": 29,
       "question": "what is abbreviated dialing",
       "worker": "Worker-3",
-      "answer": "Abbreviated dialing is a telecommunication feature that allows users to dial a short sequence of numbers to reach a specific phone number or service, instead of dialing the full number. This is often used for speed dialing, emergency services, or accessing special services. For example, dialing \"911\" for emergency services in the United States is a form of abbreviated dialing. It simplifies the process of making calls to frequently used numbers or important services, enhancing convenience and efficiency.",
-      "response_time": 2.5073962211608887,
-      "timestamp": 1750130623.2548368,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071649.2511988,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-3: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: c2c76dbb-7e72-4a11-bd3c-7e4d97f3fe6a)"
     },
     {
       "question_id": 30,
       "question": "fastest cell phone processor",
-      "worker": "Worker-4",
-      "answer": "As of the latest information available in 2023, the Apple A17 Pro chip, used in the iPhone 15 Pro and iPhone 15 Pro Max, is considered one of the fastest smartphone processors. It is built on a 3nm process, offering significant improvements in performance and efficiency. On the Android side, the Qualcomm Snapdragon 8 Gen 2 is also a top performer, powering many flagship Android devices with excellent speed and capabilities. Both processors are known for their high performance in tasks such as gaming, multitasking, and AI applications.",
-      "response_time": 2.6242482662200928,
-      "timestamp": 1750130623.4445043,
-      "status": "success"
-    },
-    {
-      "question_id": 33,
-      "question": "what were the brothers grimm names",
-      "worker": "Worker-3",
-      "answer": "The Brothers Grimm were named Jacob Grimm and Wilhelm Grimm.",
-      "response_time": 1.172572135925293,
-      "timestamp": 1750130624.4280877,
-      "status": "success"
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071650.0785663,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-1: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 42904fc2-7f82-48dd-9b13-d6d13c053fc1)"
     },
     {
       "question_id": 31,
       "question": "what are the three monetary policy tools of the fed",
       "worker": "Worker-2",
-      "answer": "The Federal Reserve uses three primary monetary policy tools to manage the economy:\n\n1. **Open Market Operations (OMO):** This involves the buying and selling of government securities in the open market to influence the level of reserves in the banking system, thereby affecting interest rates and the supply of money.\n\n2. **Discount Rate:** This is the interest rate charged to commercial banks and other depository institutions on loans they receive from the Federal Reserve's discount window. Adjusting the discount rate influences the cost of borrowing and the level of reserves banks hold.\n\n3. **Reserve Requirements:** This tool involves setting the minimum amount of reserves that banks must hold against deposits. Changing reserve requirements can directly impact the amount of money banks can lend, influencing the money supply and economic activity.",
-      "response_time": 2.7322897911071777,
-      "timestamp": 1750130624.7029243,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071650.9890978,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-2: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 1682b5dc-3a9c-429f-aa06-fa0503b365ae)"
+    },
+    {
+      "question_id": 33,
+      "question": "what were the brothers grimm names",
+      "worker": "Worker-3",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071651.5305843,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-3: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: a874c7f8-58b3-4aaa-8293-4f6f5c648bce)"
     },
     {
       "question_id": 34,
       "question": "what is an insta pot?",
-      "worker": "Worker-4",
-      "answer": "An Instant Pot is a brand of multi-cooker that combines several kitchen appliances into one device. It can function as a pressure cooker, slow cooker, rice cooker, steamer, sauté pan, yogurt maker, and warmer. The Instant Pot is known for its versatility and ability to cook meals quickly, especially through pressure cooking. It has become popular for its convenience, energy efficiency, and ability to prepare a wide variety of dishes with minimal effort. The device typically features programmable settings and safety mechanisms to ensure ease of use.",
-      "response_time": 2.0503990650177,
-      "timestamp": 1750130625.495434,
-      "status": "success"
-    },
-    {
-      "question_id": 36,
-      "question": "where does spermatogenesis occur?",
-      "worker": "Worker-2",
-      "answer": "Spermatogenesis occurs in the seminiferous tubules of the testes. These tubules are tightly coiled structures where the process of sperm cell development takes place. Within the seminiferous tubules, germ cells undergo several stages of division and maturation, ultimately resulting in the formation of mature spermatozoa.",
-      "response_time": 1.4818620681762695,
-      "timestamp": 1750130626.1851885,
-      "status": "success"
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071653.3881838,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-1: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: b42aab9d-a782-484c-9e7d-d29de4b84d3e)"
     },
     {
       "question_id": 35,
       "question": "side effects for diclofenac topical",
+      "worker": "Worker-2",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071653.5312238,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-2: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 46efb1ef-3581-4d8a-826a-62f179a46def)"
+    },
+    {
+      "question_id": 36,
+      "question": "where does spermatogenesis occur?",
       "worker": "Worker-3",
-      "answer": "Common side effects of diclofenac topical include:\n\n1. Skin reactions at the application site, such as redness, itching, or rash.\n2. Dry or scaly skin.\n3. Tingling or numbness.\n\nLess common but more serious side effects can include:\n\n1. Allergic reactions, such as hives or swelling.\n2. Difficulty breathing.\n3. Stomach pain or gastrointestinal issues.\n4. Liver problems, indicated by symptoms like yellowing of the skin or eyes.\n\nIf you experience severe side effects or signs of an allergic reaction, seek medical attention immediately. Always use diclofenac topical as directed by a healthcare professional.",
-      "response_time": 2.0801384449005127,
-      "timestamp": 1750130626.5086062,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071654.6107247,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-3: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 6af8c08c-85e8-4c34-888f-dfb82a4364b9)"
     },
     {
       "question_id": 32,
       "question": "what did maria theresa do for the serfs",
-      "worker": "Worker-1",
-      "answer": "Maria Theresa, the Habsburg Empress, implemented several reforms to improve the conditions of serfs in her realm. She introduced the Robot Patent in 1771, which aimed to regulate and limit the amount of labor that serfs were required to provide to their landlords. This reform sought to reduce the burden on serfs by capping the number of days they had to work for their lords and ensuring they had more time to work on their own land. Additionally, she promoted agricultural improvements and education, which indirectly benefited the serfs by enhancing their productivity and living conditions. However, her reforms were limited and did not abolish serfdom entirely, leaving significant power in the hands of the nobility.",
-      "response_time": 3.867445230484009,
-      "timestamp": 1750130626.8622203,
-      "status": "success"
+      "worker": "Worker-4",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071655.115738,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-4: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 74ea11b6-f5d4-4b25-b024-da286c841852)"
     },
     {
       "question_id": 37,
       "question": "where is baby beach hi",
-      "worker": "Worker-4",
-      "answer": "Baby Beach is located on the north shore of Maui, Hawaii, in the town of Lahaina. It's a small, protected beach known for its calm, shallow waters, making it ideal for families with young children. The beach is situated at the end of Puunoa Place, just off Front Street in Lahaina.",
-      "response_time": 2.003732681274414,
-      "timestamp": 1750130627.499541,
-      "status": "success"
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071655.696901,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-1: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 614a3338-5370-469f-aaf7-602cf5b727a4)"
     },
     {
       "question_id": 41,
       "question": "what county is mitchell south dakota in",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071656.528886,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-1: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: fc80d32e-e0ba-41ac-80f6-0662810802c9)"
+    },
+    {
+      "question_id": 40,
+      "question": "who is dakota meyer",
       "worker": "Worker-4",
-      "answer": "Mitchell, South Dakota, is located in Davison County.",
-      "response_time": 0.622715950012207,
-      "timestamp": 1750130628.1227758,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071658.1964223,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-4: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: d9eb0709-6b41-4703-821c-2446a86bdbdc)"
     },
     {
       "question_id": 39,
       "question": "how many milligrams of ritalin should an adult take",
       "worker": "Worker-3",
-      "answer": "The appropriate dosage of Ritalin (methylphenidate) for adults varies based on individual needs and medical guidance. Typically, the starting dose for adults with ADHD is 10 mg taken 2-3 times daily, with adjustments made by a healthcare provider. The maximum recommended daily dose is generally 60 mg. However, it's crucial to follow a doctor's prescription and guidance, as they will tailor the dosage to the individual's specific condition and response to the medication. Always consult a healthcare professional before starting or adjusting any medication.",
-      "response_time": 2.108947277069092,
-      "timestamp": 1750130628.6179848,
-      "status": "success"
-    },
-    {
-      "question_id": 42,
-      "question": "who is the judge michael day district court of south dakota",
-      "worker": "Worker-4",
-      "answer": "As of my last update, there is no record of a Judge Michael Day serving on the United States District Court for the District of South Dakota. It's possible that you might be referring to a judge serving in a different capacity or court within South Dakota, such as a state court. For the most current and specific information, you may want to check the official website of the U.S. District Court for the District of South Dakota or contact the court directly.",
-      "response_time": 1.6185386180877686,
-      "timestamp": 1750130629.7419102,
-      "status": "success"
-    },
-    {
-      "question_id": 43,
-      "question": "where is wild creek reservoir",
-      "worker": "Worker-3",
-      "answer": "Wild Creek Reservoir is located in Monroe County, Pennsylvania, near the town of Jim Thorpe. It is part of the water supply system for the city of Bethlehem. The reservoir is situated in a scenic area within the Pocono Mountains, offering natural beauty and recreational opportunities.",
-      "response_time": 1.7275192737579346,
-      "timestamp": 1750130630.3458633,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071658.2698472,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-3: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: fec25b44-b51e-456a-80e5-c85f4e783d4c)"
     },
     {
       "question_id": 38,
       "question": "what cleans your liver and kidneys",
       "worker": "Worker-2",
-      "answer": "The liver and kidneys are self-cleaning organs that naturally detoxify the body. To support their function, maintain a healthy lifestyle:\n\n1. **Hydration**: Drink plenty of water to help the kidneys filter waste.\n2. **Balanced Diet**: Eat a diet rich in fruits, vegetables, whole grains, and lean proteins. Foods like berries, citrus fruits, leafy greens, and garlic can support liver health.\n3. **Limit Alcohol**: Excessive alcohol can damage the liver.\n4. **Avoid Toxins**: Minimize exposure to harmful chemicals and pollutants.\n5. **Exercise Regularly**: Physical activity supports overall organ health.\n6. **Avoid Processed Foods**: Reduce intake of high-sugar and high-fat foods.\n7. **Monitor Medications**: Use medications responsibly, as some can affect liver and kidney function.\n\nConsult a healthcare professional for personalized advice, especially if you have existing health conditions.",
-      "response_time": 4.28125262260437,
-      "timestamp": 1750130630.466968,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071659.2804303,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-2: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 08793d79-68a9-44e2-9145-2bdea3524ad2)"
     },
     {
-      "question_id": 40,
-      "question": "who is dakota meyer",
-      "worker": "Worker-1",
-      "answer": "Dakota Meyer is a former United States Marine who was awarded the Medal of Honor for his actions during the Battle of Ganjgal in Afghanistan on September 8, 2009. He is recognized for his bravery in repeatedly entering a kill zone to rescue fellow soldiers and recover the bodies of fallen comrades. Meyer is also known for his public speaking, advocacy for veterans, and his work as an author. He co-authored the book \"Into the Fire: A Firsthand Account of the Most Extraordinary Battle in the Afghan War.\"",
-      "response_time": 3.6441683769226074,
-      "timestamp": 1750130630.5067382,
-      "status": "success"
-    },
-    {
-      "question_id": 47,
-      "question": "lakegirl address",
-      "worker": "Worker-1",
-      "answer": "I'm sorry, but I can't assist with that request.",
-      "response_time": 0.7420525550842285,
-      "timestamp": 1750130631.2491763,
-      "status": "success"
-    },
-    {
-      "question_id": 44,
-      "question": "what make up the pistil in the female flower",
+      "question_id": 43,
+      "question": "where is wild creek reservoir",
       "worker": "Worker-4",
-      "answer": "The pistil is the female reproductive part of a flower and is typically composed of three main parts: \n\n1. **Stigma**: The top part of the pistil that receives pollen. It is often sticky to help capture and hold pollen grains.\n\n2. **Style**: The slender stalk that connects the stigma to the ovary. It serves as a passageway for pollen tubes to grow from the stigma to the ovary.\n\n3. **Ovary**: The enlarged basal portion that contains ovules. After fertilization, the ovary develops into a fruit, and the ovules become seeds. \n\nTogether, these components facilitate the process of fertilization in flowering plants.",
-      "response_time": 2.376626491546631,
-      "timestamp": 1750130632.119024,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071660.1253302,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-4: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: a15076e8-029b-44f3-bcd6-aaac605c963b)"
     },
     {
       "question_id": 45,
       "question": "where is metro ny distribution center",
+      "worker": "Worker-2",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071661.621995,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-2: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: a68cc019-14a5-497a-8901-f9d4f6aeff45)"
+    },
+    {
+      "question_id": 42,
+      "question": "who is the judge michael day district court of south dakota",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071661.9675477,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-1: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: d6e5f81c-70b9-4bf7-b30d-82a22237d858)"
+    },
+    {
+      "question_id": 44,
+      "question": "what make up the pistil in the female flower",
       "worker": "Worker-3",
-      "answer": "The Metro NY Distribution Center is a major postal facility located in the New York metropolitan area. It serves as a hub for sorting and distributing mail and packages for the United States Postal Service (USPS). The exact address can vary, but it is typically associated with large USPS facilities in the region, such as those in Jersey City, NJ, or Kearny, NJ. For specific inquiries or services, it's best to contact USPS directly or check their website for the most current information.",
-      "response_time": 1.8763961791992188,
-      "timestamp": 1750130632.2226126,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071662.2973802,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-3: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: ef841d7d-87df-40e3-942a-beeb9b7c0c4b)"
+    },
+    {
+      "question_id": 47,
+      "question": "lakegirl address",
+      "worker": "Worker-2",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071662.8081832,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-2: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 7ee14457-4b75-4622-a558-44c8e2d7130d)"
+    },
+    {
+      "question_id": 46,
+      "question": "how to find device ip",
+      "worker": "Worker-4",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071663.1719134,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-4: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: fe996450-651e-4236-aad3-e1e6144645fb)"
     },
     {
       "question_id": 48,
       "question": "shopko kennewick address",
       "worker": "Worker-1",
-      "answer": "Shopko in Kennewick, Washington, was located at 867 N Columbia Center Blvd. However, please note that Shopko filed for bankruptcy and closed all its stores in 2019. The location may now be occupied by a different business.",
-      "response_time": 1.4710307121276855,
-      "timestamp": 1750130632.7206628,
-      "status": "success"
-    },
-    {
-      "question_id": 46,
-      "question": "how to find device ip",
-      "worker": "Worker-2",
-      "answer": "To find a device's IP address, follow these steps based on your device type:\n\n**Windows:**\n1. Open Command Prompt (type `cmd` in the search bar and press Enter).\n2. Type `ipconfig` and press Enter.\n3. Look for \"IPv4 Address\" under your active network connection.\n\n**Mac:**\n1. Open System Preferences.\n2. Click on \"Network.\"\n3. Select your active connection (Wi-Fi or Ethernet) on the left.\n4. Your IP address will be displayed on the right.\n\n**Linux:**\n1. Open Terminal.\n2. Type `hostname -I` and press Enter.\n3. Your IP address will be displayed.\n\n**iOS:**\n1. Go to Settings > Wi-Fi.\n2. Tap the \"i\" icon next to your connected network.\n3. Your IP address will be listed.\n\n**Android:**\n1. Go to Settings > Network & Internet > Wi-Fi.\n2. Tap on your connected network.\n3. Your IP address will be displayed.",
-      "response_time": 3.1227643489837646,
-      "timestamp": 1750130633.5901282,
-      "status": "success"
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071664.3820884,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-1: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: a34cd252-0e64-4100-b25c-54eedbead138)"
     },
     {
       "question_id": 50,
       "question": "how do i find my Ip address",
-      "worker": "Worker-3",
-      "answer": "To find your IP address, you can use the following methods:\n\n1. **On Windows:**\n   - Open Command Prompt by typing `cmd` in the search bar and pressing Enter.\n   - Type `ipconfig` and press Enter.\n   - Look for \"IPv4 Address\" under your active network connection.\n\n2. **On macOS:**\n   - Go to System Preferences > Network.\n   - Select your active network connection (e.g., Wi-Fi or Ethernet).\n   - Your IP address will be displayed on the right.\n\n3. **On Linux:**\n   - Open a terminal.\n   - Type `hostname -I` or `ifconfig` and press Enter.\n   - Look for the IP address associated with your active network interface.\n\n4. **On a smartphone:**\n   - Go to Settings > Wi-Fi.\n   - Tap on the connected network to see the IP address.\n\n5. **Online:**\n   - Visit a website like `whatismyip.com` to see your public IP address.",
-      "response_time": 2.4970741271972656,
-      "timestamp": 1750130634.720513,
-      "status": "success"
+      "worker": "Worker-2",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071666.1856465,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-2: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 414d8fad-07dd-4f74-9aba-579a39569008)"
     },
     {
       "question_id": 49,
       "question": "how to change ip address on netgear router",
-      "worker": "Worker-4",
-      "answer": "To change the IP address on a Netgear router, follow these steps:\n\n1. **Access the Router Interface:**\n   - Connect your computer to the router via Ethernet or Wi-Fi.\n   - Open a web browser and enter `http://www.routerlogin.net` or `http://192.168.1.1`.\n\n2. **Log In:**\n   - Enter the admin username and password. The default is usually `admin` and `password`, unless changed.\n\n3. **Navigate to LAN Setup:**\n   - Go to the \"Advanced\" tab.\n   - Select \"Setup\" and then \"LAN Setup.\"\n\n4. **Change the IP Address:**\n   - In the \"LAN TCP/IP Setup\" section, change the \"IP Address\" field to your desired IP address (e.g., `192.168.1.2`).\n\n5. **Apply Changes:**\n   - Click \"Apply\" to save the changes. The router will reboot with the new IP address.\n\nEnsure the new IP address is within the same subnet and doesn't conflict with other devices.",
-      "response_time": 3.968958854675293,
-      "timestamp": 1750130636.0884008,
-      "status": "success"
+      "worker": "Worker-3",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1752071666.313781,
+      "status": "failed",
+      "error": "Failed to send message from Coordinator-1 to Worker-3: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 92a29c09-9642-42a6-81c2-c0b2cee60fbb)"
     }
   ]
 }
