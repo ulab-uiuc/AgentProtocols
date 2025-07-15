@@ -179,7 +179,7 @@
       "error": "Failed to send message from Coordinator-1 to Worker-3: A2A HTTP error 500: {\"error\":\"Message handling failed: object NoneType can't be used in 'await' expression\"} (req_id: 129b0b40-b139-471b-9f01-28ee653e1787)"
     },
     {
-      "question_id": 16,
+      "question_id": 17,
       "question": "where is the graphic card located in the cpu",
       "worker": "Worker-1",
       "answer": null,

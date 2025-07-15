@@ -258,10 +258,3 @@ class Core:
                     time.sleep(10)
                     if rounds > threshold:
                         raise Exception(f"Function call generation failed too many times. Last error: {str(e)}")
-
-    def _sanitize_for_gemini(self, messages):
-        """Sanitize messages for Gemini compatibility"""
-        # This is a placeholder - implement if needed for specific model compatibility
-        return messages
-
-    

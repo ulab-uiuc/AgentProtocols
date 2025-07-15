@@ -30,17 +30,36 @@ except ImportError:
         BRIGHT = ""
         RESET_ALL = ""
 
-# Add paths to import AgentNetwork and protocols
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src")) # Add root directory
-sys.path.insert(0, str(Path(__file__).parent.parent))
+import sys
+from pathlib import Path
+
+import sys
+from pathlib import Path
+
+# 获取当前文件的路径
+current_file = Path(__file__).resolve()
+project_root = current_file.parent.parent.parent
+src_path = project_root / "src"
+script_path = project_root / "script"
+
+# 添加必要的路径
+sys.path.insert(0, str(src_path))
+sys.path.insert(0, str(script_path))
+
+# 导入基础模块
 from network import AgentNetwork
 from base_agent import BaseAgent
 
-# Import real QA Agent Executors
-sys.path.insert(0, str(Path(__file__).parent / "qa_worker"))
-sys.path.insert(0, str(Path(__file__).parent / "qa_coordinator"))
-from qa_worker.agent_executor import QAAgentExecutor
-from qa_coordinator.agent_executor import QACoordinatorExecutor
+# 如果文件存在，尝试导入
+try:
+    from qa_coordinator.agent_executor import QACoordinatorExecutor
+except ImportError as e:
+    print(f"导入 QACoordinatorExecutor 失败: {e}")
+
+try:
+    from qa_worker.agent_executor import QAAgentExecutor
+except ImportError as e:
+    print(f"导入 QAAgentExecutor 失败: {e}")
 
 class ColoredOutput:
     """Helper class for colored console output"""
