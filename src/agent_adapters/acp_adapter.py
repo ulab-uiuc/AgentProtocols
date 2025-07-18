@@ -168,8 +168,9 @@ class ACPAdapter(BaseProtocolAdapter):
 
             # Determine message type from payload
             message_type = payload.get("message_type", "request")
-            if message_type not in [t.value for t in ACPMessageType]:
-                raise ValueError(f"Invalid message type: {message_type}")
+            # Valid message types for ACP
+            valid_types = ["request", "response", "notification", "heartbeat"]
+            if message_type not in valid_types:
                 message_type = "request"  # Default fallback
 
             # Construct ACP message

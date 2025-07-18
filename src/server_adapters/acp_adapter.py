@@ -5,7 +5,7 @@ ACP (Agent Communication Protocol) server adapter implementation using ACP SDK.
 import json
 import logging
 import time
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, Union, List
 
 import uvicorn
 from starlette.applications import Starlette
@@ -67,7 +67,7 @@ class ACPStarletteApplication:
             "timestamp": time.time()
         })
 
-    async def handle_message(self, request: Request) -> JSONResponse | StreamingResponse:
+    async def handle_message(self, request: Request) -> Union[JSONResponse, StreamingResponse]:
         """
         Handle incoming ACP messages using SDK native executor interface.
 
@@ -118,7 +118,15 @@ class ACPStarletteApplication:
                 messages.append(message)
 
             # Create ACP SDK Context
-            context = Context()
+            context = Context(
+                session=None,
+                store=None,
+                loader=None,
+                executor=self.executor,
+                request=request,
+                yield_queue=None,
+                yield_resume_queue=None
+            )
 
             # Check if client wants streaming response
             accept_header = request.headers.get("accept", "")
@@ -150,7 +158,7 @@ class ACPStarletteApplication:
                 status_code=500
             )
 
-    async def _sse_generator(self, messages: list[Message], context: Context):
+    async def _sse_generator(self, messages: List[Message], context: Context):
         """Generate SSE events from ACP SDK AsyncGenerator."""
         try:
             async for result in self.executor(messages, context):
@@ -165,8 +173,14 @@ class ACPStarletteApplication:
     def _yield_to_dict(self, result: RunYield) -> Dict[str, Any]:
         """Convert ACP SDK RunYield to JSON-serializable dictionary."""
         try:
+            # Handle MessagePart objects (our custom yield objects)
+            if hasattr(result, 'text') and hasattr(result, 'type'):
+                return {
+                    "type": result.type,
+                    "text": result.text
+                }
             # Try pydantic model_dump() first
-            if hasattr(result, 'model_dump'):
+            elif hasattr(result, 'model_dump'):
                 return result.model_dump()
             # Fallback to pydantic dict() method
             elif hasattr(result, 'dict'):

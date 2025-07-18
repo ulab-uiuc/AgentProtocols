@@ -18,13 +18,13 @@ try:
     from .agent_adapters.base_adapter import BaseProtocolAdapter
     from .agent_adapters.a2a_adapter import A2AAdapter
     from .metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
-    from .server_adapters import BaseServerAdapter, A2AServerAdapter
+    from .server_adapters import BaseServerAdapter, A2AServerAdapter, ACPServerAdapter
 except ImportError:
     # Fallback to direct imports for standalone execution
     from agent_adapters.base_adapter import BaseProtocolAdapter
     from agent_adapters.a2a_adapter import A2AAdapter
     from metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
-    from server_adapters import BaseServerAdapter, A2AServerAdapter
+    from server_adapters import BaseServerAdapter, A2AServerAdapter, ACPServerAdapter
 
 # Module-level constants for better reusability
 DEFAULT_SERVER_STARTUP_TIMEOUT = 10.0
@@ -176,6 +176,69 @@ class BaseAgent:
 
         # Start server with SDK native executor
         await agent._start_server(final_executor)
+
+        # Fetch self agent card
+        await agent._fetch_self_card()
+
+        agent._initialized = True
+        return agent
+
+    @classmethod
+    async def create_acp(
+        cls,
+        agent_id: str,
+        host: str = "0.0.0.0",
+        port: Optional[int] = None,
+        executor: Optional[Any] = None,
+        httpx_client: Optional[httpx.AsyncClient] = None,
+        server_adapter: Optional[BaseServerAdapter] = None
+    ) -> "BaseAgent":
+        """
+        v1.0.0 factory method: Create BaseAgent with ACP server capability.
+
+        Parameters
+        ----------
+        agent_id : str
+            Unique agent identifier
+        host : str
+            Server listening host
+        port : Optional[int]
+            Server listening port (auto-assigned if None)
+        executor : Optional[Any]
+            ACP SDK native executor implementing async generator interface:
+            async def executor(input: list[Message], context: Context) -> AsyncGenerator[RunYield, None]
+        httpx_client : Optional[httpx.AsyncClient]
+            Shared HTTP client for connection pooling
+        server_adapter : Optional[BaseServerAdapter]
+            Server adapter (defaults to ACPServerAdapter for ACP protocol)
+
+        Returns
+        -------
+        BaseAgent
+            Initialized BaseAgent with running ACP server
+        """
+        # Validate executor is provided
+        if executor is None:
+            raise ValueError("executor parameter is required for ACP agents")
+
+        # Validate ACP executor interface
+        if not callable(executor):
+            raise TypeError(
+                f"ACP executor {type(executor)} must be callable and implement ACP SDK interface: "
+                "async def executor(input: list[Message], context: Context) -> AsyncGenerator[RunYield, None]"
+            )
+
+        # Create BaseAgent instance
+        agent = cls(
+            agent_id=agent_id,
+            host=host,
+            port=port,
+            httpx_client=httpx_client,
+            server_adapter=server_adapter or ACPServerAdapter()
+        )
+
+        # Start server with ACP executor
+        await agent._start_server(executor)
 
         # Fetch self agent card
         await agent._fetch_self_card()
