@@ -1,6 +1,7 @@
 """
 Monitoring metrics module - Prometheus-based metrics collection and exposure
 """
+print("=== Loading metrics.py ===")
 
 import asyncio
 import time
@@ -22,42 +23,59 @@ from prometheus_client import Counter, Histogram, Gauge, start_http_server
 
 
 # --------------------------- Core Metrics ---------------------------
+from prometheus_client import Counter, Histogram, Gauge, CollectorRegistry
+
+REGISTRY = CollectorRegistry()
+
 REQUEST_LATENCY = Histogram(
     "agent_request_latency_seconds",
     "Latency for agent→agent messages",
-    ["src", "dst", "protocol"]
+    ["src", "dst", "protocol"],
+    registry=REGISTRY
 )
 
 MSG_BYTES = Counter(
     "agent_message_bytes_total",
     "Bytes transferred through AgentNetwork",
-    ["direction", "agent_id"]
+    ["direction", "agent_id"],
+    registry=REGISTRY
 )
 
 REQUEST_FAILURES = Counter(
     "agent_request_failures_total",
     "Number of failed messages",
-    ["src", "dst"]
+    ["src", "dst"],
+    registry=REGISTRY
 )
 
 RECOVERY_TIME = Histogram(
     "agent_recovery_time_seconds",
     "Time to recover from failures",
-    buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0, 60.0]
+    buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0, 60.0],
+    registry=REGISTRY
 )
 
-# --------------------------- System Metrics ---------------------------
-CPU_PERCENT = Gauge("cpu_percent", "CPU usage (%)", ["host"])
-MEMORY_BYTES = Gauge("memory_bytes", "Memory usage in bytes", ["host", "type"])
-GPU_IDLE_RATIO = Gauge("gpu_idle_ratio", "Fraction of time GPU is idle", ["gpu_index"])
-GPU_MEMORY_BYTES = Gauge("gpu_memory_bytes", "GPU memory usage", ["gpu_index", "type"])
+CPU_PERCENT = Gauge("cpu_percent", "CPU usage (%)", ["host"], registry=REGISTRY)
+MEMORY_BYTES = Gauge("memory_bytes", "Memory usage in bytes", ["host", "type"], registry=REGISTRY)
+GPU_IDLE_RATIO = Gauge("gpu_idle_ratio", "Fraction of time GPU is idle", ["gpu_index"], registry=REGISTRY)
+GPU_MEMORY_BYTES = Gauge("gpu_memory_bytes", "GPU memory usage", ["gpu_index", "type"], registry=REGISTRY)
 
+
+
+# def setup_prometheus_metrics(port: int = 8000) -> None:
+#     """Start Prometheus metrics server."""
+#     start_http_server(port)
+#     print(f"Prometheus metrics server started on port {port}")
+#     print(f"Metrics available at: http://localhost:{port}/metrics")
+
+from prometheus_client import make_wsgi_app
+from wsgiref.simple_server import make_server
 
 def setup_prometheus_metrics(port: int = 8000) -> None:
-    """Start Prometheus metrics server."""
-    start_http_server(port)
+    app = make_wsgi_app(REGISTRY)
+    httpd = make_server('', port, app)
     print(f"Prometheus metrics server started on port {port}")
-    print(f"Metrics available at: http://localhost:{port}/metrics")
+    httpd.serve_forever()
 
 
 async def sample_system_metrics(host_name: str = "localhost") -> None:

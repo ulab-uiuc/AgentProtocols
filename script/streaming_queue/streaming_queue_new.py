@@ -140,6 +140,7 @@ class RealAgentNetworkDemo:
         # Create Coordinator Agent
         coordinator_executor = QACoordinatorExecutor(qa_config, self.output)
         server_adapter = AgoraServerAdapter() if protocol == 'agora' else None
+
         self.coordinator = await BaseAgent.create_a2a(
             agent_id="Coordinator-1",
             host="localhost",
@@ -148,9 +149,9 @@ class RealAgentNetworkDemo:
             httpx_client=self.httpx_client,
             server_adapter=server_adapter,
             protocol=protocol,
-            openai_api_key=qa_config.get('openai_api_key'),
             model=qa_config['model']['name']
         )
+
         await self.network.register_agent(self.coordinator)
         self.output.success("Coordinator-1 created and registered to AgentNetwork")
         
@@ -178,7 +179,6 @@ class RealAgentNetworkDemo:
                 httpx_client=self.httpx_client,
                 server_adapter=server_adapter,
                 protocol=protocol,
-                openai_api_key=qa_config.get('openai_api_key'),
                 model=qa_config['model']['name']
             )
             
@@ -227,41 +227,81 @@ class RealAgentNetworkDemo:
         
         protocol = self.config.get('core', {}).get('protocol', 'a2a')
         
-        if protocol == "agora":
-            # Agora message format
-            message_payload = {
-                "message": command,
-                "type": task_type,
-                "context": {"source": "demo"}
-            }
-        else:
-            # A2A message format
-            message_payload = {
-                "id": str(time.time_ns()),
-                "params": {
-                    "message": {
-                        "role": "user",
-                        "parts": [
-                            {
-                                "kind": "text",
-                                "text": command
-                            }
-                        ],
-                        "messageId": str(time.time_ns())
-                    }
-                }
-            }
-        
         try:
             if protocol == "agora":
-                # Use network routing for Agora
-                response = await self.network.route_message(
-                    src_id="ExternalClient",
-                    dst_id="Coordinator-1",
-                    payload=message_payload
+                # For Agora protocol, use correct message format with required fields
+                agora_payload = {
+                    "protocolHash": None,  # No formal protocol, using natural language
+                    "body": command,       # The actual message content
+                    "protocolSources": []  # Empty array since no protocol is used
+                }
+                
+                # Use HTTP POST to Agora endpoint
+                response = await self.httpx_client.post(
+                    f"{coordinator_url}/",  # Agora main endpoint
+                    json=agora_payload,
+                    timeout=60.0,
+                    headers={"Content-Type": "application/json"}
                 )
-                return {"result": response}
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    return {"result": result}
+                else:
+                    # Fallback: try the network routing method
+                    self.output.warning(f"Direct Agora call failed (status {response.status_code}), trying network routing...")
+                    
+                    # Create a dummy external client agent
+                    external_client = await BaseAgent.create_a2a(
+                        agent_id="ExternalClient",
+                        host="localhost",
+                        port=8999,  # Different port
+                        executor=DummyExecutor(),  # Simple executor
+                        httpx_client=self.httpx_client,
+                        server_adapter=AgoraServerAdapter(),
+                        protocol=protocol,
+                        model=qa_config['model']['name']
+                    )
+                    
+                    # Register with network
+                    await self.network.register_agent(external_client)
+                    
+                    # Add connection to coordinator
+                    external_client.add_outbound_adapter(
+                        "Coordinator-1",
+                        await self._create_agora_client_adapter("Coordinator-1")
+                    )
+                    
+                    # Send message via network
+                    response = await external_client.send("Coordinator-1", {
+                        "message": command,
+                        "type": task_type,
+                        "context": {"source": "demo"}
+                    })
+                    
+                    # Cleanup
+                    await external_client.stop()
+                    
+                    return {"result": response}
+                    
             else:
+                # A2A message format
+                message_payload = {
+                    "id": str(time.time_ns()),
+                    "params": {
+                        "message": {
+                            "role": "user",
+                            "parts": [
+                                {
+                                    "kind": "text",
+                                    "text": command
+                                }
+                            ],
+                            "messageId": str(time.time_ns())
+                        }
+                    }
+                }
+                
                 # Use HTTP POST for A2A
                 response = await self.httpx_client.post(
                     f"{coordinator_url}/message",
@@ -281,6 +321,40 @@ class RealAgentNetworkDemo:
             
         except Exception as e:
             self.output.error(f"Message to coordinator failed: {e}")
+            # For debugging, try a simple HTTP test
+            try:
+                test_response = await self.httpx_client.get(f"{coordinator_url}/health")
+                self.output.system(f"Health endpoint test: {test_response.status_code}")
+            except Exception as test_e:
+                self.output.system(f"Health endpoint test failed: {test_e}")
+            
+            return None
+    
+    async def _create_agora_client_adapter(self, target_agent_id: str):
+        """Create Agora client adapter for communication"""
+        try:
+            from agent_adapters.agora_adapter import AgoraClientAdapter
+            import agora
+            from langchain_openai import ChatOpenAI
+            
+            # Create toolformer
+            model = ChatOpenAI(model="gpt-4o-mini")
+            toolformer = agora.toolformers.LangChainToolformer(model)
+            
+            # Get target URL
+            target_url = f"http://localhost:9998"  # Coordinator URL
+            
+            # Create adapter
+            adapter = AgoraClientAdapter(
+                toolformer=toolformer,
+                target_url=target_url
+            )
+            
+            await adapter.initialize()
+            return adapter
+            
+        except Exception as e:
+            self.output.error(f"Failed to create Agora client adapter: {e}")
             return None
     
     async def load_questions(self):
@@ -294,29 +368,36 @@ class RealAgentNetworkDemo:
         protocol = self.config.get('core', {}).get('protocol', 'a2a')
         if protocol == "agora":
             return [
-                {"type": "weather", "location": "New York", "date": "today"},
-                {"type": "booking", "service": "hotel", "datetime": "2025-07-20", "details": {"guests": 2}},
-                {"type": "data", "query_type": "search", "parameters": {"term": "AI trends"}},
+                {"type": "weather", "message": "What's the weather like in New York today?"},
+                {"type": "booking", "message": "I need to book a hotel for July 20th for 2 guests"},
+                {"type": "data", "message": "Search for current AI trends"},
                 {"type": "general", "message": "Hello, how can you assist me?"}
             ]
-        return []
+        else:
+            return [
+                {"type": "general", "message": "What is artificial intelligence?"},
+                {"type": "general", "message": "Explain machine learning basics"},
+                {"type": "general", "message": "What are neural networks?"},
+                {"type": "general", "message": "How does deep learning work?"}
+            ]
     
     async def dispatch_questions_dynamically(self, questions: List[Dict]):
         """Dispatch questions via coordinator"""
         self.output.info("Starting dispatch process...")
         
         results = []
-        for question in questions:
+        for i, question in enumerate(questions, 1):
+            self.output.progress(f"Processing question {i}/{len(questions)}: {question['message'][:50]}...")
             response = await self.send_message_to_coordinator(
-                command=question.get("message", json.dumps(question)),
+                command=question.get("message", ""),
                 task_type=question.get("type", "general")
             )
             if response and "result" in response:
-                self.output.success(f"Processed question: {question.get('type', 'general')}")
-                self.output.system(f"Response: {response['result']}")
+                self.output.success(f"Question {i} processed successfully")
+                self.output.system(f"Response: {str(response['result'])[:100]}...")
                 results.append(response)
             else:
-                self.output.error(f"Failed to process question: {question}")
+                self.output.error(f"Failed to process question {i}")
         
         return results
     
@@ -369,6 +450,7 @@ class RealAgentNetworkDemo:
             # 7. Display completion
             self.output.success("Demo completed!")
             self.output.system(f"Total time: {end_time - start_time:.2f} seconds")
+            self.output.system(f"Successfully processed: {len(results)}/{len(questions)} questions")
             
             # 8. Final health check
             await self.run_health_check()
@@ -403,6 +485,15 @@ class RealAgentNetworkDemo:
         await self.httpx_client.aclose()
         
         self.output.success("Resource cleanup completed")
+
+
+class DummyExecutor:
+    """Dummy executor for external client"""
+    
+    async def execute(self, context, event_queue):
+        """Simple execute method"""
+        pass
+
 
 async def main():
     demo = RealAgentNetworkDemo()

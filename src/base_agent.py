@@ -16,20 +16,20 @@ from urllib.parse import urlparse
 import httpx
 import uvicorn
 
-# try:
-#     # Try package-style imports first
-#     from .agent_adapters.base_adapter import BaseProtocolAdapter
-#     from .agent_adapters.a2a_adapter import A2AAdapter
-#     from .agent_adapters.agora_adapter import AgoraClientAdapter, AgoraServerAdapter
-#     from .metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
-#     from .server_adapters import BaseServerAdapter, A2AServerAdapter
-# except ImportError:
-#     # Fallback to direct imports for standalone execution
-from agent_adapters.base_adapter import BaseProtocolAdapter
-from agent_adapters.a2a_adapter import A2AAdapter
-from agent_adapters.agora_adapter import AgoraClientAdapter, AgoraServerAdapter
-from metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
-from server_adapters import BaseServerAdapter, A2AServerAdapter
+try:
+    # Try package-style imports first
+    from .agent_adapters.base_adapter import BaseProtocolAdapter
+    from .agent_adapters.a2a_adapter import A2AAdapter
+    from .agent_adapters.agora_adapter import AgoraClientAdapter, AgoraServerAdapter
+    from .metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
+    from .server_adapters import BaseServerAdapter, A2AServerAdapter
+except ImportError:
+    # Fallback to direct imports for standalone execution
+    from agent_adapters.base_adapter import BaseProtocolAdapter
+    from agent_adapters.a2a_adapter import A2AAdapter
+    from agent_adapters.agora_adapter import AgoraClientAdapter, AgoraServerAdapter
+    from metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
+    from server_adapters import BaseServerAdapter, A2AServerAdapter
 
 # Module-level constants for better reusability
 DEFAULT_SERVER_STARTUP_TIMEOUT = 10.0
@@ -123,6 +123,77 @@ class BaseAgent:
             port = s.getsockname()[1]
         return port
 
+    # @classmethod
+    # async def create_a2a(
+    #     cls,
+    #     agent_id: str,
+    #     host: str = "0.0.0.0",
+    #     port: Optional[int] = None,
+    #     executor: Optional[Any] = None,
+    #     httpx_client: Optional[httpx.AsyncClient] = None,
+    #     server_adapter: Optional[BaseServerAdapter] = None,
+    #     protocol: str = "agora",
+    #     openai_api_key: Optional[str] = None,
+    #     **kwargs
+    # ) -> "BaseAgent":
+    #     """
+    #     v1.0.0 factory method: Create BaseAgent with A2A or Agora server capability.
+        
+    #     Parameters
+    #     ----------
+    #     agent_id : str
+    #         Unique agent identifier
+    #     host : str
+    #         Server listening host
+    #     port : Optional[int]
+    #         Server listening port (auto-assigned if None)
+    #     executor : Optional[Any]
+    #         SDK native executor implementing execute(context, event_queue) interface
+    #     httpx_client : Optional[httpx.AsyncClient]
+    #         Shared HTTP client for connection pooling
+    #     server_adapter : Optional[BaseServerAdapter]
+    #         Server adapter (defaults to A2AServerAdapter or AgoraServerAdapter based on protocol)
+    #     protocol : str
+    #         Protocol to use ("a2a" or "agora")
+    #     openai_api_key : Optional[str]
+    #         API key for Agora toolformer (if protocol is "agora")
+    #     **kwargs
+    #         Additional parameters for server adapter (e.g., model for Agora)
+        
+    #     Returns
+    #     -------
+    #     BaseAgent
+    #         Initialized BaseAgent with running server
+    #     """
+    #     if executor is None:
+    #         raise ValueError("executor parameter is required")
+        
+    #     if not is_sdk_native_executor(executor):
+    #         raise TypeError(
+    #             f"Executor {type(executor)} must implement SDK native interface: "
+    #             "async def execute(context: RequestContext, event_queue: EventQueue) -> None"
+    #         )
+        
+    #     final_executor = executor
+  
+    #     # Create BaseAgent instance
+    #     agent = cls(
+    #         agent_id=agent_id,
+    #         host=host,
+    #         port=port,
+    #         httpx_client=httpx_client,
+    #         server_adapter=server_adapter
+    #     )
+        
+    #     # Start server with SDK native executor
+    #     await agent._start_server(final_executor, toolformer=toolformer, openai_api_key=openai_api_key, **kwargs)
+        
+    #     # Fetch self agent card
+    #     await agent._fetch_self_card()
+        
+    #     agent._initialized = True
+    #     return agent
+
     @classmethod
     async def create_a2a(
         cls,
@@ -132,7 +203,7 @@ class BaseAgent:
         executor: Optional[Any] = None,
         httpx_client: Optional[httpx.AsyncClient] = None,
         server_adapter: Optional[BaseServerAdapter] = None,
-        protocol: str = "a2a",
+        protocol: str = "agora",  # Assuming default protocol is Agora
         openai_api_key: Optional[str] = None,
         **kwargs
     ) -> "BaseAgent":
@@ -176,23 +247,17 @@ class BaseAgent:
         
         final_executor = executor
         
-        # Select server adapter based on protocol
+        # Initialize toolformer for Agora protocol
+        toolformer = None
         if protocol == "agora":
-            if not openai_api_key:
-                raise ValueError("openai_api_key is required for Agora protocol")
             try:
-                from agora import toolformers
-                toolformer = toolformers.OpenAIToolformer(
+                from agora import toolformers  # Assuming the Agora library has toolformers
+                toolformer = toolformers.LangChainToolformer(
                     model=kwargs.get('model', 'gpt-4o-mini'),
-                    api_key=openai_api_key
                 )
             except ImportError:
-                raise ImportError("Agora library not available")
-            server_adapter = server_adapter or AgoraServerAdapter()
-        else:
-            toolformer = None
-            server_adapter = server_adapter or A2AServerAdapter()
-        
+                raise ImportError("Agora library not available or failed to import toolformer")
+
         # Create BaseAgent instance
         agent = cls(
             agent_id=agent_id,
@@ -202,7 +267,7 @@ class BaseAgent:
             server_adapter=server_adapter
         )
         
-        # Start server with SDK native executor
+        # Start server with SDK native executor and toolformer (if Agora protocol)
         await agent._start_server(final_executor, toolformer=toolformer, openai_api_key=openai_api_key, **kwargs)
         
         # Fetch self agent card
@@ -211,9 +276,12 @@ class BaseAgent:
         agent._initialized = True
         return agent
 
+
     async def _start_server(self, executor: Any, toolformer: Any = None, **kwargs) -> None:
         """Start the internal server using pluggable adapter."""
         # Use server adapter to build server and agent card
+        # 删除 openai_api_key，避免传两次
+        kwargs.pop("openai_api_key", None)  
         self._server_instance, self._self_agent_card = self._server_adapter.build(
             host=self._host,
             port=self._port,
@@ -229,11 +297,32 @@ class BaseAgent:
         # Wait for server to be ready with health check polling
         await self._wait_for_server_ready()
 
+    # async def _wait_for_server_ready(self, timeout: float = DEFAULT_SERVER_STARTUP_TIMEOUT) -> None:
+    #     """Wait for server to be ready by polling health endpoint."""
+    #     import time
+    #     start_time = time.time()
+        
+    #     while time.time() - start_time < timeout:
+    #         try:
+    #             url = f"http://{self._host}:{self._port}/health"
+    #             response = await self._httpx_client.get(url, timeout=2.0)
+    #             if response.status_code == 200:
+    #                 return  # Server is ready
+    #         except Exception:
+    #             pass  # Server not ready yet
+            
+    #         await asyncio.sleep(0.1)  # Short polling interval
+        
+    #     raise RuntimeError(f"Server failed to start within {timeout}s")
+
     async def _wait_for_server_ready(self, timeout: float = DEFAULT_SERVER_STARTUP_TIMEOUT) -> None:
         """Wait for server to be ready by polling health endpoint."""
         import time
         start_time = time.time()
-        
+
+        # Introduce a delay to ensure server starts
+        await asyncio.sleep(2)  # Add a 2-second wait before first health check
+
         while time.time() - start_time < timeout:
             try:
                 url = f"http://{self._host}:{self._port}/health"
@@ -246,6 +335,7 @@ class BaseAgent:
             await asyncio.sleep(0.1)  # Short polling interval
         
         raise RuntimeError(f"Server failed to start within {timeout}s")
+
 
     async def _fetch_self_card(self) -> None:
         """Fetch agent card from our own server."""
@@ -299,9 +389,9 @@ class BaseAgent:
         if protocol == "agora":
             try:
                 from agora import toolformers
-                toolformer = toolformers.OpenAIToolformer(
-                    model="gpt-4o-mini",
-                    api_key=""
+                toolformer = toolformers.Toolformer(
+                    model=kwargs.get('model', 'gpt-4o-mini'),
+                    api_key=openai_api_key
                 )
                 adapter = AgoraClientAdapter(
                     toolformer=toolformer,

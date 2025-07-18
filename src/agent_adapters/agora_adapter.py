@@ -8,6 +8,7 @@ import threading
 from typing import Any, Dict, Optional, List, Callable
 import json
 import time
+from flask import Flask, jsonify
 
 # Official Agora imports
 import agora
@@ -397,48 +398,38 @@ class AgoraServerAdapter(BaseServerAdapter):
     def _create_toolformer(self, openai_api_key: Optional[str] = None, **kwargs) -> agora.Toolformer:
         """Create appropriate toolformer based on available dependencies."""
         
-        # Try LangChain first
-        try:
-            from langchain_openai import ChatOpenAI
-            model = ChatOpenAI(
-                model=kwargs.get('model', 'gpt-4o-mini'),
-                api_key=openai_api_key or kwargs.get('openai_api_key')
-            )
-            return agora.toolformers.LangChainToolformer(model)
-        except ImportError:
-            print("LangChain not available, trying Camel...")
-        
-        # Try Camel framework
+        # 获取模型名称，默认是 'gpt-4o-mini'
+        model_name = kwargs.get('model', 'gpt-4o-mini')
+        print(f"[DEBUG] Trying to create Toolformer with model: {model_name}")
+
+        # 尝试使用 Camel 框架
         try:
             import camel.types
+            print("[DEBUG] Using CamelToolformer")
             return agora.toolformers.CamelToolformer(
                 camel.types.ModelPlatformType.OPENAI,
                 camel.types.ModelType.GPT_4O_MINI
             )
         except ImportError:
-            print("Camel not available, using OpenAI toolformer...")
-        
-        # Fallback to OpenAI toolformer
-        return agora.toolformers.OpenAIToolformer(
-            model=kwargs.get('model', 'gpt-4o-mini'),
-            api_key=openai_api_key or kwargs.get('openai_api_key', '')
-        )
-    
+            print("[WARN] Camel not available, falling back to LangChainToolformer again...")
+
+        # 最后使用 LangChainToolformer 作为 fallback
+        from langchain_openai import ChatOpenAI
+        model = ChatOpenAI(model=model_name)
+        return agora.toolformers.LangChainToolformer(model)
+
     def _create_agora_tools(self, executor: Any, agent_id: str) -> List[Callable]:
         """Create Agora-compatible tools from A2A executor."""
         
         tools = []
         
-        def weather_service(city: str, date: str = "today") -> Dict[str, Any]:
+        def weather_service(city: str, date: str = "today"):
             """
             Get weather information for a city.
             
             Args:
                 city: Name of the city
                 date: Date for weather query
-                
-            Returns:
-                Weather data including temperature, conditions, precipitation
             """
             return self._bridge_to_a2a_executor(
                 executor,
@@ -450,11 +441,7 @@ class AgoraServerAdapter(BaseServerAdapter):
                 }
             )
         
-        def booking_service(
-            service: str,
-            datetime: str,
-            details: Dict[str, Any] = None
-        ) -> Dict[str, Any]:
+        def booking_service(service: str, datetime: str, details: str = ""):
             """
             Handle booking and reservation requests.
             
@@ -462,64 +449,74 @@ class AgoraServerAdapter(BaseServerAdapter):
                 service: Type of service to book
                 datetime: Requested date and time
                 details: Additional booking details
-                
-            Returns:
-                Booking confirmation with ID and status
             """
+            import json
+            try:
+                details_dict = json.loads(details) if details else {}
+            except:
+                details_dict = {"notes": details}
+                
             return self._bridge_to_a2a_executor(
                 executor,
                 {
                     "service": service,
                     "datetime": datetime,
-                    "details": details or {},
+                    "details": details_dict,
                     "type": "booking",
                     "agent_id": agent_id
                 }
             )
         
-        def data_service(
-            query_type: str,
-            parameters: Dict[str, Any],
-            filters: Dict[str, Any] = None
-        ) -> Any:
+        def data_service(query_type: str, parameters: str, filters: str = ""):
             """
             Handle data queries and searches.
             
             Args:
                 query_type: Type of data query
-                parameters: Query parameters
-                filters: Optional filters
-                
-            Returns:
-                Query results
+                parameters: Query parameters as JSON string
+                filters: Optional filters as JSON string
             """
+            import json
+            try:
+                parameters_dict = json.loads(parameters) if parameters else {}
+            except:
+                parameters_dict = {"query": parameters}
+                
+            try:
+                filters_dict = json.loads(filters) if filters else {}
+            except:
+                filters_dict = {}
+                
             return self._bridge_to_a2a_executor(
                 executor,
                 {
                     "query_type": query_type,
-                    "parameters": parameters,
-                    "filters": filters or {},
+                    "parameters": parameters_dict,
+                    "filters": filters_dict,
                     "type": "data",
                     "agent_id": agent_id
                 }
             )
         
-        def general_service(message: str, context: Dict[str, Any] = None) -> str:
+        def general_service(message: str, context: str = ""):
             """
             Handle general messages and requests.
             
             Args:
                 message: Message content
-                context: Additional context
-                
-            Returns:
-                Response text
+                context: Additional context as JSON string
             """
+            import json
+            try:
+                context_dict = json.loads(context) if context else {}
+            except:
+                context_dict = {"notes": context}
+                
             result = self._bridge_to_a2a_executor(
                 executor,
                 {
                     "text": message,
-                    "context": context or {},
+                    "context": context_dict,
                     "type": "general",
                     "agent_id": agent_id
                 }
@@ -656,8 +653,52 @@ class AgoraServerWrapper:
         self.server_task = None
         self.should_exit_flag = False
         
-        # Create official Agora server
-        self.agora_server = agora.ReceiverServer(receiver)
+        # Create official Agora server with health endpoint
+        self.agora_server = self._create_enhanced_agora_server(receiver)
+    
+    def _create_enhanced_agora_server(self, receiver):
+        """Create Agora ReceiverServer with additional health endpoint."""
+        
+        # Get the original Flask app from ReceiverServer
+        original_server = agora.ReceiverServer(receiver)
+        
+        # Add health endpoint to the Flask app
+        @original_server.app.route('/health', methods=['GET'])
+        def health_check():
+            """Health check endpoint for AgentNetwork compatibility."""
+            return jsonify({
+                "status": "healthy",
+                "agent_id": self.agent_id,
+                "timestamp": time.time()
+            }), 200
+        
+        # Add agent card endpoint for AgentNetwork compatibility
+        @original_server.app.route('/.well-known/agent.json', methods=['GET'])
+        def agent_card():
+            """Agent card endpoint for AgentNetwork compatibility."""
+            return jsonify({
+                "name": f"Agora Agent {self.agent_id}",
+                "url": f"http://{self.host}:{self.port}/",
+                "protocol": "Agora (Official)",
+                "version": "1.0.0",
+                "description": "Agent using official Agora Protocol library",
+                "agent_id": self.agent_id,
+                "capabilities": {
+                    "protocol_negotiation": True,
+                    "automatic_efficiency": True,
+                    "multi_framework_support": True,
+                    "natural_language_processing": True,
+                    "structured_communication": True,
+                    "routine_generation": True,
+                    "cross_platform_interop": True
+                },
+                "endpoints": {
+                    "health": f"http://{self.host}:{self.port}/health",
+                    "agora_endpoint": f"http://{self.host}:{self.port}/",
+                }
+            }), 200
+        
+        return original_server
     
     async def serve(self):
         """Start the official Agora server in async context."""
@@ -671,6 +712,9 @@ class AgoraServerWrapper:
                 daemon=True
             )
             server_thread.start()
+            
+            # Wait a moment for server to start
+            await asyncio.sleep(1)
             
             # Keep serving until told to stop
             while not self.should_exit_flag:
@@ -692,7 +736,7 @@ class AgoraServerWrapper:
         """Run official Agora server in background thread."""
         try:
             print(f"📡 Agora ReceiverServer starting on {self.host}:{self.port}")
-            self.agora_server.run(host=self.host, port=self.port)
+            self.agora_server.run(host=self.host, port=self.port, debug=False)
         except Exception as e:
             print(f"❌ Agora ReceiverServer error: {e}")
             self.should_exit_flag = True
