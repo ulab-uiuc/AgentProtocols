@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-Real AgentNetwork Demo - Using real AgentNetwork class and BaseAgent
+Real AgentNetwork Demo - Using ACP Protocol
+ACP (Agent Communication Protocol) version of the streaming queue demo
 """
 import asyncio
-import json
 import yaml
 import time
 import sys
+import json
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List
 import httpx
 
 # Add colorama for colored output
 try:
-    from colorama import init, Fore, Back, Style
-
+    from colorama import init, Fore, Style
     init(autoreset=True)
     COLORS_AVAILABLE = True
 except ImportError:
@@ -33,12 +33,6 @@ except ImportError:
         BRIGHT = ""
         RESET_ALL = ""
 
-import sys
-from pathlib import Path
-
-import sys
-from pathlib import Path
-
 # 获取当前文件的路径
 current_file = Path(__file__).resolve()
 project_root = current_file.parent.parent.parent
@@ -53,16 +47,21 @@ sys.path.insert(0, str(script_path))
 from network import AgentNetwork
 from base_agent import BaseAgent
 
-# 如果文件存在，尝试导入
+# 尝试导入 ACP 执行器 (将来会创建)
 try:
-    from qa_coordinator.agent_executor import QACoordinatorExecutor
+    from qa_coordinator.agent_executor_acp import QACoordinatorExecutorACP
 except ImportError as e:
-    print(f"导入 QACoordinatorExecutor 失败: {e}")
+    print(f"导入 QACoordinatorExecutorACP 失败: {e}")
+    print("请先创建 ACP 执行器")
+    QACoordinatorExecutorACP = None
 
 try:
-    from qa_worker.agent_executor import QAAgentExecutor
+    from qa_worker.agent_executor_acp import QAAgentExecutorACP
 except ImportError as e:
-    print(f"导入 QAAgentExecutor 失败: {e}")
+    print(f"导入 QAAgentExecutorACP 失败: {e}")
+    print("请先创建 ACP 执行器")
+    QAAgentExecutorACP = None
+
 
 class ColoredOutput:
     """Helper class for colored console output"""
@@ -98,8 +97,8 @@ class ColoredOutput:
         print(f"{Fore.WHITE}   {message}{Style.RESET_ALL}")
 
 
-class RealAgentNetworkDemo:
-    """Real AgentNetwork Demo Class"""
+class ACPAgentNetworkDemo:
+    """ACP AgentNetwork Demo Class"""
 
     def __init__(self, config_path="config.yaml"):
         self.config = self.load_config(config_path)
@@ -140,36 +139,66 @@ class RealAgentNetworkDemo:
         return None
 
     async def setup_agents(self):
-        """Setup real A2A Agents"""
-        self.output.info("Initializing real AgentNetwork and A2A Agents...")
+        """Setup ACP Agents"""
+        self.output.info("Initializing real AgentNetwork and ACP Agents...")
+
+        # Check if ACP executors are available
+        if QACoordinatorExecutorACP is None or QAAgentExecutorACP is None:
+            self.output.error("ACP executors not available. Please create them first.")
+            raise ImportError("ACP executors not found")
 
         qa_config = self._convert_config_for_qa_agent(self.config)
 
-        # Create Coordinator A2A Agent
-        coordinator_executor = QACoordinatorExecutor(self.config, self.output)
-        self.coordinator = await BaseAgent.create_a2a(
-            agent_id="Coordinator-1", host="localhost", port=9998, executor=coordinator_executor, httpx_client=self.httpx_client  # Get port from configuration
+        # Create Coordinator ACP Agent
+        coordinator_executor_instance = QACoordinatorExecutorACP(
+            coordinator_id="Coordinator-ACP",
+            config=qa_config
+        )
+
+        # Create callable executor for ACP interface
+        async def coordinator_executor(messages, context):
+            async for result in coordinator_executor_instance.execute(messages, context):
+                yield result
+
+        # Check if BaseAgent has create_acp method
+        if not hasattr(BaseAgent, 'create_acp'):
+            self.output.error("BaseAgent.create_acp() method not found. Please implement it first.")
+            raise NotImplementedError("BaseAgent.create_acp() method not implemented")
+
+        self.coordinator = await BaseAgent.create_acp(
+            agent_id="Coordinator-ACP",
+            port=9998,
+            executor=coordinator_executor
         )
         await self.network.register_agent(self.coordinator)
-        self.output.success("Coordinator-1 created and registered to AgentNetwork")
+        self.output.success("Coordinator-ACP created and registered to AgentNetwork")
 
-        # Store coordinator's executor for easy access
-        self.coordinator_executor = coordinator_executor
+        # Store coordinator's executor instance for easy access
+        self.coordinator_executor = coordinator_executor_instance
 
-        # Create Worker A2A Agents
+        # Create Worker ACP Agents
         worker_count = self.config["qa"]["worker"]["count"]
         start_port = self.config["qa"]["worker"]["start_port"]
         worker_ids = []
 
         for i in range(worker_count):
-            worker_id = f"Worker-{i+1}"
+            worker_id = f"Worker-ACP-{i+1}"
             port = start_port + i
 
             # Create Worker executor
-            worker_executor = QAAgentExecutor(qa_config)
+            worker_executor_instance = QAAgentExecutorACP(qa_config)
 
-            # Create Worker A2A Agent
-            worker = await BaseAgent.create_a2a(agent_id=worker_id, host="localhost", port=port, executor=worker_executor, httpx_client=self.httpx_client)
+            # Create callable executor for ACP interface
+            async def worker_executor(messages, context):
+                async for result in worker_executor_instance.execute(messages, context):
+                    yield result
+
+            # Create Worker ACP Agent
+            worker = await BaseAgent.create_acp(
+                agent_id=worker_id,
+                port=port,
+                executor=worker_executor
+            )
 
             await self.network.register_agent(worker)
             self.workers.append(worker)
@@ -177,7 +206,8 @@ class RealAgentNetworkDemo:
             self.output.success(f"{worker_id} created and registered to AgentNetwork (port: {port})")
 
         # Set up coordinator with network and worker information
-        self.coordinator_executor.coordinator.set_network(self.network, worker_ids)
+        self.coordinator_executor.set_agent_network(self.network)
+        self.coordinator_executor.coordinator.worker_ids = worker_ids
 
         return worker_ids
 
@@ -188,17 +218,14 @@ class RealAgentNetworkDemo:
         topology = self.config["qa"]["network"]["topology"]
 
         if topology == "star":
-            self.network.setup_star_topology("Coordinator-1")
-            self.output.success("Setup star topology with center node: Coordinator-1")
+            await self.network.setup_star_topology("Coordinator-ACP")
+            self.output.success("Setup star topology with center node: Coordinator-ACP")
         elif topology == "mesh":
-            self.network.setup_mesh_topology()
+            await self.network.setup_mesh_topology()
             self.output.success("Setup mesh topology")
         else:
             self.output.error("Unknown topology type")
             return
-
-        # Wait for topology setup to complete
-        await asyncio.sleep(1)
 
         # Display topology information
         topology_info = self.network.get_topology()
@@ -211,28 +238,50 @@ class RealAgentNetworkDemo:
                 self.output.progress(f"{agent_id} → {list(connections)}")
 
     async def send_message_to_coordinator(self, command: str):
-        """Send HTTP message directly to coordinator"""
+        """Send ACP message directly to coordinator"""
         coordinator_url = "http://localhost:9998"
 
-        # Use A2A message format based on the example
-        message_payload = {"id": str(time.time_ns()), "params": {"message": {"role": "user", "parts": [{"kind": "text", "text": command}], "messageId": str(time.time_ns())}}}
+        # Use ACP message format
+        message_payload = {
+            "messages": [
+                {
+                    "role": "user",
+                    "parts": [{"content": command}]
+                }
+            ]
+        }
 
         try:
-            # Use correct A2A endpoint: /message
-            response = await self.httpx_client.post(f"{coordinator_url}/message", json=message_payload, timeout=60.0)
+            # Use ACP endpoint: /acp/message
+            response = await self.httpx_client.post(
+                f"{coordinator_url}/acp/message",
+                json=message_payload,
+                timeout=60.0
+            )
             response.raise_for_status()
             result = response.json()
 
-            # Extract text response from events array
-            if "events" in result and result["events"]:
-                for event in result["events"]:
-                    if event.get("type") == "agent_text_message":
-                        return {"result": event.get("data", event.get("text", str(event)))}
+            # Extract response from ACP results array
+            if "results" in result and result["results"]:
+                for result_item in result["results"]:
+                    if "role" in result_item and result_item["role"] == "assistant":
+                        if "parts" in result_item and result_item["parts"]:
+                            content = result_item["parts"][0].get("content", "")
+                            return {"result": content}
+                    elif "message" in result_item:
+                        return {"result": str(result_item["message"])}
+                    elif "content" in result_item:
+                        return {"result": result_item["content"]}
 
+                # Fallback: return first result as string
+                return {"result": str(result["results"][0])}
+
+            # Debug: print the result structure
+            print(f"DEBUG: Full result structure: {result}")
             return {"result": "Command processed"}
 
         except Exception as e:
-            self.output.error(f"HTTP request to coordinator failed: {e}")
+            self.output.error(f"ACP request to coordinator failed: {e}")
             return None
 
     async def load_questions(self):
@@ -244,8 +293,8 @@ class RealAgentNetworkDemo:
         return []
 
     async def dispatch_questions_dynamically(self, questions: List[Dict]):
-        """Start dispatch process via HTTP"""
-        self.output.info("Starting dispatch process via HTTP...")
+        """Start dispatch process via ACP (like A2A version)"""
+        self.output.info("Starting dispatch process via ACP...")
 
         # Send dispatch command to coordinator
         response = await self.send_message_to_coordinator("dispatch")
@@ -278,13 +327,13 @@ class RealAgentNetworkDemo:
                 self.output.error(f"{agent_id}: Failed")
 
     async def run_demo(self):
-        """Run complete demo"""
-        self.output.info("Real A2A AgentNetwork QA System Demo")
+        """Run complete ACP demo"""
+        self.output.info("ACP AgentNetwork QA System Demo")
         print("=" * 60)
 
         try:
-            # 1. Setup A2A Agents
-            worker_ids = await self.setup_agents()
+            # 1. Setup ACP Agents
+            await self.setup_agents()
 
             # 2. Setup network topology
             await self.setup_topology()
@@ -292,11 +341,11 @@ class RealAgentNetworkDemo:
             # 3. Health check
             await self.run_health_check()
 
-            # 4. Check coordinator status via HTTP
+            # 4. Check coordinator status via ACP
             questions = await self.load_questions()
 
-            # 5. Start dispatch process via HTTP
-            self.output.info("=== Starting Q&A Processing via HTTP ===")
+            # 5. Start dispatch process via ACP
+            self.output.info("=== Starting Q&A Processing via ACP ===")
             start_time = time.time()
             results = await self.dispatch_questions_dynamically(questions)
             end_time = time.time()
@@ -305,7 +354,7 @@ class RealAgentNetworkDemo:
             await self.save_results(results)
 
             # 7. Display completion
-            self.output.success("Demo completed!")
+            self.output.success("ACP Demo completed!")
             self.output.system(f"Total time: {end_time - start_time:.2f} seconds")
 
             # 8. Final health check
@@ -318,9 +367,8 @@ class RealAgentNetworkDemo:
             self.output.progress(f"Connection count: {metrics['edge_count']}")
 
         except Exception as e:
-            self.output.error(f"Error during demo: {e}")
+            self.output.error(f"Error during ACP demo: {e}")
             import traceback
-
             traceback.print_exc()
 
         finally:
@@ -345,7 +393,7 @@ class RealAgentNetworkDemo:
 
 
 async def main():
-    demo = RealAgentNetworkDemo()
+    demo = ACPAgentNetworkDemo()
     await demo.run_demo()
 
 

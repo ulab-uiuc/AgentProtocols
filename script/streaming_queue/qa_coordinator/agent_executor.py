@@ -13,19 +13,19 @@ try:
 except ImportError:
     print("Warning: a2a-sdk not available, using mock classes")
     A2A_AVAILABLE = False
-    
+
     # Mock classes for when a2a-sdk is not available
     class AgentExecutor:
         pass
-    
+
     class RequestContext:
         def get_user_input(self):
             return "Mock input"
-    
+
     class EventQueue:
         def enqueue_event(self, event):
             pass
-    
+
     def new_agent_text_message(text):
         return {"type": "text", "content": text}
 
@@ -37,7 +37,7 @@ class QACoordinator:
         """Initialize QA Coordinator."""
         if config is None:
             config = {}
-        
+
         # Get coordinator related parameters from configuration
         coordinator_config = config.get('qa', {}).get('coordinator', {})
 
@@ -59,37 +59,37 @@ class QACoordinator:
         """Load questions from data file"""
         questions = []
         file_path = Path(self.data_path)
-        
+
         if not file_path.exists():
             if self.output:
                 self.output.error(f"Question file does not exist: {self.data_path}")
             return questions
-        
+
         with open(file_path, 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
                 if not line:
                     continue
-                
+
                 try:
                     item = json.loads(line)
                     question = item.get('q', '')
                     message_id = item.get('id', str(len(questions) + 1))
-                    
+
                     if question:
                         questions.append({
                             'id': message_id,
                             'question': question
                         })
-                    
+
                     if self.first_50 and len(questions) >= 50:
                         break
-                        
+
                 except json.JSONDecodeError as e:
                     if self.output:
                         self.output.error(f"JSON parsing failed: {line[:50]}... Error: {e}")
                     continue
-        
+
         if self.output:
             self.output.system(f"Loaded {len(questions)} questions")
         return questions
@@ -98,18 +98,18 @@ class QACoordinator:
         """Dynamic load balancing question dispatch"""
         if not self.agent_network or not self.worker_ids:
             return []
-        
+
         if self.output:
             self.output.info(f"Starting dynamic load balancing: {len(questions)} questions, {len(self.worker_ids)} workers")
-        
+
         # Create question queue
         question_queue = asyncio.Queue()
         for q in questions:
             await question_queue.put(q)
-        
+
         # Create result queue
         result_queue = asyncio.Queue()
-        
+
         # Create processing tasks for each Worker
         worker_tasks = []
         for worker_id in self.worker_ids:
@@ -117,24 +117,24 @@ class QACoordinator:
                 self.worker_processor(worker_id, question_queue, result_queue)
             )
             worker_tasks.append(task)
-        
+
         # Result collection task
         result_collector_task = asyncio.create_task(
             self.result_collector(result_queue, len(questions))
         )
-        
+
         # Wait for all tasks to complete
         results = await result_collector_task
-        
+
         # Wait for all Worker tasks to complete
         await asyncio.gather(*worker_tasks, return_exceptions=True)
-        
+
         return results
 
     async def worker_processor(self, worker_id: str, question_queue: asyncio.Queue, result_queue: asyncio.Queue):
         """Worker processor - continuously get tasks from queue"""
         processed_count = 0
-        
+
         while True:
             try:
                 # Get question from queue (non-blocking, exit if queue is empty)
@@ -142,14 +142,14 @@ class QACoordinator:
                     question_data = question_queue.get_nowait()
                 except asyncio.QueueEmpty:
                     break
-                
+
                 processed_count += 1
                 question_id = question_data['id']
                 question = question_data['question']
-                
+
                 if self.output:
                     self.output.progress(f"{worker_id} starting to process question {question_id}: {question[:50]}...")
-                
+
                 # Prepare A2A message format
                 payload = {
                     "messageId": str(question_id),
@@ -161,7 +161,7 @@ class QACoordinator:
                     ],
                     "role": "user"
                 }
-                
+
                 # Send message to Worker through network
                 start_time = time.time()
                 try:
@@ -217,13 +217,13 @@ class QACoordinator:
                         "timestamp": time.time(),
                         "status": "success" if answer != "No answer received" else "failed"
                     }
-                    
+
                     # Put result into result queue
                     await result_queue.put(result_record)
-                    
+
                     if self.output:
                         self.output.progress(f"{worker_id} completed question {question_id}, continuing to next...")
-                    
+
                 except Exception as e:
                     # Build failure record
                     result_record = {
@@ -239,10 +239,10 @@ class QACoordinator:
                     await result_queue.put(result_record)
                     if self.output:
                         self.output.error(f"{worker_id} failed to process question {question_id}: {e}")
-                
+
                 # Mark task as done
                 question_queue.task_done()
-                
+
             except Exception as e:
                 if self.output:
                     self.output.error(f"{worker_id} processing exception: {e}")
@@ -251,7 +251,7 @@ class QACoordinator:
                 except:
                     pass
                 break
-        
+
         if self.output:
             self.output.system(f"{worker_id} completed all tasks, processed {processed_count} questions")
 
@@ -259,24 +259,24 @@ class QACoordinator:
         """Result collector"""
         results = []
         collected = 0
-        
+
         while collected < total_questions:
             try:
                 result = await result_queue.get()
                 results.append(result)
                 collected += 1
-                
+
                 if collected % 5 == 0 or collected == total_questions:
                     if self.output:
                         self.output.system(f"Collected {collected}/{total_questions} results")
-                
+
                 result_queue.task_done()
-                
+
             except Exception as e:
                 if self.output:
                     self.output.error(f"Result collection exception: {e}")
                 break
-        
+
         if self.output:
             self.output.success(f"Result collection completed, collected {collected} results")
         return results
@@ -286,17 +286,17 @@ class QACoordinator:
         questions = await self.load_questions()
         if not questions:
             return "Error: No questions loaded"
-        
+
         start_time = time.time()
         results = await self.dispatch_questions_dynamically(questions)
         end_time = time.time()
-        
+
         # Save results to file
         await self.save_results(results)
-        
+
         success_count = len([r for r in results if r["status"] == "success"])
         failed_count = len([r for r in results if r["status"] == "failed"])
-        
+
         summary = (
             f"Dispatch round completed in {end_time - start_time:.2f} seconds\n"
             f"Total processed: {len(results)} questions\n"
@@ -305,7 +305,7 @@ class QACoordinator:
             f"Workers used: {len(self.worker_ids)}\n"
             f"Results saved to file"
         )
-        
+
         return summary
 
     async def save_results(self, results):
@@ -314,7 +314,7 @@ class QACoordinator:
             result_file = self.config.get('qa', {}).get('coordinator', {}).get('result_file', './data/qa_result.json')
             result_path = Path(result_file)
             result_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             output_data = {
                 "metadata": {
                     "total_questions": len(results),
@@ -326,10 +326,10 @@ class QACoordinator:
                 },
                 "results": results
             }
-            
+
             with open(result_path, 'w', encoding='utf-8') as f:
                 json.dump(output_data, f, indent=2, ensure_ascii=False)
-            
+
             if self.output:
                 self.output.success(f"Results saved to: {result_path}")
         except Exception as e:
@@ -353,7 +353,7 @@ class QACoordinatorExecutor(AgentExecutor):
         try:
             # Get message from context
             user_input = context.get_user_input() if hasattr(context, 'get_user_input') else "status"
-            
+
             if isinstance(user_input, dict):
                 # Extract text from message parts if it's a structured message
                 command = "status"
@@ -368,9 +368,9 @@ class QACoordinatorExecutor(AgentExecutor):
                     command = str(user_input)
             else:
                 command = str(user_input) if user_input else "status"
-            
+
             command = command.lower().strip()
-            
+
             # Route to appropriate coordinator method
             if command == "dispatch" or command == "start_dispatch":
                 # Call the existing dispatch_round method
@@ -380,13 +380,13 @@ class QACoordinatorExecutor(AgentExecutor):
                 result = await self.get_coordinator_status()
             else:
                 result = f"Unknown command: {command}. Available commands: dispatch, status"
-            
+
             # Send response event
             if A2A_AVAILABLE:
                 await event_queue.enqueue_event(new_agent_text_message(result))
             else:
                 print(f"[QACoordinatorExecutor] {result}")
-                
+
         except Exception as e:
             error_msg = f"QA Coordinator execution failed: {str(e)}"
             print(f"[QACoordinatorExecutor] {error_msg}")
@@ -398,7 +398,7 @@ class QACoordinatorExecutor(AgentExecutor):
         try:
             network_status = "Connected" if self.coordinator.agent_network else "Not connected"
             worker_count = len(self.coordinator.worker_ids)
-            
+
             status_info = (
                 f"QA Coordinator Status:\n"
                 f"Configuration: batch_size={self.coordinator.batch_size}, "
@@ -408,9 +408,9 @@ class QACoordinatorExecutor(AgentExecutor):
                 f"Worker count: {worker_count}\n"
                 f"Available commands: dispatch, status"
             )
-            
+
             return status_info
-            
+
         except Exception as e:
             return f"Status check failed: {str(e)}"
 
