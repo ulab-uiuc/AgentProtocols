@@ -19,14 +19,14 @@ try:
     from .agent_adapters.a2a_adapter import A2AAdapter
     from .agent_adapters.agent_protocol_adapter import AgentProtocolAdapter
     from .metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
-    from .server_adapters import BaseServerAdapter, A2AServerAdapter, ACPServerAdapter
+    from .server_adapters import BaseServerAdapter, A2AServerAdapter, AgentProtocolServerAdapter, ANPServerAdapter, ANP_AVAILABLE
 except ImportError:
     # Fallback to direct imports for standalone execution
     from agent_adapters.base_adapter import BaseProtocolAdapter
     from agent_adapters.a2a_adapter import A2AAdapter
     from agent_adapters.agent_protocol_adapter import AgentProtocolAdapter
     from metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
-    from server_adapters import BaseServerAdapter, A2AServerAdapter, ACPServerAdapter
+    from server_adapters import BaseServerAdapter, A2AServerAdapter, AgentProtocolServerAdapter, ANPServerAdapter, ANP_AVAILABLE
 
 # Module-level constants for better reusability
 DEFAULT_SERVER_STARTUP_TIMEOUT = 10.0
@@ -249,6 +249,98 @@ class BaseAgent:
         agent._initialized = True
         return agent
 
+    @classmethod
+    async def create_anp(
+        cls,
+        agent_id: str,
+        host: str = "0.0.0.0",
+        port: Optional[int] = None,
+        executor: Optional[Any] = None,
+        httpx_client: Optional[httpx.AsyncClient] = None,
+        did_info: Optional[Dict[str, str]] = None,
+        did_service_url: Optional[str] = None,
+        did_api_key: Optional[str] = None,
+        host_ws_path: str = "/ws",
+        enable_protocol_negotiation: bool = False
+    ) -> "BaseAgent":
+        """
+        Create BaseAgent with ANP (Agent Network Protocol) server capability.
+        
+        Parameters
+        ----------
+        agent_id : str
+            Unique agent identifier
+        host : str
+            Server listening host
+        port : Optional[int]
+            Server listening port (auto-assigned if None)
+        executor : Optional[Any]
+            ANP-compatible executor (supports A2A SDK, Agent Protocol, or callable interface)
+        httpx_client : Optional[httpx.AsyncClient]
+            Shared HTTP client for connection pooling
+        did_info : Optional[Dict[str, str]]
+            Pre-generated DID information containing:
+            - private_key_pem: Private key in PEM format
+            - did: DID string
+            - did_document_json: DID document JSON
+        did_service_url : Optional[str]
+            DID resolution service URL for remote DID generation
+        did_api_key : Optional[str]
+            API key for DID service authentication
+        host_ws_path : str
+            WebSocket path for ANP communication (default: /ws)
+        enable_protocol_negotiation : bool
+            Enable LLM-based protocol negotiation
+        
+        Returns
+        -------
+        BaseAgent
+            Initialized BaseAgent with running ANP server
+        
+        Raises
+        ------
+        ImportError
+            If AgentConnect library is not available
+        ValueError
+            If executor is None
+        """
+        # ANP server adapter should be available if we reach this point
+        
+        # Validate executor (executor is required for ANP)
+        if executor is None:
+            raise ValueError("executor parameter is required for ANP")
+        
+        # Create ANP server adapter with additional configuration
+        server_adapter = ANPServerAdapter()
+        
+        # Prepare ANP-specific configuration
+        anp_config = {
+            "did_info": did_info,
+            "did_service_url": did_service_url,
+            "did_api_key": did_api_key,
+            "host_ws_path": host_ws_path,
+            "enable_protocol_negotiation": enable_protocol_negotiation
+        }
+        
+        # Create BaseAgent instance
+        agent = cls(
+            agent_id=agent_id,
+            host=host,
+            port=port,
+            httpx_client=httpx_client,
+            server_adapter=server_adapter
+        )
+        
+        # Start server with executor and ANP configuration
+        await agent._start_anp_server(executor, anp_config)
+        
+        # For ANP, we don't fetch card via HTTP, as it uses WebSocket
+        # The card is generated during server setup
+        await agent._setup_anp_card()
+        
+        agent._initialized = True
+        return agent
+
     async def _start_server(self, executor: Any) -> None:
         """Start the internal server using pluggable adapter."""
         # Use server adapter to build server and agent card
@@ -264,6 +356,63 @@ class BaseAgent:
 
         # Wait for server to be ready with health check polling
         await self._wait_for_server_ready()
+
+    async def _start_anp_server(self, executor: Any, anp_config: Dict[str, Any]) -> None:
+        """Start ANP server with special configuration."""
+        # Use server adapter to build ANP server and agent card
+        self._server_instance, self._self_agent_card = self._server_adapter.build(
+            host=self._host,
+            port=self._port,
+            agent_id=self.agent_id,
+            executor=executor,
+            **anp_config
+        )
+        
+        # Start ANP server in background task
+        self._server_task = asyncio.create_task(self._server_instance.serve())
+        
+        # ANP uses WebSocket, so we wait differently
+        await self._wait_for_anp_server_ready()
+
+    async def _wait_for_anp_server_ready(self, timeout: float = DEFAULT_SERVER_STARTUP_TIMEOUT) -> None:
+        """Wait for ANP server to be ready (WebSocket-based)."""
+        import time
+        start_time = time.time()
+        
+        while time.time() - start_time < timeout:
+            try:
+                # ANP server readiness is checked differently
+                # We can check if the server task is running without error
+                if self._server_task and not self._server_task.done():
+                    return  # Server is running
+                elif self._server_task and self._server_task.done():
+                    # Server task completed, check for exceptions
+                    try:
+                        await self._server_task
+                    except Exception as e:
+                        raise RuntimeError(f"ANP server failed to start: {e}")
+            except Exception:
+                pass  # Server not ready yet
+            
+            await asyncio.sleep(0.1)  # Short polling interval
+        
+        raise RuntimeError(f"ANP server failed to start within {timeout}s")
+
+    async def _setup_anp_card(self) -> None:
+        """Setup ANP agent card (already created during server build)."""
+        # For ANP, the agent card is already set up during server build
+        # We just need to ensure it exists
+        if not self._self_agent_card:
+            self._self_agent_card = {
+                "name": f"ANP Agent {self.agent_id}",
+                "protocol": "ANP",
+                "protocolVersion": "1.0.0",
+                "agent_id": self.agent_id,
+                "endpoints": {
+                    "websocket": f"ws://{self._host}:{self._port}/ws"
+                },
+                "error": "Failed to setup ANP card during server build"
+            }
 
     async def _wait_for_server_ready(self, timeout: float = DEFAULT_SERVER_STARTUP_TIMEOUT) -> None:
         """Wait for server to be ready by polling health endpoint."""
@@ -385,6 +534,87 @@ class BaseAgent:
         
         agent._initialized = True
         return agent
+    @classmethod
+    async def from_anp(
+        cls,
+        agent_id: str,
+        target_did: str,
+        httpx_client: Optional[httpx.AsyncClient] = None,
+        local_did_info: Optional[Dict[str, str]] = None,
+        host_domain: str = "localhost",
+        host_port: Optional[str] = None,
+        **kwargs
+    ) -> "BaseAgent":
+        """
+        Create ANP client-only agent for connecting to existing ANP server endpoint.
+        
+        Parameters
+        ----------
+        agent_id : str
+            Agent identifier
+        target_did : str
+            Target agent's DID (Decentralized Identifier)
+        httpx_client : Optional[httpx.AsyncClient]
+            Shared HTTP client for connection pooling
+        local_did_info : Optional[Dict[str, str]]
+            Local DID information (will be generated if not provided)
+        host_domain : str
+            Local host domain for WebSocket server
+        host_port : Optional[str]
+            Local port for WebSocket server
+        **kwargs : dict
+            Additional ANP configuration parameters
+            
+        Returns
+        -------
+        BaseAgent
+            Created ANP client agent instance
+        
+        Raises
+        ------
+        ImportError
+            If AgentConnect library is not available
+        """
+        try:
+            from .agent_adapters.anp_adapter import ANPAdapter
+        except ImportError:
+            try:
+                from agent_adapters.anp_adapter import ANPAdapter
+            except ImportError:
+                raise ImportError(
+                    "ANP adapter not available. "
+                    "Please install AgentConnect library to use ANP protocol."
+                )
+        
+        # Create client-only BaseAgent
+        client = httpx_client or httpx.AsyncClient(timeout=30.0)
+        
+        # Use default ports for compatibility
+        host = host_domain
+        port = int(host_port) if host_port else 8080
+        
+        agent = cls(
+            agent_id=agent_id,
+            host=host,
+            port=port,
+            httpx_client=client
+        )
+        
+        # Create ANP adapter instance
+        adapter = ANPAdapter(
+            httpx_client=client,
+            target_did=target_did,
+            local_did_info=local_did_info,
+            host_domain=host_domain,
+            host_port=host_port,
+            **kwargs
+        )
+        await adapter.initialize()
+        agent._outbound["default"] = adapter
+        
+        agent._initialized = True
+        return agent
+
     @classmethod
     async def from_ioa(
         cls,
@@ -557,8 +787,12 @@ class BaseAgent:
                 try:
                     await self._server_task
                 except asyncio.CancelledError:
+                    # CancelledError is expected during shutdown
                     pass
-
+            except asyncio.CancelledError:
+                # Handle direct cancellation
+                pass
+            
             self._server_task = None
             self._server_instance = None
 

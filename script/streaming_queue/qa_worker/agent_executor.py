@@ -16,9 +16,23 @@ class QAAgent:
         self.use_mock = False
         
         try:
-            # Import Core class from utils
-            sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-            from utils.core import Core
+            # Import Core class from src/utils - using absolute import
+            project_root = Path(__file__).parent.parent.parent.parent
+            src_path = project_root / "src"
+            core_module_path = src_path / "utils" / "core.py"
+            
+            print(f"[QAAgent] Attempting direct module import from: {core_module_path}")
+            
+            # Method 1: Try direct module loading
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("core", core_module_path)
+            if spec and spec.loader:
+                core_module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(core_module)
+                Core = core_module.Core
+                print(f"[QAAgent] Successfully imported Core via direct module loading")
+            else:
+                raise ImportError("Failed to load module spec")
             
             # Use provided config or get default configuration
             if config is None:
