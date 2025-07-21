@@ -683,24 +683,6 @@ class ANPServerAdapter(BaseServerAdapter):
         }
 
 
-# Mock uvicorn.Server interface for compatibility
-class MockUvicornServer:
-    """Mock server that wraps ANP server for uvicorn compatibility."""
-    
-    def __init__(self, anp_server_wrapper: ANPSimpleNodeWrapper):
-        self.anp_server = anp_server_wrapper
-        self.should_exit = False
-    
-    async def serve(self) -> None:
-        """Serve method compatible with uvicorn.Server."""
-        await self.anp_server.serve()
-    
-    async def shutdown(self) -> None:
-        """Shutdown the server."""
-        self.should_exit = True
-        self.anp_server.should_exit = True
-        await self.anp_server.stop()
-
 
 # Optional: Enhanced ANP Server Adapter with more features
 class EnhancedANPServerAdapter(ANPServerAdapter):
