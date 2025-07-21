@@ -1,4 +1,40 @@
 #original data
+streaming_queue\data\top1000.dev
+streaming_queue\data\qa_results.json
+streaming_queue\data\top1000.jsonl
+streaming_queue/data/*
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# OS / Editor specific
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Environment variables
+.env
+
+.git
+#original data
 
 script/streaming_queue/data/*
 script/shard_qa/data/*

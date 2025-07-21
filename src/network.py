@@ -64,7 +64,6 @@ class AgentNetwork:
 
             # Get destination agent's server address
             dst_address = dst_agent.get_listening_address()
-<<<<<<< HEAD
             
             # Create A2A adapter for this connection
             from agent_adapters.a2a_adapter import A2AAdapter
@@ -75,30 +74,6 @@ class AgentNetwork:
             )
             await adapter.initialize()
             
-=======
-
-            # Create appropriate adapter based on destination protocol
-            dst_protocol = getattr(dst_agent._server_adapter, 'protocol_name', 'A2A')
-
-            if dst_protocol == 'ACP':
-                # Create ACP adapter for ACP-to-ACP communication
-                from agent_adapters.acp_adapter import ACPAdapter
-                adapter = ACPAdapter(
-                    httpx_client=src_agent._httpx_client,
-                    base_url=dst_address,
-                    agent_id=src_agent.agent_id
-                )
-                await adapter.initialize()
-            else:
-                # Default to A2A adapter
-                from agent_adapters.a2a_adapter import A2AAdapter
-                adapter = A2AAdapter(
-                    httpx_client=src_agent._httpx_client,
-                    base_url=dst_address
-                )
-                await adapter.initialize()
-
->>>>>>> ACP
             # Add the adapter to source agent
             src_agent.add_outbound_adapter(dst_id, adapter)
 

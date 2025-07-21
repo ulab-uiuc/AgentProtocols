@@ -1,4 +1,5 @@
 core:
+  protocol: agora
   type: "openai"  # "local" or "openai"
   name: "gpt-4o"
   temperature: 0.0

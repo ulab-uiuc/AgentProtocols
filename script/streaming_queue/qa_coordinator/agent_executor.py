@@ -43,7 +43,7 @@ class QACoordinator:
 
         self.batch_size = coordinator_config.get('batch_size', 50)
         self.first_50 = coordinator_config.get('first_50', True)
-        self.data_path = coordinator_config.get('data_file', 'script/streaming_queue/data/top1000_simplified.jsonl')
+        self.data_path = coordinator_config.get('data_file', 'data/top1000_simplified.jsonl')
         self.worker_ids: List[str] = []
         self.agent_network = None
         self.coordinator_id = "Coordinator-1"
@@ -311,7 +311,7 @@ class QACoordinator:
     async def save_results(self, results):
         """Save results to file"""
         try:
-            result_file = self.config.get('qa', {}).get('coordinator', {}).get('result_file', './data/qa_result.json')
+            result_file = self.config.get('qa', {}).get('coordinator', {}).get('result_file', 'data/qa_results.json')
             result_path = Path(result_file)
             result_path.parent.mkdir(parents=True, exist_ok=True)
 

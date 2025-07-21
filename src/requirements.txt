@@ -4,8 +4,12 @@ prometheus-client>=0.16.0
 colorama>=0.4.6
 
 # A2A SDK (required for native executor interface)
+<<<<<<< HEAD
 # Note: Use a2a-sdk instead of a2a-server
 a2a-sdk>=0.2.0
+=======
+a2a-server>=0.2.0
+>>>>>>> Agora
 
 # Server dependencies (v1.0.0)
 uvicorn>=0.22.0
@@ -17,4 +21,8 @@ pynvml>=11.0.0
 
 # Development
 pytest>=7.0.0
+<<<<<<< HEAD
 pytest-asyncio>=0.21.0
+=======
+pytest-asyncio>=0.21.0 
+>>>>>>> Agora
