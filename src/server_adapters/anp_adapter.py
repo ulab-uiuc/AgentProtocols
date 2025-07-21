@@ -7,7 +7,11 @@ import json
 import logging
 import time
 from typing import Any, Dict, Tuple, Optional, Callable, Awaitable
+from contextlib import asynccontextmanager
 import uvicorn
+from starlette.applications import Starlette
+from starlette.responses import JSONResponse
+from starlette.routing import Route
 
 # Import base adapter
 try:
@@ -20,26 +24,24 @@ except ImportError:
     from server_adapters.base_adapter import BaseServerAdapter
 
 # Import AgentConnect components
-try:
-    # Try to import AgentConnect components
-    from agentconnect_src.agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
-    from agentconnect_src.agent_connect.python.authentication import (
-        DIDAllClient, create_did_wba_document
-    )
-    from agentconnect_src.agent_connect.python.utils.did_generate import did_generate
-    from agentconnect_src.agent_connect.python.utils.crypto_tool import get_pem_from_private_key
-    AGENTCONNECT_AVAILABLE = True
-except ImportError as e:
-    # AgentConnect not available, create stub classes
-    logging.warning(f"AgentConnect not available: {e}")
-    AGENTCONNECT_AVAILABLE = False
-    
-    class SimpleNode:
-        def __init__(self, *args, **kwargs):
-            raise ImportError("AgentConnect library not available")
-    
-    class SimpleNodeSession:
-        pass
+# Add AgentConnect to path if not already there
+import sys
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(current_dir))
+agentconnect_path = os.path.join(project_root, 'agentconnect_src')
+if agentconnect_path not in sys.path:
+    sys.path.insert(0, agentconnect_path)
+
+# Import AgentConnect components
+from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
+from agent_connect.python.authentication import (
+    DIDAllClient, create_did_wba_document
+)
+from agent_connect.python.utils.did_generate import did_generate
+from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
+AGENTCONNECT_AVAILABLE = True
+
 
 logger = logging.getLogger(__name__)
 
@@ -284,6 +286,7 @@ class ANPExecutorWrapper:
 class ANPSimpleNodeWrapper:
     """
     Wrapper around SimpleNode to integrate with uvicorn server interface.
+    Provides both WebSocket (via SimpleNode) and HTTP endpoints.
     """
     
     def __init__(self, 
@@ -320,6 +323,37 @@ class ANPSimpleNodeWrapper:
         
         self.simple_node: Optional[SimpleNode] = None
         self.should_exit = False
+        self.starlette_app: Optional[Starlette] = None
+        
+    def _create_http_app(self) -> Starlette:
+        """Create Starlette app for HTTP endpoints."""
+        
+        async def health_check(request):
+            """Health check endpoint."""
+            return JSONResponse({"status": "healthy", "protocol": "ANP"})
+        
+        async def agent_card(request):
+            """Agent card endpoint."""
+            return JSONResponse(self.agent_card)
+        
+        @asynccontextmanager
+        async def lifespan(app):
+            """Handle application lifespan events with proper context manager."""
+            # Startup
+            try:
+                yield
+            finally:
+                # Shutdown - gracefully handle cleanup
+                self.should_exit = True
+            
+        # Define routes
+        routes = [
+            Route("/health", health_check, methods=["GET"]),
+            Route("/.well-known/agent.json", agent_card, methods=["GET"]),
+        ]
+        
+        app = Starlette(routes=routes, lifespan=lifespan)
+        return app
         
     async def _setup_did_info(self) -> None:
         """Setup DID information if not provided."""
@@ -411,20 +445,82 @@ class ANPSimpleNodeWrapper:
             # Setup DID information
             await self._setup_did_info()
             
-            logger.info(f"Starting ANP server on {self.host_domain}:{self.host_port}{self.host_ws_path}")
+            logger.info(f"Starting ANP hybrid server on {self.host_domain}:{self.host_port}")
+            logger.info(f"HTTP endpoints: /health, /.well-known/agent.json")
+            logger.info(f"WebSocket endpoint: {self.host_ws_path} (via SimpleNode on port {self.host_port + 1000})")
             logger.info(f"Server DID: {self.did_info.get('did', 'unknown')}")
             
-            # Create and configure SimpleNode
-            self.simple_node = SimpleNode(
-                host_domain=self.host_domain,
-                new_session_callback=self._on_new_session,
-                host_port=str(self.host_port),
-                host_ws_path=self.host_ws_path,
-                private_key_pem=self.did_info.get('private_key_pem'),
-                did=self.did_info.get('did'),
-                did_document_json=self.did_info.get('did_document_json')
-            )
+            # Create HTTP app for compatibility endpoints
+            self.starlette_app = self._create_http_app()
             
+            # Create and configure SimpleNode for WebSocket on a different port
+            ws_port = self.host_port + 1000  # Use offset port for WebSocket
+            
+            logger.info(f"Creating SimpleNode with DID: {self.did_info.get('did', 'unknown')}")
+            logger.info(f"SimpleNode WebSocket port: {ws_port}")
+            
+            try:
+                self.simple_node = SimpleNode(
+                    host_domain=self.host_domain,
+                    new_session_callback=self._on_new_session,
+                    host_port=str(ws_port),
+                    host_ws_path=self.host_ws_path,
+                    private_key_pem=self.did_info.get('private_key_pem'),
+                    did=self.did_info.get('did'),
+                    did_document_json=self.did_info.get('did_document_json')
+                )
+                logger.info("SimpleNode created successfully")
+            except Exception as e:
+                logger.error(f"Failed to create SimpleNode: {e}")
+                self.simple_node = None
+            
+            # Start SimpleNode in background
+            simple_node_task = asyncio.create_task(self._run_simple_node())
+            
+            # Start HTTP server using uvicorn with simple config
+            config = uvicorn.Config(
+                self.starlette_app,
+                host=self.host_domain,
+                port=self.host_port,
+                log_level="critical",
+                access_log=False,
+                use_colors=False
+            )
+            server = uvicorn.Server(config)
+            
+            # Run both servers concurrently with proper error handling
+            try:
+                await asyncio.gather(
+                    server.serve(),
+                    simple_node_task,
+                    return_exceptions=False  # Let exceptions bubble up properly
+                )
+            except asyncio.CancelledError:
+                # Handle graceful shutdown
+                logger.info("ANP server shutdown requested")
+                self.should_exit = True
+                # Cancel SimpleNode task if still running
+                if not simple_node_task.done():
+                    simple_node_task.cancel()
+                    try:
+                        await simple_node_task
+                    except asyncio.CancelledError:
+                        pass
+                
+        except Exception as e:
+            logger.error(f"ANP server error: {e}")
+            raise
+        finally:
+            await self.stop()
+            
+    async def _run_simple_node(self) -> None:
+        """Run SimpleNode for WebSocket functionality."""
+        try:
+            # Check if SimpleNode was created successfully
+            if self.simple_node is None:
+                logger.error("SimpleNode not initialized")
+                return
+                
             # Run the SimpleNode
             self.simple_node.run()
             
@@ -433,10 +529,8 @@ class ANPSimpleNodeWrapper:
                 await asyncio.sleep(1)
                 
         except Exception as e:
-            logger.error(f"ANP server error: {e}")
-            raise
-        finally:
-            await self.stop()
+            logger.error(f"SimpleNode error: {e}")
+            # Don't raise to prevent blocking other tasks
     
     async def stop(self) -> None:
         """Stop the ANP server."""
@@ -445,7 +539,8 @@ class ANPSimpleNodeWrapper:
             try:
                 await self.simple_node.stop()
             except Exception as e:
-                logger.error(f"Error stopping SimpleNode: {e}")
+                # Log but don't raise - we want cleanup to continue
+                logger.debug(f"Error stopping SimpleNode (expected during shutdown): {e}")
             self.simple_node = None
 
 
@@ -522,14 +617,21 @@ class ANPServerAdapter(BaseServerAdapter):
                            host: str, 
                            port: int, 
                            ws_path: str,
-                           did_info: Dict[str, str]) -> Dict[str, Any]:
+                           did_info: Optional[Dict[str, str]]) -> Dict[str, Any]:
         """Generate ANP agent card."""
+        # Ensure did_info is not None
+        if did_info is None:
+            did_info = {}
+        
+        # WebSocket runs on offset port
+        ws_port = port + 1000
+        
         return {
             "id": did_info.get('did', agent_id),
             "name": f"ANP Agent - {agent_id}",
             "description": f"Agent Network Protocol (ANP) server for {agent_id}",
             "version": "1.0.0",
-            "url": f"ws://{host}:{port}{ws_path}",
+            "url": f"http://{host}:{port}/",  # HTTP endpoint
             "protocol": "ANP",
             "protocolVersion": "1.0.0",
             "capabilities": {
@@ -541,9 +643,10 @@ class ANPServerAdapter(BaseServerAdapter):
                 "real_time_communication": True
             },
             "endpoints": {
-                "websocket": f"ws://{host}:{port}{ws_path}",
+                "websocket": f"ws://{host}:{ws_port}{ws_path}",  # WebSocket on offset port
+                "http": f"http://{host}:{port}/",  # HTTP for compatibility
                 "did_document": did_info.get('did', ''),
-                "health": f"ws://{host}:{port}{ws_path}"  # Health check via WebSocket ping
+                "health": f"http://{host}:{port}/health"  # Health check via HTTP
             },
             "supportedMessageTypes": [
                 "text", "json", "binary"

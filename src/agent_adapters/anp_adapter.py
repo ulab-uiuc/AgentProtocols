@@ -22,29 +22,22 @@ except ImportError:
     from agent_adapters.base_adapter import BaseProtocolAdapter
 
 # Import AgentConnect components
-try:
-    # Try to import AgentConnect components
-    from agentconnect_src.agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
-    from agentconnect_src.agent_connect.python.authentication import (
-        DIDAllClient, create_did_wba_document, generate_auth_header
-    )
-    from agentconnect_src.agent_connect.python.utils.did_generate import did_generate
-    AGENTCONNECT_AVAILABLE = True
-except ImportError as e:
-    # AgentConnect not available, create stub classes
-    logging.warning(f"AgentConnect not available: {e}")
-    AGENTCONNECT_AVAILABLE = False
-    
-    class SimpleNode:
-        def __init__(self, *args, **kwargs):
-            raise ImportError("AgentConnect library not available")
-    
-    class SimpleNodeSession:
-        pass
-    
-    class DIDAllClient:
-        def __init__(self, *args, **kwargs):
-            raise ImportError("AgentConnect library not available")
+# Add AgentConnect to path if not already there
+import sys
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(current_dir))
+agentconnect_path = os.path.join(project_root, 'agentconnect_src')
+if agentconnect_path not in sys.path:
+    sys.path.insert(0, agentconnect_path)
+
+# Import AgentConnect components
+from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
+from agent_connect.python.authentication import (
+    DIDAllClient, create_did_wba_document, generate_auth_header
+)
+from agent_connect.python.utils.did_generate import did_generate
+AGENTCONNECT_AVAILABLE = True
 
 logger = logging.getLogger(__name__)
 
