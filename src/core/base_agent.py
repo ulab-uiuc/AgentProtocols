@@ -15,18 +15,24 @@ import uvicorn
 
 try:
     # Try package-style imports first
-    from .agent_adapters.base_adapter import BaseProtocolAdapter
-    from .agent_adapters.a2a_adapter import A2AAdapter
-    from .agent_adapters.agent_protocol_adapter import AgentProtocolAdapter
+    from ..agent_adapters.base_adapter import BaseProtocolAdapter
+    from ..agent_adapters.a2a_adapter import A2AAdapter
+    from ..agent_adapters.agent_protocol_adapter import AgentProtocolAdapter
+    from ..agent_adapters.agora_adapter import AgoraClientAdapter
     from .metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
-    from .server_adapters import BaseServerAdapter, A2AServerAdapter, AgentProtocolServerAdapter, ANPServerAdapter, ANP_AVAILABLE
+    from ..server_adapters import BaseServerAdapter, A2AServerAdapter, AgentProtocolServerAdapter, ANPServerAdapter, ANP_AVAILABLE, ACPServerAdapter
+    from .unified_message import UTE
+    from .protocol_converter import ENCODE_TABLE, DECODE_TABLE
 except ImportError:
     # Fallback to direct imports for standalone execution
     from agent_adapters.base_adapter import BaseProtocolAdapter
     from agent_adapters.a2a_adapter import A2AAdapter
     from agent_adapters.agent_protocol_adapter import AgentProtocolAdapter
-    from metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
-    from server_adapters import BaseServerAdapter, A2AServerAdapter, AgentProtocolServerAdapter, ANPServerAdapter, ANP_AVAILABLE
+    from agent_adapters.agora_adapter import AgoraClientAdapter
+    from src.core.metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
+    from server_adapters import BaseServerAdapter, A2AServerAdapter, AgentProtocolServerAdapter, ANPServerAdapter, ANP_AVAILABLE, ACPServerAdapter
+    from src.core.unified_message import UTE
+    from src.core.protocol_converter import ENCODE_TABLE, DECODE_TABLE
 
 # Module-level constants for better reusability
 DEFAULT_SERVER_STARTUP_TIMEOUT = 10.0
@@ -341,6 +347,145 @@ class BaseAgent:
         agent._initialized = True
         return agent
 
+    @classmethod
+    async def create_agora(
+        cls,
+        agent_id: str,
+        host: str = "0.0.0.0",
+        port: Optional[int] = None,
+        executor: Optional[Any] = None,
+        httpx_client: Optional[httpx.AsyncClient] = None,
+        server_adapter: Optional[BaseServerAdapter] = None,
+        openai_api_key: Optional[str] = None,
+        **kwargs
+    ) -> "BaseAgent":
+        """
+        Create BaseAgent with Agora server capability.
+
+        Parameters
+        ----------
+        agent_id : str
+            Unique agent identifier
+        host : str
+            Server listening host
+        port : Optional[int]
+            Server listening port (auto-assigned if None)
+        executor : Optional[Any]
+            A2A SDK native executor implementing execute(context, event_queue) interface
+        httpx_client : Optional[httpx.AsyncClient]
+            Shared HTTP client for connection pooling
+        server_adapter : Optional[BaseServerAdapter]
+            Server adapter (defaults to AgoraServerAdapter)
+        openai_api_key : Optional[str]
+            OpenAI API key for Agora toolformer
+        **kwargs
+            Additional configuration for Agora (model name, etc.)
+
+        Returns
+        -------
+        BaseAgent
+            Initialized BaseAgent with running Agora server
+        """
+        # Validate executor interface (executor is required)
+        if executor is None:
+            raise ValueError("executor parameter is required for Agora agents")
+
+        if not is_sdk_native_executor(executor):
+            raise TypeError(
+                f"Executor {type(executor)} must implement SDK native interface: "
+                "async def execute(context: RequestContext, event_queue: EventQueue) -> None"
+            )
+
+        # Import AgoraServerAdapter
+        try:
+            from ..server_adapters.agora_adapter import AgoraServerAdapter
+        except ImportError:
+            from server_adapters.agora_adapter import AgoraServerAdapter
+
+        # Create BaseAgent instance with Agora server adapter
+        agent = cls(
+            agent_id=agent_id,
+            host=host,
+            port=port,
+            httpx_client=httpx_client,
+            server_adapter=server_adapter or AgoraServerAdapter()
+        )
+
+        # Configure Agora-specific parameters
+        agora_config = kwargs.copy()
+        if openai_api_key:
+            agora_config['openai_api_key'] = openai_api_key
+
+        # Start server with executor and Agora configuration
+        await agent._start_agora_server(executor, agora_config)
+
+        # Fetch self agent card
+        await agent._fetch_self_card()
+
+        agent._initialized = True
+        return agent
+
+    @classmethod
+    async def create_agent_protocol(
+        cls,
+        agent_id: str,
+        host: str = "0.0.0.0",
+        port: Optional[int] = None,
+        executor: Optional[Any] = None,
+        httpx_client: Optional[httpx.AsyncClient] = None,
+        server_adapter: Optional[BaseServerAdapter] = None
+    ) -> "BaseAgent":
+        """
+        Create BaseAgent with Agent Protocol server capability.
+
+        Parameters
+        ----------
+        agent_id : str
+            Unique agent identifier
+        host : str
+            Server listening host
+        port : Optional[int]
+            Server listening port (auto-assigned if None)
+        executor : Optional[Any]
+            A2A SDK native executor implementing execute(context, event_queue) interface
+        httpx_client : Optional[httpx.AsyncClient]
+            Shared HTTP client for connection pooling
+        server_adapter : Optional[BaseServerAdapter]
+            Server adapter (defaults to AgentProtocolServerAdapter)
+
+        Returns
+        -------
+        BaseAgent
+            Initialized BaseAgent with running Agent Protocol server
+        """
+        # Validate executor interface (executor is required)
+        if executor is None:
+            raise ValueError("executor parameter is required for Agent Protocol agents")
+
+        if not is_sdk_native_executor(executor):
+            raise TypeError(
+                f"Executor {type(executor)} must implement SDK native interface: "
+                "async def execute(context: RequestContext, event_queue: EventQueue) -> None"
+            )
+
+        # Create BaseAgent instance with Agent Protocol server adapter
+        agent = cls(
+            agent_id=agent_id,
+            host=host,
+            port=port,
+            httpx_client=httpx_client,
+            server_adapter=server_adapter or AgentProtocolServerAdapter()
+        )
+
+        # Start server with executor
+        await agent._start_server(executor)
+
+        # Fetch self agent card
+        await agent._fetch_self_card()
+
+        agent._initialized = True
+        return agent
+
     async def _start_server(self, executor: Any) -> None:
         """Start the internal server using pluggable adapter."""
         # Use server adapter to build server and agent card
@@ -576,7 +721,7 @@ class BaseAgent:
             If AgentConnect library is not available
         """
         try:
-            from .agent_adapters.anp_adapter import ANPAdapter
+            from ..agent_adapters.anp_adapter import ANPAdapter
         except ImportError:
             try:
                 from agent_adapters.anp_adapter import ANPAdapter
@@ -649,18 +794,19 @@ class BaseAgent:
     async def send(self, dst_id: str, payload: Dict[str, Any]) -> Any:
         """
         Send message to destination agent using appropriate outbound adapter.
+        Now uses Unified Transport Envelope (UTE) for protocol-agnostic sending.
 
         Parameters
         ----------
         dst_id : str
             Destination agent ID
         payload : Dict[str, Any]
-            Message payload to send
+            Message payload (business content) to send
 
         Returns
         -------
         Any
-            Response from destination agent
+            Response content from destination agent, decoded back into a dict.
 
         Raises
         ------
@@ -672,27 +818,34 @@ class BaseAgent:
 
         # Find outbound adapter
         if dst_id not in self._outbound:
-            raise RuntimeError(f"No outbound adapter found for destination {dst_id}")
+            # Try default if specific not found
+            if "default" not in self._outbound:
+                raise RuntimeError(f"No outbound adapter found for destination {dst_id}")
+            adapter = self._outbound["default"]
+        else:
+            adapter = self._outbound[dst_id]
 
-        adapter = self._outbound[dst_id]
-
-        # Add source information to payload
-        enriched_payload = payload.copy()
-        enriched_payload.setdefault("source", self.agent_id)
-
+        # ★ UTE Conversion Step 1: Create UTE
+        ute = UTE.new(src=self.agent_id, dst=dst_id, content=payload, context={})
+        
+        # ★ UTE Conversion Step 2: Encode UTE to protocol-specific payload
+        proto_payload = ENCODE_TABLE[adapter.protocol_name](ute)
+        
         # Record metrics
-        protocol_name = type(adapter).__name__.replace("Adapter", "").lower()
+        protocol_name = adapter.protocol_name
 
         with MetricsTimer(REQUEST_LATENCY, (self.agent_id, dst_id, protocol_name)):
             try:
-                # Delegate to protocol adapter
-                response = await adapter.send_message(dst_id, enriched_payload)
+                # Delegate to protocol adapter with the protocol-specific payload
+                response = await adapter.send_message(dst_id, proto_payload)
 
-                # Record successful message bytes (accurate JSON size of enriched payload)
-                msg_size = len(json.dumps(enriched_payload).encode('utf-8'))
+                # Record successful message bytes (accurate JSON size of encoded payload)
+                msg_size = len(json.dumps(proto_payload).encode('utf-8'))
                 MSG_BYTES.labels("out", self.agent_id).inc(msg_size)
 
-                return response
+                # ★ UTE Conversion Step 3: Decode response back to UTE
+                ute_response = DECODE_TABLE[adapter.protocol_name](response)
+                return ute_response.content  # Return only the business content
 
             except Exception as e:
                 # Record failure
@@ -846,3 +999,20 @@ class BaseAgent:
             f"server_running={self.is_server_running()}, "
             f"initialized={self._initialized})"
         )
+
+    async def _start_agora_server(self, executor: Any, agora_config: Dict[str, Any]) -> None:
+        """Start Agora server with special configuration."""
+        # Use server adapter to build Agora server and agent card
+        self._server_instance, self._self_agent_card = self._server_adapter.build(
+            host=self._host,
+            port=self._port,
+            agent_id=self.agent_id,
+            executor=executor,
+            **agora_config
+        )
+        
+        # Start Agora server in background task
+        self._server_task = asyncio.create_task(self._server_instance.serve())
+        
+        # Wait for server to be ready
+        await self._wait_for_server_ready()

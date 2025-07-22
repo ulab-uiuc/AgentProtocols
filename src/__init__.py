@@ -2,9 +2,9 @@
 Agent Network - Unified multi-protocol agent network infrastructure
 """
 
-from .base_agent import BaseAgent
-from .network import AgentNetwork
-from .metrics import setup_prometheus_metrics, sample_system_metrics
+from .core.base_agent import BaseAgent
+from .core.network import AgentNetwork
+from .core.metrics import setup_prometheus_metrics, sample_system_metrics
 from .agent_adapters import BaseProtocolAdapter, A2AAdapter
 
 __version__ = "0.1.0"

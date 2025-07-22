@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # 导入框架组件
-from src.base_agent import BaseAgent
+from src.core.base_agent import BaseAgent
 from src.server_adapters import A2AServerAdapter, AgentProtocolServerAdapter
 
 # 简单的测试执行器

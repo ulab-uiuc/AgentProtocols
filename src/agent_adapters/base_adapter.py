@@ -3,7 +3,11 @@ BaseProtocolAdapter - 协议适配器基类
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+
+# ★ UTE Imports Added
+from ..core.unified_message import UTE
+from ..core.protocol_converter import ENCODE_TABLE, DECODE_TABLE
 
 
 class BaseProtocolAdapter(ABC):
@@ -12,6 +16,12 @@ class BaseProtocolAdapter(ABC):
     def __init__(self, **kwargs):
         """Initialize the adapter with protocol-specific parameters."""
         self.config = kwargs
+
+    @property
+    @abstractmethod
+    def protocol_name(self) -> str:
+        """Return lower-case protocol key used in converter tables."""
+        raise NotImplementedError
 
     @abstractmethod
     async def initialize(self) -> None:

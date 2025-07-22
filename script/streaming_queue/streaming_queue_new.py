@@ -33,8 +33,8 @@ except ImportError:
 # Add paths to import AgentNetwork and protocols
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))  # Add root directory
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from src.network import AgentNetwork
-from src.base_agent import BaseAgent
+from src.core.network import AgentNetwork
+from src.core.base_agent import BaseAgent
 
 # Import real QA Agent Executors
 sys.path.insert(0, str(Path(__file__).parent / "qa_worker"))

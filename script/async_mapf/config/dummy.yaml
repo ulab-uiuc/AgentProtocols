@@ -1,0 +1,43 @@
+# Dummy Protocol Configuration for MAPF
+# Used for local testing without external dependencies
+
+protocol: "dummy"
+
+# Agent and Network class paths
+agent_cls: "script.async_mapf.protocol_backends.dummy.agent:DummyRobot"
+net_cls: "script.async_mapf.protocol_backends.dummy.network:DummyNet"
+
+# World configuration
+world:
+  size: 10
+  goals: [[9, 9], [0, 9], [9, 0], [0, 0]]
+  obstacles: 
+    - [5, 5]
+    - [5, 6] 
+    - [6, 5]
+
+# Number of agents
+num_agents: 4
+
+# Starting positions (optional, defaults to shuffled goals)
+start_positions:
+  - [0, 0]
+  - [9, 0] 
+  - [0, 9]
+  - [9, 9]
+
+# Agent configuration
+agent_kwargs:
+  delivery_delay: 0.001  # Simulated network delay
+  message_loss_rate: 0.0  # No message loss
+  max_message_size: 1048576  # 1MB
+
+# Network configuration
+net_kwargs:
+  tick_ms: 50  # 50ms per tick
+  delivery_delay: 0.001
+  broadcast_delay: 0.002
+  message_loss_rate: 0.0
+
+# Execution settings
+timeout_seconds: 60 

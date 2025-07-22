@@ -13,6 +13,7 @@ import agora
 
 # AgentNetwork Framework imports
 from agent_adapters.base_adapter import BaseProtocolAdapter
+from src.core.protocol_converter import DECODE_TABLE
 
 
 class AgoraClientAdapter(BaseProtocolAdapter):
@@ -22,6 +23,10 @@ class AgoraClientAdapter(BaseProtocolAdapter):
     Wraps official Agora Sender to integrate with AgentNetwork's adapter pattern.
     Provides automatic protocol negotiation and efficiency optimization.
     """
+
+    @property
+    def protocol_name(self) -> str:
+        return "agora"
     
     def __init__(
         self,
@@ -263,7 +268,9 @@ class AgoraClientAdapter(BaseProtocolAdapter):
     
     async def receive_message(self) -> Dict[str, Any]:
         """Receive messages (not applicable for client adapter)."""
-        return {"messages": []}
+        raw_message = {"messages": []} # Placeholder for actual message reception
+        ute = DECODE_TABLE[self.protocol_name](raw_message)
+        return {"messages": [ute]}
     
     def get_agent_card(self) -> Dict[str, Any]:
         """Get agent card for Agora client adapter."""

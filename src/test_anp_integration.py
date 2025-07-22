@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # 导入框架组件
 try:
-    from src.base_agent import BaseAgent
+    from src.core.base_agent import BaseAgent
     from src.server_adapters import ANPServerAdapter
     from src.agent_adapters import ANPAdapter, ANPMessageBuilder
     ANP_AVAILABLE = True

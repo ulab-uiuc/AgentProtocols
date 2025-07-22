@@ -15,11 +15,12 @@ from .base_adapter import BaseProtocolAdapter
 
 class ACPAdapter(BaseProtocolAdapter):
     """
-    Adapter for ACP (Agent Communication Protocol).
-
-    Translates protocol-agnostic message structures to ACP standard format
-    and interacts with remote ACP Agents via HTTP (supports both one-shot and streaming).
+    Client adapter for the Agent Communication Protocol (ACP).
     """
+
+    @property
+    def protocol_name(self) -> str:
+        return "acp"
 
     def __init__(
         self,
@@ -261,16 +262,18 @@ class ACPAdapter(BaseProtocolAdapter):
             raise ConnectionError(f"HTTP {e.response.status_code} streaming: {error_detail}") from e
 
     async def receive_message(self) -> Dict[str, Any]:
-        """
-        ACP is a request-response protocol, so receiving messages
-        is not applicable. This method is included for interface compliance.
-
-        Returns
-        -------
-        Dict[str, Any]
-            Empty dict indicating no messages to receive
-        """
-        return {}
+        """Receive messages from the ACP inbox."""
+        try:
+            response = await self.httpx_client.get(f"{self.base_url}/inbox")
+            response.raise_for_status()
+            raw_messages = response.json().get("messages", [])
+            
+            # Decode each raw message into a UTE
+            utes = [DECODE_TABLE[self.protocol_name](msg) for msg in raw_messages]
+            
+            return {"messages": utes}
+        except Exception:
+            return {"messages": []}
 
     def get_agent_card(self) -> Dict[str, Any]:
         """

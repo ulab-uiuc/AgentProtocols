@@ -17,3 +17,6 @@ pynvml>=11.0.0
 # Development
 pytest>=7.0.0
 pytest-asyncio>=0.21.0 
+
+acp-sdk >= 1.0.0
+

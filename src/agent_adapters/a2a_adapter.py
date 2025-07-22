@@ -21,6 +21,10 @@ class A2AAdapter(BaseProtocolAdapter):
     Different dst_id / base_url / protocol / Auth do not share instances.
     """
 
+    @property
+    def protocol_name(self) -> str:
+        return "a2a"
+
     def __init__(
         self, 
         httpx_client: httpx.AsyncClient, 
@@ -212,46 +216,12 @@ class A2AAdapter(BaseProtocolAdapter):
             raise RuntimeError(f"A2A streaming failed: {e} (req_id: {request_id})") from e
 
     async def receive_message(self) -> Dict[str, Any]:
-        """
-        Optional /inbox polling for A2A.
-        
-        A2A is typically request-response, so this might not be used
-        in many scenarios. Returns empty list if server has no inbox endpoint.
-        
-        Returns
-        -------
-        Dict[str, Any]
-            {"messages": [...]} format or empty list if no messages
-            
-        Raises
-        ------
-        RuntimeError
-            If receive operation fails (excluding timeout)
-        """
-        # Use cached 404 status to avoid repeated requests
-        if self._inbox_not_available:
-            return {"messages": []}
-            
-        try:
-            headers = {}
-            headers.update(self.auth_headers)
-            
-            response = await self.httpx_client.get(
-                f"{self.base_url}/inbox",
-                headers=headers,
-                timeout=5.0
-            )
-            response.raise_for_status()
-            return response.json()
-        except httpx.TimeoutException:
-            return {"messages": []}  # Timeout is expected, return empty
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
-                self._inbox_not_available = True  # Cache 404 status
-                return {"messages": []}  # Inbox endpoint not available
-            raise RuntimeError(f"A2A receive HTTP error {e.response.status_code}: {e.response.text}") from e
-        except Exception as e:
-            raise RuntimeError(f"A2A receive failed: {e}") from e
+        """Receive messages (not applicable for client adapters)."""
+        # This is a client adapter, so it doesn't receive in a server capacity.
+        # However, for full UTE compatibility, we can simulate a decode of an empty message.
+        raw_message = {"messages": []} 
+        ute = DECODE_TABLE[self.protocol_name](raw_message)
+        return {"messages": [ute]}
 
     def get_agent_card(self) -> Dict[str, Any]:
         """Return the cached agent card."""

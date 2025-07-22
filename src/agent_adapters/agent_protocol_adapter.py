@@ -17,6 +17,7 @@ except ImportError:
     import os
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
     from agent_adapters.base_adapter import BaseProtocolAdapter
+from src.core.protocol_converter import DECODE_TABLE
 
 
 class AgentProtocolAdapter(BaseProtocolAdapter):
@@ -38,6 +39,10 @@ class AgentProtocolAdapter(BaseProtocolAdapter):
     Instance granularity: One outbound edge = One Adapter instance.
     Different dst_id / base_url / protocol / Auth do not share instances.
     """
+
+    @property
+    def protocol_name(self) -> str:
+        return "agentprotocol"
 
     def __init__(
         self, 
@@ -362,15 +367,28 @@ class AgentProtocolAdapter(BaseProtocolAdapter):
 
     async def receive_message(self) -> Dict[str, Any]:
         """
-        Agent Protocol is request-response based, doesn't support polling.
-        Returns empty message list.
-        
-        Returns
-        -------
-        Dict[str, Any]
-            Empty message list
+        Receives messages by polling the task's steps.
+        This is a simplified polling mechanism.
         """
-        return {"messages": []}
+        if not self.task_id:
+            return {"messages": []}
+
+        try:
+            # This is a simplified example. A real implementation would
+            # paginate through steps and handle different step states.
+            response = await self.httpx_client.get(f"{self.base_url}/agent/tasks/{self.task_id}/steps")
+            response.raise_for_status()
+            
+            raw_steps = response.json().get("steps", [])
+            
+            # Decode each step into a UTE
+            utes = [DECODE_TABLE[self.protocol_name](step) for step in raw_steps]
+            
+            return {"messages": utes}
+
+        except Exception:
+            # In a real scenario, handle exceptions gracefully
+            return {"messages": []}
 
     def get_agent_card(self) -> Dict[str, Any]:
         """Return the cached agent card."""

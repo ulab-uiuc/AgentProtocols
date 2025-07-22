@@ -16,22 +16,23 @@ import httpx
 # Import base adapter
 try:
     from .base_adapter import BaseProtocolAdapter
+    from ..core.protocol_converter import DECODE_TABLE
+    from ..core.unified_message import UTE
 except ImportError:
     # Fall back to absolute import for standalone usage
-    import sys
-    import os
-    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
     from agent_adapters.base_adapter import BaseProtocolAdapter
+    from core.protocol_converter import DECODE_TABLE
+    from core.unified_message import UTE
 
 # Import AgentConnect components  
-from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
-from agent_connect.python.authentication import (
+from ...agentconnect_src.agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
+from ...agentconnect_src.agent_connect.python.authentication import (
     DIDAllClient, create_did_wba_document, generate_auth_header
 )
-from agent_connect.python.utils.did_generate import did_generate
-from agent_connect.python.meta_protocol.meta_protocol import MetaProtocol, ProtocolType
-from agent_connect.python.app_protocols.protocol_container import ProtocolContainer
-from agent_connect.python.e2e_encryption.message_generation import generate_encrypted_message
+from ...agentconnect_src.agent_connect.python.utils.did_generate import did_generate
+from ...agentconnect_src.agent_connect.python.meta_protocol.meta_protocol import MetaProtocol, ProtocolType
+from ...agentconnect_src.agent_connect.python.app_protocols.protocol_container import ProtocolContainer
+from ...agentconnect_src.agent_connect.python.e2e_encryption.message_generation import generate_encrypted_message
 AGENTCONNECT_AVAILABLE = True
 
 logger = logging.getLogger(__name__)
@@ -151,6 +152,10 @@ class ANPAdapter(BaseProtocolAdapter):
         # Agent card
         self.agent_card: Dict[str, Any] = {}
 
+    @property
+    def protocol_name(self) -> str:
+        return "anp"
+
     async def initialize(self) -> None:
         """
         Initialize ANP adapter with full AgentConnect stack.
@@ -218,12 +223,12 @@ class ANPAdapter(BaseProtocolAdapter):
                     logger.warning(f"DID service failed, falling back to local generation: {e}")
                     # Fallback to local generation
                     private_key, _, did, did_document_json = did_generate(ws_endpoint)
-                    from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
+                    from ...agentconnect_src.agent_connect.python.utils.crypto_tool import get_pem_from_private_key
                     private_key_pem = get_pem_from_private_key(private_key)
             else:
                 # Generate DID locally using AgentConnect utils
                 private_key, _, did, did_document_json = did_generate(ws_endpoint)
-                from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
+                from ...agentconnect_src.agent_connect.python.utils.crypto_tool import get_pem_from_private_key
                 private_key_pem = get_pem_from_private_key(private_key)
             
             self.local_did_info = {
@@ -815,20 +820,24 @@ Capability Assessment:
 
     async def receive_message(self) -> Dict[str, Any]:
         """
-        Receive message from ANP protocol.
+        Receive message from ANP protocol and decode to UTE.
         
         Returns
         -------
         Dict[str, Any]
-            Received message
+            Received message(s) in UTE format
         """
         if not self._connected:
             return {"messages": []}
         
         try:
             # Get message from queue with timeout
-            message = await asyncio.wait_for(self._message_queue.get(), timeout=1.0)
-            return {"messages": [message]}
+            raw_message = await asyncio.wait_for(self._message_queue.get(), timeout=1.0)
+            
+            # Decode raw ANP message to UTE
+            ute = DECODE_TABLE[self.protocol_name](raw_message)
+            return {"messages": [ute]}
+            
         except asyncio.TimeoutError:
             return {"messages": []}
 
