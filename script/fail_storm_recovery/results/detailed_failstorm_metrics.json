@@ -1,0 +1,265 @@
+{
+  "metadata": {
+    "scenario": "fail_storm_recovery",
+    "protocol": "a2a",
+    "start_time": 1754273089.951555,
+    "export_time": 1754273155.151138,
+    "fault_injection_time": 1754273149.952309,
+    "first_recovery_time": null,
+    "steady_state_time": 1754273155.14994
+  },
+  "failstorm_metrics": {
+    "recovery_ms": null,
+    "steady_state_ms": 5197.631120681763,
+    "success_rate_drop": 1.0,
+    "duplicate_work_ratio": 0.0,
+    "bytes_reconnect": 0
+  },
+  "performance_analysis": {
+    "pre_fault_performance": {
+      "count": 20,
+      "mean": 0.0018391013145446777,
+      "median": 0.0018531084060668945,
+      "std": 0.0013975596103302478,
+      "min": 1.7881393432617188e-05,
+      "max": 0.004546165466308594
+    },
+    "recovery_performance": {
+      "count": 0,
+      "mean": 0.0,
+      "median": 0.0,
+      "std": 0.0
+    },
+    "post_fault_performance": {
+      "count": 0,
+      "mean": 0.0,
+      "median": 0.0,
+      "std": 0.0
+    },
+    "total_task_executions": 20,
+    "successful_executions": 0,
+    "network_events_count": 1,
+    "reconnection_attempts": 0,
+    "topology_snapshots": 0
+  },
+  "detailed_data": {
+    "task_executions": [
+      {
+        "task_id": "cycle_0_search",
+        "agent_id": "gaia_agent_0",
+        "tool_type": "search",
+        "start_time": 1754273092.444025,
+        "end_time": 1754273092.444043,
+        "success": false,
+        "error": "gaia_agent_0 cannot reach gaia_agent_0.",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_0_extract",
+        "agent_id": "gaia_agent_1",
+        "tool_type": "extract",
+        "start_time": 1754273092.444055,
+        "end_time": 1754273092.445392,
+        "success": false,
+        "error": "Failed to send message from gaia_agent_0 to gaia_agent_1: A2A HTTP error 500: {\"error\":\"Message handling failed: 3 validation errors for Message\\nmessageId\\n  Field required [type=missing, input_value={'id': 'b17ff92e-6544-496...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nparts\\n  Field required [type=missing, input_value={'id': 'b17ff92e-6544-496...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nrole\\n  Field required [type=missing, input_value={'id': 'b17ff92e-6544-496...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\"} (req_id: fe31acf2-3b7b-4113-91a8-5263ba17e1df)",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_0_triple",
+        "agent_id": "gaia_agent_2",
+        "tool_type": "triple",
+        "start_time": 1754273092.445428,
+        "end_time": 1754273092.446721,
+        "success": false,
+        "error": "Failed to send message from gaia_agent_0 to gaia_agent_2: A2A HTTP error 500: {\"error\":\"Message handling failed: 3 validation errors for Message\\nmessageId\\n  Field required [type=missing, input_value={'id': '1a935df9-7ffd-48a...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nparts\\n  Field required [type=missing, input_value={'id': '1a935df9-7ffd-48a...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nrole\\n  Field required [type=missing, input_value={'id': '1a935df9-7ffd-48a...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\"} (req_id: 48d7be6d-848a-4451-a495-f69508f76bc8)",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_0_reason",
+        "agent_id": "gaia_agent_3",
+        "tool_type": "reason",
+        "start_time": 1754273092.446749,
+        "end_time": 1754273092.4480262,
+        "success": false,
+        "error": "Failed to send message from gaia_agent_0 to gaia_agent_3: A2A HTTP error 500: {\"error\":\"Message handling failed: 3 validation errors for Message\\nmessageId\\n  Field required [type=missing, input_value={'id': '59737acc-d7a1-4c8...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nparts\\n  Field required [type=missing, input_value={'id': '59737acc-d7a1-4c8...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nrole\\n  Field required [type=missing, input_value={'id': '59737acc-d7a1-4c8...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\"} (req_id: 55a39905-57cd-4d2d-aa40-0c02ad57ad95)",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_1_search",
+        "agent_id": "gaia_agent_0",
+        "tool_type": "search",
+        "start_time": 1754273104.44857,
+        "end_time": 1754273104.44863,
+        "success": false,
+        "error": "gaia_agent_0 cannot reach gaia_agent_0.",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_1_extract",
+        "agent_id": "gaia_agent_1",
+        "tool_type": "extract",
+        "start_time": 1754273104.4486668,
+        "end_time": 1754273104.453213,
+        "success": false,
+        "error": "Failed to send message from gaia_agent_0 to gaia_agent_1: A2A HTTP error 500: {\"error\":\"Message handling failed: 3 validation errors for Message\\nmessageId\\n  Field required [type=missing, input_value={'id': '87c99801-fbde-435...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nparts\\n  Field required [type=missing, input_value={'id': '87c99801-fbde-435...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nrole\\n  Field required [type=missing, input_value={'id': '87c99801-fbde-435...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\"} (req_id: d1f93c07-0018-4b38-82a0-ea8fcaf6fc1b)",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_1_triple",
+        "agent_id": "gaia_agent_2",
+        "tool_type": "triple",
+        "start_time": 1754273104.453255,
+        "end_time": 1754273104.455125,
+        "success": false,
+        "error": "Failed to send message from gaia_agent_0 to gaia_agent_2: A2A HTTP error 500: {\"error\":\"Message handling failed: 3 validation errors for Message\\nmessageId\\n  Field required [type=missing, input_value={'id': '2f6fb398-f1f3-484...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nparts\\n  Field required [type=missing, input_value={'id': '2f6fb398-f1f3-484...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nrole\\n  Field required [type=missing, input_value={'id': '2f6fb398-f1f3-484...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\"} (req_id: e50c4a24-d0de-4ddb-9064-a49df45f705c)",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_1_reason",
+        "agent_id": "gaia_agent_3",
+        "tool_type": "reason",
+        "start_time": 1754273104.455154,
+        "end_time": 1754273104.4569159,
+        "success": false,
+        "error": "Failed to send message from gaia_agent_0 to gaia_agent_3: A2A HTTP error 500: {\"error\":\"Message handling failed: 3 validation errors for Message\\nmessageId\\n  Field required [type=missing, input_value={'id': '678f8739-9a0f-4a0...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nparts\\n  Field required [type=missing, input_value={'id': '678f8739-9a0f-4a0...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nrole\\n  Field required [type=missing, input_value={'id': '678f8739-9a0f-4a0...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\"} (req_id: 63da3ed2-f659-4017-b205-d3f17885fe34)",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_2_search",
+        "agent_id": "gaia_agent_0",
+        "tool_type": "search",
+        "start_time": 1754273116.457201,
+        "end_time": 1754273116.457251,
+        "success": false,
+        "error": "gaia_agent_0 cannot reach gaia_agent_0.",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_2_extract",
+        "agent_id": "gaia_agent_1",
+        "tool_type": "extract",
+        "start_time": 1754273116.457281,
+        "end_time": 1754273116.461754,
+        "success": false,
+        "error": "Failed to send message from gaia_agent_0 to gaia_agent_1: A2A HTTP error 500: {\"error\":\"Message handling failed: 3 validation errors for Message\\nmessageId\\n  Field required [type=missing, input_value={'id': '53237c2a-bcdc-434...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nparts\\n  Field required [type=missing, input_value={'id': '53237c2a-bcdc-434...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nrole\\n  Field required [type=missing, input_value={'id': '53237c2a-bcdc-434...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\"} (req_id: 5b14af4f-96e1-4829-af3f-d8ad850721f5)",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_2_triple",
+        "agent_id": "gaia_agent_2",
+        "tool_type": "triple",
+        "start_time": 1754273116.461805,
+        "end_time": 1754273116.464896,
+        "success": false,
+        "error": "Failed to send message from gaia_agent_0 to gaia_agent_2: A2A HTTP error 500: {\"error\":\"Message handling failed: 3 validation errors for Message\\nmessageId\\n  Field required [type=missing, input_value={'id': '5526ffcf-9618-434...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nparts\\n  Field required [type=missing, input_value={'id': '5526ffcf-9618-434...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nrole\\n  Field required [type=missing, input_value={'id': '5526ffcf-9618-434...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\"} (req_id: 0fc120f0-75e3-44e2-87c8-621f79331257)",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_2_reason",
+        "agent_id": "gaia_agent_3",
+        "tool_type": "reason",
+        "start_time": 1754273116.4649332,
+        "end_time": 1754273116.467231,
+        "success": false,
+        "error": "Failed to send message from gaia_agent_0 to gaia_agent_3: A2A HTTP error 500: {\"error\":\"Message handling failed: 3 validation errors for Message\\nmessageId\\n  Field required [type=missing, input_value={'id': '1c710434-4ead-4cb...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nparts\\n  Field required [type=missing, input_value={'id': '1c710434-4ead-4cb...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nrole\\n  Field required [type=missing, input_value={'id': '1c710434-4ead-4cb...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\"} (req_id: 3b146bcf-7ce0-4864-a9f5-4204ad3b9ea4)",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_3_search",
+        "agent_id": "gaia_agent_0",
+        "tool_type": "search",
+        "start_time": 1754273128.468283,
+        "end_time": 1754273128.468311,
+        "success": false,
+        "error": "gaia_agent_0 cannot reach gaia_agent_0.",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_3_extract",
+        "agent_id": "gaia_agent_1",
+        "tool_type": "extract",
+        "start_time": 1754273128.46833,
+        "end_time": 1754273128.471524,
+        "success": false,
+        "error": "Failed to send message from gaia_agent_0 to gaia_agent_1: A2A HTTP error 500: {\"error\":\"Message handling failed: 3 validation errors for Message\\nmessageId\\n  Field required [type=missing, input_value={'id': '8e1592f1-195f-478...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nparts\\n  Field required [type=missing, input_value={'id': '8e1592f1-195f-478...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nrole\\n  Field required [type=missing, input_value={'id': '8e1592f1-195f-478...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\"} (req_id: 0bdede68-eb6b-40c3-b39f-041436321343)",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_3_triple",
+        "agent_id": "gaia_agent_2",
+        "tool_type": "triple",
+        "start_time": 1754273128.471555,
+        "end_time": 1754273128.473516,
+        "success": false,
+        "error": "Failed to send message from gaia_agent_0 to gaia_agent_2: A2A HTTP error 500: {\"error\":\"Message handling failed: 3 validation errors for Message\\nmessageId\\n  Field required [type=missing, input_value={'id': '14a898a4-cbf1-463...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nparts\\n  Field required [type=missing, input_value={'id': '14a898a4-cbf1-463...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nrole\\n  Field required [type=missing, input_value={'id': '14a898a4-cbf1-463...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\"} (req_id: 0b5ceced-0871-43c2-a4c9-ca676735c2b3)",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_3_reason",
+        "agent_id": "gaia_agent_3",
+        "tool_type": "reason",
+        "start_time": 1754273128.4735382,
+        "end_time": 1754273128.47606,
+        "success": false,
+        "error": "Failed to send message from gaia_agent_0 to gaia_agent_3: A2A HTTP error 500: {\"error\":\"Message handling failed: 3 validation errors for Message\\nmessageId\\n  Field required [type=missing, input_value={'id': '62a573a3-5e1e-42d...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nparts\\n  Field required [type=missing, input_value={'id': '62a573a3-5e1e-42d...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nrole\\n  Field required [type=missing, input_value={'id': '62a573a3-5e1e-42d...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\"} (req_id: 7514a6dc-c5c4-4668-852a-8368a0c41315)",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_4_search",
+        "agent_id": "gaia_agent_0",
+        "tool_type": "search",
+        "start_time": 1754273140.476387,
+        "end_time": 1754273140.476416,
+        "success": false,
+        "error": "gaia_agent_0 cannot reach gaia_agent_0.",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_4_extract",
+        "agent_id": "gaia_agent_1",
+        "tool_type": "extract",
+        "start_time": 1754273140.476435,
+        "end_time": 1754273140.4795399,
+        "success": false,
+        "error": "Failed to send message from gaia_agent_0 to gaia_agent_1: A2A HTTP error 500: {\"error\":\"Message handling failed: 3 validation errors for Message\\nmessageId\\n  Field required [type=missing, input_value={'id': 'ebf9c3de-3509-481...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nparts\\n  Field required [type=missing, input_value={'id': 'ebf9c3de-3509-481...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nrole\\n  Field required [type=missing, input_value={'id': 'ebf9c3de-3509-481...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\"} (req_id: f8556734-151c-490d-a210-dc5d4d24ae85)",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_4_triple",
+        "agent_id": "gaia_agent_2",
+        "tool_type": "triple",
+        "start_time": 1754273140.47957,
+        "end_time": 1754273140.481406,
+        "success": false,
+        "error": "Failed to send message from gaia_agent_0 to gaia_agent_2: A2A HTTP error 500: {\"error\":\"Message handling failed: 3 validation errors for Message\\nmessageId\\n  Field required [type=missing, input_value={'id': 'a60ae009-af4e-4a0...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nparts\\n  Field required [type=missing, input_value={'id': 'a60ae009-af4e-4a0...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nrole\\n  Field required [type=missing, input_value={'id': 'a60ae009-af4e-4a0...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\"} (req_id: 9c0ed4a7-fa8c-4d38-a405-331c23b173d5)",
+        "result_size_bytes": 0
+      },
+      {
+        "task_id": "cycle_4_reason",
+        "agent_id": "gaia_agent_3",
+        "tool_type": "reason",
+        "start_time": 1754273140.481431,
+        "end_time": 1754273140.4834628,
+        "success": false,
+        "error": "Failed to send message from gaia_agent_0 to gaia_agent_3: A2A HTTP error 500: {\"error\":\"Message handling failed: 3 validation errors for Message\\nmessageId\\n  Field required [type=missing, input_value={'id': '2e8df8a2-f382-40f...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nparts\\n  Field required [type=missing, input_value={'id': '2e8df8a2-f382-40f...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\\nrole\\n  Field required [type=missing, input_value={'id': '2e8df8a2-f382-40f...urce': 'gaia_agent_0'}}}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.11/v/missing\"} (req_id: b619acae-a7cd-4eaf-995f-7fb0f80e1dec)",
+        "result_size_bytes": 0
+      }
+    ],
+    "network_events": [
+      {
+        "timestamp": 1754273150.143578,
+        "event_type": "agent_state_change",
+        "source_agent": "gaia_agent_3",
+        "target_agent": null,
+        "bytes_transferred": 0,
+        "latency_ms": null,
+        "error": "unknown -> failed"
+      }
+    ],
+    "reconnection_attempts": [],
+    "topology_snapshots": [],
+    "agent_states": {
+      "gaia_agent_3": "failed"
+    }
+  }
+}
