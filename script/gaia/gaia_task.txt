@@ -1,8 +1,0 @@
-Question: What is the current population of Tokyo, Japan in 2024?
-            
-            Please provide:
-            1. The most recent population figure
-            2. Data sources and verification
-            3. Comparison with previous years if available
-            
-            Use web search to find accurate and up-to-date information.

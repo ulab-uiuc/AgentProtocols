@@ -6,7 +6,6 @@ from .tool_collection import ToolCollection
 from .registry import ToolRegistry
 
 # Import simplified tools
-from .planning import PlanningTool
 from .web_search_simple import WebSearch
 from .python_execute import PythonExecute
 from .file_operators_simple import FileOperators
@@ -18,7 +17,6 @@ __all__ = [
     "ToolError", 
     "ToolCollection",
     "ToolRegistry",
-    "PlanningTool",
     "WebSearch",
     "PythonExecute", 
     "FileOperators",
