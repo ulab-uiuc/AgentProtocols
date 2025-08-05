@@ -203,17 +203,17 @@ class TopologyBenchmark:
     
     async def run_topology_comparison(self):
         """运行拓扑对比测试"""
-        # 只测试已知存在的拓扑类型
         topologies_to_test = [
             ('star', 'Star Topology'),
-            ('mesh', 'Mesh Topology')
+            ('ring', 'Ring Topology'),
+            ('mesh', 'Mesh Topology'),
+            ('hierarchical', 'Hierarchical Topology')
         ]
-        
+
         self.output.info("开始拓扑结构对比评测...")
         
         for topology_name, description in topologies_to_test:
             self.output.info(f"\n=== 测试 {description} ===")
-            
             # 创建demo实例
             demo = RealAgentNetworkDemo()
             
@@ -229,7 +229,21 @@ class TopologyBenchmark:
                 elif topology_name == "mesh":
                     demo.network.setup_mesh_topology()
                     self.output.success("应用网状拓扑")
-                
+                elif topology_name == "ring":
+                    if hasattr(demo.network, 'setup_ring_topology'):
+                        demo.network.setup_ring_topology()
+                    else:
+                        raise Exception("Ring topology not implemented")
+                elif topology_name == "hierarchical":
+                    if len(worker_ids) >= 4:
+                        sub_coordinators = worker_ids[:2]
+                        if hasattr(demo.network, 'setup_hierarchical_topology'):
+                            demo.network.setup_hierarchical_topology("Coordinator-1", sub_coordinators)
+                        else:
+                            raise Exception("Hierarchical topology not implemented")
+                    else:
+                        raise Exception("需要至少4个worker进行分层拓扑测试")
+
                 # 等待连接建立
                 await asyncio.sleep(2)
                 
@@ -253,13 +267,60 @@ class TopologyBenchmark:
                 traceback.print_exc()
                 
             finally:
-                await demo.cleanup()
-                # 测试间隔
+                await self.simple_cleanup(demo)
                 await asyncio.sleep(2)
-        
+                
         # 生成对比报告
         self.generate_comparison_report()
     
+    async def simple_cleanup(self, demo):
+        """简单清理 - 忽略所有错误"""
+        if not demo:
+            return
+        
+        self.output.info("开始清理资源...")
+        
+        try:
+            # 尝试正常清理，但不等待
+            cleanup_task = asyncio.create_task(demo.cleanup())
+            try:
+                await asyncio.wait_for(cleanup_task, timeout=3.0)
+                self.output.success("正常清理完成")
+            except asyncio.TimeoutError:
+                self.output.info("清理超时，执行强制清理")
+                cleanup_task.cancel()
+                await self.force_cleanup(demo)
+        except Exception as e:
+            self.output.info(f"清理时出现预期错误: {type(e).__name__}")
+            await self.force_cleanup(demo)
+    
+    async def force_cleanup(self, demo):
+        """强制清理资源"""
+        try:
+            # 强制关闭HTTP客户端
+            if hasattr(demo, 'httpx_client') and demo.httpx_client:
+                if not demo.httpx_client.is_closed:
+                    await demo.httpx_client.aclose()
+            
+            # 取消所有任务
+            agents = []
+            if hasattr(demo, 'coordinator') and demo.coordinator:
+                agents.append(demo.coordinator)
+            if hasattr(demo, 'workers') and demo.workers:
+                agents.extend(demo.workers)
+            
+            for agent in agents:
+                try:
+                    if hasattr(agent, '_server_task') and agent._server_task:
+                        agent._server_task.cancel()
+                except Exception:
+                    pass
+            
+            self.output.success("强制清理完成")
+            
+        except Exception as e:
+            self.output.info(f"强制清理也出现错误: {e} (可忽略)")
+
     def display_immediate_results(self, topology_name: str, results: Dict):
         """显示即时测试结果"""
         self.output.info(f"\n--- {topology_name.upper()} 拓扑测试结果 ---")
