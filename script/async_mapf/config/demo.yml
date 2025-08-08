@@ -1,0 +1,47 @@
+model:
+  type: "openai"
+  name: "gpt-4o"
+  openai_api_key: "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"
+  temperature: 0
+
+network:
+  grid_size: 19
+  tick_ms: 100  
+  max_ticks: null  
+  stop_on_all_goals: true    # stop when all agents with goals reach them
+  hard_exit_on_complete: false  # let RunnerBase handle graceful shutdown
+  agents:
+    - id: 0
+      start: [0, 0]
+      goal: [18, 18]
+      protocol: "a2a"
+    - id: 1
+      start: [18, 0]
+      goal: [0, 18]
+      protocol: "a2a"
+    - id: 2
+      start: [0, 18]
+      goal: [18, 0]
+      protocol: "a2a"
+    - id: 3
+      start: [18, 18]
+      goal: [0, 0]
+      protocol: "a2a"
+
+a2a_network:
+  message_timeout: 5.0
+  max_retries: 3
+  stats_interval: 10
+
+history:
+  max_len: 20
+
+# Debug and logging settings
+debug:
+  verbose: false          # Enable detailed debug output (true/false)
+  log_level: "DEBUG"    # Logging level: DEBUG, INFO, WARNING, ERROR
+  log_llm_interactions: true   # Log all LLM inputs/outputs
+  log_agent_actions: true     # Log agent actions (move, send_msg, etc.)
+  log_network_events: true    # Log network events
+
+grid_size: 19
