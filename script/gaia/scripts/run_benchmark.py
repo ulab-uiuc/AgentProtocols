@@ -3,75 +3,68 @@ import argparse
 import asyncio
 import sys
 from pathlib import Path
+import json
 
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
 
-from core import TaskPlanner, MeshNetwork
-from protocols import JsonAdapter, AgentProtocolAdapter
+from core import TaskPlanner
+from protocols.ap.network import APNetwork
+from protocols import JsonAdapter
 
 
 async def main():
     """Main execution function."""
     parser = argparse.ArgumentParser(description="Run Gaia benchmark with multi-agent framework")
-    parser.add_argument("--task-file", default="gaia_task.txt", help="Gaia task document file")
-    parser.add_argument("--strategy", default="adaptive", choices=["simple", "adaptive"], 
-                       help="Planning strategy")
+    parser.add_argument("--task-file", default="/root/Multiagent-Protocol/script/gaia/GAIABench/2023/validation/metadata.jsonl", help="Gaia task document file")
     parser.add_argument("--protocol", default="json", choices=["json", "agent_protocol"],
                        help="Communication protocol")
     parser.add_argument("--timeout", type=int, default=300, help="Execution timeout in seconds")
-    
+    parser.add_argument("--debug", default=True, action="store_true", help="Enable debug mode")
     args = parser.parse_args()
     
     print("🌟 Starting Gaia Multi-Agent Framework")
     print(f"📄 Task file: {args.task_file}")
-    print(f"🧠 Strategy: {args.strategy}")
     print(f"🔌 Protocol: {args.protocol}")
     print(f"⏰ Timeout: {args.timeout}s")
     print("-" * 50)
     
     try:
         # 1. Initialize protocol adapter
-        if args.protocol == "agent_protocol":
-            adapter = AgentProtocolAdapter()
-        else:
-            adapter = JsonAdapter()
+        adapter = JsonAdapter()
         
         print(f"🔌 Protocol adapter initialized: {adapter.__class__.__name__}")
         
         # 2. Load Gaia task document
         task_file_path = Path(args.task_file)
         if not task_file_path.exists():
-            print(f"❌ Task file not found: {task_file_path}")
-            print("💡 Creating sample task file...")
-            sample_task = """
-            Question: What is the current population of Tokyo, Japan in 2024?
-            
-            Please provide:
-            1. The most recent population figure
-            2. Data sources and verification
-            3. Comparison with previous years if available
-            
-            Use web search to find accurate and up-to-date information.
-            """
-            task_file_path.write_text(sample_task.strip(), encoding='utf-8')
-            print(f"✅ Sample task created at {task_file_path}")
+            raise FileNotFoundError(f"Task file '{args.task_file}' not found")
         
         with open(task_file_path, "r", encoding='utf-8') as f:
-            gaia_task_document = f.read()
+            task_dict_list = [json.loads(line) for line in f if line.strip()]
         
-        print(f"📄 Loaded task document ({len(gaia_task_document)} characters)")
+        print(f"📄 Loaded task document ({len(task_dict_list)} tasks)")
+        
+        if args.debug:
+            print("🔍 Debug mode enabled: Test with only one case")
+            task_dict = task_dict_list[0]  # Use only the first task for debugging
+            task_id = task_dict.get("task_id", "debug_task")
+            task_doc = task_dict.get("Question", "What is the answer?")
+            level = task_dict.get("Level", 1)
+        else:
+            raise NotImplementedError("Debug mode is not enabled, please set --debug flag")
         
         # 3. Initialize intelligent planner
-        planner = TaskPlanner(strategy_type=args.strategy)
+        # planner = TaskPlanner(task_id=task_id, level=level)
         
         # 4. Analyze Gaia task and generate agent configuration
         print("🧠 Analyzing Gaia task and planning agents...")
-        config_path = await planner.plan_agents(gaia_task_document, args.strategy)
+        # config_path = await planner.plan_agents(task_doc)
+        config_path = "/root/Multiagent-Protocol/script/gaia/workspaces/c61d22de-5f6c-4958-a7f6-5e9707bd3466/agent_config.json"
         print(f"📋 Agent configuration generated: {config_path}")
         
         # 5. Create dynamic network manager
-        network = MeshNetwork(adapter)
+        network = APNetwork(adapter)
         
         # 6. Create agents based on configuration
         print("🤖 Creating agents based on configuration...")
@@ -81,19 +74,28 @@ async def main():
         print("🚀 Starting network communication...")
         await network.start()
         
-        # 8. Begin task execution
-        print("📄 Broadcasting Gaia task document...")
-        await network.broadcast_init(gaia_task_document)
-        
-        # 9. Monitor execution with timeout
-        print("⏳ Monitoring task execution...")
+        # 8. Execute workflow with the Gaia task
+        print("🎯 Executing workflow with Gaia task...")
         try:
-            await asyncio.wait_for(network._monitor_done(), timeout=args.timeout)
+            result = await asyncio.wait_for(
+                network.execute_workflow_with_task(task_doc), 
+                timeout=args.timeout
+            )
+            print("✅ Workflow execution completed")
+            print(f"📋 Final Result: {result}")
+            
+            # Store the result for evaluation
+            network.done_payload = result
+            network.done_ts = time.time() * 1000
+            
         except asyncio.TimeoutError:
             print("⏰ Execution timeout reached")
             network.done_ts = time.time() * 1000
             network.done_payload = "TIMEOUT: Framework execution exceeded time limit"
-            await network._evaluate()
+        
+        # 9. Evaluate results
+        print("📊 Evaluating results...")
+        await network._evaluate()
         
         print("✅ Task completed")
         print("📊 Results:")

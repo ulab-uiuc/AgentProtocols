@@ -30,80 +30,32 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
 
 class TaskPlanner:
     """Simplified planner that directly analyzes tasks and creates agent configurations."""
-    
-    def __init__(self, config_path: Optional[str] = None):
+
+    def __init__(self, config_path: Optional[str] = None, task_id: Optional[List[str]] = None, level: Optional[int] = 1):
         self.tool_registry = ToolRegistry()
         self.llm = call_llm()
         self.prompt_builder = PromptBuilder()
         self.config = load_config(config_path)
         self.max_agents = self.config.get("agents", {}).get("max_agent_num", 5)
-        
-        # Predefined agent templates with roles and tools
-        self.agent_templates = {
-            "web_search": {
-                "name": "WebResearcher",
-                "role": "researcher", 
-                "specialization": "information_retrieval"
-            },
-            "python_execute": {
-                "name": "CodeExecutor",
-                "role": "specialist",
-                "specialization": "computation"
-            },
-            "file_operators": {
-                "name": "DataProcessor",
-                "role": "worker",
-                "specialization": "data_management"
-            },
-            "reasoning": {
-                "name": "ReasoningSynthesizer", 
-                "role": "synthesizer",
-                "specialization": "reasoning_synthesis"
-            }
-        }
-    
-    async def analyze_and_plan(self, gaia_task_document: str) -> Dict[str, Any]:
+        self.task_id = task_id
+        self.level = level
+
+    async def analyze_and_plan(self, gaia_task_document: str) -> tuple[Dict[str, Any], str]:
         """Analyze Gaia task and generate optimal agent configuration."""
         print("🧠 Analyzing Gaia task...")
         
-        # Create system message for task analysis
-        # system_message_content = (
-        #     "You are a task analysis assistant. Analyze the given task and determine "
-        #     "what capabilities and tools are needed. Focus on identifying the key "
-        #     "requirements rather than detailed sub-steps. Optimize for clarity and efficiency."
-        # )
-        
-        # Get available tools description
+        # Get available tools
         available_tools = self.tool_registry.get_available_tools()
-        planning_message_content = self.prompt_builder.build_task_analysis_messages(
-            gaia_task_document, max_agents=self.max_agents
-        )
-        planning_message_content['user'] += ('The available tools are: ' + ', '.join(available_tools) + '.\n')
-
-        # agents_description = []
-        # for tool_name, template in self.agent_templates.items():
-        #     if tool_name in tool_mapping or tool_name == "reasoning":
-        #         agents_description.append({
-        #             "tool": tool_name,
-        #             "name": template["name"],
-        #             "role": template["role"],
-        #             "description": template['specialization']
-        #         })
         
-        # system_message_content += (
-        #     f"\nAvailable agent types: {json.dumps(agents_description, indent=2)}\n"
-        #     "Analyze the task and respond with a JSON object containing:\n"
-        #     "{\n"
-        #     "  \"task_type\": \"general_qa|research_task|computational_task|multi_step_analysis\",\n"
-        #     "  \"complexity\": \"low|medium|high\",\n"
-        #     "  \"required_tools\": [\"web_search\", \"python_execute\", \"file_operators\", \"reasoning\"],\n"
-        #     "  \"estimated_steps\": number,\n"
-        #     "  \"domain_areas\": [\"domain1\", \"domain2\"]\n"
-        #     "}"
-        # )
+        # Build analysis messages with available tools
+        messages = self.prompt_builder.build_task_analysis_messages(
+            gaia_task_document, 
+            max_agents=self.max_agents,
+            available_tools=available_tools
+        )
         
         # Analyze task using LLM
-        task_analysis = await self._analyze_task_with_llm(gaia_task_document, planning_message_content)
+        task_analysis = await self._analyze_task_with_llm(gaia_task_document, messages)
         
         print("📋 Generating agent configuration...")
         agent_config = await self._generate_config(task_analysis, gaia_task_document)
@@ -111,12 +63,11 @@ class TaskPlanner:
         print("💾 Saving configuration...")
         config_path = await self._save_config(agent_config, agent_config.get("task_id"))
         
-        return agent_config, config_path 
+        return agent_config, str(config_path)  # 将 PosixPath 转换为字符串 
     
-    async def _analyze_task_with_llm(self, document: str, messages: str) -> Dict[str, Any]:
+    async def _analyze_task_with_llm(self, document: str, messages: List[Dict[str, str]]) -> Dict[str, Any]:
         """Use LLM to analyze the task and determine requirements."""
-        try:
-            
+        try:    
             # Get LLM analysis
             response = await self.llm.ask(messages=messages, temperature=0.2)
             
@@ -138,27 +89,52 @@ class TaskPlanner:
         """Validate and clean up LLM analysis."""
         valid_task_types = ["general_qa", "research_task", "computational_task", "multi_step_analysis"]
         valid_complexities = ["low", "medium", "high"]
-        valid_tools = ["web_search", "python_execute", "file_operators", "reasoning"]
+        valid_roles = ["researcher", "specialist", "worker", "synthesizer"]
+        available_tools = self.tool_registry.get_available_tools()
         
         # Validate and fix fields
         task_type = analysis.get("task_type", "general_qa")
         if task_type not in valid_task_types:
             task_type = "general_qa"
         
-        complexity = analysis.get("complexity", "medium")
-        if complexity not in valid_complexities:
-            complexity = "medium"
+        level_to_complexity = {1: "low", 2: "medium", 3: "high"}
+        complexity = level_to_complexity.get(self.level, "medium")
         
+        # Validate required_tools
         required_tools = analysis.get("required_tools", [])
         if not isinstance(required_tools, list):
             required_tools = []
-        required_tools = [tool for tool in required_tools if tool in valid_tools]
+        required_tools = [tool for tool in required_tools if tool in available_tools]
         
-        # Ensure minimum tools
-        if not required_tools:
-            required_tools = ["reasoning"]
-        if "reasoning" not in required_tools:
-            required_tools.append("reasoning")
+        # Validate agents configuration
+        agents_config = analysis.get("agents", [])
+        if not isinstance(agents_config, list):
+            agents_config = []
+        
+        validated_agents = []
+        for agent in agents_config:
+            if isinstance(agent, dict):
+                tool = agent.get("tool", "")
+                if tool in available_tools:
+                    validated_agent = {
+                        "tool": tool,
+                        "name": agent.get("name", f"Agent_{tool}"),
+                        "role": agent.get("role", "worker") if agent.get("role") in valid_roles else "worker",
+                        "specialization": agent.get("specialization", "general_processing")
+                    }
+                    validated_agents.append(validated_agent)
+        
+        # Ensure minimum configuration
+        if not validated_agents:
+            validated_agents = [{
+                "tool": "create_chat_completion",
+                "name": "ReasoningSynthesizer",
+                "role": "synthesizer", 
+                "specialization": "reasoning_synthesis"
+            }]
+        
+        # Update required_tools based on validated agents
+        required_tools = list(set([agent["tool"] for agent in validated_agents]))
         
         estimated_steps = analysis.get("estimated_steps", len(required_tools))
         if not isinstance(estimated_steps, int) or estimated_steps < 1:
@@ -171,7 +147,9 @@ class TaskPlanner:
         return {
             "task_type": task_type,
             "complexity": complexity,
+            "level": self.level,  # 添加level信息到分析结果
             "required_tools": required_tools,
+            "agents": validated_agents,
             "estimated_steps": estimated_steps,
             "domain_areas": domain_areas,
             "document_length": len(document)
@@ -180,30 +158,53 @@ class TaskPlanner:
     def _fallback_analysis(self, document: str) -> Dict[str, Any]:
         """Fallback analysis when LLM fails."""
         doc_lower = document.lower()
+        available_tools = self.tool_registry.get_available_tools()
         
         # Simple keyword detection
-        required_tools = []
-        if any(keyword in doc_lower for keyword in ["search", "web", "internet", "find"]):
-            required_tools.append("web_search")
-        if any(keyword in doc_lower for keyword in ["calculate", "compute", "code", "python"]):
-            required_tools.append("python_execute") 
-        if any(keyword in doc_lower for keyword in ["file", "data", "csv", "json"]):
-            required_tools.append("file_operators")
+        agents_config = []
+        if any(keyword in doc_lower for keyword in ["search", "web", "internet", "find"]) and "web_search" in available_tools:
+            agents_config.append({
+                "tool": "web_search",
+                "name": "WebResearcher",
+                "role": "researcher",
+                "specialization": "information_retrieval"
+            })
+        if any(keyword in doc_lower for keyword in ["calculate", "compute", "code", "python"]) and "python_execute" in available_tools:
+            agents_config.append({
+                "tool": "python_execute", 
+                "name": "CodeExecutor",
+                "role": "specialist",
+                "specialization": "computation"
+            })
+        if any(keyword in doc_lower for keyword in ["file", "data", "csv", "json"]) and "file_operators" in available_tools:
+            agents_config.append({
+                "tool": "file_operators",
+                "name": "DataProcessor", 
+                "role": "worker",
+                "specialization": "data_management"
+            })
         
-        # Always include reasoning
-        if "reasoning" not in required_tools:
-            required_tools.append("reasoning")
+        # Always include a reasoning agent
+        if "create_chat_completion" in available_tools:
+            agents_config.append({
+                "tool": "create_chat_completion",
+                "name": "ReasoningSynthesizer",
+                "role": "synthesizer",
+                "specialization": "reasoning_synthesis"
+            })
         
-        complexity = "low"
-        if len(document) > 1000:
-            complexity = "high"
-        elif len(document) > 500:
-            complexity = "medium"
+        required_tools = [agent["tool"] for agent in agents_config]
+        
+        # 根据level参数映射complexity，而不是文档长度
+        level_to_complexity = {1: "low", 2: "medium", 3: "high"}
+        complexity = level_to_complexity.get(self.level, "medium")
         
         return {
             "task_type": "general_qa",
             "complexity": complexity,
+            "level": self.level,  # 添加level信息
             "required_tools": required_tools,
+            "agents": agents_config,
             "estimated_steps": len(required_tools),
             "domain_areas": ["general_knowledge"],
             "document_length": len(document)
@@ -214,8 +215,9 @@ class TaskPlanner:
         agents = []
         agent_id = 0
         port = 9000
+        task_id = self.task_id or time.strftime("%Y-%m-%d-%H-%M")
         
-        required_tools = analysis["required_tools"]
+        agents_config = analysis["agents"]
         complexity = analysis["complexity"]
         
         # Token allocation based on complexity
@@ -226,35 +228,31 @@ class TaskPlanner:
         }
         tokens = token_allocation.get(complexity, token_allocation["medium"])
         
-        # Get tool mapping
-        tool_mapping = self.tool_registry.get_tool_mapping()
-        
-        # Create agents based on required tools
-        for tool_name in required_tools:
-            if tool_name in self.agent_templates:
-                template = self.agent_templates[tool_name]
-                
-                # Map tool name to actual tool
-                actual_tool = tool_mapping.get(tool_name, "create_chat_completion")
-                if not self.tool_registry.validate_tool_name(actual_tool):
-                    actual_tool = "create_chat_completion"
-                
-                # Determine tokens
-                max_tokens = tokens["synthesizer"] if template["role"] == "synthesizer" else tokens["default"]
-                
-                agents.append({
-                    "id": agent_id,
-                    "name": template["name"],
-                    "tool": actual_tool,
-                    "port": port,
-                    "priority": 2,
-                    "max_tokens": max_tokens,
-                    "specialization": template["specialization"],
-                    "role": template["role"]
-                })
-                
-                agent_id += 1
-                port += 1
+        # Create agents based on LLM analysis
+        for agent_config in agents_config:
+            tool_name = agent_config["tool"]
+            
+            # Validate tool availability
+            if not self.tool_registry.validate_tool_name(tool_name):
+                print(f"Warning: Tool {tool_name} not available, skipping agent")
+                continue
+            
+            # Determine tokens based on role
+            max_tokens = tokens["synthesizer"] if agent_config["role"] == "synthesizer" else tokens["default"]
+            
+            agents.append({
+                "id": agent_id,
+                "name": agent_config["name"],
+                "tool": tool_name,
+                "port": port,
+                "priority": 2,
+                "max_tokens": max_tokens,
+                "specialization": agent_config["specialization"],
+                "role": agent_config["role"]
+            })
+            
+            agent_id += 1
+            port += 1
         
         # Limit agents if needed
         if len(agents) > self.max_agents:
@@ -267,7 +265,7 @@ class TaskPlanner:
         agent_prompts = await self._generate_agent_prompts(agents, analysis, workflow, original_document)
         
         return {
-            "task_id": time.strftime("%Y-%m-%d-%H-%M"),
+            "task_id": task_id,
             "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "task_analysis": analysis,
             "agents": agents,
@@ -429,24 +427,23 @@ if __name__ == "__main__":
     
     async def test_planner():
         """Test the simplified planner."""
-        sample_task = """
-        Question: What is the population of Tokyo in 2023? 
-        Please search for the most recent data and provide a detailed answer with sources.
-        
-        Additional requirements:
-        - Use web search to find current information
-        - Verify the data from multiple sources
-        - Provide reasoning for your answer
-        """
-        
+        input_file = '/root/Multiagent-Protocol/script/gaia/GAIABench/2023/validation/metadata.jsonl'
+        with open(input_file, 'r', encoding='utf-8') as f:
+            data = [json.loads(line) for line in f if line.strip()]
+        task_dict = data[0]
+        prompt = task_dict.get("question", "")
+        task_id = task_dict.get("task_id", None)
+        level = task_dict.get("level", 1)
         print("=== TaskPlanner Test ===")
-        planner = TaskPlanner()
+        planner = TaskPlanner(task_id=task_id, level=level)
         
         # Test analysis and planning
-        config = await planner.analyze_and_plan(sample_task)
-        
+        config, config_path = await planner.analyze_and_plan(prompt)
+
         print("\n=== Generated Configuration ===")
         print(json.dumps(config, indent=2, ensure_ascii=False))
+        
+        print(f"\n=== Configuration saved to: {config_path} ===")
         
         print("\n=== Available Tools ===")
         tools = planner.tool_registry.get_available_tools()

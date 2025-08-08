@@ -3,9 +3,10 @@ import asyncio
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 import sys
 import os
+import abc
 
 # Add the parent directory to sys.path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -15,7 +16,7 @@ from tools.registry import ToolRegistry
 from tools.tool_collection import ToolCollection
 
 
-class MeshAgent:
+class MeshAgent(abc.ABC):
     """
     Enhanced multi-agent network node with configuration-driven dynamic creation and personalization.
     
@@ -28,10 +29,14 @@ class MeshAgent:
     6. Priority support: Agent priority settings for task scheduling
     7. Enhanced logging: Detailed execution logs with agent metadata
     8. Tool configuration: Dynamic tool configuration and parameter passing
+
+    Abstract methods:
+    - send_message: Send message to other agents (protocol-specific)
+    - receive_message: Receive message from other agents (protocol-specific)
     """
     
     def __init__(self, node_id: int, name: str, tool: str, adapter: ProtocolAdapter, 
-                 port: int, config: Dict[str, Any]):
+                 port: int, config: Dict[str, Any], task_id: Optional[List[str]] = None):
         """
         Initialize enhanced agent.
         
@@ -50,6 +55,7 @@ class MeshAgent:
         self.adapter = adapter
         self.port = port
         self.config = config
+        self.task_id = task_id
         
         # Configuration-based personalization
         self.max_tokens = config.get("max_tokens", 500)
@@ -57,7 +63,7 @@ class MeshAgent:
         self.specialization = config.get("specialization", "general")
         
         # Enhanced workspace setup: use "id_name" format
-        self.ws = f"workspaces/{self.id}_{self.name}"
+        self.ws = f"workspaces/{self.task_id}/{self.id}_{self.name}"
         Path(self.ws).mkdir(parents=True, exist_ok=True)
         
         # Initialize tool system
@@ -68,7 +74,34 @@ class MeshAgent:
         # Initialize state
         self.running = False
         self.server = None
+
+    # ==================== Abstract Communication Methods ====================
     
+    @abc.abstractmethod
+    async def send_msg(self, dst: int, payload: Dict[str, Any]) -> None:
+        """
+        Send message to another agent.
+        
+        Args:
+            dst: Destination agent ID
+            payload: Message content
+        """
+        pass
+    
+    @abc.abstractmethod
+    async def recv_msg(self, timeout: float = 0.0) -> Optional[Dict[str, Any]]:
+        """
+        Receive message with optional timeout.
+        
+        Args:
+            timeout: Maximum wait time in seconds (0 = non-blocking)
+            
+        Returns:
+            Received message or None if timeout
+        """
+        pass
+    
+    # ==================== Enhanced Agent Methods ====================
     def _setup_tools(self) -> Optional[ToolCollection]:
         """Setup tools for this agent based on configuration."""
         try:
@@ -86,15 +119,55 @@ class MeshAgent:
     def _count_token(self, _):
         """Token counter callback."""
         self.token_used += 1
-    
-    async def serve(self):
-        """Start agent server."""
+
+    async def start(self):
+        """Start agent server and main execution loop."""
         print(f"🤖 Starting agent {self.name} (ID: {self.id}) on port {self.port}")
         self.server = await asyncio.start_server(self._handle, "127.0.0.1", self.port)
         self.running = True
         
+        self._log(f"Starting main execution loop for agent {self.name}")
+        
+        # Start both server and main execution loop concurrently
         async with self.server:
-            await self.server.serve_forever()
+            # Create server task
+            server_task = asyncio.create_task(self.server.serve_forever())
+            
+            try:
+                # Main execution loop runs alongside the server
+                while self.running:
+                    # Process incoming messages
+                    await self.process_messages()
+                    
+                    # Monitor token usage and performance
+                    await self._monitor_agent_health()
+                    
+                    # Small delay to prevent busy waiting
+                    await asyncio.sleep(0.05)
+                    print('running')  # Debugging output
+                    
+            except Exception as e:
+                self._log(f"Error in main loop: {e}")
+            finally:
+                # Cancel server task and ensure clean shutdown
+                server_task.cancel()
+                await self.stop()
+                
+                # Notify completion when shutting down
+                completion_msg = {
+                    "type": "agent_shutdown",
+                    "agent_id": self.id,
+                    "agent_name": self.name,
+                    "final_status": "completed",
+                    "total_tokens_used": self.token_used
+                }
+                
+                # Broadcast completion to other agents
+                try:
+                    await self.send_msg(dst=0, payload=completion_msg)  # Broadcast
+                    self._log(f"Agent {self.name} completed execution successfully")
+                except Exception as e:
+                    self._log(f"Error sending completion notification: {e}")
     
     async def stop(self):
         """Stop agent server."""
@@ -102,6 +175,13 @@ class MeshAgent:
         if self.server:
             self.server.close()
             await self.server.wait_closed()
+
+    async def process_messages(self) -> None:
+        """Process incoming messages and update coordination state."""
+        msg = await self.recv_msg(timeout=0.0)  # Non-blocking, single message
+        if msg:
+            await self._handle_message(msg)
+            self.running = False # Stop after processing one message
     
     async def _handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         """Handle network connection."""
@@ -116,7 +196,7 @@ class MeshAgent:
                 packet = self.adapter.decode(packet_data)
                 
                 # Process packet asynchronously
-                asyncio.create_task(self._process(packet, writer))
+                asyncio.create_task(self._handle_message(packet))
                 
         except asyncio.IncompleteReadError:
             # Connection closed
@@ -127,46 +207,20 @@ class MeshAgent:
             writer.close()
             await writer.wait_closed()
     
-    async def _process(self, packet: Dict[str, Any], writer: asyncio.StreamWriter):
-        """
-        Process message packet with enhanced configuration-driven logic.
+    async def _handle_message(self, msg: Dict[str, Any]) -> None:
+        """Handle different types of coordination messages."""
+        msg_type = msg.get("type")
         
-        Features:
-        1. Configuration-driven message processing
-        2. Specialization-based message filtering
-        3. Token usage limit checking
-        4. Enhanced logging
-        """
-        self.token_used = 0
-        
-        try:
-            # Check if we should process this message type
-            if not self._should_process_message(packet.get("type", "")):
-                self._log(f"Skipping message type {packet.get('type')} due to specialization")
-                return
-            
-            # Process different message types
-            message_type = packet.get("type")
-            
-            if message_type == "doc_init":
-                await self._handle_doc_init(packet, writer)
-            elif message_type == "task_result":
-                await self._handle_task_result(packet, writer)
-            elif message_type in ["search_results", "file_result", "code_result"]:
-                await self._handle_intermediate_result(packet, writer)
-            else:
-                self._log(f"Unknown message type: {message_type}")
-            
-            # Check token usage
-            if self.token_used > self.max_tokens:
-                await self._emit_warning(writer, "token_limit_exceeded")
-                self._log(f"WARNING: Token limit exceeded ({self.token_used}/{self.max_tokens})")
-        
-        except Exception as e:
-            self._log(f"Error processing packet: {e}")
-            await self._emit_error(writer, str(e))
+        if msg_type == "doc_init":
+            await self._handle_doc_init(msg)
+        elif msg_type == "task_result":
+            await self._handle_task_result(msg)
+        elif msg_type in ["search_results", "file_result", "code_result"]:
+            await self._handle_intermediate_result(msg)
+        else:
+            self._log(f"Unknown message type: {msg_type}")
     
-    async def _handle_doc_init(self, packet: Dict[str, Any], writer: asyncio.StreamWriter):
+    async def _handle_doc_init(self, packet: Dict[str, Any]):
         """Handle initial document broadcast."""
         chunks = packet.get("chunks", [])
         full_doc = "".join(chunks)
@@ -180,9 +234,9 @@ class MeshAgent:
         # If this is the first agent in the workflow, start processing
         if self.priority == 1:
             result = await self._execute_tool(full_doc)
-            await self._emit(writer, "task_result", {"result": result, "source": "doc_init"})
+            await self._send_result("task_result", {"result": result, "source": "doc_init"})
     
-    async def _handle_task_result(self, packet: Dict[str, Any], writer: asyncio.StreamWriter):
+    async def _handle_task_result(self, packet: Dict[str, Any]):
         """Handle task result from previous agent."""
         result = packet.get("result", "")
         source = packet.get("source", "unknown")
@@ -194,7 +248,7 @@ class MeshAgent:
         
         # Check if this is the final agent
         if self.specialization == "reasoning_synthesis":
-            await self._emit(writer, "data_event", {
+            await self._send_result("data_event", {
                 "tag": "final_answer",
                 "payload": tool_result,
                 "log_uri": f"{self.ws}/execution.log",
@@ -204,18 +258,18 @@ class MeshAgent:
             })
             self._log(f"Generated final answer: {tool_result[:100]}...")
         else:
-            await self._emit(writer, "task_result", {
+            await self._send_result("task_result", {
                 "result": tool_result,
                 "source": self.name
             })
     
-    async def _handle_intermediate_result(self, packet: Dict[str, Any], writer: asyncio.StreamWriter):
+    async def _handle_intermediate_result(self, packet: Dict[str, Any]):
         """Handle intermediate results from other agents."""
         result = packet.get("result", "")
         self._log(f"Processing intermediate result: {result[:100]}...")
         
         tool_result = await self._execute_tool(result)
-        await self._emit(writer, "task_result", {
+        await self._send_result("task_result", {
             "result": tool_result,
             "source": self.name
         })
@@ -236,8 +290,6 @@ class MeshAgent:
                 result = await tool.execute(operation="read", content=input_data)
             elif self.tool_name == "python_execute":
                 result = await tool.execute(code=input_data)
-            elif self.tool_name == "planning":
-                result = await tool.execute(task=input_data)
             elif self.tool_name == "create_chat_completion":
                 result = await tool.execute(input=input_data)
             else:
@@ -269,24 +321,26 @@ class MeshAgent:
             self._log(error_msg)
             return error_msg
     
-    def _should_process_message(self, message_type: str) -> bool:
-        """
-        Determine if agent should process message based on specialization.
-        
-        Returns:
-            bool: Whether the message should be processed
-        """
-        processing_rules = {
-            "task_planning": ["doc_init", "task_result"],
-            "information_retrieval": ["doc_init", "task_result", "search_results"],
-            "file_management": ["task_result", "file_result"],
-            "code_execution": ["task_result", "code_result"],
-            "reasoning_synthesis": ["task_result", "search_results", "file_result", "code_result"],
-            "general": ["doc_init", "task_result", "search_results", "file_result", "code_result"]
+    async def _send_result(self, pkt_type: str, extra: Dict[str, Any]):
+        """Send result message using the abstract send_msg method."""
+        # Add agent metadata to packet
+        packet = {
+            "type": pkt_type,
+            "token_used": self.token_used,
+            "agent_id": self.id,
+            "agent_name": self.name,
+            "priority": self.priority,
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            **extra
         }
         
-        allowed_types = processing_rules.get(self.specialization, ["doc_init", "task_result"])
-        return message_type in allowed_types
+        # Use the abstract send_msg method
+        # Note: This assumes the destination is handled by the protocol adapter
+        # You may need to adjust this based on your specific routing logic
+        await self.send_msg(dst=0, payload=packet)  # dst=0 for broadcast or coordinator
+        
+        # Enhanced logging
+        self._log_packet(packet)
     
     async def _emit(self, writer: asyncio.StreamWriter, pkt_type: str, extra: Dict[str, Any]):
         """
@@ -355,3 +409,14 @@ class MeshAgent:
         log_path = Path(self.ws) / "packet.log"
         with open(log_path, "a", encoding='utf-8') as f:
             f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
+    
+    async def _monitor_agent_health(self) -> None:
+        """Monitor agent health and performance metrics."""
+        # Check token usage limits
+        if self.token_used > self.max_tokens * 0.8:  # 80% warning threshold
+            self._log(f"WARNING: High token usage ({self.token_used}/{self.max_tokens})")
+        
+        # Check if workspace is accessible
+        if not Path(self.ws).exists():
+            self._log("WARNING: Workspace directory not accessible")
+            Path(self.ws).mkdir(parents=True, exist_ok=True)

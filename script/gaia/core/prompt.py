@@ -1,4 +1,4 @@
-"""Prompt templates for multi-agent system planning and agent coordination."""
+"""Prompt templates for system planning and agent coordination."""
 from typing import Dict, List, Any
 
 
@@ -21,22 +21,64 @@ Consider these aspects:
    - medium: Moderate complexity requiring 3-5 processing steps
    - high: Complex tasks requiring 6+ steps, domain expertise, or sophisticated reasoning
 
-3. REQUIRED TOOLS - Select all applicable:
-   - web_search: Online information retrieval
-   - file_operators: File I/O, data processing  
-   - python_execute: Code execution, calculations
-   - content_creation: Writing, summarization, report generation and reasoning
+3. REQUIRED TOOLS - Select from available tools:
+   Available tools: {available_tools}
 
-4. DOMAIN EXPERTISE needed (technology, science, business, finance, healthcare, etc.)
+4. AGENT CONFIGURATION - For each required tool, specify:
+   - name: Descriptive agent name (e.g., "WebResearcher", "DataAnalyst")
+   - role: One of ["researcher", "specialist", "worker", "synthesizer"]
+   - specialization: Brief description of agent's focus area
 
-5. PROCESSING REQUIREMENTS:
+5. DOMAIN EXPERTISE needed (technology, science, business, finance, healthcare, etc.)
+
+6. PROCESSING REQUIREMENTS:
    - Sequential vs parallel processing needs
    - Validation/verification requirements
    - Error handling complexity
 
-IMPORTANT: You must limit your agent recommendations to a maximum of {max_agents} agents total. Plan efficiently within this constraint.
+IMPORTANT: You must limit your agent recommendations to a maximum of {max_agents} agents total. Plan efficiently within this constraint. 
+Respond with detailed JSON analysis including your reasoning.
 
-Respond with detailed JSON analysis including your reasoning."""
+Analyze the task and respond with a JSON object containing:
+{{
+  "task_type": "general_qa|research_task|computational_task|multi_step_analysis",
+  "complexity": "low|medium|high", 
+  "required_tools": ["tool1", "tool2"],
+  "agents": [
+    {{
+      "tool": "tool_name",
+      "name": "AgentName", 
+      "role": "researcher|specialist|worker|synthesizer",
+      "specialization": "brief_description"
+    }}
+  ],
+  "estimated_steps": number,
+  "domain_areas": ["domain1", "domain2"]
+}}
+
+Example:
+{{
+  "task_type": "research_task",
+  "complexity": "medium",
+  "required_tools": ["web_search", "create_chat_completion"],
+  "agents": [
+    {{
+      "tool": "web_search",
+      "name": "WebResearcher",
+      "role": "researcher", 
+      "specialization": "information_retrieval"
+    }},
+    {{
+      "tool": "create_chat_completion",
+      "name": "ReasoningSynthesizer",
+      "role": "synthesizer",
+      "specialization": "reasoning_synthesis"
+    }}
+  ],
+  "estimated_steps": 3,
+  "domain_areas": ["general_knowledge"]
+}}
+"""
 
     TASK_ANALYSIS_USER = """Analyze this task for optimal multi-agent system design:
 
@@ -153,9 +195,15 @@ QUALITY STANDARDS:
 Remember: Your success is measured by how well you contribute to solving the overall task while fulfilling your specific role in the multi-agent system."""
 
     @classmethod
-    def get_task_analysis_prompts(cls, max_agents: int = 5) -> tuple[str, str]:
+    def get_task_analysis_prompts(cls, max_agents: int = 5, available_tools: List[str] = None) -> tuple[str, str]:
         """Get system and user prompts for task analysis."""
-        system_prompt = cls.TASK_ANALYSIS_SYSTEM.format(max_agents=max_agents)
+        if available_tools is None:
+            available_tools = ["web_search", "python_execute", "file_operators", "create_chat_completion"]
+        
+        system_prompt = cls.TASK_ANALYSIS_SYSTEM.format(
+            max_agents=max_agents,
+            available_tools=", ".join(available_tools)
+        )
         user_template = cls.TASK_ANALYSIS_USER
         
         return system_prompt, user_template
@@ -241,9 +289,9 @@ class PromptBuilder:
     def __init__(self):
         self.templates = PromptTemplates()
     
-    def build_task_analysis_messages(self, document: str, max_agents: int = 5) -> List[Dict[str, str]]:
+    def build_task_analysis_messages(self, document: str, max_agents: int = 5, available_tools: List[str] = None) -> List[Dict[str, str]]:
         """Build messages for task analysis."""
-        system_prompt, user_template = self.templates.get_task_analysis_prompts(max_agents)
+        system_prompt, user_template = self.templates.get_task_analysis_prompts(max_agents, available_tools)
         user_prompt = user_template.format(document=document)
         
         return [
