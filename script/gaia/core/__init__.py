@@ -2,7 +2,7 @@
 
 from .planner import TaskPlanner
 from .agent_base import MeshAgent
-from .network_base import MeshNetwork, eval_runner
+from .network import MeshNetwork, eval_runner
 
 __all__ = [
     "TaskPlanner",

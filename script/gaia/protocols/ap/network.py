@@ -3,7 +3,7 @@ import asyncio
 import json
 import time
 from typing import Dict, Any, List, Tuple
-from core.network_base import MeshNetwork
+from script.gaia.core.network import MeshNetwork
 from .agent import APAgent
 
 

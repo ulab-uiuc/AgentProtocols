@@ -11,7 +11,6 @@ import abc
 # Add the parent directory to sys.path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from protocols.base_adapter import ProtocolAdapter
 from tools.registry import ToolRegistry
 from tools.tool_collection import ToolCollection
 
@@ -31,12 +30,12 @@ class MeshAgent(abc.ABC):
     8. Tool configuration: Dynamic tool configuration and parameter passing
 
     Abstract methods:
-    - send_message: Send message to other agents (protocol-specific)
-    - receive_message: Receive message from other agents (protocol-specific)
+    - send_msg: Send message to other agents (protocol-specific)
+    - recv_msg: Receive message from other agents (protocol-specific)
     """
     
-    def __init__(self, node_id: int, name: str, tool: str, adapter: ProtocolAdapter, 
-                 port: int, config: Dict[str, Any], task_id: Optional[List[str]] = None):
+    def __init__(self, node_id: int, name: str, tool: str, port: int, 
+                 config: Dict[str, Any], task_id: Optional[str] = None):
         """
         Initialize enhanced agent.
         
@@ -44,18 +43,17 @@ class MeshAgent(abc.ABC):
             node_id: Unique agent identifier
             name: Human-readable agent name
             tool: Tool name
-            adapter: Protocol adapter
             port: Listening port
             config: Configuration dictionary with personalization parameters
+            task_id: Optional task identifier
         """
         # Basic attributes
         self.id = node_id
         self.name = name
         self.tool_name = tool
-        self.adapter = adapter
         self.port = port
         self.config = config
-        self.task_id = task_id
+        self.task_id = task_id or "default"
         
         # Configuration-based personalization
         self.max_tokens = config.get("max_tokens", 500)
@@ -101,19 +99,20 @@ class MeshAgent(abc.ABC):
         """
         pass
     
-    # ==================== Enhanced Agent Methods ====================
+    # ==================== Core Agent Methods ====================
+    
     def _setup_tools(self) -> Optional[ToolCollection]:
         """Setup tools for this agent based on configuration."""
         try:
-            # Create tool instance based on tool name using adapter
+            # Create tool instance based on tool name using registry
             tool_instance = self.tool_registry.create_tool(self.tool_name)
             if tool_instance:
                 return ToolCollection(tool_instance)
             else:
-                print(f"Warning: Tool {self.tool_name} not found, agent will have limited functionality")
+                self._log(f"Warning: Tool {self.tool_name} not found, agent will have limited functionality")
                 return None
         except Exception as e:
-            print(f"Error setting up tools for agent {self.name}: {e}")
+            self._log(f"Error setting up tools for agent {self.name}: {e}")
             return None
     
     def _count_token(self, _):
@@ -121,94 +120,56 @@ class MeshAgent(abc.ABC):
         self.token_used += 1
 
     async def start(self):
-        """Start agent server and main execution loop."""
-        print(f"🤖 Starting agent {self.name} (ID: {self.id}) on port {self.port}")
-        self.server = await asyncio.start_server(self._handle, "127.0.0.1", self.port)
+        """Start agent and main execution loop."""
+        self._log(f"Starting agent {self.name} (ID: {self.id}) on port {self.port}")
         self.running = True
         
-        self._log(f"Starting main execution loop for agent {self.name}")
-        
-        # Start both server and main execution loop concurrently
-        async with self.server:
-            # Create server task
-            server_task = asyncio.create_task(self.server.serve_forever())
+        try:
+            # Main execution loop
+            while self.running:
+                # Process incoming messages
+                await self.process_messages()
+                
+                # Monitor token usage and performance
+                await self._monitor_agent_health()
+                
+                # Small delay to prevent busy waiting
+                await asyncio.sleep(0.05)
+                
+        except Exception as e:
+            self._log(f"Error in main loop: {e}")
+        finally:
+            await self.stop()
             
+            # Notify completion when shutting down
+            completion_msg = {
+                "type": "agent_shutdown",
+                "agent_id": self.id,
+                "agent_name": self.name,
+                "final_status": "completed",
+                "total_tokens_used": self.token_used
+            }
+            
+            # Send completion notification
             try:
-                # Main execution loop runs alongside the server
-                while self.running:
-                    # Process incoming messages
-                    await self.process_messages()
-                    
-                    # Monitor token usage and performance
-                    await self._monitor_agent_health()
-                    
-                    # Small delay to prevent busy waiting
-                    await asyncio.sleep(0.05)
-                    print('running')  # Debugging output
-                    
+                await self.send_msg(dst=0, payload=completion_msg)  # Broadcast
+                self._log(f"Agent {self.name} completed execution successfully")
             except Exception as e:
-                self._log(f"Error in main loop: {e}")
-            finally:
-                # Cancel server task and ensure clean shutdown
-                server_task.cancel()
-                await self.stop()
-                
-                # Notify completion when shutting down
-                completion_msg = {
-                    "type": "agent_shutdown",
-                    "agent_id": self.id,
-                    "agent_name": self.name,
-                    "final_status": "completed",
-                    "total_tokens_used": self.token_used
-                }
-                
-                # Broadcast completion to other agents
-                try:
-                    await self.send_msg(dst=0, payload=completion_msg)  # Broadcast
-                    self._log(f"Agent {self.name} completed execution successfully")
-                except Exception as e:
-                    self._log(f"Error sending completion notification: {e}")
+                self._log(f"Error sending completion notification: {e}")
     
     async def stop(self):
-        """Stop agent server."""
+        """Stop agent."""
         self.running = False
-        if self.server:
-            self.server.close()
-            await self.server.wait_closed()
+        self._log(f"Agent {self.name} stopped")
 
     async def process_messages(self) -> None:
         """Process incoming messages and update coordination state."""
         msg = await self.recv_msg(timeout=0.0)  # Non-blocking, single message
         if msg:
             await self._handle_message(msg)
-            self.running = False # Stop after processing one message
-    
-    async def _handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
-        """Handle network connection."""
-        try:
-            while self.running:
-                # Read packet size
-                size_data = await reader.readexactly(4)
-                size = int.from_bytes(size_data, "big")
-                
-                # Read packet data
-                packet_data = await reader.readexactly(size)
-                packet = self.adapter.decode(packet_data)
-                
-                # Process packet asynchronously
-                asyncio.create_task(self._handle_message(packet))
-                
-        except asyncio.IncompleteReadError:
-            # Connection closed
-            pass
-        except Exception as e:
-            self._log(f"Error handling connection: {e}")
-        finally:
-            writer.close()
-            await writer.wait_closed()
     
     async def _handle_message(self, msg: Dict[str, Any]) -> None:
-        """Handle different types of coordination messages."""
+        """Handle different types of messages."""
         msg_type = msg.get("type")
         
         if msg_type == "doc_init":
@@ -217,12 +178,14 @@ class MeshAgent(abc.ABC):
             await self._handle_task_result(msg)
         elif msg_type in ["search_results", "file_result", "code_result"]:
             await self._handle_intermediate_result(msg)
+        elif msg_type == "workflow_task":
+            await self._handle_workflow_task(msg)
         else:
             self._log(f"Unknown message type: {msg_type}")
     
-    async def _handle_doc_init(self, packet: Dict[str, Any]):
+    async def _handle_doc_init(self, msg: Dict[str, Any]):
         """Handle initial document broadcast."""
-        chunks = packet.get("chunks", [])
+        chunks = msg.get("chunks", [])
         full_doc = "".join(chunks)
         
         self._log(f"Received initial document ({len(full_doc)} chars)")
@@ -236,10 +199,10 @@ class MeshAgent(abc.ABC):
             result = await self._execute_tool(full_doc)
             await self._send_result("task_result", {"result": result, "source": "doc_init"})
     
-    async def _handle_task_result(self, packet: Dict[str, Any]):
+    async def _handle_task_result(self, msg: Dict[str, Any]):
         """Handle task result from previous agent."""
-        result = packet.get("result", "")
-        source = packet.get("source", "unknown")
+        result = msg.get("result", "")
+        source = msg.get("source", "unknown")
         
         self._log(f"Received task result from {source}")
         
@@ -263,9 +226,9 @@ class MeshAgent(abc.ABC):
                 "source": self.name
             })
     
-    async def _handle_intermediate_result(self, packet: Dict[str, Any]):
+    async def _handle_intermediate_result(self, msg: Dict[str, Any]):
         """Handle intermediate results from other agents."""
-        result = packet.get("result", "")
+        result = msg.get("result", "")
         self._log(f"Processing intermediate result: {result[:100]}...")
         
         tool_result = await self._execute_tool(result)
@@ -273,6 +236,40 @@ class MeshAgent(abc.ABC):
             "result": tool_result,
             "source": self.name
         })
+    
+    async def _handle_workflow_task(self, msg: Dict[str, Any]):
+        """Handle workflow task messages."""
+        task_input = msg.get("task_input", "")
+        step = msg.get("step", 0)
+        from_agent = msg.get("from", "system")
+        
+        self._log(f"Received workflow task from {from_agent} (step {step})")
+        
+        try:
+            # Execute the agent's tool with the task input
+            result = await self._execute_tool(task_input)
+            
+            # Send result back
+            result_message = {
+                'type': 'workflow_result',
+                'result': result,
+                'step': step,
+                'timestamp': int(time.time())
+            }
+            
+            await self.send_msg(0, result_message)
+            
+        except Exception as e:
+            self._log(f"Error executing workflow task: {e}")
+            
+            # Send error result
+            error_message = {
+                'type': 'workflow_result',
+                'result': f"Error: {e}",
+                'step': step,
+                'timestamp': int(time.time())
+            }
+            await self.send_msg(0, error_message)
     
     async def _execute_tool(self, input_data: str) -> str:
         """Execute the agent's tool with input data."""
@@ -321,11 +318,11 @@ class MeshAgent(abc.ABC):
             self._log(error_msg)
             return error_msg
     
-    async def _send_result(self, pkt_type: str, extra: Dict[str, Any]):
+    async def _send_result(self, msg_type: str, extra: Dict[str, Any]):
         """Send result message using the abstract send_msg method."""
         # Add agent metadata to packet
-        packet = {
-            "type": pkt_type,
+        message = {
+            "type": msg_type,
             "token_used": self.token_used,
             "agent_id": self.id,
             "agent_name": self.name,
@@ -335,54 +332,10 @@ class MeshAgent(abc.ABC):
         }
         
         # Use the abstract send_msg method
-        # Note: This assumes the destination is handled by the protocol adapter
-        # You may need to adjust this based on your specific routing logic
-        await self.send_msg(dst=0, payload=packet)  # dst=0 for broadcast or coordinator
+        await self.send_msg(dst=0, payload=message)  # dst=0 for broadcast or coordinator
         
         # Enhanced logging
-        self._log_packet(packet)
-    
-    async def _emit(self, writer: asyncio.StreamWriter, pkt_type: str, extra: Dict[str, Any]):
-        """
-        Send message packet with enhanced agent metadata.
-        
-        Features:
-        1. Add agent metadata to packet
-        2. Enhanced logging format
-        """
-        # Add agent metadata to packet
-        packet = {
-            "type": pkt_type,
-            "token_used": self.token_used,
-            "agent_id": self.id,
-            "agent_name": self.name,
-            "priority": self.priority,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            **extra
-        }
-        
-        blob = self.adapter.encode(packet)
-        writer.write(len(blob).to_bytes(4, "big") + blob)
-        await writer.drain()
-        
-        # Enhanced logging
-        self._log_packet(packet)
-    
-    async def _emit_warning(self, writer: asyncio.StreamWriter, warning_type: str):
-        """Send warning message."""
-        await self._emit(writer, "warning", {
-            "warning_type": warning_type,
-            "message": f"Agent {self.name} encountered {warning_type}",
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
-        })
-    
-    async def _emit_error(self, writer: asyncio.StreamWriter, error_message: str):
-        """Send error message."""
-        await self._emit(writer, "error", {
-            "error": error_message,
-            "agent_id": self.id,
-            "agent_name": self.name
-        })
+        self._log_message(message)
     
     def _log(self, message: str):
         """Enhanced logging function with agent metadata."""
@@ -396,17 +349,17 @@ class MeshAgent(abc.ABC):
         # Also print to console for debugging
         print(log_entry)
     
-    def _log_packet(self, packet: Dict[str, Any]):
-        """Log packet in structured format."""
+    def _log_message(self, message: Dict[str, Any]):
+        """Log message in structured format."""
         log_entry = {
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
             "agent_id": self.id,
             "agent_name": self.name,
             "specialization": self.specialization,
-            "packet": packet
+            "message": message
         }
         
-        log_path = Path(self.ws) / "packet.log"
+        log_path = Path(self.ws) / "message.log"
         with open(log_path, "a", encoding='utf-8') as f:
             f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
     

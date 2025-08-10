@@ -9,9 +9,29 @@ import json
 sys.path.append(str(Path(__file__).parent.parent))
 
 from core import TaskPlanner
-from protocols.ap.network import APNetwork
-from protocols import JsonAdapter
+from protocols.dummy.agent import DummyAgent
+from protocols.dummy.network import DummyNetwork
+from typing import Dict, Any
 
+def create_agent_from_config(agent_config: Dict[str, Any], task_id: str) -> DummyAgent:
+        """Create a DummyAgent from configuration."""
+        return DummyAgent(
+            node_id=agent_config['id'],
+            name=agent_config['name'],
+            tool=agent_config['tool'],
+            port=agent_config['port'],
+            config={
+                'max_tokens': agent_config.get('max_tokens', 500),
+                'specialization': agent_config.get('specialization', ''),
+                'role': agent_config.get('role', 'agent'),
+                'priority': agent_config.get('priority', 1),
+                'message_loss_rate': 0.05,  # 5% message loss for testing
+                'delivery_delay': 0.1,      # 100ms delay
+                'max_message_size': 1024    # 1KB messages
+            },
+            task_id=task_id,
+            router_url="dummy://localhost:8000"
+        )
 
 async def main():
     """Main execution function."""
@@ -30,12 +50,7 @@ async def main():
     print("-" * 50)
     
     try:
-        # 1. Initialize protocol adapter
-        adapter = JsonAdapter()
-        
-        print(f"🔌 Protocol adapter initialized: {adapter.__class__.__name__}")
-        
-        # 2. Load Gaia task document
+        # 1. Load Gaia task document
         task_file_path = Path(args.task_file)
         if not task_file_path.exists():
             raise FileNotFoundError(f"Task file '{args.task_file}' not found")
@@ -54,31 +69,36 @@ async def main():
         else:
             raise NotImplementedError("Debug mode is not enabled, please set --debug flag")
         
-        # 3. Initialize intelligent planner
+        # 2. Initialize intelligent planner
         # planner = TaskPlanner(task_id=task_id, level=level)
         
-        # 4. Analyze Gaia task and generate agent configuration
+        # 3. Analyze Gaia task and generate agent configuration
         print("🧠 Analyzing Gaia task and planning agents...")
         # config_path = await planner.plan_agents(task_doc)
         config_path = "/root/Multiagent-Protocol/script/gaia/workspaces/c61d22de-5f6c-4958-a7f6-5e9707bd3466/agent_config.json"
         print(f"📋 Agent configuration generated: {config_path}")
         
-        # 5. Create dynamic network manager
-        network = APNetwork(adapter)
-        
-        # 6. Create agents based on configuration
+        # 4. Create dynamic network manager
+        network = DummyNetwork()
+        with open(config_path, "r", encoding='utf-8') as f:
+            general_config = json.load(f)
+            agent_config = general_config['agents']
+        print(f"🤖 Agent configuration loaded: {agent_config}")
+
+        # 5. Create agents based on configuration
         print("🤖 Creating agents based on configuration...")
-        await network.load_and_create_agents(config_path)
+        for agent_info in agent_config:
+            agent = create_agent_from_config(agent_config=agent_info, task_id=task_id)
+            network.register_agent(agent)
         
-        # 7. Start network
-        print("🚀 Starting network communication...")
+        # 6. Start network
         await network.start()
         
-        # 8. Execute workflow with the Gaia task
+        # 7. Execute workflow with the Gaia task
         print("🎯 Executing workflow with Gaia task...")
         try:
             result = await asyncio.wait_for(
-                network.execute_workflow_with_task(task_doc), 
+                network.execute_workflow(general_config, task_doc), 
                 timeout=args.timeout
             )
             print("✅ Workflow execution completed")
@@ -93,9 +113,9 @@ async def main():
             network.done_ts = time.time() * 1000
             network.done_payload = "TIMEOUT: Framework execution exceeded time limit"
         
-        # 9. Evaluate results
+        # 8. Evaluate results
         print("📊 Evaluating results...")
-        await network._evaluate()
+        await network.evaluate()
         
         print("✅ Task completed")
         print("📊 Results:")
