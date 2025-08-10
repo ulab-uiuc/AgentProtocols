@@ -10,28 +10,8 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from core import TaskPlanner
 from protocols.dummy.agent import DummyAgent
-from protocols.dummy.network import DummyNetwork
+from protocols.dummy.network import DummyNetwork, create_dummy_agent
 from typing import Dict, Any
-
-def create_agent_from_config(agent_config: Dict[str, Any], task_id: str) -> DummyAgent:
-        """Create a DummyAgent from configuration."""
-        return DummyAgent(
-            node_id=agent_config['id'],
-            name=agent_config['name'],
-            tool=agent_config['tool'],
-            port=agent_config['port'],
-            config={
-                'max_tokens': agent_config.get('max_tokens', 500),
-                'specialization': agent_config.get('specialization', ''),
-                'role': agent_config.get('role', 'agent'),
-                'priority': agent_config.get('priority', 1),
-                'message_loss_rate': 0.05,  # 5% message loss for testing
-                'delivery_delay': 0.1,      # 100ms delay
-                'max_message_size': 1024    # 1KB messages
-            },
-            task_id=task_id,
-            router_url="dummy://localhost:8000"
-        )
 
 async def main():
     """Main execution function."""
@@ -88,7 +68,7 @@ async def main():
         # 5. Create agents based on configuration
         print("🤖 Creating agents based on configuration...")
         for agent_info in agent_config:
-            agent = create_agent_from_config(agent_config=agent_info, task_id=task_id)
+            agent = create_dummy_agent(agent_config=agent_info, task_id=task_id)
             network.register_agent(agent)
         
         # 6. Start network

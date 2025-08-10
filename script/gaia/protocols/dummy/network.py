@@ -16,6 +16,25 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from core.network import MeshNetwork
 from protocols.dummy.agent import DummyAgent
 
+def create_dummy_agent(agent_config: Dict[str, Any], task_id: str) -> DummyAgent:
+    """Create a DummyAgent from configuration."""
+    return DummyAgent(
+        node_id=agent_config['id'],
+        name=agent_config['name'],
+        tool=agent_config['tool'],
+        port=agent_config['port'],
+        config={
+            'max_tokens': agent_config.get('max_tokens', 500),
+            'specialization': agent_config.get('specialization', ''),
+            'role': agent_config.get('role', 'agent'),
+            'priority': agent_config.get('priority', 1),
+            'message_loss_rate': 0.05,  # 5% message loss for testing
+            'delivery_delay': 0.1,      # 100ms delay
+            'max_message_size': 1024    # 1KB messages
+        },
+        task_id=task_id,
+        router_url="dummy://localhost:8000"
+    )
 
 class DummyNetwork(MeshNetwork):
     """

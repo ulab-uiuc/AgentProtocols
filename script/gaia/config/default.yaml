@@ -18,12 +18,6 @@ agents:
   workspace_base: "workspaces"
   max_agent_num: 5
   agent_timeout: 10000  # milliseconds
-
-planning:
-  default_strategy: "adaptive"
-  available_strategies:
-    - "simple"
-    - "adaptive"
   
   complexity_thresholds:
     low: 500
