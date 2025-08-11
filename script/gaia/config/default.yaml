@@ -41,9 +41,9 @@ logging:
   packet_logs: true
 
 model:
-  name: "gpt-4o"
-  base_url: "http://47.254.87.71:3000/v1"
-  api_key: "sk-lNAfLdE1AMKr6AV6a3qaNZ86BIPdEUKdyZ26VogskVpeCDjn"
+  name: "nvdev/nvidia/llama-3.1-nemotron-70b-instruct"
+  base_url:  "https://integrate.api.nvidia.com/v1"
+  api_key: "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"
   max_tokens: 4096
   temperature: 0.9
   timeout: 30
