@@ -1,0 +1,39 @@
+# Topology Benchmark README
+
+## Project Overview
+
+This project aims to evaluate the performance of different network topologies by simulating and assessing their behavior in various scenarios. It helps users understand the performance of various topologies (e.g., Star, Ring, Mesh, and Hierarchical topologies) in real-world applications. The evaluation includes several performance metrics and generates detailed comparison reports.
+
+## Key Features
+
+1. **Topology Performance Evaluation**:
+   - Tests the basic performance of different topologies (e.g., success rate, throughput, average latency).
+   - Evaluates concurrent performance by simulating multiple simultaneous requests.
+   - Provides network analysis, including node count, edge count, and network density.
+   - Assesses connectivity by running health checks.
+
+2. **Topology Comparison**:
+   - Compares the performance of multiple network topologies (Star, Ring, Mesh, and Hierarchical).
+   - Provides detailed performance reports, including metrics such as success rate, throughput, latency, and network density.
+
+3. **Report Generation**:
+   - Automatically generates a comparison report summarizing the performance of each topology.
+   - Outputs detailed JSON reports for further analysis.
+
+
+## Run the script to start the topology performance evaluation:
+```
+    python topology_benchmark.py
+```
+
+topology_benchmark.py is the main script that will initiate the tests for all topologies and generate the report.
+
+## Test Report
+Once the tests are completed, the script generates a detailed topology comparison report. 
+The report includes the following metrics:
+- Success Rate: The percentage of successful responses for each topology
+- Throughput (QPS): The queries per second processed by each topology.
+- Average Latency: The average response time (in milliseconds) for each topology.
+- Network Density: The density of the network, describing how tightly connected the topology is.
+
+The report is saved as topology_comparison_report.json in the project directory.
