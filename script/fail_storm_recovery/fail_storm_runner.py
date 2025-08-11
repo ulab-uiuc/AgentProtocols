@@ -128,7 +128,8 @@ class FailStormRunner:
                 "kill_fraction": 0.3,
                 "fault_injection_time": 60.0,
                 "total_runtime": 120.0,
-                "heartbeat_interval": 5.0
+                "heartbeat_interval": 3.0,
+                "heartbeat_timeout": 30.0
             },
             "gaia": {
                 "document_path": "docs/gaia_document.txt",
@@ -140,10 +141,15 @@ class FailStormRunner:
                 "host": "127.0.0.1"
             },
             "llm": {
-                "type": "openai",
-                "model": "gpt-4o",
-                "api_key": "",
-                "temperature": 0.0
+                "type": "nvidia",
+                "model": "nvdev/nvidia/llama-3.1-nemotron-70b-instruct",
+                "nvidia_api_key": "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",
+                "nvidia_base_url": "https://integrate.api.nvidia.com/v1",
+                "temperature": 0.2,
+                "top_p": 0.7,
+                "max_tokens": 8192,
+                "name": "nvdev/nvidia/llama-3.1-nemotron-70b-instruct",
+                "openai_api_key": "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"
             },
             "output": {
                 "results_file": "failstorm_metrics.json",
@@ -281,7 +287,7 @@ class FailStormRunner:
                 with open(doc_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                 
-                return {
+                document = {
                     "title": "Gaia Test Document",
                     "content": content,
                     "metadata": {
@@ -290,6 +296,8 @@ class FailStormRunner:
                         "load_time": time.time()
                     }
                 }
+                print(f"[DEBUG] Loaded Gaia document: title='{document['title']}', content_length={len(content)}")
+                return document
             except Exception as e:
                 self.output.warning(f"Failed to load Gaia document: {e}")
         
@@ -307,27 +315,49 @@ class FailStormRunner:
         # Prepare LLM configuration with proper field mapping
         llm_base_config = self.config["llm"].copy()
         
-        # Handle API key resolution
+        # Handle API key resolution based on LLM type
         import os
-        api_key = llm_base_config.get("api_key", "")
-        if api_key.startswith("${") and api_key.endswith("}"):
-            # Environment variable reference
-            env_var = api_key[2:-1]
-            resolved_api_key = os.getenv(env_var, "")
-        else:
-            resolved_api_key = api_key
+        llm_type = llm_base_config.get("type", "nvidia")
         
-        # Map api_key to openai_api_key for compatibility with agent_executor
-        llm_base_config["openai_api_key"] = resolved_api_key
+        if llm_type == "nvidia":
+            # Handle NVIDIA API key
+            api_key = llm_base_config.get("nvidia_api_key", "")
+            if api_key.startswith("${") and api_key.endswith("}"):
+                # Environment variable reference
+                env_var = api_key[2:-1]
+                resolved_api_key = os.getenv(env_var, "")
+            else:
+                resolved_api_key = api_key
+            
+            # Map for compatibility with agent_executor
+            llm_base_config["openai_api_key"] = resolved_api_key
+            
+            # Check if valid NVIDIA API key
+            if not resolved_api_key or resolved_api_key == "your_nvidia_api_key_here":
+                self.output.warning("No valid NVIDIA API key found, using mock responses")
+                llm_base_config["type"] = "mock"
+        else:
+            # Handle other API types (OpenAI, etc.)
+            api_key = llm_base_config.get("api_key", "")
+            if api_key.startswith("${") and api_key.endswith("}"):
+                # Environment variable reference
+                env_var = api_key[2:-1]
+                resolved_api_key = os.getenv(env_var, "")
+            else:
+                resolved_api_key = api_key
+            
+            # Map api_key to openai_api_key for compatibility with agent_executor
+            llm_base_config["openai_api_key"] = resolved_api_key
+            
+            # If no valid API key, enable mock mode
+            if not resolved_api_key or resolved_api_key == "your_openai_api_key_here":
+                self.output.warning("No valid API key found, using mock responses")
+                llm_base_config["type"] = "mock"
         
         # Add name field if missing (Core class expects this)
         if "name" not in llm_base_config:
-            llm_base_config["name"] = llm_base_config.get("model", "gpt-4o")
-        
-        # If no valid API key, enable mock mode
-        if not resolved_api_key or resolved_api_key == "your_openai_api_key_here":
-            self.output.warning("No valid OpenAI API key found, using mock responses")
-            llm_base_config["type"] = "mock"
+            default_model = "nvdev/nvidia/llama-3.1-nemotron-70b-instruct" if llm_type == "nvidia" else "gpt-4o"
+            llm_base_config["name"] = llm_base_config.get("model", default_model)
         
         llm_config = {
             "model": llm_base_config
@@ -903,6 +933,16 @@ async def main():
     if args.output:
         runner.results_dir = Path(args.output)
         runner.results_dir.mkdir(exist_ok=True)
+    
+    # Validate and adjust timing parameters
+    total_runtime = runner.config["scenario"]["total_runtime"]
+    fault_injection_time = runner.config["scenario"]["fault_injection_time"]
+    
+    if fault_injection_time >= total_runtime:
+        # Auto-adjust fault injection time to be 60% of total runtime
+        adjusted_fault_time = total_runtime * 0.6
+        runner.config["scenario"]["fault_injection_time"] = adjusted_fault_time
+        print(f"⚠️  Auto-adjusted fault injection time: {fault_injection_time}s → {adjusted_fault_time}s (60% of total runtime)")
     
     # Run scenario
     try:

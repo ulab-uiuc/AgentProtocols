@@ -19,10 +19,10 @@ scenario:
   total_runtime: 120.0
   
   # Heartbeat interval for failure detection (seconds)
-  heartbeat_interval: 5.0
+  heartbeat_interval: 3.0
   
-  # Heartbeat timeout for considering nodes failed (seconds)
-  heartbeat_timeout: 15.0
+  # Heartbeat timeout for considering nodes failed (seconds) - 增加超时时间避免误报
+  heartbeat_timeout: 30.0
 
 # Gaia document processing configuration
 gaia:
@@ -69,21 +69,26 @@ agents:
 
 # LLM configuration for agent reasoning
 llm:
-  # LLM provider type (openai, local, anthropic)
-  type: "openai"
+  # LLM provider type (openai, local, anthropic, nvidia)
+  type: "nvidia"
   
-  # Model name
-  model: "gpt-4o"
+  # Model name for NVIDIA API
+  model: "nvdev/nvidia/llama-3.1-nemotron-70b-instruct"
   
-  # API key (can be set via environment variable OPENAI_API_KEY)
-  api_key: "${OPENAI_API_KEY}"
+  # NVIDIA API key
+  nvidia_api_key: "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"
   
-  # Base URL for API (useful for local models)
-  base_url: "https://api.openai.com/v1"
+  # Base URL for NVIDIA API
+  nvidia_base_url: "https://integrate.api.nvidia.com/v1"
   
   # Model parameters
-  temperature: 0.0
-  max_tokens: 4096
+  temperature: 0.2
+  top_p: 0.7
+  max_tokens: 8192
+  
+  # Legacy compatibility fields (will be auto-mapped)
+  name: "nvdev/nvidia/llama-3.1-nemotron-70b-instruct"
+  openai_api_key: "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"
   
   # Request timeout
   timeout: 30.0

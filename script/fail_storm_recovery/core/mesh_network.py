@@ -86,6 +86,12 @@ class MeshNetwork(AgentNetwork):
         self._last_heartbeat[agent.agent_id] = time.time()
         
         print(f"[MeshNetwork] Agent {agent.agent_id} registered with heartbeat monitoring")
+        
+        # If this is the second agent, start heartbeat monitoring for all agents
+        if len(self._agents) == 2:
+            for existing_agent_id in self._agents:
+                if existing_agent_id not in self._heartbeat_tasks:
+                    await self._start_heartbeat_monitoring(existing_agent_id)
 
     async def unregister_agent(self, agent_id: str) -> None:
         """Unregister agent and stop heartbeat monitoring."""
@@ -102,6 +108,11 @@ class MeshNetwork(AgentNetwork):
         """Start heartbeat monitoring for a specific agent."""
         if agent_id in self._heartbeat_tasks:
             return  # Already monitoring
+        
+        # Skip heartbeat monitoring if there's only one agent
+        if len(self._agents) <= 1:
+            print(f"[MeshNetwork] Skipping heartbeat monitoring for {agent_id} (single agent)")
+            return
         
         async def heartbeat_loop():
             """Heartbeat loop for monitoring agent health."""
@@ -187,7 +198,8 @@ class MeshNetwork(AgentNetwork):
         neighbors = self._graph.get(agent_id, set())
         failed_neighbors = set()
         
-        for neighbor_id in neighbors:
+        # Create a copy to avoid concurrent modification
+        for neighbor_id in list(neighbors):
             if neighbor_id in self._failed_nodes:
                 continue
                 
@@ -204,20 +216,44 @@ class MeshNetwork(AgentNetwork):
             await self._handle_node_failure(failed_id)
 
     async def _check_heartbeat_timeouts(self) -> None:
-        """Check for nodes that have missed heartbeats."""
+        """Check for nodes that have missed heartbeats with smart detection."""
         current_time = time.time()
-        timeout_nodes = []
         
-        for agent_id, last_heartbeat in self._last_heartbeat.items():
+        # Create a copy to avoid concurrent modification
+        for agent_id, last_heartbeat in list(self._last_heartbeat.items()):
             if agent_id in self._failed_nodes:
                 continue
                 
-            if current_time - last_heartbeat > self.heartbeat_timeout:
-                timeout_nodes.append(agent_id)
+            time_since_heartbeat = current_time - last_heartbeat
+            
+            # Use graduated failure detection instead of immediate timeout
+            if time_since_heartbeat > self.heartbeat_timeout:
+                # First attempt: try to verify failure with direct health check
+                if await self._verify_agent_failure(agent_id):
+                    await self._handle_node_failure(agent_id)
+                else:
+                    # Agent responded to health check, update heartbeat time
+                    self._last_heartbeat[agent_id] = current_time
+                    print(f"[MeshNetwork] Agent {agent_id} recovered from timeout (false alarm)")
+    
+    async def _verify_agent_failure(self, agent_id: str) -> bool:
+        """Verify if an agent is truly failed by attempting direct health check."""
+        if agent_id not in self._agents:
+            return True  # Agent not registered, consider failed
         
-        # Handle timeouts
-        for agent_id in timeout_nodes:
-            await self._handle_node_failure(agent_id)
+        agent = self._agents[agent_id]
+        try:
+            # Try direct health check
+            import httpx
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.get(f"http://{agent.host}:{agent.port}/health")
+                if response.status_code == 200:
+                    print(f"[MeshNetwork] Health check passed for {agent_id}, not failed")
+                    return False  # Agent is alive
+        except Exception as e:
+            print(f"[MeshNetwork] Health check failed for {agent_id}: {e}")
+        
+        return True  # Confirmed failure
 
     async def _handle_node_failure(self, failed_agent_id: str) -> None:
         """Handle detection of a failed node."""
