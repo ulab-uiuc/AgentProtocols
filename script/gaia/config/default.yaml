@@ -1,0 +1,65 @@
+# Default configuration for Gaia multi-agent framework
+framework:
+  name: "multi-agent protocol framework for GAIA"
+  version: "1.0.0"
+  protocol: "json"  # Options: json, agent_protocol
+
+network:
+  host: "127.0.0.1"
+  port_range:
+    start: 9000
+    end: 9100
+  timeout_seconds: 60
+  max_connections: 10
+
+agents:
+  default_max_tokens: 500
+  default_priority: 1
+  workspace_base: "workspaces"
+  max_agent_num: 5
+  agent_timeout: 10000  # milliseconds
+  
+  complexity_thresholds:
+    low: 500
+    medium: 1000
+    high: 2000
+
+performance:
+  max_execution_time: 300000  # milliseconds
+  target_accuracy: 0.8
+  max_total_tokens: 5000
+
+evaluation:
+  truth_file: "ground_truth.json"
+  metrics_file: "metrics.json"
+  artifacts_file: "run_artifacts.tar.gz"
+
+logging:
+  level: "INFO"
+  format: "[%(asctime)s] %(levelname)s: %(message)s"
+  agent_logs: true
+  packet_logs: true
+
+model:
+  name: "nvdev/nvidia/llama-3.1-nemotron-70b-instruct"
+  base_url:  "https://integrate.api.nvidia.com/v1"
+  api_key: "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"
+  max_tokens: 4096
+  temperature: 0.9
+  timeout: 30
+  top_p: 1.0
+  frequency_penalty: 0.0
+  presence_penalty: 0.0
+  # Alternative models configuration
+  alternative_models:
+    - name: "gpt-3.5-turbo"
+      max_tokens: 800
+      temperature: 0.7
+    - name: "claude-3-sonnet"
+      base_url: "https://api.anthropic.com/v1"
+      max_tokens: 1200
+      temperature: 0.8
+    - name: "gemini-pro"
+      base_url: "https://generativelanguage.googleapis.com/v1"
+      max_tokens: 1000
+      temperature: 0.9
