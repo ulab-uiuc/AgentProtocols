@@ -41,30 +41,93 @@ class Core:
             # Import OpenAI locally to avoid conflicts
             try:
                 from openai import OpenAI
+                import httpx
                 
                 # Get configuration
                 api_key = self.config["model"]["openai_api_key"]
-                base_url = self.config["model"].get("openai_base_url", "https://api.openai.com/v1")
+                base_url = self.config["model"].get("openai_base_url")
                 
                 if not api_key:
                     raise ValueError("OpenAI API key is required but not provided")
                 
-                # Create client with only supported parameters
-                client_kwargs = {
-                    "api_key": api_key,
-                    "base_url": base_url
-                }
-                
-                # Remove any None values
-                client_kwargs = {k: v for k, v in client_kwargs.items() if v is not None}
-                
-                self.client = OpenAI(**client_kwargs)
-                self.model = self.client
-                
-                print(f"[Core] OpenAI client initialized with base_url: {base_url}")
+                # Create a custom HTTP client without proxy settings to avoid the error
+                try:
+                    # Create httpx client with minimal settings
+                    http_client = httpx.Client(
+                        timeout=60.0,
+                        follow_redirects=True
+                    )
+                    
+                    # Create OpenAI client with custom http_client
+                    if base_url and base_url.strip():
+                        self.client = OpenAI(
+                            api_key=api_key, 
+                            base_url=base_url.strip(),
+                            http_client=http_client
+                        )
+                        print(f"[Core] OpenAI client initialized with custom base_url: {base_url}")
+                    else:
+                        self.client = OpenAI(
+                            api_key=api_key,
+                            http_client=http_client
+                        )
+                        print(f"[Core] OpenAI client initialized with custom http_client")
+                    
+                    self.model = self.client
+                    
+                    # Test the client with a simple call to ensure it works
+                    try:
+                        models = self.client.models.list()
+                        print(f"[Core] OpenAI client test successful, {len(models.data)} models available")
+                    except Exception as test_e:
+                        print(f"[Core] Warning: OpenAI client test failed: {test_e}")
+                    
+                except Exception as init_e:
+                    print(f"[Core] OpenAI client initialization failed: {init_e}")
+                    print(f"[Core] Error type: {type(init_e).__name__}")
+                    
+                    # If that fails, try the most basic approach
+                    print("[Core] Trying fallback initialization...")
+                    try:
+                        # Last resort - try to create without any custom settings
+                        import subprocess
+                        import sys
+                        
+                        # Try to temporarily disable all proxy settings at system level
+                        if base_url and base_url.strip():
+                            self.client = OpenAI(api_key=api_key, base_url=base_url.strip())
+                        else:
+                            self.client = OpenAI(api_key=api_key)
+                        
+                        self.model = self.client
+                        print(f"[Core] OpenAI client fallback initialization successful")
+                        
+                    except Exception as fallback_e:
+                        print(f"[Core] Fallback initialization also failed: {fallback_e}")
+                        
+                        # Try to get more debug info
+                        try:
+                            import traceback
+                            print(f"[Core] Full traceback:")
+                            traceback.print_exc()
+                        except:
+                            pass
+                        
+                        raise fallback_e
                 
             except Exception as e:
                 print(f"[Core] Failed to initialize OpenAI client: {e}")
+                print(f"[Core] Error details: {type(e).__name__}: {str(e)}")
+                
+                # Try to provide a fallback or more detailed error info
+                try:
+                    from openai import __version__ as openai_version
+                    print(f"[Core] OpenAI library version: {openai_version}")
+                    import httpx
+                    print(f"[Core] HTTPX version: {httpx.__version__}")
+                except Exception as ver_e:
+                    print(f"[Core] Could not get version info: {ver_e}")
+                    
                 raise
     
     
@@ -186,8 +249,7 @@ class Core:
             threshold = 3
             
             tools = []
-            truncated_messages = self._sanitize_for_gemini(truncated_messages)
-  
+            
             first_is_tool = False
             if isinstance(functions, list) and len(functions) > 0:
                 first_item = functions[0]

@@ -2,14 +2,15 @@
 Core MAPF algorithms and base classes.
 
 This module contains the protocol-agnostic implementation of:
-- GridWorld: Environment and collision detection
-- BaseRobot: Abstract robot with pathfinding algorithms
-- BaseNet: Abstract network coordinator
+- BaseAgent: Abstract agent with pathfinding algorithms
+- NetworkBase: Network coordinator
+- Communication adapters and types
 """
 
-from .world import GridWorld
-from .agent_base import BaseRobot
-from .network_base import BaseNet
+from .agent_base import BaseAgent
+from .network_base import NetworkBase
+from .comm import AbstractCommAdapter, LocalQueueAdapter
+from .types import MoveCmd, MoveFeedback
 from .utils import *
 
-__all__ = ["GridWorld", "BaseRobot", "BaseNet"] 
+__all__ = ["BaseAgent", "NetworkBase", "AbstractCommAdapter", "LocalQueueAdapter", "MoveCmd", "MoveFeedback"] 
