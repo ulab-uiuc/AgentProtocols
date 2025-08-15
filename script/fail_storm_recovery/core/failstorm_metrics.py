@@ -29,12 +29,17 @@ class TaskExecution:
     """Record of a single task execution."""
     task_id: str
     agent_id: str
-    tool_type: str  # search/extract/triple/reason
+    task_type: str  # qa_task, qa_group_search, qa_answer_found, etc.
     start_time: float
     end_time: Optional[float] = None
     success: bool = False
     error: Optional[str] = None
     result_size_bytes: int = 0
+    # QA-specific fields
+    group_id: Optional[int] = None
+    answer_found: bool = False
+    answer_source: Optional[str] = None  # "local", "neighbor", "collaborative"
+    answer_quality_score: Optional[float] = None
 
 
 @dataclass
@@ -95,19 +100,22 @@ class FailStormMetricsCollector:
 
     # ========================== Task Execution Tracking ==========================
 
-    def start_task_execution(self, task_id: str, agent_id: str, tool_type: str) -> None:
-        """Record the start of a task execution."""
+    def start_task_execution(self, task_id: str, agent_id: str, task_type: str, group_id: Optional[int] = None) -> None:
+        """Record the start of a QA task execution."""
         execution = TaskExecution(
             task_id=task_id,
             agent_id=agent_id,
-            tool_type=tool_type,
-            start_time=time.time()
+            task_type=task_type,
+            start_time=time.time(),
+            group_id=group_id
         )
         self.task_executions.append(execution)
 
     def complete_task_execution(self, task_id: str, success: bool, 
-                              result_size_bytes: int = 0, error: Optional[str] = None) -> None:
-        """Record the completion of a task execution."""
+                              result_size_bytes: int = 0, error: Optional[str] = None,
+                              answer_found: bool = False, answer_source: Optional[str] = None,
+                              answer_quality_score: Optional[float] = None) -> None:
+        """Record the completion of a QA task execution."""
         current_time = time.time()
         
         # Find the corresponding task execution
@@ -117,6 +125,9 @@ class FailStormMetricsCollector:
                 execution.success = success
                 execution.result_size_bytes = result_size_bytes
                 execution.error = error
+                execution.answer_found = answer_found
+                execution.answer_source = answer_source
+                execution.answer_quality_score = answer_quality_score
                 
                 # Record completion time
                 completion_time = execution.end_time - execution.start_time
@@ -132,6 +143,37 @@ class FailStormMetricsCollector:
                 
                 break
 
+    def record_task_execution(self, task_id: str, agent_id: str, task_type: str, 
+                            start_time: float, end_time: float, success: bool,
+                            answer_found: bool = False, answer_source: Optional[str] = None,
+                            result_size_bytes: int = 0, error: Optional[str] = None,
+                            group_id: Optional[int] = None) -> None:
+        """Record a complete task execution with start and end times."""
+        execution = TaskExecution(
+            task_id=task_id,
+            agent_id=agent_id,
+            task_type=task_type,
+            start_time=start_time,
+            end_time=end_time,
+            success=success,
+            result_size_bytes=result_size_bytes,
+            error=error,
+            group_id=group_id,
+            answer_found=answer_found,
+            answer_source=answer_source
+        )
+        self.task_executions.append(execution)
+        
+        # Record completion time
+        completion_time = end_time - start_time
+        self.task_completion_times.append(completion_time)
+        
+        # Categorize by phase
+        if self.fault_injection_time is None or start_time < self.fault_injection_time:
+            self.pre_fault_window.append(completion_time)
+        else:
+            self.post_fault_window.append(completion_time)
+
     def record_duplicate_task(self, original_task_id: str, duplicate_agent_id: str) -> None:
         """Record when a task is executed multiple times (duplicate work)."""
         # Find original execution
@@ -144,7 +186,7 @@ class FailStormMetricsCollector:
         if original_execution:
             # Mark this as a duplicate with a unique ID
             duplicate_task_id = f"{original_task_id}_dup_{int(time.time()*1000)}"
-            self.start_task_execution(duplicate_task_id, duplicate_agent_id, original_execution.tool_type)
+            self.start_task_execution(duplicate_task_id, duplicate_agent_id, original_execution.task_type)
 
     # ========================== Network Event Tracking ==========================
 
@@ -407,6 +449,66 @@ class FailStormMetricsCollector:
             return "recovery"
         else:
             return "post_recovery"
+
+    # ========================== QA-Specific Metrics ==========================
+    
+    def start_normal_phase(self) -> None:
+        """Mark the start of normal QA phase."""
+        print("[FailStormMetrics] Normal QA phase started")
+    
+    def end_normal_phase(self) -> None:
+        """Mark the end of normal QA phase."""
+        print("[FailStormMetrics] Normal QA phase ended")
+    
+    def start_recovery_phase(self) -> None:
+        """Mark the start of recovery QA phase."""
+        print("[FailStormMetrics] Recovery QA phase started")
+    
+    def end_recovery_phase(self) -> None:
+        """Mark the end of recovery QA phase."""
+        print("[FailStormMetrics] Recovery QA phase ended")
+    
+    def get_qa_metrics(self) -> Dict[str, Any]:
+        """Get QA-specific metrics."""
+        if not self.task_executions:
+            return {"no_qa_tasks": True}
+        
+        qa_tasks = [t for t in self.task_executions if t.task_type.startswith("qa_")]
+        successful_qa = [t for t in qa_tasks if t.success]
+        answered_qa = [t for t in qa_tasks if t.answer_found]
+        
+        # Calculate answer success rates
+        total_qa_tasks = len(qa_tasks)
+        successful_rate = len(successful_qa) / total_qa_tasks if total_qa_tasks > 0 else 0
+        answer_found_rate = len(answered_qa) / total_qa_tasks if total_qa_tasks > 0 else 0
+        
+        # Answer source distribution
+        answer_sources = {}
+        for task in answered_qa:
+            source = task.answer_source or "unknown"
+            answer_sources[source] = answer_sources.get(source, 0) + 1
+        
+        # Pre/post fault comparison
+        pre_fault_qa = [t for t in qa_tasks if t.start_time < (self.fault_injection_time or float('inf'))]
+        post_fault_qa = [t for t in qa_tasks if t.start_time >= (self.fault_injection_time or 0)]
+        
+        pre_fault_success = len([t for t in pre_fault_qa if t.answer_found]) / len(pre_fault_qa) if pre_fault_qa else 0
+        post_fault_success = len([t for t in post_fault_qa if t.answer_found]) / len(post_fault_qa) if post_fault_qa else 0
+        
+        return {
+            "total_qa_tasks": total_qa_tasks,
+            "successful_tasks": len(successful_qa),
+            "tasks_with_answers": len(answered_qa),
+            "success_rate": successful_rate,
+            "answer_found_rate": answer_found_rate,
+            "answer_sources": answer_sources,
+            "pre_fault_answer_rate": pre_fault_success,
+            "post_fault_answer_rate": post_fault_success,
+            "average_task_duration": statistics.mean([
+                t.end_time - t.start_time for t in qa_tasks 
+                if t.end_time is not None
+            ]) if qa_tasks else 0
+        }
 
     def __repr__(self) -> str:
         """String representation of the metrics collector."""

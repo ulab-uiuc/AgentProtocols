@@ -294,7 +294,8 @@ class A2AServerAdapter(BaseServerAdapter):
             app,
             host=host,
             port=port,
-            log_level="error"  # Minimize server logs
+            log_level="error",  # Minimize server logs
+            lifespan="off"     # 禁用lifespan避免CancelledError
         )
         server = uvicorn.Server(config)
         

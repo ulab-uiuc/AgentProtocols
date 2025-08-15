@@ -66,6 +66,33 @@ class Core:
             except Exception as e:
                 print(f"[Core] Failed to initialize OpenAI client: {e}")
                 raise
+                
+        elif self.config["model"]["type"] == "nvidia":
+            # NVIDIA API support
+            try:
+                from openai import OpenAI
+                
+                # Get configuration
+                api_key = self.config["model"]["nvidia_api_key"]
+                base_url = self.config["model"].get("nvidia_base_url", "https://integrate.api.nvidia.com/v1")
+                
+                if not api_key:
+                    raise ValueError("NVIDIA API key is required but not provided")
+                
+                # Create client for NVIDIA API
+                client_kwargs = {
+                    "api_key": api_key,
+                    "base_url": base_url
+                }
+                
+                self.client = OpenAI(**client_kwargs)
+                self.model = self.client
+                
+                print(f"[Core] NVIDIA client initialized with base_url: {base_url}")
+                
+            except Exception as e:
+                print(f"[Core] Failed to initialize NVIDIA client: {e}")
+                raise
     
     
     def execute(self, messages):
@@ -108,6 +135,28 @@ class Core:
                     time.sleep(10)
                     if rounds > threshold:
                         return f"Error in OpenAI chat generation: {str(e)}"
+        
+        elif self.config["model"]["type"] == "nvidia":
+            rounds = 0
+            threshold = 3
+            while True:
+                rounds += 1
+                try:
+                    response = self.client.chat.completions.create(
+                        model=self.config["model"]["name"],
+                        messages=messages,
+                        temperature=self.config["model"]["temperature"],
+                        top_p=self.config["model"].get("top_p", 0.7),
+                        max_tokens=self.config["model"].get("max_tokens", 8192),
+                        n=1,
+                    )
+                    content = response.choices[0].message.content
+                    return content.strip()
+                except Exception as e:
+                    print(f"[Core] NVIDIA chat generation error: {e}")
+                    time.sleep(10)
+                    if rounds > threshold:
+                        return f"Error in NVIDIA chat generation: {str(e)}"
         
                         
 
@@ -258,3 +307,112 @@ class Core:
                     time.sleep(10)
                     if rounds > threshold:
                         raise Exception(f"Function call generation failed too many times. Last error: {str(e)}")
+                        
+        elif self.config["model"]["type"] == "nvidia":
+            # NVIDIA API function calling - try to use tools if supported
+            rounds = 0
+            threshold = 3
+            
+            while True:
+                rounds += 1
+                try:
+                    # Prepare tools in the correct format
+                    tools = []
+                    for func in functions:
+                        if isinstance(func, dict):
+                            if func.get('type') == 'function' and 'function' in func:
+                                tools.append(func)
+                            else:
+                                tools.append({"type": "function", "function": func})
+                    
+                    try:
+                        # Try to use tools with NVIDIA API
+                        response = self.client.chat.completions.create(
+                            model=self.config["model"]["name"],
+                            messages=truncated_messages,
+                            tools=tools,
+                            tool_choice="auto",
+                            temperature=self.config["model"]["temperature"],
+                            top_p=self.config["model"].get("top_p", 0.7),
+                            max_tokens=self.config["model"].get("max_tokens", 8192),
+                            n=1,
+                        )
+                        
+                        # Check if we got tool calls
+                        choice = response.choices[0] if response.choices else None
+                        message = choice.message if choice else None
+                        has_tool_calls = hasattr(message, 'tool_calls') and message.tool_calls
+                        
+                        if has_tool_calls:
+                            return response
+                        else:
+                            # Fallback to prompt-based approach
+                            raise Exception("No tool calls returned")
+                            
+                    except Exception as tool_error:
+                        print(f"[Core] NVIDIA tool calling failed, falling back to prompt-based: {tool_error}")
+                        
+                        # Fallback: simulate function calling by including function info in the prompt
+                        function_prompt = "\n\nAvailable functions:\n"
+                        for func in functions:
+                            if isinstance(func, dict):
+                                if func.get('type') == 'function' and 'function' in func:
+                                    func_def = func['function']
+                                else:
+                                    func_def = func
+                                function_prompt += f"- {func_def.get('name', 'unknown')}: {func_def.get('description', 'No description')}\n"
+                        
+                        # Add function information to the last user message
+                        enhanced_messages = truncated_messages.copy()
+                        if enhanced_messages and enhanced_messages[-1].get('role') == 'user':
+                            enhanced_messages[-1]['content'] += function_prompt
+                        else:
+                            enhanced_messages.append({
+                                'role': 'user',
+                                'content': function_prompt + "\nPlease respond with a function call if appropriate."
+                            })
+                        
+                        response = self.client.chat.completions.create(
+                            model=self.config["model"]["name"],
+                            messages=enhanced_messages,
+                            temperature=self.config["model"]["temperature"],
+                            top_p=self.config["model"].get("top_p", 0.7),
+                            max_tokens=self.config["model"].get("max_tokens", 8192),
+                            n=1,
+                        )
+                        
+                        return response
+                    
+                except Exception as e:
+                    print(f"[Core] NVIDIA function call error (round {rounds}): {e}")
+                    time.sleep(10)
+                    if rounds > threshold:
+                        raise Exception(f"NVIDIA function call generation failed too many times. Last error: {str(e)}")
+                        
+    def _sanitize_for_gemini(self, messages):
+        """
+        Sanitize messages for Gemini API compatibility.
+        
+        Args:
+            messages: List of message dictionaries
+            
+        Returns:
+            List of sanitized messages
+        """
+        sanitized = []
+        for msg in messages:
+            if isinstance(msg, dict):
+                # Create a copy to avoid modifying the original
+                sanitized_msg = msg.copy()
+                
+                # Ensure role is supported
+                if 'role' in sanitized_msg:
+                    role = sanitized_msg['role']
+                    if role not in ['user', 'assistant', 'system']:
+                        sanitized_msg['role'] = 'user'  # Default fallback
+                
+                sanitized.append(sanitized_msg)
+            else:
+                sanitized.append(msg)
+        
+        return sanitized

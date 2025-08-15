@@ -6,51 +6,48 @@ scenario:
   # Communication protocol to test (a2a, anp, acp, simple_json)
   protocol: "simple_json"
   
-  # Number of agents in the mesh network
+  # Number of agents in the mesh network - 8 agents for full-scale testing
   agent_count: 8
   
   # Fraction of agents to kill during fault injection (0.0 - 1.0)
   kill_fraction: 0.3
   
-  # Time in seconds when fault injection occurs
-  fault_injection_time: 60.0
+  # Time in seconds when fault injection occurs - 10秒注入故障
+  fault_injection_time: 10.0
   
-  # Total scenario runtime in seconds
+  # Total scenario runtime in seconds - 2分钟或直到final_answer产出  
   total_runtime: 120.0
   
-  # Heartbeat interval for failure detection (seconds)
-  heartbeat_interval: 3.0
+  # Heartbeat interval for failure detection (seconds) - 降低频率减少日志
+  heartbeat_interval: 10.0
   
   # Heartbeat timeout for considering nodes failed (seconds) - 增加超时时间避免误报
-  heartbeat_timeout: 30.0
+  heartbeat_timeout: 45.0
+  
+  # Agent reconnection configuration
+  enable_reconnection: true
+  reconnection_delay: 10.0  # 故障后多久开始尝试重连 (秒)
+  reconnection_timeout: 30.0  # 重连超时时间 (秒)
 
-# Gaia document processing configuration
-gaia:
-  # Path to Gaia document (relative to scenario directory)
-  document_path: "docs/gaia_document.txt"
+# Shard QA Task Configuration
+shard_qa:
+  # QA任务的数据目录
+  data_dir: "../shard_qa/data"
   
-  # Available tool types for agents
-  tools: ["search", "extract", "triple", "reason"]
+  # QA任务执行配置
+  questions_file: "qa_questions.json"
+  fragments_file: "knowledge_fragments.json"
   
-  # Number of workflow cycles during normal phase
-  workflow_cycles: 5
+  # 正常阶段持续时间（30秒）
+  normal_phase_duration: 30.0
   
-  # Tool-specific configuration
-  search:
-    max_results: 10
-    similarity_threshold: 0.1
+  # 每个QA周期的超时时间
+  qa_cycle_timeout: 15.0
   
-  extract:
-    max_extractions: 20
-    confidence_threshold: 0.6
-  
-  triple:
-    max_triples: 50
-    confidence_threshold: 0.5
-  
-  reason:
-    max_conclusions: 10
-    confidence_threshold: 0.6
+  # Agent角色配置
+  roles:
+    coordinator: 1  # 1个协调器
+    worker: 2       # 2个工作者（总共3个agent时）
 
 # Agent network configuration
 agents:
@@ -65,7 +62,7 @@ agents:
   
   # Agent-specific timeouts
   message_timeout: 10.0
-  health_check_interval: 30.0
+  health_check_interval: 15.0  # 降低健康检查频率
 
 # LLM configuration for agent reasoning
 llm:

@@ -69,8 +69,21 @@ class SimpleJSONStarletteApplication:
             # 解析请求体
             body = await request.json()
             
-            # 提取消息内容
-            message_content = body.get("payload", {})
+            # 提取消息内容 - 支持多种协议格式
+            message_content = None
+            
+            # 检查A2A格式: body["params"]["message"]
+            if "params" in body and "message" in body["params"]:
+                message_content = body["params"]["message"]
+            
+            # 检查直接payload格式
+            elif "payload" in body:
+                message_content = body["payload"]
+            
+            # 如果都没有，使用整个body
+            else:
+                message_content = body
+            
             message_text = self._extract_text_content(message_content)
             
             # 创建模拟的RequestContext和EventQueue
@@ -113,6 +126,29 @@ class SimpleJSONStarletteApplication:
     def _extract_text_content(self, payload: Dict[str, Any]) -> str:
         """从负载中提取文本内容"""
         if isinstance(payload, dict):
+            # 处理Gaia文档广播
+            if payload.get("type") == "gaia_document_init" and "document" in payload:
+                document = payload["document"]
+                print(f"[DEBUG] Gaia document received: type={type(document)}, keys={list(document.keys()) if isinstance(document, dict) else 'N/A'}")
+                if isinstance(document, dict):
+                    # 提取文档的主要内容
+                    content_parts = []
+                    if "title" in document:
+                        content_parts.append(f"Title: {document['title']}")
+                        print(f"[DEBUG] Found title: {document['title']}")
+                    if "content" in document:
+                        content_length = len(document['content']) if document['content'] else 0
+                        content_parts.append(f"Content: {document['content'][:100]}..." if content_length > 100 else f"Content: {document['content']}")
+                        print(f"[DEBUG] Found content: length={content_length}")
+                    if "question" in document:
+                        content_parts.append(f"Question: {document['question']}")
+                        print(f"[DEBUG] Found question: {document['question']}")
+                    result = "\n".join(content_parts) if content_parts else json.dumps(document)
+                    print(f"[DEBUG] Extracted content result: {result[:100]}...")
+                    return result
+                else:
+                    return str(document)
+            
             # 尝试多种可能的文本字段
             for field in ["text", "content", "message", "query", "input"]:
                 if field in payload:
@@ -250,7 +286,9 @@ class SimpleJSONServerAdapter(BaseServerAdapter):
             app=app,
             host=host,
             port=port,
-            log_level="info"
+            log_level="error",  # 减少HTTP请求日志输出
+            access_log=False,   # 关闭访问日志
+            lifespan="off"     # 禁用lifespan避免CancelledError
         )
         
         # 创建服务器

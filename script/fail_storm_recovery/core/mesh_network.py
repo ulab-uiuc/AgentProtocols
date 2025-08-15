@@ -36,7 +36,7 @@ class MeshNetwork(AgentNetwork):
     - Real-time metrics collection for fail-storm analysis
     """
     
-    def __init__(self, heartbeat_interval: float = 5.0, heartbeat_timeout: float = 15.0):
+    def __init__(self, heartbeat_interval: float = 5.0, heartbeat_timeout: float = 15.0, debug_mode: bool = False):
         """
         Initialize MeshNetwork with fault tolerance parameters.
         
@@ -46,12 +46,15 @@ class MeshNetwork(AgentNetwork):
             Interval between heartbeat messages (seconds)
         heartbeat_timeout : float
             Time to wait before considering a node failed (seconds)
+        debug_mode : bool
+            Enable verbose debug output for health checks
         """
         super().__init__()
         
         # Heartbeat configuration
         self.heartbeat_interval = heartbeat_interval
         self.heartbeat_timeout = heartbeat_timeout
+        self._debug_mode = debug_mode
         
         # Failure detection state
         self._heartbeat_tasks: Dict[str, asyncio.Task] = {}
@@ -203,12 +206,25 @@ class MeshNetwork(AgentNetwork):
             if neighbor_id in self._failed_nodes:
                 continue
                 
+            # Check if agent still exists and has outbound connections
+            if agent_id not in self._agents:
+                continue
+                
+            agent = self._agents[agent_id]
+            if not hasattr(agent, '_outbound') or not agent._outbound:
+                continue
+                
             try:
                 await self.route_message(agent_id, neighbor_id, heartbeat_payload)
                 self._message_stats["heartbeats_sent"] += 1
                 
             except Exception as e:
-                print(f"[MeshNetwork] Heartbeat failed {agent_id} -> {neighbor_id}: {e}")
+                # Only log as debug if it's a "No outbound adapter" error
+                if "No outbound adapter found" in str(e):
+                    # This is expected during disconnections, don't spam logs
+                    pass
+                else:
+                    print(f"[MeshNetwork] Heartbeat failed {agent_id} -> {neighbor_id}: {e}")
                 failed_neighbors.add(neighbor_id)
         
         # Mark failed neighbors for recovery
@@ -234,7 +250,9 @@ class MeshNetwork(AgentNetwork):
                 else:
                     # Agent responded to health check, update heartbeat time
                     self._last_heartbeat[agent_id] = current_time
-                    print(f"[MeshNetwork] Agent {agent_id} recovered from timeout (false alarm)")
+                    # 减少false alarm的噪音输出
+                    if self._debug_mode:
+                        print(f"[MeshNetwork] Agent {agent_id} recovered from timeout (false alarm)")
     
     async def _verify_agent_failure(self, agent_id: str) -> bool:
         """Verify if an agent is truly failed by attempting direct health check."""
@@ -248,7 +266,9 @@ class MeshNetwork(AgentNetwork):
             async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.get(f"http://{agent.host}:{agent.port}/health")
                 if response.status_code == 200:
-                    print(f"[MeshNetwork] Health check passed for {agent_id}, not failed")
+                    # 减少健康检查的噪音输出，只在调试模式下显示
+                    if self._debug_mode:
+                        print(f"[MeshNetwork] Health check passed for {agent_id}")
                     return False  # Agent is alive
         except Exception as e:
             print(f"[MeshNetwork] Health check failed for {agent_id}: {e}")
@@ -347,6 +367,24 @@ class MeshNetwork(AgentNetwork):
         """Record receipt of a heartbeat message."""
         self._last_heartbeat[sender_id] = time.time()
         self._message_stats["heartbeats_received"] += 1
+    
+    async def connect_agents(self, src_id: str, dst_id: str) -> bool:
+        """Establish connection between two agents."""
+        try:
+            if src_id not in self._agents or dst_id not in self._agents:
+                return False
+            
+            # Add to topology graph
+            if src_id not in self._graph:
+                self._graph[src_id] = set()
+            self._graph[src_id].add(dst_id)
+            
+            print(f"[MeshNetwork] Connected: {src_id} → {dst_id}")
+            return True
+            
+        except Exception as e:
+            print(f"[MeshNetwork] Connection failed {src_id} → {dst_id}: {e}")
+            return False
         
         # Remove from failed nodes if it was marked as failed
         if sender_id in self._failed_nodes:

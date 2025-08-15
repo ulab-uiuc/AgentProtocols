@@ -336,23 +336,14 @@ class ANPSimpleNodeWrapper:
             """Agent card endpoint."""
             return JSONResponse(self.agent_card)
         
-        @asynccontextmanager
-        async def lifespan(app):
-            """Handle application lifespan events with proper context manager."""
-            # Startup
-            try:
-                yield
-            finally:
-                # Shutdown - gracefully handle cleanup
-                self.should_exit = True
-            
         # Define routes
         routes = [
             Route("/health", health_check, methods=["GET"]),
             Route("/.well-known/agent.json", agent_card, methods=["GET"]),
         ]
         
-        app = Starlette(routes=routes, lifespan=lifespan)
+        # 不使用lifespan处理器，避免CancelledError
+        app = Starlette(routes=routes)
         return app
         
     async def _setup_did_info(self) -> None:
@@ -462,7 +453,6 @@ class ANPSimpleNodeWrapper:
             try:
                 self.simple_node = SimpleNode(
                     host_domain=self.host_domain,
-                    new_session_callback=self._on_new_session,
                     host_port=str(ws_port),
                     host_ws_path=self.host_ws_path,
                     private_key_pem=self.did_info.get('private_key_pem'),
@@ -478,39 +468,83 @@ class ANPSimpleNodeWrapper:
             simple_node_task = asyncio.create_task(self._run_simple_node())
             
             # Start HTTP server using uvicorn with simple config
+            # Configure uvicorn with minimal logging to reduce noise
+            import logging
+            # Temporarily suppress uvicorn's internal logging
+            uvicorn_logger = logging.getLogger("uvicorn")
+            uvicorn_error_logger = logging.getLogger("uvicorn.error")
+            original_level = uvicorn_logger.level
+            original_error_level = uvicorn_error_logger.level
+            uvicorn_logger.setLevel(logging.CRITICAL)
+            uvicorn_error_logger.setLevel(logging.CRITICAL)
+            
             config = uvicorn.Config(
                 self.starlette_app,
                 host=self.host_domain,
                 port=self.host_port,
                 log_level="critical",
                 access_log=False,
-                use_colors=False
+                use_colors=False,
+                lifespan="off"  # Disable lifespan to avoid CancelledError noise
             )
             server = uvicorn.Server(config)
             
-            # Run both servers concurrently with proper error handling
+            # 启动uvicorn服务器
+            server_task = asyncio.create_task(server.serve())
+            
+            # 运行主服务循环，等待关闭信号
             try:
-                await asyncio.gather(
-                    server.serve(),
-                    simple_node_task,
-                    return_exceptions=False  # Let exceptions bubble up properly
-                )
-            except asyncio.CancelledError:
-                # Handle graceful shutdown
-                logger.info("ANP server shutdown requested")
-                self.should_exit = True
-                # Cancel SimpleNode task if still running
+                while not self.should_exit:
+                    # 检查任务状态
+                    if server_task.done():
+                        # 服务器意外退出，检查原因
+                        try:
+                            result = server_task.result()
+                        except Exception as e:
+                            if "address already in use" in str(e) or "Errno 48" in str(e):
+                                logger.error(f"Port {self.host_port} already in use on {self.host_domain}")
+                                raise OSError(f"Port {self.host_port} is already in use")
+                            else:
+                                logger.error(f"Server task failed: {e}")
+                                raise
+                        break
+                    
+                    if simple_node_task.done():
+                        # SimpleNode意外退出，检查原因
+                        try:
+                            simple_node_task.result()
+                        except Exception as e:
+                            logger.error(f"SimpleNode task failed: {e}")
+                        break
+                    
+                    # 短暂等待，让出控制权
+                    await asyncio.sleep(0.1)
+                    
+            finally:
+                # 优雅关闭所有任务
+                logger.debug("Initiating graceful shutdown...")
+                
+                # 取消服务器任务
+                if not server_task.done():
+                    server_task.cancel()
+                    
+                # 取消SimpleNode任务  
                 if not simple_node_task.done():
                     simple_node_task.cancel()
-                    try:
-                        await simple_node_task
-                    except asyncio.CancelledError:
-                        pass
+                
+                # 等待任务完成，但不抛出CancelledError
+                await asyncio.gather(server_task, simple_node_task, return_exceptions=True)
                 
         except Exception as e:
             logger.error(f"ANP server error: {e}")
             raise
         finally:
+            # Restore original logging levels
+            try:
+                uvicorn_logger.setLevel(original_level)
+                uvicorn_error_logger.setLevel(original_error_level)
+            except:
+                pass  # Ignore if loggers not defined
             await self.stop()
             
     async def _run_simple_node(self) -> None:
@@ -533,15 +567,50 @@ class ANPSimpleNodeWrapper:
             # Don't raise to prevent blocking other tasks
     
     async def stop(self) -> None:
-        """Stop the ANP server."""
+        """Stop the ANP server and clean up all resources."""
         self.should_exit = True
+        
+        # Stop SimpleNode and its server task
         if self.simple_node:
             try:
+                # Stop the SimpleNode gracefully
                 await self.simple_node.stop()
+                
+                # 给系统时间来处理关闭
+                await asyncio.sleep(0.5)  # 减少等待时间
+                
             except Exception as e:
                 # Log but don't raise - we want cleanup to continue
                 logger.debug(f"Error stopping SimpleNode (expected during shutdown): {e}")
-            self.simple_node = None
+            finally:
+                self.simple_node = None
+        
+        # Cancel and cleanup any remaining tasks related to this server
+        current_task = asyncio.current_task()
+        tasks_to_cancel = []
+        
+        for task in asyncio.all_tasks():
+            if task != current_task and not task.done():
+                task_str = str(task).lower()
+                if any(keyword in task_str for keyword in ["simple_node", "uvicorn", "anp"]):
+                    tasks_to_cancel.append(task)
+        
+        if tasks_to_cancel:
+            logger.debug(f"Cancelling {len(tasks_to_cancel)} ANP-related tasks")
+            for task in tasks_to_cancel:
+                task.cancel()
+            
+            # Wait for tasks to be cancelled
+            try:
+                await asyncio.wait_for(
+                    asyncio.gather(*tasks_to_cancel, return_exceptions=True),
+                    timeout=2.0
+                )
+            except asyncio.TimeoutError:
+                logger.debug("Some tasks took too long to cancel")
+        
+        # Give extra time for port to be released
+        await asyncio.sleep(1.0)
 
 
 class ANPServerAdapter(BaseServerAdapter):

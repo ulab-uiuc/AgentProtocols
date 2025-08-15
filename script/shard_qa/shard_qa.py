@@ -34,8 +34,8 @@ except ImportError:
 # Add paths to import AgentNetwork and protocols
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from network import AgentNetwork
-from base_agent import BaseAgent
+from core.network import AgentNetwork
+from core.base_agent import BaseAgent
 
 # Import Shard Agent Executors
 sys.path.insert(0, str(Path(__file__).parent / "shard_worker"))

@@ -101,7 +101,8 @@ class SimpleNode:
             host="0.0.0.0",
             port=int(self.host_port) if self.host_port else 8000,
             ssl_keyfile=self.ssl_key_path,
-            ssl_certfile=self.ssl_cert_path
+            ssl_certfile=self.ssl_cert_path,
+            lifespan="off"  # 禁用lifespan避免CancelledError
         )
         server = uvicorn.Server(config)
         await server.serve()
