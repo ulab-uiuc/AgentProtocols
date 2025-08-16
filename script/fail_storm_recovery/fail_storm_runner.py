@@ -1131,6 +1131,7 @@ async def main():
     parser.add_argument("--protocol", "-p", choices=["a2a", "anp", "acp", "simple_json"], help="Protocol to test")
     parser.add_argument("--agents", "-n", type=int, help="Number of agents")
     parser.add_argument("--kill-fraction", "-k", type=float, help="Fraction of agents to kill")
+    parser.add_argument("--fault-time", "-f", type=float, help="Fault injection time in seconds")
     parser.add_argument("--runtime", "-r", type=float, help="Total runtime in seconds")
     parser.add_argument("--output", "-o", help="Output directory for results")
     
@@ -1146,6 +1147,8 @@ async def main():
         runner.config["scenario"]["agent_count"] = args.agents
     if args.kill_fraction:
         runner.config["scenario"]["kill_fraction"] = args.kill_fraction
+    if args.fault_time:
+        runner.config["scenario"]["fault_injection_time"] = args.fault_time
     if args.runtime:
         runner.config["scenario"]["total_runtime"] = args.runtime
     if args.output:

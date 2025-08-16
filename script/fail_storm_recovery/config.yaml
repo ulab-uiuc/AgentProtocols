@@ -13,7 +13,7 @@ scenario:
   kill_fraction: 0.3
   
   # Time in seconds when fault injection occurs - 10秒注入故障
-  fault_injection_time: 10.0
+  fault_injection_time: 30.0
   
   # Total scenario runtime in seconds - 2分钟或直到final_answer产出  
   total_runtime: 120.0
