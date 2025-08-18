@@ -10,7 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 try:
-    from streaming_queue import ColoredOutput
+    from agent_network.script.streaming_queue.old_scripts.streaming_queue import ColoredOutput
     COLORS_AVAILABLE = True
 except ImportError:
     COLORS_AVAILABLE = False

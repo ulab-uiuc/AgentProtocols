@@ -13,7 +13,7 @@ import statistics
 
 # 正确导入streaming_queue_new模块
 sys.path.insert(0, str(Path(__file__).parent))
-from streaming_queue_new import RealAgentNetworkDemo, ColoredOutput
+from agent_network.script.streaming_queue.old_scripts.streaming_queue_new import RealAgentNetworkDemo, ColoredOutput
 
 class TopologyBenchmark:
     """拓扑结构评测类"""
