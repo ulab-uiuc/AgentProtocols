@@ -1,0 +1,81 @@
+# ANP Protocol Configuration for Fail-Storm Recovery
+
+# Basic scenario configuration
+scenario:
+  name: "fail_storm_recovery_anp"
+  timeout: 120
+  agents: 3
+  fault_rate: 0.33  # Kill 33% of agents (1 out of 3)
+  fault_time: 60    # Inject fault at 60 seconds
+  recovery_timeout: 60
+
+# Network configuration
+network:
+  heartbeat_interval: 1.0
+  heartbeat_timeout: 3.0
+  steady_state_threshold: 5.0
+  
+# Agent ports (ANP uses HTTP + WebSocket)
+ports:
+  start: 9000
+  count: 3
+
+# Shard QA configuration  
+shard_qa:
+  normal_duration: 30.0
+  groups: 2
+  questions_per_group: 3
+  data_file: "docs/gaia_document.txt"
+
+# LLM configuration
+llm:
+  type: "nvidia"
+  model: "nvdev/nvidia/llama-3.1-nemotron-70b-instruct"
+  nvidia_api_key: "${NVIDIA_API_KEY}"
+  nvidia_base_url: "https://integrate.api.nvidia.com/v1"
+  temperature: 0.2
+  top_p: 0.7
+  max_tokens: 8192
+  
+  # Legacy compatibility fields (will be auto-mapped)
+  name: "nvdev/nvidia/llama-3.1-nemotron-70b-instruct"
+  nvidia_api_key: "${NVIDIA_API_KEY}"
+
+# ANP specific configuration
+anp:
+  # DID-based authentication
+  authentication:
+    enabled: true
+    did_method: "wba"
+    
+  # E2E encryption
+  encryption:
+    enabled: true
+    key_rotation: 3600  # 1 hour
+    
+  # Protocol negotiation
+  negotiation:
+    enabled: true
+    timeout: 30
+    
+  # Communication settings
+  communication:
+    http_port_offset: 0      # HTTP on base port
+    websocket_port_offset: 1000  # WebSocket on base_port + 1000
+    max_connections: 10
+    
+# Metrics and logging
+metrics:
+  enabled: true
+  prometheus_port: 8001
+  
+logging:
+  level: "INFO"
+  output_dir: "logs/"
+
+# Output configuration
+output:
+  results_dir: "results/"
+  save_llm_outputs: false
+  metrics_file: "failstorm_metrics.json"
+  detailed_metrics_file: "detailed_failstorm_metrics.json"

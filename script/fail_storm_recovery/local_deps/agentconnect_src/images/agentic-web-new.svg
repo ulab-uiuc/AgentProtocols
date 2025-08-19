@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#ffffff"/>
+
+  <!-- Central Network Concept -->
+  <circle cx="400" cy="300" r="250" fill="rgba(100,149,237,0.05)" stroke="#6495ED" stroke-width="1" stroke-dasharray="10,5"/>
+
+  <!-- 中心图片 -->
+  <!-- <image x="320" y="225" width="150" height="150" href="./Internet.png"/> -->
+
+  <!-- Node Positioning on Circumference -->
+  <g>
+    <!-- 0度 -->
+    <circle cx="650" cy="300" r="36" fill="#66B2FF"/>
+    <text x="650" y="300" text-anchor="middle" dy="5" fill="#2C3E50" font-weight="bold" >Assistant</text>
+
+    <!-- 45度 -->
+    <circle cx="577" cy="123" r="36" fill="#0052CC"/>
+    <text x="577" y="123" text-anchor="middle" dy="5" fill="white" font-weight="bold" >Agent</text>
+
+    <!-- 90度 -->
+    <circle cx="400" cy="50" r="36" fill="#0052CC"/>
+    <text x="400" y="50" text-anchor="middle" dy="5" fill="white" font-weight="bold" >Agent</text>
+
+    <!-- 135度 -->
+    <circle cx="223" cy="123" r="36" fill="#0052CC"/>
+    <text x="223" y="123" text-anchor="middle" dy="5" fill="white" font-weight="bold" >Agent</text>
+
+    <!-- 180度 -->
+    <circle cx="150" cy="300" r="36" fill="#66B2FF"/>
+    <text x="150" y="300" text-anchor="middle" dy="5" fill="#2C3E50" font-weight="bold" >Assistant</text>
+
+    <!-- 225度 -->
+    <circle cx="223" cy="477" r="36" fill="#0052CC"/>
+    <text x="223" y="477" text-anchor="middle" dy="5" fill="white" font-weight="bold" >Agent</text>
+
+    <!-- 270度 -->
+    <circle cx="400" cy="550" r="36" fill="#0052CC"/>
+    <text x="400" y="550" text-anchor="middle" dy="5" fill="white" font-weight="bold" >Agent</text>
+
+    <!-- 315度 -->
+    <circle cx="577" cy="477" r="36" fill="#0052CC"/>
+    <text x="577" y="477" text-anchor="middle" dy="5" fill="white" font-weight="bold" >Agent</text>
+  </g>
+
+  <!-- 连接线 -->
+  <g stroke="#808080" stroke-width="0.8" opacity="0.2">
+    <!-- 所有节点之间的连线 -->
+    <!-- 0度(650,300)连接到其他所有点 -->
+    <line x1="650" y1="300" x2="577" y2="123" />
+    <line x1="650" y1="300" x2="400" y2="50" />
+    <line x1="650" y1="300" x2="223" y2="123" />
+    <line x1="650" y1="300" x2="150" y2="300" />
+    <line x1="650" y1="300" x2="223" y2="477" />
+    <line x1="650" y1="300" x2="400" y2="550" />
+    <line x1="650" y1="300" x2="577" y2="477" />
+
+    <!-- 45度(577,123)连接到其他点 -->
+    <line x1="577" y1="123" x2="400" y2="50" />
+    <line x1="577" y1="123" x2="223" y2="123" />
+    <line x1="577" y1="123" x2="150" y2="300" />
+    <line x1="577" y1="123" x2="223" y2="477" />
+    <line x1="577" y1="123" x2="400" y2="550" />
+    <line x1="577" y1="123" x2="577" y2="477" />
+
+    <!-- 90度(400,50)连接到其他点 -->
+    <line x1="400" y1="50" x2="223" y2="123" />
+    <line x1="400" y1="50" x2="150" y2="300" />
+    <line x1="400" y1="50" x2="223" y2="477" />
+    <line x1="400" y1="50" x2="400" y2="550" />
+    <line x1="400" y1="50" x2="577" y2="477" />
+
+    <!-- 135度(223,123)连接到其他点 -->
+    <line x1="223" y1="123" x2="150" y2="300" />
+    <line x1="223" y1="123" x2="223" y2="477" />
+    <line x1="223" y1="123" x2="400" y2="550" />
+    <line x1="223" y1="123" x2="577" y2="477" />
+
+    <!-- 180度(150,300)连接到其他点 -->
+    <line x1="150" y1="300" x2="223" y2="477" />
+    <line x1="150" y1="300" x2="400" y2="550" />
+    <line x1="150" y1="300" x2="577" y2="477" />
+
+    <!-- 225度(223,477)连接到其他点 -->
+    <line x1="223" y1="477" x2="400" y2="550" />
+    <line x1="223" y1="477" x2="577" y2="477" />
+
+    <!-- 270度(400,550)连接到其他点 -->
+    <line x1="400" y1="550" x2="577" y2="477" />
+  </g>
+
+  <!-- Central Protocol Label -->
+  <text x="400" y="300" text-anchor="middle" font-size="22" font-weight="bold" fill="#2C3E50">
+    Agentic Web
+    <tspan x="400" dy="25" font-size="18">Agent Network Protocol</tspan>
+  </text>
+</svg>
