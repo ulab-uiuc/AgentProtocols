@@ -72,8 +72,8 @@ llm:
   # Model name for NVIDIA API
   model: "nvdev/nvidia/llama-3.1-nemotron-70b-instruct"
   
-  # NVIDIA API key
-  nvidia_api_key: "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"
+  # NVIDIA API key (从环境变量读取)
+  nvidia_api_key: "${NVIDIA_API_KEY}"
   
   # Base URL for NVIDIA API
   nvidia_base_url: "https://integrate.api.nvidia.com/v1"
@@ -85,7 +85,6 @@ llm:
   
   # Legacy compatibility fields (will be auto-mapped)
   name: "nvdev/nvidia/llama-3.1-nemotron-70b-instruct"
-  openai_api_key: "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"
   
   # Request timeout
   timeout: 30.0
