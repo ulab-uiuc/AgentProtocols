@@ -1,5 +1,5 @@
 core:
-  protocol: agora
+  protocol: anp
   type: "openai"  # "local" or "openai"
   name: "gpt-4o"
   temperature: 0.0
@@ -20,7 +20,7 @@ qa:
     count: 1          # Define the number of coordinators
     start_port: 9998   # Coordinator starting port
     data_file: "script/streaming_queue/data/top1000_simplified.jsonl"  # Question file path
-    result_file: "script/streaming_queue/data/qa_results.json"  # Result storage file path
+    result_file: "script/streaming_queue/data/qa_results_anp.json"  # Result storage file path
     batch_size: 50  # Number of questions to dispatch per round
     first_50: true  # Whether to process only the first 50 questions
   worker:
