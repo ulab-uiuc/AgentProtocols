@@ -24,10 +24,10 @@ class QAWorkerBase:
         self.use_mock = False
         self.core = None
 
-        # 允许从项目根下的 utils/core.py 引入 Core
+        # 允许从项目根下的 src/utils/core.py 引入 Core
         try:
-            sys.path.insert(0, str(Path(__file__).resolve().parents[3]))  # …/agent_network
-            from utils.core import Core  # type: ignore
+            sys.path.insert(0, str(Path(__file__).resolve().parents[3]))  # …/Multiagent-Protocol
+            from src.utils.core import Core  # type: ignore
 
             cfg = config or self._get_default_config()
             self.core = Core(cfg)

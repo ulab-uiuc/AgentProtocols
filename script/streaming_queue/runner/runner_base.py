@@ -143,12 +143,13 @@ class RunnerBase:
         """将调度交给 Coordinator（通常是 'dispatch' 指令）。"""
         self.output.info("Starting dispatch process...")
         resp = await self.send_command_to_coordinator("dispatch")
-        if resp and "result" in resp:
+        if resp:
+            # The dispatch was sent successfully, results are handled internally
             self.output.success("Dispatch completed!")
-            self.output.system(resp["result"])
             return []
-        self.output.error("Failed to start dispatch")
-        return []
+        else:
+            self.output.error("Failed to communicate with coordinator")
+            return []
 
     async def save_results(self, results: List[Dict[str, Any]]) -> None:
         """多数协议里结果由 Coordinator 内部保存；这里仅提示。"""
