@@ -1,0 +1,67 @@
+scenario:
+  protocol: "a2a"
+  agent_count: 8
+  total_runtime: 120.0
+  fault_injection_time: 60.0
+  recovery_duration: 60
+  kill_fraction: 0.25
+
+llm:
+  # LLM configuration is now automatically handled by Core class from src/utils/core.py
+  # Core will use OPENAI_API_KEY or NVIDIA_API_KEY environment variables
+  # No need to manually configure - just set the appropriate API key
+  # Supported models:
+  #   OpenAI: gpt-4o-mini, gpt-4, gpt-3.5-turbo (requires OPENAI_API_KEY)
+  #   NVIDIA: nvdev/nvidia/llama-3.1-nemotron-70b-instruct (requires NVIDIA_API_KEY)
+  auto_configured: true
+
+a2a:
+  # === 替换点 #1：你的 Agent 启动命令 ===
+  agent_start_cmd:
+    - "python"
+    - "local_deps/a2a_agent.py"
+    - "--port"
+    - "{port}"
+    - "--ws-port"
+    - "{ws_port}"
+    - "--id"
+    - "{agent_id}"
+    - "--workspace"
+    - "{ws}"
+  # === 替换点 #2：探活端点 ===
+  health_path: "/healthz"
+  # === 替换点 #3：建链/广播/QA 端点 ===
+  peer_add_path: "/mesh/add_peer"
+  broadcast_path: "/mesh/broadcast"
+  qa_path: "/qa/submit"
+
+network:
+  base_port: 9000           # HTTP base
+  base_ws_port: 29000       # WS base (if your A2A needs)
+  heartbeat_interval: 5.0
+  heartbeat_timeout: 12.0
+  connection_timeout: 10.0
+
+agents:
+  base_port: 9000
+  host: "127.0.0.1"
+
+shard_qa:
+  data_dir: "../shard_qa/data"
+  questions_file: "qa_questions.json"
+  fragments_file: "knowledge_fragments.json"
+  normal_phase_duration: 30.0
+  qa_cycle_timeout: 15.0
+  roles:
+    coordinator: 1
+    worker: 2
+
+output:
+  results_file: "failstorm_metrics.json"
+  logs_dir: "logs"
+  artifacts_dir: "artifacts"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+

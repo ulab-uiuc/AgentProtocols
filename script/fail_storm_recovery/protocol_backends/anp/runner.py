@@ -15,13 +15,17 @@ import asyncio
 # Add paths for local imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from local_deps.base_agent import BaseAgent
+from core.simple_base_agent import SimpleBaseAgent as BaseAgent
 from protocol_backends.base_runner import FailStormRunnerBase
 
-# Import shard_qa components
+# Import shard_qa components dynamically to avoid circular imports
 shard_qa_path = Path(__file__).parent.parent.parent / "shard_qa"
 sys.path.insert(0, str(shard_qa_path))
-from shard_worker.agent_executor import ShardWorkerExecutor
+import importlib.util
+spec = importlib.util.spec_from_file_location("agent_executor", shard_qa_path / "shard_worker" / "agent_executor.py")
+agent_executor_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(agent_executor_module)
+ShardWorkerExecutor = agent_executor_module.ShardWorkerExecutor
 
 
 class ANPRunner(FailStormRunnerBase):

@@ -28,17 +28,27 @@ import shutil
 
 # Add paths for imports
 project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root / "src"))
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(Path(__file__).parent))
-from src.core.base_agent import BaseAgent
-from core.mesh_network import MeshNetwork
+
+# Import core components (needed by existing FailStormRunner)
+from core.simple_base_agent import SimpleBaseAgent as BaseAgent
+from core.enhanced_mesh_network import EnhancedMeshNetwork as MeshNetwork
 from core.failstorm_metrics import FailStormMetricsCollector
 
-# Import user's shard_qa agent_executor directly
+# Import protocol-specific runners
+from protocol_backends.simple_json.runner import SimpleJsonRunner
+from protocol_backends.anp.runner import ANPRunner
+from protocol_backends.a2a.runner import A2ARunner
+
+# Import user's shard_qa agent_executor directly with dynamic import
 shard_qa_path = Path(__file__).parent.parent / "shard_qa"
 sys.path.insert(0, str(shard_qa_path))
-from shard_worker.agent_executor import ShardWorkerExecutor
+import importlib.util
+spec = importlib.util.spec_from_file_location("agent_executor", shard_qa_path / "shard_worker" / "agent_executor.py")
+agent_executor_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(agent_executor_module)
+ShardWorkerExecutor = agent_executor_module.ShardWorkerExecutor
 
 # Import colorama for output
 try:
@@ -70,6 +80,24 @@ class ColoredOutput:
     
     def progress(self, message: str) -> None:
         print(f"{Fore.WHITE}   {message}{Style.RESET_ALL}")
+
+
+class ProtocolRunnerFactory:
+    """Factory for creating protocol-specific runners."""
+    
+    RUNNERS = {
+        "simple_json": SimpleJsonRunner,
+        "anp": ANPRunner,
+        "a2a": A2ARunner,
+        # "acp": ACPRunner,  # 未来再加
+    }
+    
+    @classmethod
+    def create(cls, protocol: str, config_path: str):
+        """Create a protocol-specific runner."""
+        if protocol not in cls.RUNNERS:
+            raise ValueError(f"Unknown protocol runner: {protocol}. Available: {list(cls.RUNNERS.keys())}")
+        return cls.RUNNERS[protocol](config_path=config_path)
 
 
 class FailStormRunner:
@@ -1137,8 +1165,8 @@ async def main():
     
     args = parser.parse_args()
     
-    # Create runner
-    runner = FailStormRunner(args.config)
+    # Create protocol-specific runner using factory
+    runner = ProtocolRunnerFactory.create(args.protocol or "simple_json", args.config)
     
     # Override config with command line arguments
     if args.protocol:

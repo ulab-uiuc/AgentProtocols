@@ -34,24 +34,30 @@ sys.path.insert(0, str(parent_dir))
 import importlib.util
 import sys
 
-# Import BaseAgent
-spec = importlib.util.spec_from_file_location("base_agent", parent_dir / "local_deps" / "base_agent.py")
+# Import SimpleBaseAgent
+spec = importlib.util.spec_from_file_location("simple_base_agent", parent_dir / "core" / "simple_base_agent.py")
 base_agent_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(base_agent_module)
-BaseAgent = base_agent_module.BaseAgent
+BaseAgent = base_agent_module.SimpleBaseAgent
 
-# Import MeshNetwork  
-spec = importlib.util.spec_from_file_location("mesh_network", parent_dir / "core" / "mesh_network.py")
+# Import EnhancedMeshNetwork  
+spec = importlib.util.spec_from_file_location("enhanced_mesh_network", parent_dir / "core" / "enhanced_mesh_network.py")
 mesh_network_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mesh_network_module)
-MeshNetwork = mesh_network_module.MeshNetwork
+MeshNetwork = mesh_network_module.EnhancedMeshNetwork
 
 # Import FailStormMetricsCollector
 spec = importlib.util.spec_from_file_location("failstorm_metrics", parent_dir / "core" / "failstorm_metrics.py")
 failstorm_metrics_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(failstorm_metrics_module)
 FailStormMetricsCollector = failstorm_metrics_module.FailStormMetricsCollector
-from shard_worker.agent_executor import ShardWorkerExecutor
+# Import ShardWorkerExecutor dynamically
+shard_qa_path = parent_dir / "shard_qa"
+sys.path.insert(0, str(shard_qa_path))
+spec = importlib.util.spec_from_file_location("agent_executor", shard_qa_path / "shard_worker" / "agent_executor.py")
+agent_executor_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(agent_executor_module)
+ShardWorkerExecutor = agent_executor_module.ShardWorkerExecutor
 
 # Import colorama for output
 try:
@@ -143,11 +149,19 @@ class FailStormRunnerBase(ABC):
 
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         """Load configuration file with environment variable support."""
-        from utils.config_loader import load_config_with_env_vars, check_env_vars
+        from utils.config_loader import load_config_with_env_vars, check_env_vars, create_core_instance
         
         # Check required environment variables
         if not check_env_vars():
-            raise EnvironmentError("Required environment variables are not set")
+            raise EnvironmentError("At least one LLM API key must be set")
+        
+        # Initialize Core instance for LLM
+        try:
+            self.core = create_core_instance()
+            print(f"🔧 Initialized Core with {self.core.config['model']['type'].upper()} LLM")
+        except Exception as e:
+            print(f"⚠️  Failed to initialize Core LLM: {e}")
+            self.core = None
         
         config_file = Path(__file__).parent.parent / config_path
         
@@ -208,7 +222,8 @@ class FailStormRunnerBase(ABC):
                             default[key] = value
                     return default
                 
-                return merge_configs(default_config, loaded_config)
+                config = merge_configs(default_config, loaded_config)
+                return config
                 
             except Exception as e:
                 print(f"Warning: Failed to load config {config_path}: {e}")
@@ -216,6 +231,56 @@ class FailStormRunnerBase(ABC):
         else:
             print(f"Warning: Config file {config_path} not found, using defaults")
             return default_config
+    
+    def execute_llm(self, messages):
+        """
+        Execute LLM using the Core instance.
+        
+        Parameters
+        ----------
+        messages : list
+            List of message dictionaries in OpenAI format
+            
+        Returns
+        -------
+        str
+            LLM response content
+        """
+        if not self.core:
+            raise RuntimeError("Core LLM instance not initialized")
+        
+        try:
+            return self.core.execute(messages)
+        except Exception as e:
+            print(f"❌ LLM execution error: {e}")
+            raise
+    
+    def execute_llm_with_functions(self, messages, functions, max_length=300000):
+        """
+        Execute LLM with function calling using the Core instance.
+        
+        Parameters
+        ----------
+        messages : list
+            List of message dictionaries
+        functions : list
+            List of function definitions
+        max_length : int
+            Maximum character length limit
+            
+        Returns
+        -------
+        object
+            Complete LLM response object with tool calls
+        """
+        if not self.core:
+            raise RuntimeError("Core LLM instance not initialized")
+        
+        try:
+            return self.core.function_call_execute(messages, functions, max_length)
+        except Exception as e:
+            print(f"❌ LLM function call error: {e}")
+            raise
 
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals."""
