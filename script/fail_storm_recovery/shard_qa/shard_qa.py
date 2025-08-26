@@ -27,7 +27,7 @@ except ImportError:
         BLUE = ""
         CYAN = ""
         WHITE = ""
-    class Style:
+    class Style:   
         BRIGHT = ""
         RESET_ALL = ""
 
