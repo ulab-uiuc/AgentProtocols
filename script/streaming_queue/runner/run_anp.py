@@ -66,7 +66,7 @@ class ANPRunner(RunnerBase):
 
         # 1) Coordinator
         coord_port = int(self.config.get("qa", {}).get("coordinator", {}).get("start_port", 9998))
-        coordinator_executor = ANPCoordinatorExecutor(qa_cfg, out)
+        coordinator_executor = ANPCoordinatorExecutor(self.config, out)
         coord_handle = await self._backend.spawn_local_agent(
             agent_id="Coordinator-1", host="localhost", port=coord_port, executor=coordinator_executor
         )

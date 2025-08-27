@@ -1,0 +1,976 @@
+{
+  "metadata": {
+    "total_questions": 50,
+    "successful_questions": 23,
+    "failed_questions": 27,
+    "average_response_time": 9.869628595269244,
+    "timestamp": 1756312237.5076475,
+    "network_type": "ANPQACoordinator"
+  },
+  "results": [
+    {
+      "question_id": 2,
+      "question": "where is the federal penitentiary in ind",
+      "worker": "Worker-2",
+      "answer": "The Federal Correctional Complex in Terre Haute, Indiana, houses the federal penitentiary in Indiana. Located about 70 miles west of Indianapolis, this facility is notable for being the site of the federal death chamber. The complex includes a medium-security men's prison, a minimum-security satellite camp, and an administrative maximum-security unit. It serves as one of the few locations where federal inmates sentenced to death are housed and executed. The facility opened in 1998 and has been the site of several high-profile executions since then. It's managed by the Federal Bureau of Prisons and plays a significant role in the U.S. federal prison system, particularly concerning capital punishment cases.",
+      "response_time": 8.7939932346344,
+      "timestamp": 1756312186.2883155,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "The Federal Correctional Complex in Terre Haute, Indiana, houses the federal penitentiary in Indiana. Located about 70 miles west of Indianapolis, this facility is notable for being the site of the federal death chamber. The complex includes a medium-security men's prison, a minimum-security satellite camp, and an administrative maximum-security unit. It serves as one of the few locations where federal inmates sentenced to death are housed and executed. The facility opened in 1998 and has been the site of several high-profile executions since then. It's managed by the Federal Bureau of Prisons and plays a significant role in the U.S. federal prison system, particularly concerning capital punishment cases.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "481d1eaf-04d1-4f6b-abce-6a138a611a44",
+            "sender": "Worker-2",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "The Federal Correctional Complex in Terre Haute, Indiana, houses the federal penitentiary in Indiana. Located about 70 miles west of Indianapolis, this facility is notable for being the site of the federal death chamber. The complex includes a medium-security men's prison, a minimum-security satellite camp, and an administrative maximum-security unit. It serves as one of the few locations where federal inmates sentenced to death are housed and executed. The facility opened in 1998 and has been the site of several high-profile executions since then. It's managed by the Federal Bureau of Prisons and plays a significant role in the U.S. federal prison system, particularly concerning capital punishment cases."
+            },
+            "timestamp": 1756312186.287577
+          },
+          "text": "The Federal Correctional Complex in Terre Haute, Indiana, houses the federal penitentiary in Indiana. Located about 70 miles west of Indianapolis, this facility is notable for being the site of the federal death chamber. The complex includes a medium-security men's prison, a minimum-security satellite camp, and an administrative maximum-security unit. It serves as one of the few locations where federal inmates sentenced to death are housed and executed. The facility opened in 1998 and has been the site of several high-profile executions since then. It's managed by the Federal Bureau of Prisons and plays a significant role in the U.S. federal prison system, particularly concerning capital punishment cases."
+        }
+      }
+    },
+    {
+      "question_id": 1,
+      "question": "what does the golgi apparatus do to the proteins and lipids once they arrive ?",
+      "worker": "Worker-1",
+      "answer": "The Golgi apparatus modifies, sorts, and packages proteins and lipids for secretion or delivery to other parts of the cell. Once these molecules arrive from the endoplasmic reticulum (ER), the Golgi apparatus adds sugars (glycosylation) or phosphate groups (phosphorylation) to proteins, enhancing their function or targeting them for specific locations. It also packages these modified molecules into vesicles, which then bud off and travel to their destinations, such as the cell membrane for secretion or lysosomes for degradation. This process is crucial for the proper functioning of cells, ensuring that proteins and lipids are correctly modified and delivered to where they are needed within the cell or for export. The Golgi's role in this trafficking is essential for maintaining cellular homeostasis and communication.",
+      "response_time": 10.022648096084595,
+      "timestamp": 1756312187.516712,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "The Golgi apparatus modifies, sorts, and packages proteins and lipids for secretion or delivery to other parts of the cell. Once these molecules arrive from the endoplasmic reticulum (ER), the Golgi apparatus adds sugars (glycosylation) or phosphate groups (phosphorylation) to proteins, enhancing their function or targeting them for specific locations. It also packages these modified molecules into vesicles, which then bud off and travel to their destinations, such as the cell membrane for secretion or lysosomes for degradation. This process is crucial for the proper functioning of cells, ensuring that proteins and lipids are correctly modified and delivered to where they are needed within the cell or for export. The Golgi's role in this trafficking is essential for maintaining cellular homeostasis and communication.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "bd6cbfc5-fc6f-4953-82fa-6ef729cb22eb",
+            "sender": "Worker-1",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "The Golgi apparatus modifies, sorts, and packages proteins and lipids for secretion or delivery to other parts of the cell. Once these molecules arrive from the endoplasmic reticulum (ER), the Golgi apparatus adds sugars (glycosylation) or phosphate groups (phosphorylation) to proteins, enhancing their function or targeting them for specific locations. It also packages these modified molecules into vesicles, which then bud off and travel to their destinations, such as the cell membrane for secretion or lysosomes for degradation. This process is crucial for the proper functioning of cells, ensuring that proteins and lipids are correctly modified and delivered to where they are needed within the cell or for export. The Golgi's role in this trafficking is essential for maintaining cellular homeostasis and communication."
+            },
+            "timestamp": 1756312187.5159936
+          },
+          "text": "The Golgi apparatus modifies, sorts, and packages proteins and lipids for secretion or delivery to other parts of the cell. Once these molecules arrive from the endoplasmic reticulum (ER), the Golgi apparatus adds sugars (glycosylation) or phosphate groups (phosphorylation) to proteins, enhancing their function or targeting them for specific locations. It also packages these modified molecules into vesicles, which then bud off and travel to their destinations, such as the cell membrane for secretion or lysosomes for degradation. This process is crucial for the proper functioning of cells, ensuring that proteins and lipids are correctly modified and delivered to where they are needed within the cell or for export. The Golgi's role in this trafficking is essential for maintaining cellular homeostasis and communication."
+        }
+      }
+    },
+    {
+      "question_id": 4,
+      "question": "what foods are good if you have gout?",
+      "worker": "Worker-4",
+      "answer": "For gout management, focus on low-purine foods that help reduce uric acid levels. Opt for fruits like cherries and berries, which may lower uric acid. Vegetables such as leafy greens, broccoli, and cucumbers are beneficial. Whole grains like brown rice and oats provide fiber without increasing purine levels. Low-fat dairy products can also help manage gout. Lean proteins from sources like tofu, eggs, and poultry (in moderation) are preferable. Drink plenty of water to aid in flushing out uric acid. Avoid high-purine foods like organ meats, red meat, seafood, and alcohol, especially beer. Sugary drinks and foods with high fructose corn syrup should also be limited. Consulting a dietitian can help tailor a diet plan that suits individual needs while managing gout effectively. Always discuss dietary changes with a healthcare provider to ensure they align with overall health goals.",
+      "response_time": 11.562447309494019,
+      "timestamp": 1756312189.0577333,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "For gout management, focus on low-purine foods that help reduce uric acid levels. Opt for fruits like cherries and berries, which may lower uric acid. Vegetables such as leafy greens, broccoli, and cucumbers are beneficial. Whole grains like brown rice and oats provide fiber without increasing purine levels. Low-fat dairy products can also help manage gout. Lean proteins from sources like tofu, eggs, and poultry (in moderation) are preferable. Drink plenty of water to aid in flushing out uric acid. Avoid high-purine foods like organ meats, red meat, seafood, and alcohol, especially beer. Sugary drinks and foods with high fructose corn syrup should also be limited. Consulting a dietitian can help tailor a diet plan that suits individual needs while managing gout effectively. Always discuss dietary changes with a healthcare provider to ensure they align with overall health goals.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "687a5398-8641-4b05-b65e-2ec95b71a64f",
+            "sender": "Worker-4",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "For gout management, focus on low-purine foods that help reduce uric acid levels. Opt for fruits like cherries and berries, which may lower uric acid. Vegetables such as leafy greens, broccoli, and cucumbers are beneficial. Whole grains like brown rice and oats provide fiber without increasing purine levels. Low-fat dairy products can also help manage gout. Lean proteins from sources like tofu, eggs, and poultry (in moderation) are preferable. Drink plenty of water to aid in flushing out uric acid. Avoid high-purine foods like organ meats, red meat, seafood, and alcohol, especially beer. Sugary drinks and foods with high fructose corn syrup should also be limited. Consulting a dietitian can help tailor a diet plan that suits individual needs while managing gout effectively. Always discuss dietary changes with a healthcare provider to ensure they align with overall health goals."
+            },
+            "timestamp": 1756312189.056995
+          },
+          "text": "For gout management, focus on low-purine foods that help reduce uric acid levels. Opt for fruits like cherries and berries, which may lower uric acid. Vegetables such as leafy greens, broccoli, and cucumbers are beneficial. Whole grains like brown rice and oats provide fiber without increasing purine levels. Low-fat dairy products can also help manage gout. Lean proteins from sources like tofu, eggs, and poultry (in moderation) are preferable. Drink plenty of water to aid in flushing out uric acid. Avoid high-purine foods like organ meats, red meat, seafood, and alcohol, especially beer. Sugary drinks and foods with high fructose corn syrup should also be limited. Consulting a dietitian can help tailor a diet plan that suits individual needs while managing gout effectively. Always discuss dietary changes with a healthcare provider to ensure they align with overall health goals."
+        }
+      }
+    },
+    {
+      "question_id": 3,
+      "question": "health benefits of eating vegetarian",
+      "worker": "Worker-3",
+      "answer": "Eating a vegetarian diet offers numerous health benefits. It is typically rich in dietary fiber, vitamins C and E, potassium, magnesium, and many phytochemicals, which can lower the risk of chronic diseases such as heart disease, diabetes, and certain cancers. Vegetarians tend to have lower body mass indices (BMI), reduced blood pressure, and improved cholesterol levels compared to non-vegetarians. This diet also promotes gut health due to higher fiber intake, supporting beneficial bacteria in the digestive tract. Additionally, it can enhance longevity and reduce the risk of obesity. A vegetarian diet is environmentally friendly, reducing water usage and greenhouse gas emissions associated with meat production. However, careful planning is essential to ensure adequate intake of nutrients like protein, iron, calcium, vitamin B12, and omega-3 fatty acids, which are more commonly found in animal products. Overall, adopting a vegetarian diet can significantly improve health and contribute to environmental sustainability.",
+      "response_time": 11.874030828475952,
+      "timestamp": 1756312189.3685277,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Eating a vegetarian diet offers numerous health benefits. It is typically rich in dietary fiber, vitamins C and E, potassium, magnesium, and many phytochemicals, which can lower the risk of chronic diseases such as heart disease, diabetes, and certain cancers. Vegetarians tend to have lower body mass indices (BMI), reduced blood pressure, and improved cholesterol levels compared to non-vegetarians. This diet also promotes gut health due to higher fiber intake, supporting beneficial bacteria in the digestive tract. Additionally, it can enhance longevity and reduce the risk of obesity. A vegetarian diet is environmentally friendly, reducing water usage and greenhouse gas emissions associated with meat production. However, careful planning is essential to ensure adequate intake of nutrients like protein, iron, calcium, vitamin B12, and omega-3 fatty acids, which are more commonly found in animal products. Overall, adopting a vegetarian diet can significantly improve health and contribute to environmental sustainability.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "d32aa58e-c1b3-496a-8912-b7c338b94adf",
+            "sender": "Worker-3",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "Eating a vegetarian diet offers numerous health benefits. It is typically rich in dietary fiber, vitamins C and E, potassium, magnesium, and many phytochemicals, which can lower the risk of chronic diseases such as heart disease, diabetes, and certain cancers. Vegetarians tend to have lower body mass indices (BMI), reduced blood pressure, and improved cholesterol levels compared to non-vegetarians. This diet also promotes gut health due to higher fiber intake, supporting beneficial bacteria in the digestive tract. Additionally, it can enhance longevity and reduce the risk of obesity. A vegetarian diet is environmentally friendly, reducing water usage and greenhouse gas emissions associated with meat production. However, careful planning is essential to ensure adequate intake of nutrients like protein, iron, calcium, vitamin B12, and omega-3 fatty acids, which are more commonly found in animal products. Overall, adopting a vegetarian diet can significantly improve health and contribute to environmental sustainability."
+            },
+            "timestamp": 1756312189.3677046
+          },
+          "text": "Eating a vegetarian diet offers numerous health benefits. It is typically rich in dietary fiber, vitamins C and E, potassium, magnesium, and many phytochemicals, which can lower the risk of chronic diseases such as heart disease, diabetes, and certain cancers. Vegetarians tend to have lower body mass indices (BMI), reduced blood pressure, and improved cholesterol levels compared to non-vegetarians. This diet also promotes gut health due to higher fiber intake, supporting beneficial bacteria in the digestive tract. Additionally, it can enhance longevity and reduce the risk of obesity. A vegetarian diet is environmentally friendly, reducing water usage and greenhouse gas emissions associated with meat production. However, careful planning is essential to ensure adequate intake of nutrients like protein, iron, calcium, vitamin B12, and omega-3 fatty acids, which are more commonly found in animal products. Overall, adopting a vegetarian diet can significantly improve health and contribute to environmental sustainability."
+        }
+      }
+    },
+    {
+      "question_id": 5,
+      "question": "what is the endocrine system responsible for?",
+      "worker": "Worker-2",
+      "answer": "The endocrine system is responsible for producing and regulating hormones, which are chemical messengers that control various bodily functions. It consists of glands such as the pituitary, thyroid, adrenal, and pancreas, among others. These glands secrete hormones directly into the bloodstream, influencing metabolism, growth, sexual function, sleep, and mood. For example, the thyroid gland produces hormones that regulate metabolism, while the pancreas releases insulin to manage blood sugar levels. The system works closely with the nervous system to maintain homeostasis, ensuring that the body's internal environment remains stable. Hormonal imbalances can lead to various disorders, highlighting the critical role of the endocrine system in overall health and well-being.",
+      "response_time": 9.050819158554077,
+      "timestamp": 1756312195.339166,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "The endocrine system is responsible for producing and regulating hormones, which are chemical messengers that control various bodily functions. It consists of glands such as the pituitary, thyroid, adrenal, and pancreas, among others. These glands secrete hormones directly into the bloodstream, influencing metabolism, growth, sexual function, sleep, and mood. For example, the thyroid gland produces hormones that regulate metabolism, while the pancreas releases insulin to manage blood sugar levels. The system works closely with the nervous system to maintain homeostasis, ensuring that the body's internal environment remains stable. Hormonal imbalances can lead to various disorders, highlighting the critical role of the endocrine system in overall health and well-being.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "23314e71-b0d4-494a-88ca-6643a9c82aaf",
+            "sender": "Worker-2",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "The endocrine system is responsible for producing and regulating hormones, which are chemical messengers that control various bodily functions. It consists of glands such as the pituitary, thyroid, adrenal, and pancreas, among others. These glands secrete hormones directly into the bloodstream, influencing metabolism, growth, sexual function, sleep, and mood. For example, the thyroid gland produces hormones that regulate metabolism, while the pancreas releases insulin to manage blood sugar levels. The system works closely with the nervous system to maintain homeostasis, ensuring that the body's internal environment remains stable. Hormonal imbalances can lead to various disorders, highlighting the critical role of the endocrine system in overall health and well-being."
+            },
+            "timestamp": 1756312195.3384812
+          },
+          "text": "The endocrine system is responsible for producing and regulating hormones, which are chemical messengers that control various bodily functions. It consists of glands such as the pituitary, thyroid, adrenal, and pancreas, among others. These glands secrete hormones directly into the bloodstream, influencing metabolism, growth, sexual function, sleep, and mood. For example, the thyroid gland produces hormones that regulate metabolism, while the pancreas releases insulin to manage blood sugar levels. The system works closely with the nervous system to maintain homeostasis, ensuring that the body's internal environment remains stable. Hormonal imbalances can lead to various disorders, highlighting the critical role of the endocrine system in overall health and well-being."
+        }
+      }
+    },
+    {
+      "question_id": 8,
+      "question": "is dhgate a scam",
+      "worker": "Worker-3",
+      "answer": "Dhgate is not inherently a scam, but like any online marketplace, it has its risks. It's a legitimate platform where sellers from China and other countries offer products at competitive prices. However, there have been reports of fraudulent activities, such as fake listings, poor quality goods, or non-delivery. To minimize risks, buyers should check seller ratings, read reviews, and use the platform's buyer protection services. It's also advisable to start with smaller purchases to test the reliability of sellers. While most transactions on Dhgate are legitimate, being cautious and informed can help avoid potential scams. Always report suspicious activities to the platform for better security measures.",
+      "response_time": 8.25509762763977,
+      "timestamp": 1756312197.623674,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Dhgate is not inherently a scam, but like any online marketplace, it has its risks. It's a legitimate platform where sellers from China and other countries offer products at competitive prices. However, there have been reports of fraudulent activities, such as fake listings, poor quality goods, or non-delivery. To minimize risks, buyers should check seller ratings, read reviews, and use the platform's buyer protection services. It's also advisable to start with smaller purchases to test the reliability of sellers. While most transactions on Dhgate are legitimate, being cautious and informed can help avoid potential scams. Always report suspicious activities to the platform for better security measures.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "b49b71d4-4617-4266-b02e-038f51e2780c",
+            "sender": "Worker-3",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "Dhgate is not inherently a scam, but like any online marketplace, it has its risks. It's a legitimate platform where sellers from China and other countries offer products at competitive prices. However, there have been reports of fraudulent activities, such as fake listings, poor quality goods, or non-delivery. To minimize risks, buyers should check seller ratings, read reviews, and use the platform's buyer protection services. It's also advisable to start with smaller purchases to test the reliability of sellers. While most transactions on Dhgate are legitimate, being cautious and informed can help avoid potential scams. Always report suspicious activities to the platform for better security measures."
+            },
+            "timestamp": 1756312197.6230025
+          },
+          "text": "Dhgate is not inherently a scam, but like any online marketplace, it has its risks. It's a legitimate platform where sellers from China and other countries offer products at competitive prices. However, there have been reports of fraudulent activities, such as fake listings, poor quality goods, or non-delivery. To minimize risks, buyers should check seller ratings, read reviews, and use the platform's buyer protection services. It's also advisable to start with smaller purchases to test the reliability of sellers. While most transactions on Dhgate are legitimate, being cautious and informed can help avoid potential scams. Always report suspicious activities to the platform for better security measures."
+        }
+      }
+    },
+    {
+      "question_id": 7,
+      "question": "definition for daring",
+      "worker": "Worker-4",
+      "answer": "\"Daring\" refers to the quality of being bold and courageous in the face of danger or difficulty. It involves taking risks or making decisions that require bravery and confidence. A daring person is willing to challenge the status quo, push boundaries, and pursue ambitious goals despite potential obstacles. This trait is often admired in contexts like adventure, sports, leadership, and innovation, where stepping out of one's comfort zone can lead to significant achievements. Daring can also imply a willingness to defy conventional wisdom or societal norms, fostering creativity and progress. However, it should be balanced with caution to avoid unnecessary risks. In essence, daring encapsulates the spirit of adventure and the drive to explore new possibilities.",
+      "response_time": 8.753966093063354,
+      "timestamp": 1756312197.8117514,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "\"Daring\" refers to the quality of being bold and courageous in the face of danger or difficulty. It involves taking risks or making decisions that require bravery and confidence. A daring person is willing to challenge the status quo, push boundaries, and pursue ambitious goals despite potential obstacles. This trait is often admired in contexts like adventure, sports, leadership, and innovation, where stepping out of one's comfort zone can lead to significant achievements. Daring can also imply a willingness to defy conventional wisdom or societal norms, fostering creativity and progress. However, it should be balanced with caution to avoid unnecessary risks. In essence, daring encapsulates the spirit of adventure and the drive to explore new possibilities.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "0ab72769-2cb5-4690-9db0-ed30724378c1",
+            "sender": "Worker-4",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "\"Daring\" refers to the quality of being bold and courageous in the face of danger or difficulty. It involves taking risks or making decisions that require bravery and confidence. A daring person is willing to challenge the status quo, push boundaries, and pursue ambitious goals despite potential obstacles. This trait is often admired in contexts like adventure, sports, leadership, and innovation, where stepping out of one's comfort zone can lead to significant achievements. Daring can also imply a willingness to defy conventional wisdom or societal norms, fostering creativity and progress. However, it should be balanced with caution to avoid unnecessary risks. In essence, daring encapsulates the spirit of adventure and the drive to explore new possibilities."
+            },
+            "timestamp": 1756312197.811028
+          },
+          "text": "\"Daring\" refers to the quality of being bold and courageous in the face of danger or difficulty. It involves taking risks or making decisions that require bravery and confidence. A daring person is willing to challenge the status quo, push boundaries, and pursue ambitious goals despite potential obstacles. This trait is often admired in contexts like adventure, sports, leadership, and innovation, where stepping out of one's comfort zone can lead to significant achievements. Daring can also imply a willingness to defy conventional wisdom or societal norms, fostering creativity and progress. However, it should be balanced with caution to avoid unnecessary risks. In essence, daring encapsulates the spirit of adventure and the drive to explore new possibilities."
+        }
+      }
+    },
+    {
+      "question_id": 6,
+      "question": "what is the nutritional value of oatmeal",
+      "worker": "Worker-1",
+      "answer": "Oatmeal is a nutritious food rich in essential nutrients. It's high in soluble fiber, particularly beta-glucan, which can help lower cholesterol and improve heart health. A typical serving (about 1/2 cup dry oats) provides around 150 calories, 6 grams of protein, and 4 grams of fiber. Oats are also a good source of vitamins and minerals like manganese, phosphorus, magnesium, copper, iron, zinc, and B vitamins. These nutrients support bone health, energy production, and immune function. Additionally, oats contain antioxidants called avenanthramides, which may help protect against heart disease by increasing nitric oxide production, improving blood flow, and reducing blood pressure. Overall, oatmeal is a versatile, nutrient-dense food that can contribute significantly to a healthy diet when consumed as part of a balanced meal plan.",
+      "response_time": 11.284651517868042,
+      "timestamp": 1756312198.8013947,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Oatmeal is a nutritious food rich in essential nutrients. It's high in soluble fiber, particularly beta-glucan, which can help lower cholesterol and improve heart health. A typical serving (about 1/2 cup dry oats) provides around 150 calories, 6 grams of protein, and 4 grams of fiber. Oats are also a good source of vitamins and minerals like manganese, phosphorus, magnesium, copper, iron, zinc, and B vitamins. These nutrients support bone health, energy production, and immune function. Additionally, oats contain antioxidants called avenanthramides, which may help protect against heart disease by increasing nitric oxide production, improving blood flow, and reducing blood pressure. Overall, oatmeal is a versatile, nutrient-dense food that can contribute significantly to a healthy diet when consumed as part of a balanced meal plan.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "394a4bf5-09a7-417a-823e-30d290c6e3be",
+            "sender": "Worker-1",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "Oatmeal is a nutritious food rich in essential nutrients. It's high in soluble fiber, particularly beta-glucan, which can help lower cholesterol and improve heart health. A typical serving (about 1/2 cup dry oats) provides around 150 calories, 6 grams of protein, and 4 grams of fiber. Oats are also a good source of vitamins and minerals like manganese, phosphorus, magnesium, copper, iron, zinc, and B vitamins. These nutrients support bone health, energy production, and immune function. Additionally, oats contain antioxidants called avenanthramides, which may help protect against heart disease by increasing nitric oxide production, improving blood flow, and reducing blood pressure. Overall, oatmeal is a versatile, nutrient-dense food that can contribute significantly to a healthy diet when consumed as part of a balanced meal plan."
+            },
+            "timestamp": 1756312198.8007178
+          },
+          "text": "Oatmeal is a nutritious food rich in essential nutrients. It's high in soluble fiber, particularly beta-glucan, which can help lower cholesterol and improve heart health. A typical serving (about 1/2 cup dry oats) provides around 150 calories, 6 grams of protein, and 4 grams of fiber. Oats are also a good source of vitamins and minerals like manganese, phosphorus, magnesium, copper, iron, zinc, and B vitamins. These nutrients support bone health, energy production, and immune function. Additionally, oats contain antioxidants called avenanthramides, which may help protect against heart disease by increasing nitric oxide production, improving blood flow, and reducing blood pressure. Overall, oatmeal is a versatile, nutrient-dense food that can contribute significantly to a healthy diet when consumed as part of a balanced meal plan."
+        }
+      }
+    },
+    {
+      "question_id": 9,
+      "question": "how to become a teacher assistant",
+      "worker": "Worker-2",
+      "answer": "Becoming a teacher assistant involves several steps. First, ensure you meet the basic requirements: a high school diploma or GED is often necessary. Some positions may require additional education, like an associate's degree. Next, gain relevant experience through volunteering in schools or working with children. Many districts require background checks and specific certifications, such as CPR certification. Consider enrolling in a teacher assistant program at a local community college for formal training, which can enhance your skills and employability. Look for job openings in your area, either directly with schools or through employment agencies specializing in educational roles. Prepare a resume highlighting your education, experience, and skills related to teaching assistance. Finally, interview well by demonstrating your passion for education and ability to support students and teachers effectively. Continuous learning and professional development will be beneficial throughout your career.",
+      "response_time": 10.492279529571533,
+      "timestamp": 1756312205.8315022,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Becoming a teacher assistant involves several steps. First, ensure you meet the basic requirements: a high school diploma or GED is often necessary. Some positions may require additional education, like an associate's degree. Next, gain relevant experience through volunteering in schools or working with children. Many districts require background checks and specific certifications, such as CPR certification. Consider enrolling in a teacher assistant program at a local community college for formal training, which can enhance your skills and employability. Look for job openings in your area, either directly with schools or through employment agencies specializing in educational roles. Prepare a resume highlighting your education, experience, and skills related to teaching assistance. Finally, interview well by demonstrating your passion for education and ability to support students and teachers effectively. Continuous learning and professional development will be beneficial throughout your career.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "42d6de6d-4f82-41ef-8494-b220e8bbd9a4",
+            "sender": "Worker-2",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "Becoming a teacher assistant involves several steps. First, ensure you meet the basic requirements: a high school diploma or GED is often necessary. Some positions may require additional education, like an associate's degree. Next, gain relevant experience through volunteering in schools or working with children. Many districts require background checks and specific certifications, such as CPR certification. Consider enrolling in a teacher assistant program at a local community college for formal training, which can enhance your skills and employability. Look for job openings in your area, either directly with schools or through employment agencies specializing in educational roles. Prepare a resume highlighting your education, experience, and skills related to teaching assistance. Finally, interview well by demonstrating your passion for education and ability to support students and teachers effectively. Continuous learning and professional development will be beneficial throughout your career."
+            },
+            "timestamp": 1756312205.8308325
+          },
+          "text": "Becoming a teacher assistant involves several steps. First, ensure you meet the basic requirements: a high school diploma or GED is often necessary. Some positions may require additional education, like an associate's degree. Next, gain relevant experience through volunteering in schools or working with children. Many districts require background checks and specific certifications, such as CPR certification. Consider enrolling in a teacher assistant program at a local community college for formal training, which can enhance your skills and employability. Look for job openings in your area, either directly with schools or through employment agencies specializing in educational roles. Prepare a resume highlighting your education, experience, and skills related to teaching assistance. Finally, interview well by demonstrating your passion for education and ability to support students and teachers effectively. Continuous learning and professional development will be beneficial throughout your career."
+        }
+      }
+    },
+    {
+      "question_id": 12,
+      "question": "ways to stop diarrhea in my pupply",
+      "worker": "Worker-1",
+      "answer": "To help stop diarrhea in your puppy, start by ensuring they have plenty of fresh water to prevent dehydration. Temporarily switch their diet to a bland, easily digestible food like boiled chicken and rice for 24-48 hours. Avoid giving them milk or fatty foods, as these can worsen diarrhea. Probiotics can also be beneficial, helping to restore gut bacteria balance; consult with a vet for appropriate options. If the diarrhea persists beyond two days, contains blood, or is accompanied by vomiting, lethargy, or loss of appetite, seek veterinary care immediately. These symptoms could indicate a more serious condition requiring professional treatment. Always monitor your puppy closely and adjust their diet back to normal gradually once the diarrhea subsides.",
+      "response_time": 9.319182872772217,
+      "timestamp": 1756312208.120634,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "To help stop diarrhea in your puppy, start by ensuring they have plenty of fresh water to prevent dehydration. Temporarily switch their diet to a bland, easily digestible food like boiled chicken and rice for 24-48 hours. Avoid giving them milk or fatty foods, as these can worsen diarrhea. Probiotics can also be beneficial, helping to restore gut bacteria balance; consult with a vet for appropriate options. If the diarrhea persists beyond two days, contains blood, or is accompanied by vomiting, lethargy, or loss of appetite, seek veterinary care immediately. These symptoms could indicate a more serious condition requiring professional treatment. Always monitor your puppy closely and adjust their diet back to normal gradually once the diarrhea subsides.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "083d4c45-4552-4760-a4e0-634709a05a1c",
+            "sender": "Worker-1",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "To help stop diarrhea in your puppy, start by ensuring they have plenty of fresh water to prevent dehydration. Temporarily switch their diet to a bland, easily digestible food like boiled chicken and rice for 24-48 hours. Avoid giving them milk or fatty foods, as these can worsen diarrhea. Probiotics can also be beneficial, helping to restore gut bacteria balance; consult with a vet for appropriate options. If the diarrhea persists beyond two days, contains blood, or is accompanied by vomiting, lethargy, or loss of appetite, seek veterinary care immediately. These symptoms could indicate a more serious condition requiring professional treatment. Always monitor your puppy closely and adjust their diet back to normal gradually once the diarrhea subsides."
+            },
+            "timestamp": 1756312208.119701
+          },
+          "text": "To help stop diarrhea in your puppy, start by ensuring they have plenty of fresh water to prevent dehydration. Temporarily switch their diet to a bland, easily digestible food like boiled chicken and rice for 24-48 hours. Avoid giving them milk or fatty foods, as these can worsen diarrhea. Probiotics can also be beneficial, helping to restore gut bacteria balance; consult with a vet for appropriate options. If the diarrhea persists beyond two days, contains blood, or is accompanied by vomiting, lethargy, or loss of appetite, seek veterinary care immediately. These symptoms could indicate a more serious condition requiring professional treatment. Always monitor your puppy closely and adjust their diet back to normal gradually once the diarrhea subsides."
+        }
+      }
+    },
+    {
+      "question_id": 11,
+      "question": "how far deep to plant beet early wonder",
+      "worker": "Worker-4",
+      "answer": "For planting early wonder beets, sow seeds about 1/2 inch deep in the soil. Ensure the soil is well-draining and rich in organic matter for optimal growth. Space seeds approximately 1-2 inches apart in rows that are 12-18 inches apart. After sowing, cover the seeds lightly with soil and gently water to keep the soil moist but not soggy. Beets prefer cooler temperatures, so planting in early spring or late summer is ideal. Germination typically occurs within 7-14 days. Thin seedlings to 3-4 inches apart once they reach a few inches tall to allow each plant enough space to develop fully. Regular watering and occasional fertilization will help promote healthy growth and a bountiful harvest of these sweet, earthy root vegetables.",
+      "response_time": 10.309175968170166,
+      "timestamp": 1756312208.1209624,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "For planting early wonder beets, sow seeds about 1/2 inch deep in the soil. Ensure the soil is well-draining and rich in organic matter for optimal growth. Space seeds approximately 1-2 inches apart in rows that are 12-18 inches apart. After sowing, cover the seeds lightly with soil and gently water to keep the soil moist but not soggy. Beets prefer cooler temperatures, so planting in early spring or late summer is ideal. Germination typically occurs within 7-14 days. Thin seedlings to 3-4 inches apart once they reach a few inches tall to allow each plant enough space to develop fully. Regular watering and occasional fertilization will help promote healthy growth and a bountiful harvest of these sweet, earthy root vegetables.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "019fa150-8eca-447e-b59e-2101d24d3b16",
+            "sender": "Worker-4",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "For planting early wonder beets, sow seeds about 1/2 inch deep in the soil. Ensure the soil is well-draining and rich in organic matter for optimal growth. Space seeds approximately 1-2 inches apart in rows that are 12-18 inches apart. After sowing, cover the seeds lightly with soil and gently water to keep the soil moist but not soggy. Beets prefer cooler temperatures, so planting in early spring or late summer is ideal. Germination typically occurs within 7-14 days. Thin seedlings to 3-4 inches apart once they reach a few inches tall to allow each plant enough space to develop fully. Regular watering and occasional fertilization will help promote healthy growth and a bountiful harvest of these sweet, earthy root vegetables."
+            },
+            "timestamp": 1756312208.1199021
+          },
+          "text": "For planting early wonder beets, sow seeds about 1/2 inch deep in the soil. Ensure the soil is well-draining and rich in organic matter for optimal growth. Space seeds approximately 1-2 inches apart in rows that are 12-18 inches apart. After sowing, cover the seeds lightly with soil and gently water to keep the soil moist but not soggy. Beets prefer cooler temperatures, so planting in early spring or late summer is ideal. Germination typically occurs within 7-14 days. Thin seedlings to 3-4 inches apart once they reach a few inches tall to allow each plant enough space to develop fully. Regular watering and occasional fertilization will help promote healthy growth and a bountiful harvest of these sweet, earthy root vegetables."
+        }
+      }
+    },
+    {
+      "question_id": 10,
+      "question": "what study for mets to brain",
+      "worker": "Worker-3",
+      "answer": "To study metastasis (mets) to the brain, focus on neuro-oncology and cancer biology. Key areas include understanding tumor cell invasion, angiogenesis, and the blood-brain barrier's role in metastasis. Research methods involve animal models, particularly mice, where human cancer cells can be injected into the bloodstream to observe metastatic spread to the brain. Advanced imaging techniques like MRI and PET scans help visualize tumor growth. Molecular biology tools examine genetic and epigenetic changes in metastatic cells. Clinical studies analyze patient data for risk factors and treatment outcomes. Targeted therapies and immunotherapy are explored for treatment. Collaborations between oncologists, neurosurgeons, and researchers are crucial. Educational resources include specialized courses, journals like \"Neuro-Oncology,\" and conferences focusing on brain metastases. This interdisciplinary approach enhances understanding and treatment of brain metastases.",
+      "response_time": 11.179636716842651,
+      "timestamp": 1756312208.8033688,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "To study metastasis (mets) to the brain, focus on neuro-oncology and cancer biology. Key areas include understanding tumor cell invasion, angiogenesis, and the blood-brain barrier's role in metastasis. Research methods involve animal models, particularly mice, where human cancer cells can be injected into the bloodstream to observe metastatic spread to the brain. Advanced imaging techniques like MRI and PET scans help visualize tumor growth. Molecular biology tools examine genetic and epigenetic changes in metastatic cells. Clinical studies analyze patient data for risk factors and treatment outcomes. Targeted therapies and immunotherapy are explored for treatment. Collaborations between oncologists, neurosurgeons, and researchers are crucial. Educational resources include specialized courses, journals like \"Neuro-Oncology,\" and conferences focusing on brain metastases. This interdisciplinary approach enhances understanding and treatment of brain metastases.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "11d0957d-58e6-4801-aa76-af090a77afb2",
+            "sender": "Worker-3",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "To study metastasis (mets) to the brain, focus on neuro-oncology and cancer biology. Key areas include understanding tumor cell invasion, angiogenesis, and the blood-brain barrier's role in metastasis. Research methods involve animal models, particularly mice, where human cancer cells can be injected into the bloodstream to observe metastatic spread to the brain. Advanced imaging techniques like MRI and PET scans help visualize tumor growth. Molecular biology tools examine genetic and epigenetic changes in metastatic cells. Clinical studies analyze patient data for risk factors and treatment outcomes. Targeted therapies and immunotherapy are explored for treatment. Collaborations between oncologists, neurosurgeons, and researchers are crucial. Educational resources include specialized courses, journals like \"Neuro-Oncology,\" and conferences focusing on brain metastases. This interdisciplinary approach enhances understanding and treatment of brain metastases."
+            },
+            "timestamp": 1756312208.8026435
+          },
+          "text": "To study metastasis (mets) to the brain, focus on neuro-oncology and cancer biology. Key areas include understanding tumor cell invasion, angiogenesis, and the blood-brain barrier's role in metastasis. Research methods involve animal models, particularly mice, where human cancer cells can be injected into the bloodstream to observe metastatic spread to the brain. Advanced imaging techniques like MRI and PET scans help visualize tumor growth. Molecular biology tools examine genetic and epigenetic changes in metastatic cells. Clinical studies analyze patient data for risk factors and treatment outcomes. Targeted therapies and immunotherapy are explored for treatment. Collaborations between oncologists, neurosurgeons, and researchers are crucial. Educational resources include specialized courses, journals like \"Neuro-Oncology,\" and conferences focusing on brain metastases. This interdisciplinary approach enhances understanding and treatment of brain metastases."
+        }
+      }
+    },
+    {
+      "question_id": 13,
+      "question": "what disease do roof rats cause",
+      "worker": "Worker-2",
+      "answer": "Roof rats can transmit several diseases, primarily through their droppings, urine, and bites. One of the most serious is leptospirosis, a bacterial infection that can lead to kidney damage, meningitis, liver failure, and respiratory distress in humans. They also carry hantavirus, which can cause severe respiratory illness. Rat-bite fever is another concern, transmitted through bites or scratches, causing symptoms like fever, chills, and muscle pain. Additionally, roof rats may spread salmonellosis via contaminated food, leading to gastrointestinal issues. Their presence can also exacerbate asthma and allergies due to allergens in their dander and droppings. Preventing infestations involves sealing entry points, maintaining cleanliness, and eliminating food sources. Regular inspections and professional pest control can further mitigate health risks associated with these rodents.",
+      "response_time": 10.626250267028809,
+      "timestamp": 1756312216.4577901,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Roof rats can transmit several diseases, primarily through their droppings, urine, and bites. One of the most serious is leptospirosis, a bacterial infection that can lead to kidney damage, meningitis, liver failure, and respiratory distress in humans. They also carry hantavirus, which can cause severe respiratory illness. Rat-bite fever is another concern, transmitted through bites or scratches, causing symptoms like fever, chills, and muscle pain. Additionally, roof rats may spread salmonellosis via contaminated food, leading to gastrointestinal issues. Their presence can also exacerbate asthma and allergies due to allergens in their dander and droppings. Preventing infestations involves sealing entry points, maintaining cleanliness, and eliminating food sources. Regular inspections and professional pest control can further mitigate health risks associated with these rodents.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "3338ae77-7050-451e-a2e4-ef677372de44",
+            "sender": "Worker-2",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "Roof rats can transmit several diseases, primarily through their droppings, urine, and bites. One of the most serious is leptospirosis, a bacterial infection that can lead to kidney damage, meningitis, liver failure, and respiratory distress in humans. They also carry hantavirus, which can cause severe respiratory illness. Rat-bite fever is another concern, transmitted through bites or scratches, causing symptoms like fever, chills, and muscle pain. Additionally, roof rats may spread salmonellosis via contaminated food, leading to gastrointestinal issues. Their presence can also exacerbate asthma and allergies due to allergens in their dander and droppings. Preventing infestations involves sealing entry points, maintaining cleanliness, and eliminating food sources. Regular inspections and professional pest control can further mitigate health risks associated with these rodents."
+            },
+            "timestamp": 1756312216.4571517
+          },
+          "text": "Roof rats can transmit several diseases, primarily through their droppings, urine, and bites. One of the most serious is leptospirosis, a bacterial infection that can lead to kidney damage, meningitis, liver failure, and respiratory distress in humans. They also carry hantavirus, which can cause severe respiratory illness. Rat-bite fever is another concern, transmitted through bites or scratches, causing symptoms like fever, chills, and muscle pain. Additionally, roof rats may spread salmonellosis via contaminated food, leading to gastrointestinal issues. Their presence can also exacerbate asthma and allergies due to allergens in their dander and droppings. Preventing infestations involves sealing entry points, maintaining cleanliness, and eliminating food sources. Regular inspections and professional pest control can further mitigate health risks associated with these rodents."
+        }
+      }
+    },
+    {
+      "question_id": 16,
+      "question": "where is the graphic card located in the cpu",
+      "worker": "Worker-3",
+      "answer": "The graphics card is not located inside the CPU; it's a separate component. In desktop computers, the graphics card typically slots into a PCIe (Peripheral Component Interconnect Express) slot on the motherboard. This allows it to communicate directly with the system's memory and CPU for processing graphical data. Some motherboards have integrated graphics, which use part of the CPU's processing power and system RAM for graphics tasks. However, dedicated graphics cards offer superior performance by having their own GPU (Graphics Processing Unit) and dedicated VRAM (Video Random Access Memory). In laptops, the graphics card can be integrated into the motherboard or be a dedicated chip placed near the CPU for efficient heat management and space utilization.",
+      "response_time": 8.70825481414795,
+      "timestamp": 1756312217.5116506,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "The graphics card is not located inside the CPU; it's a separate component. In desktop computers, the graphics card typically slots into a PCIe (Peripheral Component Interconnect Express) slot on the motherboard. This allows it to communicate directly with the system's memory and CPU for processing graphical data. Some motherboards have integrated graphics, which use part of the CPU's processing power and system RAM for graphics tasks. However, dedicated graphics cards offer superior performance by having their own GPU (Graphics Processing Unit) and dedicated VRAM (Video Random Access Memory). In laptops, the graphics card can be integrated into the motherboard or be a dedicated chip placed near the CPU for efficient heat management and space utilization.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "168ce69c-84e6-4e30-b2db-75c756c09bbf",
+            "sender": "Worker-3",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "The graphics card is not located inside the CPU; it's a separate component. In desktop computers, the graphics card typically slots into a PCIe (Peripheral Component Interconnect Express) slot on the motherboard. This allows it to communicate directly with the system's memory and CPU for processing graphical data. Some motherboards have integrated graphics, which use part of the CPU's processing power and system RAM for graphics tasks. However, dedicated graphics cards offer superior performance by having their own GPU (Graphics Processing Unit) and dedicated VRAM (Video Random Access Memory). In laptops, the graphics card can be integrated into the motherboard or be a dedicated chip placed near the CPU for efficient heat management and space utilization."
+            },
+            "timestamp": 1756312217.5109956
+          },
+          "text": "The graphics card is not located inside the CPU; it's a separate component. In desktop computers, the graphics card typically slots into a PCIe (Peripheral Component Interconnect Express) slot on the motherboard. This allows it to communicate directly with the system's memory and CPU for processing graphical data. Some motherboards have integrated graphics, which use part of the CPU's processing power and system RAM for graphics tasks. However, dedicated graphics cards offer superior performance by having their own GPU (Graphics Processing Unit) and dedicated VRAM (Video Random Access Memory). In laptops, the graphics card can be integrated into the motherboard or be a dedicated chip placed near the CPU for efficient heat management and space utilization."
+        }
+      }
+    },
+    {
+      "question_id": 14,
+      "question": "when was niagara falls created",
+      "worker": "Worker-1",
+      "answer": "Niagara Falls was not \"created\" in the traditional sense but rather formed over time through geological processes. The falls began about 12,000 years ago at the end of the last Ice Age when retreating glaciers exposed the Niagara Escarpment. Initially, the falls were located near the present-day Queenston-Lewiston Bridge. Over thousands of years, the continuous force of the falling water and the underlying softer rock layers eroded the hard limestone cap, causing the falls to retreat southward to their current location. This erosion process has been ongoing, with the falls moving back approximately 7 miles since their formation. The powerful water flow continues to shape the landscape, making Niagara Falls a dynamic and ever-evolving natural wonder.",
+      "response_time": 9.515082597732544,
+      "timestamp": 1756312217.635744,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Niagara Falls was not \"created\" in the traditional sense but rather formed over time through geological processes. The falls began about 12,000 years ago at the end of the last Ice Age when retreating glaciers exposed the Niagara Escarpment. Initially, the falls were located near the present-day Queenston-Lewiston Bridge. Over thousands of years, the continuous force of the falling water and the underlying softer rock layers eroded the hard limestone cap, causing the falls to retreat southward to their current location. This erosion process has been ongoing, with the falls moving back approximately 7 miles since their formation. The powerful water flow continues to shape the landscape, making Niagara Falls a dynamic and ever-evolving natural wonder.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "5f86f364-294e-4026-b760-c814120a0110",
+            "sender": "Worker-1",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "Niagara Falls was not \"created\" in the traditional sense but rather formed over time through geological processes. The falls began about 12,000 years ago at the end of the last Ice Age when retreating glaciers exposed the Niagara Escarpment. Initially, the falls were located near the present-day Queenston-Lewiston Bridge. Over thousands of years, the continuous force of the falling water and the underlying softer rock layers eroded the hard limestone cap, causing the falls to retreat southward to their current location. This erosion process has been ongoing, with the falls moving back approximately 7 miles since their formation. The powerful water flow continues to shape the landscape, making Niagara Falls a dynamic and ever-evolving natural wonder."
+            },
+            "timestamp": 1756312217.635164
+          },
+          "text": "Niagara Falls was not \"created\" in the traditional sense but rather formed over time through geological processes. The falls began about 12,000 years ago at the end of the last Ice Age when retreating glaciers exposed the Niagara Escarpment. Initially, the falls were located near the present-day Queenston-Lewiston Bridge. Over thousands of years, the continuous force of the falling water and the underlying softer rock layers eroded the hard limestone cap, causing the falls to retreat southward to their current location. This erosion process has been ongoing, with the falls moving back approximately 7 miles since their formation. The powerful water flow continues to shape the landscape, making Niagara Falls a dynamic and ever-evolving natural wonder."
+        }
+      }
+    },
+    {
+      "question_id": 15,
+      "question": "what is the difference between a medical doctor and a doctor of osteopathic",
+      "worker": "Worker-4",
+      "answer": "A Medical Doctor (MD) and a Doctor of Osteopathic Medicine (DO) both practice medicine, but they have different philosophies and training. MDs focus on diagnosing and treating illness through medication and surgery, following an allopathic approach. DOs receive additional training in osteopathic manipulative treatment (OMT), emphasizing the body's musculoskeletal system and its impact on overall health. This holistic approach considers lifestyle and environmental factors alongside traditional medical practices. Both must pass rigorous exams and complete residency programs, but DOs take an additional test on OMT. In practice, MDs and DOs can prescribe medication, perform surgery, and specialize in any field. The main difference lies in their foundational philosophy and training, with DOs integrating more holistic practices into their care. Patients may choose either based on personal preference for these approaches.",
+      "response_time": 10.879141807556152,
+      "timestamp": 1756312219.0001156,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "A Medical Doctor (MD) and a Doctor of Osteopathic Medicine (DO) both practice medicine, but they have different philosophies and training. MDs focus on diagnosing and treating illness through medication and surgery, following an allopathic approach. DOs receive additional training in osteopathic manipulative treatment (OMT), emphasizing the body's musculoskeletal system and its impact on overall health. This holistic approach considers lifestyle and environmental factors alongside traditional medical practices. Both must pass rigorous exams and complete residency programs, but DOs take an additional test on OMT. In practice, MDs and DOs can prescribe medication, perform surgery, and specialize in any field. The main difference lies in their foundational philosophy and training, with DOs integrating more holistic practices into their care. Patients may choose either based on personal preference for these approaches.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "1d78c896-36ea-4dd1-b8e1-37fea4514437",
+            "sender": "Worker-4",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "A Medical Doctor (MD) and a Doctor of Osteopathic Medicine (DO) both practice medicine, but they have different philosophies and training. MDs focus on diagnosing and treating illness through medication and surgery, following an allopathic approach. DOs receive additional training in osteopathic manipulative treatment (OMT), emphasizing the body's musculoskeletal system and its impact on overall health. This holistic approach considers lifestyle and environmental factors alongside traditional medical practices. Both must pass rigorous exams and complete residency programs, but DOs take an additional test on OMT. In practice, MDs and DOs can prescribe medication, perform surgery, and specialize in any field. The main difference lies in their foundational philosophy and training, with DOs integrating more holistic practices into their care. Patients may choose either based on personal preference for these approaches."
+            },
+            "timestamp": 1756312218.9994295
+          },
+          "text": "A Medical Doctor (MD) and a Doctor of Osteopathic Medicine (DO) both practice medicine, but they have different philosophies and training. MDs focus on diagnosing and treating illness through medication and surgery, following an allopathic approach. DOs receive additional training in osteopathic manipulative treatment (OMT), emphasizing the body's musculoskeletal system and its impact on overall health. This holistic approach considers lifestyle and environmental factors alongside traditional medical practices. Both must pass rigorous exams and complete residency programs, but DOs take an additional test on OMT. In practice, MDs and DOs can prescribe medication, perform surgery, and specialize in any field. The main difference lies in their foundational philosophy and training, with DOs integrating more holistic practices into their care. Patients may choose either based on personal preference for these approaches."
+        }
+      }
+    },
+    {
+      "question_id": 17,
+      "question": "where is the graphic card located in the cpu",
+      "worker": "Worker-2",
+      "answer": "The graphics card isn't located inside the CPU; it's a separate component. In desktop computers, it typically slots into a PCIe (Peripheral Component Interconnect Express) slot on the motherboard. This allows for dedicated processing power specifically for handling graphical tasks, enhancing performance for gaming and other graphic-intensive applications. Some CPUs do come with integrated graphics, which are built into the CPU itself, sharing memory with the system. However, these are generally less powerful than dedicated graphics cards. For laptops, the graphics card can be integrated within the system board or placed near the CPU for better thermal management. Always check your computer's manual or specifications for the exact location and type of graphics solution used.",
+      "response_time": 8.720898628234863,
+      "timestamp": 1756312225.17873,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "The graphics card isn't located inside the CPU; it's a separate component. In desktop computers, it typically slots into a PCIe (Peripheral Component Interconnect Express) slot on the motherboard. This allows for dedicated processing power specifically for handling graphical tasks, enhancing performance for gaming and other graphic-intensive applications. Some CPUs do come with integrated graphics, which are built into the CPU itself, sharing memory with the system. However, these are generally less powerful than dedicated graphics cards. For laptops, the graphics card can be integrated within the system board or placed near the CPU for better thermal management. Always check your computer's manual or specifications for the exact location and type of graphics solution used.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "5cc2078a-7080-4500-983e-03eb62963ae0",
+            "sender": "Worker-2",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "The graphics card isn't located inside the CPU; it's a separate component. In desktop computers, it typically slots into a PCIe (Peripheral Component Interconnect Express) slot on the motherboard. This allows for dedicated processing power specifically for handling graphical tasks, enhancing performance for gaming and other graphic-intensive applications. Some CPUs do come with integrated graphics, which are built into the CPU itself, sharing memory with the system. However, these are generally less powerful than dedicated graphics cards. For laptops, the graphics card can be integrated within the system board or placed near the CPU for better thermal management. Always check your computer's manual or specifications for the exact location and type of graphics solution used."
+            },
+            "timestamp": 1756312225.1780536
+          },
+          "text": "The graphics card isn't located inside the CPU; it's a separate component. In desktop computers, it typically slots into a PCIe (Peripheral Component Interconnect Express) slot on the motherboard. This allows for dedicated processing power specifically for handling graphical tasks, enhancing performance for gaming and other graphic-intensive applications. Some CPUs do come with integrated graphics, which are built into the CPU itself, sharing memory with the system. However, these are generally less powerful than dedicated graphics cards. For laptops, the graphics card can be integrated within the system board or placed near the CPU for better thermal management. Always check your computer's manual or specifications for the exact location and type of graphics solution used."
+        }
+      }
+    },
+    {
+      "question_id": 19,
+      "question": "property premises meaning",
+      "worker": "Worker-1",
+      "answer": "\"Property premises\" refers to the land and any structures on it that are owned or leased by an individual or organization. This term encompasses all physical assets associated with a property, including buildings, parking lots, gardens, and any other improvements made to the land. In legal and real estate contexts, \"premises\" can also imply the area surrounding the main structure, such as sidewalks or adjacent land used for business purposes. The concept is crucial in various fields like law, where it affects liability and ownership rights, and in real estate, where it influences property valuation and usage regulations. Understanding the full extent of one's premises is essential for managing property effectively and complying with local laws and regulations.",
+      "response_time": 8.844860315322876,
+      "timestamp": 1756312226.4806294,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "\"Property premises\" refers to the land and any structures on it that are owned or leased by an individual or organization. This term encompasses all physical assets associated with a property, including buildings, parking lots, gardens, and any other improvements made to the land. In legal and real estate contexts, \"premises\" can also imply the area surrounding the main structure, such as sidewalks or adjacent land used for business purposes. The concept is crucial in various fields like law, where it affects liability and ownership rights, and in real estate, where it influences property valuation and usage regulations. Understanding the full extent of one's premises is essential for managing property effectively and complying with local laws and regulations.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "7eaa25d0-9086-41be-a43a-b15dccddf1d8",
+            "sender": "Worker-1",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "\"Property premises\" refers to the land and any structures on it that are owned or leased by an individual or organization. This term encompasses all physical assets associated with a property, including buildings, parking lots, gardens, and any other improvements made to the land. In legal and real estate contexts, \"premises\" can also imply the area surrounding the main structure, such as sidewalks or adjacent land used for business purposes. The concept is crucial in various fields like law, where it affects liability and ownership rights, and in real estate, where it influences property valuation and usage regulations. Understanding the full extent of one's premises is essential for managing property effectively and complying with local laws and regulations."
+            },
+            "timestamp": 1756312226.4799552
+          },
+          "text": "\"Property premises\" refers to the land and any structures on it that are owned or leased by an individual or organization. This term encompasses all physical assets associated with a property, including buildings, parking lots, gardens, and any other improvements made to the land. In legal and real estate contexts, \"premises\" can also imply the area surrounding the main structure, such as sidewalks or adjacent land used for business purposes. The concept is crucial in various fields like law, where it affects liability and ownership rights, and in real estate, where it influences property valuation and usage regulations. Understanding the full extent of one's premises is essential for managing property effectively and complying with local laws and regulations."
+        }
+      }
+    },
+    {
+      "question_id": 18,
+      "question": "what are hamitic peoples",
+      "worker": "Worker-3",
+      "answer": "The term \"Hamitic\" historically referred to a supposed racial or linguistic group in Africa and parts of Asia, believed to be descendants of Ham, son of Noah. This concept was widely used in the 19th and early 20th centuries but is now considered outdated and scientifically inaccurate. It included various peoples such as Ethiopians, Somalis, Egyptians, and Berbers, based on perceived physical traits and cultural practices. Modern scholarship rejects this classification, recognizing it as a product of colonial-era racial theories that conflated language, race, and culture. Today, these groups are understood through more accurate linguistic and anthropological frameworks, emphasizing their diverse histories and cultures rather than a unified \"Hamitic\" identity. The term remains controversial due to its racist connotations and lack of scientific basis.",
+      "response_time": 10.33148980140686,
+      "timestamp": 1756312227.8431664,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "The term \"Hamitic\" historically referred to a supposed racial or linguistic group in Africa and parts of Asia, believed to be descendants of Ham, son of Noah. This concept was widely used in the 19th and early 20th centuries but is now considered outdated and scientifically inaccurate. It included various peoples such as Ethiopians, Somalis, Egyptians, and Berbers, based on perceived physical traits and cultural practices. Modern scholarship rejects this classification, recognizing it as a product of colonial-era racial theories that conflated language, race, and culture. Today, these groups are understood through more accurate linguistic and anthropological frameworks, emphasizing their diverse histories and cultures rather than a unified \"Hamitic\" identity. The term remains controversial due to its racist connotations and lack of scientific basis.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "0b877fef-01e3-4eaf-a734-baa19aa41d6a",
+            "sender": "Worker-3",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "The term \"Hamitic\" historically referred to a supposed racial or linguistic group in Africa and parts of Asia, believed to be descendants of Ham, son of Noah. This concept was widely used in the 19th and early 20th centuries but is now considered outdated and scientifically inaccurate. It included various peoples such as Ethiopians, Somalis, Egyptians, and Berbers, based on perceived physical traits and cultural practices. Modern scholarship rejects this classification, recognizing it as a product of colonial-era racial theories that conflated language, race, and culture. Today, these groups are understood through more accurate linguistic and anthropological frameworks, emphasizing their diverse histories and cultures rather than a unified \"Hamitic\" identity. The term remains controversial due to its racist connotations and lack of scientific basis."
+            },
+            "timestamp": 1756312227.8425007
+          },
+          "text": "The term \"Hamitic\" historically referred to a supposed racial or linguistic group in Africa and parts of Asia, believed to be descendants of Ham, son of Noah. This concept was widely used in the 19th and early 20th centuries but is now considered outdated and scientifically inaccurate. It included various peoples such as Ethiopians, Somalis, Egyptians, and Berbers, based on perceived physical traits and cultural practices. Modern scholarship rejects this classification, recognizing it as a product of colonial-era racial theories that conflated language, race, and culture. Today, these groups are understood through more accurate linguistic and anthropological frameworks, emphasizing their diverse histories and cultures rather than a unified \"Hamitic\" identity. The term remains controversial due to its racist connotations and lack of scientific basis."
+        }
+      }
+    },
+    {
+      "question_id": 20,
+      "question": "does ichigo lose his powers",
+      "worker": "Worker-4",
+      "answer": "Yes, Ichigo Kurosaki temporarily loses his Shinigami powers in the manga and anime \"Bleach.\" This happens after his battle with Aizen in the Soul Society arc. Exhausted and defeated, he loses all his Shinigami abilities. However, he regains them through intense training with Yamamoto and Urahara. Later, during the Thousand-Year Blood War arc, Ichigo's powers transform into Vasto Lorde, the final form of a Hollow. After this arc, he retains his powers but in a different form, no longer needing a Zanpakuto. His journey shows that while he may lose his abilities at times, his determination and willpower allow him to regain and even surpass his previous strength. This theme of loss and recovery is central to Ichigo's character development throughout the series.",
+      "response_time": 10.637397289276123,
+      "timestamp": 1756312229.637552,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Yes, Ichigo Kurosaki temporarily loses his Shinigami powers in the manga and anime \"Bleach.\" This happens after his battle with Aizen in the Soul Society arc. Exhausted and defeated, he loses all his Shinigami abilities. However, he regains them through intense training with Yamamoto and Urahara. Later, during the Thousand-Year Blood War arc, Ichigo's powers transform into Vasto Lorde, the final form of a Hollow. After this arc, he retains his powers but in a different form, no longer needing a Zanpakuto. His journey shows that while he may lose his abilities at times, his determination and willpower allow him to regain and even surpass his previous strength. This theme of loss and recovery is central to Ichigo's character development throughout the series.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "2f11aed4-bb7e-45df-8fac-f4462e6b0345",
+            "sender": "Worker-4",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "Yes, Ichigo Kurosaki temporarily loses his Shinigami powers in the manga and anime \"Bleach.\" This happens after his battle with Aizen in the Soul Society arc. Exhausted and defeated, he loses all his Shinigami abilities. However, he regains them through intense training with Yamamoto and Urahara. Later, during the Thousand-Year Blood War arc, Ichigo's powers transform into Vasto Lorde, the final form of a Hollow. After this arc, he retains his powers but in a different form, no longer needing a Zanpakuto. His journey shows that while he may lose his abilities at times, his determination and willpower allow him to regain and even surpass his previous strength. This theme of loss and recovery is central to Ichigo's character development throughout the series."
+            },
+            "timestamp": 1756312229.6368759
+          },
+          "text": "Yes, Ichigo Kurosaki temporarily loses his Shinigami powers in the manga and anime \"Bleach.\" This happens after his battle with Aizen in the Soul Society arc. Exhausted and defeated, he loses all his Shinigami abilities. However, he regains them through intense training with Yamamoto and Urahara. Later, during the Thousand-Year Blood War arc, Ichigo's powers transform into Vasto Lorde, the final form of a Hollow. After this arc, he retains his powers but in a different form, no longer needing a Zanpakuto. His journey shows that while he may lose his abilities at times, his determination and willpower allow him to regain and even surpass his previous strength. This theme of loss and recovery is central to Ichigo's character development throughout the series."
+        }
+      }
+    },
+    {
+      "question_id": 21,
+      "question": "what structure are located in the abdominal  cavity?",
+      "worker": "Worker-2",
+      "answer": "The abdominal cavity houses several vital organs and structures. Key components include the stomach, liver, spleen, pancreas, kidneys, and adrenal glands. The small intestine and large intestine (colon) are also present, along with the rectum. Additionally, the abdominal cavity contains the gallbladder, which stores bile produced by the liver. The abdominal aorta, a major blood vessel, runs through this area, supplying blood to the lower body. Surrounding these organs is a protective layer called the peritoneum. The cavity is separated from the chest by the diaphragm muscle. Each organ plays a crucial role in digestion, metabolism, detoxification, and other essential bodily functions. The arrangement ensures efficient functioning and protection of these vital systems.",
+      "response_time": 9.5888192653656,
+      "timestamp": 1756312234.7675977,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "The abdominal cavity houses several vital organs and structures. Key components include the stomach, liver, spleen, pancreas, kidneys, and adrenal glands. The small intestine and large intestine (colon) are also present, along with the rectum. Additionally, the abdominal cavity contains the gallbladder, which stores bile produced by the liver. The abdominal aorta, a major blood vessel, runs through this area, supplying blood to the lower body. Surrounding these organs is a protective layer called the peritoneum. The cavity is separated from the chest by the diaphragm muscle. Each organ plays a crucial role in digestion, metabolism, detoxification, and other essential bodily functions. The arrangement ensures efficient functioning and protection of these vital systems.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "93b5f28a-1880-4915-a785-b2c7381a1ee4",
+            "sender": "Worker-2",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "The abdominal cavity houses several vital organs and structures. Key components include the stomach, liver, spleen, pancreas, kidneys, and adrenal glands. The small intestine and large intestine (colon) are also present, along with the rectum. Additionally, the abdominal cavity contains the gallbladder, which stores bile produced by the liver. The abdominal aorta, a major blood vessel, runs through this area, supplying blood to the lower body. Surrounding these organs is a protective layer called the peritoneum. The cavity is separated from the chest by the diaphragm muscle. Each organ plays a crucial role in digestion, metabolism, detoxification, and other essential bodily functions. The arrangement ensures efficient functioning and protection of these vital systems."
+            },
+            "timestamp": 1756312234.7669227
+          },
+          "text": "The abdominal cavity houses several vital organs and structures. Key components include the stomach, liver, spleen, pancreas, kidneys, and adrenal glands. The small intestine and large intestine (colon) are also present, along with the rectum. Additionally, the abdominal cavity contains the gallbladder, which stores bile produced by the liver. The abdominal aorta, a major blood vessel, runs through this area, supplying blood to the lower body. Surrounding these organs is a protective layer called the peritoneum. The cavity is separated from the chest by the diaphragm muscle. Each organ plays a crucial role in digestion, metabolism, detoxification, and other essential bodily functions. The arrangement ensures efficient functioning and protection of these vital systems."
+        }
+      }
+    },
+    {
+      "question_id": 22,
+      "question": "does flomax cause liver damage",
+      "worker": "Worker-1",
+      "answer": "Flomax (tamsulosin) is primarily used to treat symptoms of an enlarged prostate and is generally considered safe for most people. However, like all medications, it can have side effects. Liver damage from Flomax is rare but has been reported in isolated cases. The drug's impact on the liver is not its primary concern; more common side effects include dizziness, fatigue, and nasal congestion. If liver damage does occur, it might manifest as jaundice, dark urine, or abdominal pain. Patients should inform their healthcare provider if they experience any unusual symptoms. Regular monitoring by a healthcare professional can help manage risks effectively. Always consult with a doctor about potential side effects and concerns regarding medication use.",
+      "response_time": 9.217996835708618,
+      "timestamp": 1756312235.698668,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Flomax (tamsulosin) is primarily used to treat symptoms of an enlarged prostate and is generally considered safe for most people. However, like all medications, it can have side effects. Liver damage from Flomax is rare but has been reported in isolated cases. The drug's impact on the liver is not its primary concern; more common side effects include dizziness, fatigue, and nasal congestion. If liver damage does occur, it might manifest as jaundice, dark urine, or abdominal pain. Patients should inform their healthcare provider if they experience any unusual symptoms. Regular monitoring by a healthcare professional can help manage risks effectively. Always consult with a doctor about potential side effects and concerns regarding medication use.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "7f92236f-89da-4776-8113-4214483355de",
+            "sender": "Worker-1",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "Flomax (tamsulosin) is primarily used to treat symptoms of an enlarged prostate and is generally considered safe for most people. However, like all medications, it can have side effects. Liver damage from Flomax is rare but has been reported in isolated cases. The drug's impact on the liver is not its primary concern; more common side effects include dizziness, fatigue, and nasal congestion. If liver damage does occur, it might manifest as jaundice, dark urine, or abdominal pain. Patients should inform their healthcare provider if they experience any unusual symptoms. Regular monitoring by a healthcare professional can help manage risks effectively. Always consult with a doctor about potential side effects and concerns regarding medication use."
+            },
+            "timestamp": 1756312235.6980383
+          },
+          "text": "Flomax (tamsulosin) is primarily used to treat symptoms of an enlarged prostate and is generally considered safe for most people. However, like all medications, it can have side effects. Liver damage from Flomax is rare but has been reported in isolated cases. The drug's impact on the liver is not its primary concern; more common side effects include dizziness, fatigue, and nasal congestion. If liver damage does occur, it might manifest as jaundice, dark urine, or abdominal pain. Patients should inform their healthcare provider if they experience any unusual symptoms. Regular monitoring by a healthcare professional can help manage risks effectively. Always consult with a doctor about potential side effects and concerns regarding medication use."
+        }
+      }
+    },
+    {
+      "question_id": 23,
+      "question": "what is printing mechanism",
+      "worker": "Worker-3",
+      "answer": "A printing mechanism is a system that transfers text or images from a digital format onto a physical medium like paper. It involves various technologies such as inkjet, laser, and dot matrix. Inkjet printers spray tiny droplets of ink through nozzles onto the paper. Laser printers use a laser beam to create an image on a drum, which then attracts toner particles that are fused onto the paper by heat. Dot matrix printers use pins to strike an ink ribbon against the paper, creating characters. Each method has unique advantages in terms of cost, speed, quality, and suitability for different materials. The choice of printing mechanism depends on specific needs such as print volume, quality requirements, and budget constraints.",
+      "response_time": 9.033337116241455,
+      "timestamp": 1756312236.87655,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "A printing mechanism is a system that transfers text or images from a digital format onto a physical medium like paper. It involves various technologies such as inkjet, laser, and dot matrix. Inkjet printers spray tiny droplets of ink through nozzles onto the paper. Laser printers use a laser beam to create an image on a drum, which then attracts toner particles that are fused onto the paper by heat. Dot matrix printers use pins to strike an ink ribbon against the paper, creating characters. Each method has unique advantages in terms of cost, speed, quality, and suitability for different materials. The choice of printing mechanism depends on specific needs such as print volume, quality requirements, and budget constraints.",
+        "raw": {
+          "raw": {
+            "protocol": "ANP",
+            "version": "1.0",
+            "message_id": "9f059faa-2b23-4acf-ae17-12fefd805d9c",
+            "sender": "Worker-3",
+            "receiver": "Coordinator-1",
+            "message_type": "response",
+            "payload": {
+              "action": "execute",
+              "data": "A printing mechanism is a system that transfers text or images from a digital format onto a physical medium like paper. It involves various technologies such as inkjet, laser, and dot matrix. Inkjet printers spray tiny droplets of ink through nozzles onto the paper. Laser printers use a laser beam to create an image on a drum, which then attracts toner particles that are fused onto the paper by heat. Dot matrix printers use pins to strike an ink ribbon against the paper, creating characters. Each method has unique advantages in terms of cost, speed, quality, and suitability for different materials. The choice of printing mechanism depends on specific needs such as print volume, quality requirements, and budget constraints."
+            },
+            "timestamp": 1756312236.8758554
+          },
+          "text": "A printing mechanism is a system that transfers text or images from a digital format onto a physical medium like paper. It involves various technologies such as inkjet, laser, and dot matrix. Inkjet printers spray tiny droplets of ink through nozzles onto the paper. Laser printers use a laser beam to create an image on a drum, which then attracts toner particles that are fused onto the paper by heat. Dot matrix printers use pins to strike an ink ribbon against the paper, creating characters. Each method has unique advantages in terms of cost, speed, quality, and suitability for different materials. The choice of printing mechanism depends on specific needs such as print volume, quality requirements, and budget constraints."
+        }
+      }
+    },
+    {
+      "question_id": 26,
+      "question": "lewiston idaho fedex express phone number",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.504545,
+      "status": "failed",
+      "error": "ANP send failed: ",
+      "raw": null
+    },
+    {
+      "question_id": 28,
+      "question": "what is the empirical formula for phosphorus selenide",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5047016,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 29,
+      "question": "what is abbreviated dialing",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.50482,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 30,
+      "question": "fastest cell phone processor",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.504924,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 31,
+      "question": "what are the three monetary policy tools of the fed",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5050154,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 32,
+      "question": "what did maria theresa do for the serfs",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5051043,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 33,
+      "question": "what were the brothers grimm names",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.505193,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 34,
+      "question": "what is an insta pot?",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5052767,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 35,
+      "question": "side effects for diclofenac topical",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.505362,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 36,
+      "question": "where does spermatogenesis occur?",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5054457,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 37,
+      "question": "where is baby beach hi",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5055299,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 38,
+      "question": "what cleans your liver and kidneys",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5056129,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 39,
+      "question": "how many milligrams of ritalin should an adult take",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5056968,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 40,
+      "question": "who is dakota meyer",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.505779,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 41,
+      "question": "what county is mitchell south dakota in",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5058727,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 42,
+      "question": "who is the judge michael day district court of south dakota",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.50596,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 43,
+      "question": "where is wild creek reservoir",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.506047,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 44,
+      "question": "what make up the pistil in the female flower",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.506135,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 45,
+      "question": "where is metro ny distribution center",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5062242,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 46,
+      "question": "how to find device ip",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5063107,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 47,
+      "question": "lakegirl address",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5063977,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 48,
+      "question": "shopko kennewick address",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5064862,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 49,
+      "question": "how to change ip address on netgear router",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5065749,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 50,
+      "question": "how do i find my Ip address",
+      "worker": "Worker-1",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5066688,
+      "status": "failed",
+      "error": "ANP send failed: Cannot send a request, as the client has been closed.",
+      "raw": null
+    },
+    {
+      "question_id": 25,
+      "question": "is the hawb the tracking number",
+      "worker": "Worker-2",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5070233,
+      "status": "failed",
+      "error": "ANP send failed: ",
+      "raw": null
+    },
+    {
+      "question_id": 27,
+      "question": "what is one role of the element phosphorus?",
+      "worker": "Worker-3",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5072436,
+      "status": "failed",
+      "error": "ANP send failed: ",
+      "raw": null
+    },
+    {
+      "question_id": 24,
+      "question": "who discovered the element carbon",
+      "worker": "Worker-4",
+      "answer": null,
+      "response_time": null,
+      "timestamp": 1756312237.5074637,
+      "status": "failed",
+      "error": "ANP send failed: ",
+      "raw": null
+    }
+  ]
+}

@@ -14,7 +14,7 @@ import os
 import sys
 from pathlib import Path
 from typing import Optional, List, Dict, Any
-
+from loguru import logger
 
 class QAWorkerBase:
     """协议无关的 QA 工作者：封装 LLM 调用与降级策略。"""
@@ -48,27 +48,37 @@ class QAWorkerBase:
 
     def _get_default_config(self) -> dict:
         """默认模型配置。优先使用 OPENAI_API_KEY，否则走本地/代理。"""
-        openai_key = os.getenv("OPENAI_API_KEY")
+        # openai_key = os.getenv("OPENAI_API_KEY")
 
-        if openai_key and openai_key != "test-key":
-            return {
-                "model": {
-                    "type": "openai",
-                    "name": "gpt-3.5-turbo",
-                    "openai_api_key": openai_key,
-                    "temperature": 0.3,
-                }
-            }
-        else:
-            return {
-                "model": {
-                    "type": "local",
-                    "name": "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-                    "temperature": 0.3,
-                },
-                "base_url": "http://localhost:8000/v1",
-                "port": 8000,
-            }
+        # if openai_key and openai_key != "test-key":
+        #     return {
+        #         "model": {
+        #             "type": "openai",
+        #             "name": "gpt-3.5-turbo",
+        #             "openai_api_key": openai_key,
+        #             "temperature": 0.3,
+        #         }
+        #     }
+        # else:
+        #     return {
+        #         "model": {
+        #             "type": "local",
+        #             "name": "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+        #             "temperature": 0.3,
+        #         },
+        #         "base_url": "http://localhost:8000/v1",
+        #         "port": 8000,
+        #     }
+        # use local model
+        return {
+            "model": {
+                "type": "local",
+                "name": "Qwen2.5-VL-72B-Instruct",
+                "temperature": 0.3,
+            },
+            "base_url": "http://localhost:8000/v1",
+            "port": 8000,
+        }
 
     # --------------------- public API ---------------------
     async def answer(self, question: str) -> str:
@@ -95,6 +105,7 @@ class QAWorkerBase:
             loop = asyncio.get_event_loop()
             # 假设 Core.execute 是同步阻塞方法，这里丢到线程池执行
             result: str = await loop.run_in_executor(None, self.core.execute, messages)  # type: ignore
+            logger.opt(colors=True).info(f"<yellow>QAWorkerBase answer: {result}</yellow>")
             return (result or "Unable to generate response").strip()
         except Exception as e:
             self._log(f"[QAWorkerBase] error: {e}")

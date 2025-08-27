@@ -1,91 +1,29 @@
 {
   "metadata": {
     "total_questions": 50,
-    "successful_questions": 50,
-    "failed_questions": 0,
-    "average_response_time": 1.9053691720962525,
-    "timestamp": 1756070419.121163,
-    "network_type": "ACPQACoordinator"
+    "successful_questions": 0,
+    "failed_questions": 50,
+    "average_response_time": 0.0,
+    "timestamp": 1756305442.4551156,
+    "network_type": "A2AQACoordinator"
   },
   "results": [
     {
       "question_id": 2,
       "question": "where is the federal penitentiary in ind",
       "worker": "Worker-2",
-      "answer": "The federal penitentiary in Indiana is the United States Penitentiary, Terre Haute. It is located in Terre Haute, Indiana. This facility is part of the Federal Bureau of Prisons and houses male inmates.",
-      "response_time": 1.1667640209197998,
-      "timestamp": 1756070395.3753521,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305324.703293,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "The federal penitentiary in Indiana is the United States Penitentiary, Terre Haute. It is located in Terre Haute, Indiana. This facility is part of the Federal Bureau of Prisons and houses male inmates.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The federal penitentiary in Indiana is the United States Penitentiary, Terre Haute. It is located in Terre Haute, Indiana. This facility is part of the Federal Bureau of Prisons and houses male inmates."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "The federal penitentiary in Indiana is the United States Penitentiary, Terre Haute. It is located in Terre Haute, Indiana. This facility is part of the Federal Bureau of Prisons and houses male inmates."
-        }
-      }
-    },
-    {
-      "question_id": 4,
-      "question": "what foods are good if you have gout?",
-      "worker": "Worker-4",
-      "answer": "If you have gout, it's important to focus on foods that are low in purines to help manage uric acid levels. Here are some foods that are generally considered good for people with gout:\n\n1. **Fruits**: Cherries, strawberries, blueberries, and other fruits can help reduce inflammation and lower uric acid levels.\n2. **Vegetables**: Leafy greens, bell peppers, and other non-starchy vegetables are beneficial.\n3. **Whole Grains**: Brown rice, oats, and whole grain bread are good options.\n4. **Low-Fat Dairy**: Milk, yogurt, and cheese can help lower uric acid levels.\n5. **Nuts and Seeds**: Almonds, walnuts, and flaxseeds are good choices.\n6. **Legumes**: Lentils, beans, and chickpeas are low in purines.\n7. **Water**: Staying hydrated helps flush uric acid from the body.\n\nAvoid high-purine foods like red meat, organ meats, and certain seafood. Always consult with a healthcare provider for personalized advice.",
-      "response_time": 2.2878780364990234,
-      "timestamp": 1756070396.496763,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "If you have gout, it's important to focus on foods that are low in purines to help manage uric acid levels. Here are some foods that are generally considered good for people with gout:\n\n1. **Fruits**: Cherries, strawberries, blueberries, and other fruits can help reduce inflammation and lower uric acid levels.\n2. **Vegetables**: Leafy greens, bell peppers, and other non-starchy vegetables are beneficial.\n3. **Whole Grains**: Brown rice, oats, and whole grain bread are good options.\n4. **Low-Fat Dairy**: Milk, yogurt, and cheese can help lower uric acid levels.\n5. **Nuts and Seeds**: Almonds, walnuts, and flaxseeds are good choices.\n6. **Legumes**: Lentils, beans, and chickpeas are low in purines.\n7. **Water**: Staying hydrated helps flush uric acid from the body.\n\nAvoid high-purine foods like red meat, organ meats, and certain seafood. Always consult with a healthcare provider for personalized advice.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "If you have gout, it's important to focus on foods that are low in purines to help manage uric acid levels. Here are some foods that are generally considered good for people with gout:\n\n1. **Fruits**: Cherries, strawberries, blueberries, and other fruits can help reduce inflammation and lower uric acid levels.\n2. **Vegetables**: Leafy greens, bell peppers, and other non-starchy vegetables are beneficial.\n3. **Whole Grains**: Brown rice, oats, and whole grain bread are good options.\n4. **Low-Fat Dairy**: Milk, yogurt, and cheese can help lower uric acid levels.\n5. **Nuts and Seeds**: Almonds, walnuts, and flaxseeds are good choices.\n6. **Legumes**: Lentils, beans, and chickpeas are low in purines.\n7. **Water**: Staying hydrated helps flush uric acid from the body.\n\nAvoid high-purine foods like red meat, organ meats, and certain seafood. Always consult with a healthcare provider for personalized advice."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "If you have gout, it's important to focus on foods that are low in purines to help manage uric acid levels. Here are some foods that are generally considered good for people with gout:\n\n1. **Fruits**: Cherries, strawberries, blueberries, and other fruits can help reduce inflammation and lower uric acid levels.\n2. **Vegetables**: Leafy greens, bell peppers, and other non-starchy vegetables are beneficial.\n3. **Whole Grains**: Brown rice, oats, and whole grain bread are good options.\n4. **Low-Fat Dairy**: Milk, yogurt, and cheese can help lower uric acid levels.\n5. **Nuts and Seeds**: Almonds, walnuts, and flaxseeds are good choices.\n6. **Legumes**: Lentils, beans, and chickpeas are low in purines.\n7. **Water**: Staying hydrated helps flush uric acid from the body.\n\nAvoid high-purine foods like red meat, organ meats, and certain seafood. Always consult with a healthcare provider for personalized advice."
-        }
-      }
-    },
-    {
-      "question_id": 3,
-      "question": "health benefits of eating vegetarian",
-      "worker": "Worker-3",
-      "answer": "Eating a vegetarian diet can offer several health benefits, including:\n\n1. **Heart Health**: Vegetarian diets are often lower in saturated fats and cholesterol, which can reduce the risk of heart disease.\n\n2. **Weight Management**: Vegetarians tend to have lower body mass indexes (BMIs) and may find it easier to maintain a healthy weight.\n\n3. **Lower Cancer Risk**: Some studies suggest that a diet rich in fruits, vegetables, and whole grains may lower the risk of certain types of cancer.\n\n4. **Improved Digestion**: High fiber intake from plant-based foods can improve digestive health and prevent constipation.\n\n5. **Blood Sugar Control**: Vegetarian diets can help in managing blood sugar levels, reducing the risk of type 2 diabetes.\n\n6. **Nutrient Intake**: A well-planned vegetarian diet can provide essential nutrients, including vitamins, minerals, and antioxidants.\n\nIt's important to ensure a balanced intake of nutrients, including protein, iron, and vitamin B12, which may require careful planning or supplementation.",
-      "response_time": 2.431116819381714,
-      "timestamp": 1756070396.639858,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "Eating a vegetarian diet can offer several health benefits, including:\n\n1. **Heart Health**: Vegetarian diets are often lower in saturated fats and cholesterol, which can reduce the risk of heart disease.\n\n2. **Weight Management**: Vegetarians tend to have lower body mass indexes (BMIs) and may find it easier to maintain a healthy weight.\n\n3. **Lower Cancer Risk**: Some studies suggest that a diet rich in fruits, vegetables, and whole grains may lower the risk of certain types of cancer.\n\n4. **Improved Digestion**: High fiber intake from plant-based foods can improve digestive health and prevent constipation.\n\n5. **Blood Sugar Control**: Vegetarian diets can help in managing blood sugar levels, reducing the risk of type 2 diabetes.\n\n6. **Nutrient Intake**: A well-planned vegetarian diet can provide essential nutrients, including vitamins, minerals, and antioxidants.\n\nIt's important to ensure a balanced intake of nutrients, including protein, iron, and vitamin B12, which may require careful planning or supplementation.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Eating a vegetarian diet can offer several health benefits, including:\n\n1. **Heart Health**: Vegetarian diets are often lower in saturated fats and cholesterol, which can reduce the risk of heart disease.\n\n2. **Weight Management**: Vegetarians tend to have lower body mass indexes (BMIs) and may find it easier to maintain a healthy weight.\n\n3. **Lower Cancer Risk**: Some studies suggest that a diet rich in fruits, vegetables, and whole grains may lower the risk of certain types of cancer.\n\n4. **Improved Digestion**: High fiber intake from plant-based foods can improve digestive health and prevent constipation.\n\n5. **Blood Sugar Control**: Vegetarian diets can help in managing blood sugar levels, reducing the risk of type 2 diabetes.\n\n6. **Nutrient Intake**: A well-planned vegetarian diet can provide essential nutrients, including vitamins, minerals, and antioxidants.\n\nIt's important to ensure a balanced intake of nutrients, including protein, iron, and vitamin B12, which may require careful planning or supplementation."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "Eating a vegetarian diet can offer several health benefits, including:\n\n1. **Heart Health**: Vegetarian diets are often lower in saturated fats and cholesterol, which can reduce the risk of heart disease.\n\n2. **Weight Management**: Vegetarians tend to have lower body mass indexes (BMIs) and may find it easier to maintain a healthy weight.\n\n3. **Lower Cancer Risk**: Some studies suggest that a diet rich in fruits, vegetables, and whole grains may lower the risk of certain types of cancer.\n\n4. **Improved Digestion**: High fiber intake from plant-based foods can improve digestive health and prevent constipation.\n\n5. **Blood Sugar Control**: Vegetarian diets can help in managing blood sugar levels, reducing the risk of type 2 diabetes.\n\n6. **Nutrient Intake**: A well-planned vegetarian diet can provide essential nutrients, including vitamins, minerals, and antioxidants.\n\nIt's important to ensure a balanced intake of nutrients, including protein, iron, and vitamin B12, which may require careful planning or supplementation."
+          "text": ""
         }
       }
     },
@@ -93,26 +31,75 @@
       "question_id": 1,
       "question": "what does the golgi apparatus do to the proteins and lipids once they arrive ?",
       "worker": "Worker-1",
-      "answer": "The Golgi apparatus modifies, sorts, and packages proteins and lipids for transport to their destinations. Once proteins and lipids arrive from the endoplasmic reticulum, the Golgi apparatus processes them by adding carbohydrate groups (glycosylation) or other modifications. It then sorts these molecules and packages them into vesicles. These vesicles are directed to various locations, such as the cell membrane for secretion, lysosomes for digestion, or other parts of the cell where they are needed. The Golgi apparatus plays a crucial role in ensuring that proteins and lipids are correctly modified and delivered to their proper destinations.",
-      "response_time": 2.444870948791504,
-      "timestamp": 1756070396.6532469,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305325.8066854,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "The Golgi apparatus modifies, sorts, and packages proteins and lipids for transport to their destinations. Once proteins and lipids arrive from the endoplasmic reticulum, the Golgi apparatus processes them by adding carbohydrate groups (glycosylation) or other modifications. It then sorts these molecules and packages them into vesicles. These vesicles are directed to various locations, such as the cell membrane for secretion, lysosomes for digestion, or other parts of the cell where they are needed. The Golgi apparatus plays a crucial role in ensuring that proteins and lipids are correctly modified and delivered to their proper destinations.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The Golgi apparatus modifies, sorts, and packages proteins and lipids for transport to their destinations. Once proteins and lipids arrive from the endoplasmic reticulum, the Golgi apparatus processes them by adding carbohydrate groups (glycosylation) or other modifications. It then sorts these molecules and packages them into vesicles. These vesicles are directed to various locations, such as the cell membrane for secretion, lysosomes for digestion, or other parts of the cell where they are needed. The Golgi apparatus plays a crucial role in ensuring that proteins and lipids are correctly modified and delivered to their proper destinations."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "The Golgi apparatus modifies, sorts, and packages proteins and lipids for transport to their destinations. Once proteins and lipids arrive from the endoplasmic reticulum, the Golgi apparatus processes them by adding carbohydrate groups (glycosylation) or other modifications. It then sorts these molecules and packages them into vesicles. These vesicles are directed to various locations, such as the cell membrane for secretion, lysosomes for digestion, or other parts of the cell where they are needed. The Golgi apparatus plays a crucial role in ensuring that proteins and lipids are correctly modified and delivered to their proper destinations."
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 4,
+      "question": "what foods are good if you have gout?",
+      "worker": "Worker-4",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305325.9950364,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 3,
+      "question": "health benefits of eating vegetarian",
+      "worker": "Worker-3",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305326.9797819,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 7,
+      "question": "definition for daring",
+      "worker": "Worker-4",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305334.2936826,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
         }
       }
     },
@@ -120,323 +107,132 @@
       "question_id": 5,
       "question": "what is the endocrine system responsible for?",
       "worker": "Worker-2",
-      "answer": "The endocrine system is responsible for regulating various bodily functions through the release of hormones. It plays a crucial role in maintaining homeostasis, controlling metabolism, growth and development, tissue function, sexual function, reproduction, sleep, and mood, among other things. The system consists of glands such as the pituitary, thyroid, adrenal, and pancreas, which secrete hormones directly into the bloodstream to target organs and tissues.",
-      "response_time": 1.6288402080535889,
-      "timestamp": 1756070397.0042298,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305334.8545609,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "The endocrine system is responsible for regulating various bodily functions through the release of hormones. It plays a crucial role in maintaining homeostasis, controlling metabolism, growth and development, tissue function, sexual function, reproduction, sleep, and mood, among other things. The system consists of glands such as the pituitary, thyroid, adrenal, and pancreas, which secrete hormones directly into the bloodstream to target organs and tissues.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The endocrine system is responsible for regulating various bodily functions through the release of hormones. It plays a crucial role in maintaining homeostasis, controlling metabolism, growth and development, tissue function, sexual function, reproduction, sleep, and mood, among other things. The system consists of glands such as the pituitary, thyroid, adrenal, and pancreas, which secrete hormones directly into the bloodstream to target organs and tissues."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "The endocrine system is responsible for regulating various bodily functions through the release of hormones. It plays a crucial role in maintaining homeostasis, controlling metabolism, growth and development, tissue function, sexual function, reproduction, sleep, and mood, among other things. The system consists of glands such as the pituitary, thyroid, adrenal, and pancreas, which secrete hormones directly into the bloodstream to target organs and tissues."
-        }
-      }
-    },
-    {
-      "question_id": 7,
-      "question": "definition for daring",
-      "worker": "Worker-3",
-      "answer": "The term \"daring\" refers to the willingness to take risks or engage in bold actions. It describes someone who is adventurous, courageous, and unafraid to face challenges or danger. Daring can also refer to actions or ideas that are bold and innovative.",
-      "response_time": 1.2909057140350342,
-      "timestamp": 1756070397.930783,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "The term \"daring\" refers to the willingness to take risks or engage in bold actions. It describes someone who is adventurous, courageous, and unafraid to face challenges or danger. Daring can also refer to actions or ideas that are bold and innovative.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The term \"daring\" refers to the willingness to take risks or engage in bold actions. It describes someone who is adventurous, courageous, and unafraid to face challenges or danger. Daring can also refer to actions or ideas that are bold and innovative."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "The term \"daring\" refers to the willingness to take risks or engage in bold actions. It describes someone who is adventurous, courageous, and unafraid to face challenges or danger. Daring can also refer to actions or ideas that are bold and innovative."
+          "text": ""
         }
       }
     },
     {
       "question_id": 8,
       "question": "is dhgate a scam",
-      "worker": "Worker-1",
-      "answer": "DHgate is a legitimate online marketplace based in China, connecting buyers with sellers, primarily for wholesale goods. However, like any large platform, it can have issues with counterfeit products or unreliable sellers. To ensure a safe shopping experience, it's important to:\n\n1. Check seller ratings and reviews.\n2. Look for detailed product descriptions and clear images.\n3. Use secure payment methods.\n4. Be cautious of deals that seem too good to be true.\n\nBy taking these precautions, you can reduce the risk of encountering scams on DHgate.",
-      "response_time": 1.546435832977295,
-      "timestamp": 1756070398.199698,
-      "status": "success",
+      "worker": "Worker-3",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305335.1079621,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "DHgate is a legitimate online marketplace based in China, connecting buyers with sellers, primarily for wholesale goods. However, like any large platform, it can have issues with counterfeit products or unreliable sellers. To ensure a safe shopping experience, it's important to:\n\n1. Check seller ratings and reviews.\n2. Look for detailed product descriptions and clear images.\n3. Use secure payment methods.\n4. Be cautious of deals that seem too good to be true.\n\nBy taking these precautions, you can reduce the risk of encountering scams on DHgate.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "DHgate is a legitimate online marketplace based in China, connecting buyers with sellers, primarily for wholesale goods. However, like any large platform, it can have issues with counterfeit products or unreliable sellers. To ensure a safe shopping experience, it's important to:\n\n1. Check seller ratings and reviews.\n2. Look for detailed product descriptions and clear images.\n3. Use secure payment methods.\n4. Be cautious of deals that seem too good to be true.\n\nBy taking these precautions, you can reduce the risk of encountering scams on DHgate."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "DHgate is a legitimate online marketplace based in China, connecting buyers with sellers, primarily for wholesale goods. However, like any large platform, it can have issues with counterfeit products or unreliable sellers. To ensure a safe shopping experience, it's important to:\n\n1. Check seller ratings and reviews.\n2. Look for detailed product descriptions and clear images.\n3. Use secure payment methods.\n4. Be cautious of deals that seem too good to be true.\n\nBy taking these precautions, you can reduce the risk of encountering scams on DHgate."
+          "text": ""
         }
       }
     },
     {
       "question_id": 6,
       "question": "what is the nutritional value of oatmeal",
-      "worker": "Worker-4",
-      "answer": "Oatmeal is a nutritious whole grain food that offers several health benefits. A typical serving size of 1 cup (about 81 grams) of cooked oatmeal contains approximately:\n\n- Calories: 154\n- Protein: 6 grams\n- Fat: 3 grams\n- Carbohydrates: 27 grams\n- Fiber: 4 grams\n- Sugar: 1 gram\n\nOatmeal is also a good source of essential nutrients, including:\n\n- Manganese\n- Phosphorus\n- Magnesium\n- Copper\n- Iron\n- Zinc\n- Folate\n- Vitamin B1 (Thiamine)\n\nOatmeal is rich in beta-glucan, a type of soluble fiber that can help lower cholesterol levels and improve heart health. It is also known for its ability to provide sustained energy and promote a feeling of fullness, which can aid in weight management.",
-      "response_time": 2.9656271934509277,
-      "timestamp": 1756070399.4624488,
-      "status": "success",
+      "worker": "Worker-1",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305337.3318272,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "Oatmeal is a nutritious whole grain food that offers several health benefits. A typical serving size of 1 cup (about 81 grams) of cooked oatmeal contains approximately:\n\n- Calories: 154\n- Protein: 6 grams\n- Fat: 3 grams\n- Carbohydrates: 27 grams\n- Fiber: 4 grams\n- Sugar: 1 gram\n\nOatmeal is also a good source of essential nutrients, including:\n\n- Manganese\n- Phosphorus\n- Magnesium\n- Copper\n- Iron\n- Zinc\n- Folate\n- Vitamin B1 (Thiamine)\n\nOatmeal is rich in beta-glucan, a type of soluble fiber that can help lower cholesterol levels and improve heart health. It is also known for its ability to provide sustained energy and promote a feeling of fullness, which can aid in weight management.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Oatmeal is a nutritious whole grain food that offers several health benefits. A typical serving size of 1 cup (about 81 grams) of cooked oatmeal contains approximately:\n\n- Calories: 154\n- Protein: 6 grams\n- Fat: 3 grams\n- Carbohydrates: 27 grams\n- Fiber: 4 grams\n- Sugar: 1 gram\n\nOatmeal is also a good source of essential nutrients, including:\n\n- Manganese\n- Phosphorus\n- Magnesium\n- Copper\n- Iron\n- Zinc\n- Folate\n- Vitamin B1 (Thiamine)\n\nOatmeal is rich in beta-glucan, a type of soluble fiber that can help lower cholesterol levels and improve heart health. It is also known for its ability to provide sustained energy and promote a feeling of fullness, which can aid in weight management."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "Oatmeal is a nutritious whole grain food that offers several health benefits. A typical serving size of 1 cup (about 81 grams) of cooked oatmeal contains approximately:\n\n- Calories: 154\n- Protein: 6 grams\n- Fat: 3 grams\n- Carbohydrates: 27 grams\n- Fiber: 4 grams\n- Sugar: 1 gram\n\nOatmeal is also a good source of essential nutrients, including:\n\n- Manganese\n- Phosphorus\n- Magnesium\n- Copper\n- Iron\n- Zinc\n- Folate\n- Vitamin B1 (Thiamine)\n\nOatmeal is rich in beta-glucan, a type of soluble fiber that can help lower cholesterol levels and improve heart health. It is also known for its ability to provide sustained energy and promote a feeling of fullness, which can aid in weight management."
+          "text": ""
         }
       }
     },
     {
       "question_id": 9,
       "question": "how to become a teacher assistant",
-      "worker": "Worker-2",
-      "answer": "To become a teacher assistant, follow these general steps:\n\n1. **Education**: Obtain a high school diploma or GED. Some positions may require an associate degree or coursework in education or a related field.\n\n2. **Experience**: Gain experience working with children, such as volunteering at schools, tutoring, or working in childcare.\n\n3. **Certification**: Check if your state or country requires certification. In the U.S., some states require passing the ParaPro Assessment or a similar exam.\n\n4. **Skills**: Develop strong communication, organizational, and interpersonal skills. Patience and adaptability are also important.\n\n5. **Apply**: Search for job openings at schools or educational institutions. Tailor your resume and cover letter to highlight relevant experience and skills.\n\n6. **Interview**: Prepare for interviews by understanding the role and demonstrating your passion for education and supporting teachers.",
-      "response_time": 2.472193956375122,
-      "timestamp": 1756070399.476444,
-      "status": "success",
+      "worker": "Worker-4",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305344.1146288,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "To become a teacher assistant, follow these general steps:\n\n1. **Education**: Obtain a high school diploma or GED. Some positions may require an associate degree or coursework in education or a related field.\n\n2. **Experience**: Gain experience working with children, such as volunteering at schools, tutoring, or working in childcare.\n\n3. **Certification**: Check if your state or country requires certification. In the U.S., some states require passing the ParaPro Assessment or a similar exam.\n\n4. **Skills**: Develop strong communication, organizational, and interpersonal skills. Patience and adaptability are also important.\n\n5. **Apply**: Search for job openings at schools or educational institutions. Tailor your resume and cover letter to highlight relevant experience and skills.\n\n6. **Interview**: Prepare for interviews by understanding the role and demonstrating your passion for education and supporting teachers.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "To become a teacher assistant, follow these general steps:\n\n1. **Education**: Obtain a high school diploma or GED. Some positions may require an associate degree or coursework in education or a related field.\n\n2. **Experience**: Gain experience working with children, such as volunteering at schools, tutoring, or working in childcare.\n\n3. **Certification**: Check if your state or country requires certification. In the U.S., some states require passing the ParaPro Assessment or a similar exam.\n\n4. **Skills**: Develop strong communication, organizational, and interpersonal skills. Patience and adaptability are also important.\n\n5. **Apply**: Search for job openings at schools or educational institutions. Tailor your resume and cover letter to highlight relevant experience and skills.\n\n6. **Interview**: Prepare for interviews by understanding the role and demonstrating your passion for education and supporting teachers."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "To become a teacher assistant, follow these general steps:\n\n1. **Education**: Obtain a high school diploma or GED. Some positions may require an associate degree or coursework in education or a related field.\n\n2. **Experience**: Gain experience working with children, such as volunteering at schools, tutoring, or working in childcare.\n\n3. **Certification**: Check if your state or country requires certification. In the U.S., some states require passing the ParaPro Assessment or a similar exam.\n\n4. **Skills**: Develop strong communication, organizational, and interpersonal skills. Patience and adaptability are also important.\n\n5. **Apply**: Search for job openings at schools or educational institutions. Tailor your resume and cover letter to highlight relevant experience and skills.\n\n6. **Interview**: Prepare for interviews by understanding the role and demonstrating your passion for education and supporting teachers."
-        }
-      }
-    },
-    {
-      "question_id": 11,
-      "question": "how far deep to plant beet early wonder",
-      "worker": "Worker-1",
-      "answer": "Plant \"Early Wonder\" beet seeds about 1/2 inch deep in the soil. Ensure the soil is well-drained and loosened to allow for proper root development. Space the seeds about 1 to 2 inches apart in rows that are 12 to 18 inches apart.",
-      "response_time": 2.1861679553985596,
-      "timestamp": 1756070400.385893,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "Plant \"Early Wonder\" beet seeds about 1/2 inch deep in the soil. Ensure the soil is well-drained and loosened to allow for proper root development. Space the seeds about 1 to 2 inches apart in rows that are 12 to 18 inches apart.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Plant \"Early Wonder\" beet seeds about 1/2 inch deep in the soil. Ensure the soil is well-drained and loosened to allow for proper root development. Space the seeds about 1 to 2 inches apart in rows that are 12 to 18 inches apart."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "Plant \"Early Wonder\" beet seeds about 1/2 inch deep in the soil. Ensure the soil is well-drained and loosened to allow for proper root development. Space the seeds about 1 to 2 inches apart in rows that are 12 to 18 inches apart."
+          "text": ""
         }
       }
     },
     {
       "question_id": 10,
       "question": "what study for mets to brain",
-      "worker": "Worker-3",
-      "answer": "When evaluating metastatic brain tumors, several diagnostic studies are typically used:\n\n1. **MRI (Magnetic Resonance Imaging):** The most sensitive imaging technique for detecting brain metastases. It provides detailed images of brain structures.\n\n2. **CT Scan (Computed Tomography):** Often used if MRI is unavailable or contraindicated. It can quickly identify brain lesions.\n\n3. **PET Scan (Positron Emission Tomography):** Sometimes used to detect cancer spread and assess metabolic activity.\n\n4. **Biopsy:** In certain cases, a biopsy may be performed to confirm the diagnosis and identify the primary cancer source.\n\n5. **Lumbar Puncture:** Rarely, cerebrospinal fluid analysis may be needed if leptomeningeal metastases are suspected.\n\nThese studies help determine the presence, number, and location of brain metastases, guiding treatment decisions.",
-      "response_time": 2.965373992919922,
-      "timestamp": 1756070400.896181,
-      "status": "success",
+      "worker": "Worker-2",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305345.1647196,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "When evaluating metastatic brain tumors, several diagnostic studies are typically used:\n\n1. **MRI (Magnetic Resonance Imaging):** The most sensitive imaging technique for detecting brain metastases. It provides detailed images of brain structures.\n\n2. **CT Scan (Computed Tomography):** Often used if MRI is unavailable or contraindicated. It can quickly identify brain lesions.\n\n3. **PET Scan (Positron Emission Tomography):** Sometimes used to detect cancer spread and assess metabolic activity.\n\n4. **Biopsy:** In certain cases, a biopsy may be performed to confirm the diagnosis and identify the primary cancer source.\n\n5. **Lumbar Puncture:** Rarely, cerebrospinal fluid analysis may be needed if leptomeningeal metastases are suspected.\n\nThese studies help determine the presence, number, and location of brain metastases, guiding treatment decisions.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "When evaluating metastatic brain tumors, several diagnostic studies are typically used:\n\n1. **MRI (Magnetic Resonance Imaging):** The most sensitive imaging technique for detecting brain metastases. It provides detailed images of brain structures.\n\n2. **CT Scan (Computed Tomography):** Often used if MRI is unavailable or contraindicated. It can quickly identify brain lesions.\n\n3. **PET Scan (Positron Emission Tomography):** Sometimes used to detect cancer spread and assess metabolic activity.\n\n4. **Biopsy:** In certain cases, a biopsy may be performed to confirm the diagnosis and identify the primary cancer source.\n\n5. **Lumbar Puncture:** Rarely, cerebrospinal fluid analysis may be needed if leptomeningeal metastases are suspected.\n\nThese studies help determine the presence, number, and location of brain metastases, guiding treatment decisions."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "When evaluating metastatic brain tumors, several diagnostic studies are typically used:\n\n1. **MRI (Magnetic Resonance Imaging):** The most sensitive imaging technique for detecting brain metastases. It provides detailed images of brain structures.\n\n2. **CT Scan (Computed Tomography):** Often used if MRI is unavailable or contraindicated. It can quickly identify brain lesions.\n\n3. **PET Scan (Positron Emission Tomography):** Sometimes used to detect cancer spread and assess metabolic activity.\n\n4. **Biopsy:** In certain cases, a biopsy may be performed to confirm the diagnosis and identify the primary cancer source.\n\n5. **Lumbar Puncture:** Rarely, cerebrospinal fluid analysis may be needed if leptomeningeal metastases are suspected.\n\nThese studies help determine the presence, number, and location of brain metastases, guiding treatment decisions."
+          "text": ""
         }
       }
     },
     {
-      "question_id": 14,
-      "question": "when was niagara falls created",
-      "worker": "Worker-1",
-      "answer": "Niagara Falls was formed around 12,000 years ago at the end of the last Ice Age. As the glaciers receded, they released large amounts of water, which carved out the Niagara River and the falls. The falls have since eroded and changed shape over time due to the natural flow of water.",
-      "response_time": 1.3302640914916992,
-      "timestamp": 1756070401.716182,
-      "status": "success",
+      "question_id": 11,
+      "question": "how far deep to plant beet early wonder",
+      "worker": "Worker-3",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305345.5385349,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "Niagara Falls was formed around 12,000 years ago at the end of the last Ice Age. As the glaciers receded, they released large amounts of water, which carved out the Niagara River and the falls. The falls have since eroded and changed shape over time due to the natural flow of water.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Niagara Falls was formed around 12,000 years ago at the end of the last Ice Age. As the glaciers receded, they released large amounts of water, which carved out the Niagara River and the falls. The falls have since eroded and changed shape over time due to the natural flow of water."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "Niagara Falls was formed around 12,000 years ago at the end of the last Ice Age. As the glaciers receded, they released large amounts of water, which carved out the Niagara River and the falls. The falls have since eroded and changed shape over time due to the natural flow of water."
+          "text": ""
         }
       }
     },
     {
       "question_id": 12,
       "question": "ways to stop diarrhea in my pupply",
-      "worker": "Worker-4",
-      "answer": "To help stop diarrhea in your puppy, consider the following steps:\n\n1. **Dietary Adjustment**: Temporarily withhold food for 12-24 hours to allow the digestive system to rest. Ensure your puppy has access to fresh water to prevent dehydration.\n\n2. **Bland Diet**: After the fasting period, introduce a bland diet such as boiled chicken and rice in small, frequent meals.\n\n3. **Hydration**: Ensure your puppy stays hydrated. You can offer an electrolyte solution designed for pets.\n\n4. **Monitor**: Keep an eye on your puppy's condition. If diarrhea persists for more than 24-48 hours, or if there are additional symptoms like vomiting, lethargy, or blood in the stool, consult a veterinarian.\n\n5. **Veterinary Care**: Seek professional advice if the condition doesn't improve, as it could indicate an underlying health issue.\n\nAlways consult your vet before making significant changes to your puppy's diet or health regimen.",
-      "response_time": 2.4780948162078857,
-      "timestamp": 1756070401.940574,
-      "status": "success",
+      "worker": "Worker-1",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305346.0352716,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "To help stop diarrhea in your puppy, consider the following steps:\n\n1. **Dietary Adjustment**: Temporarily withhold food for 12-24 hours to allow the digestive system to rest. Ensure your puppy has access to fresh water to prevent dehydration.\n\n2. **Bland Diet**: After the fasting period, introduce a bland diet such as boiled chicken and rice in small, frequent meals.\n\n3. **Hydration**: Ensure your puppy stays hydrated. You can offer an electrolyte solution designed for pets.\n\n4. **Monitor**: Keep an eye on your puppy's condition. If diarrhea persists for more than 24-48 hours, or if there are additional symptoms like vomiting, lethargy, or blood in the stool, consult a veterinarian.\n\n5. **Veterinary Care**: Seek professional advice if the condition doesn't improve, as it could indicate an underlying health issue.\n\nAlways consult your vet before making significant changes to your puppy's diet or health regimen.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "To help stop diarrhea in your puppy, consider the following steps:\n\n1. **Dietary Adjustment**: Temporarily withhold food for 12-24 hours to allow the digestive system to rest. Ensure your puppy has access to fresh water to prevent dehydration.\n\n2. **Bland Diet**: After the fasting period, introduce a bland diet such as boiled chicken and rice in small, frequent meals.\n\n3. **Hydration**: Ensure your puppy stays hydrated. You can offer an electrolyte solution designed for pets.\n\n4. **Monitor**: Keep an eye on your puppy's condition. If diarrhea persists for more than 24-48 hours, or if there are additional symptoms like vomiting, lethargy, or blood in the stool, consult a veterinarian.\n\n5. **Veterinary Care**: Seek professional advice if the condition doesn't improve, as it could indicate an underlying health issue.\n\nAlways consult your vet before making significant changes to your puppy's diet or health regimen."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "To help stop diarrhea in your puppy, consider the following steps:\n\n1. **Dietary Adjustment**: Temporarily withhold food for 12-24 hours to allow the digestive system to rest. Ensure your puppy has access to fresh water to prevent dehydration.\n\n2. **Bland Diet**: After the fasting period, introduce a bland diet such as boiled chicken and rice in small, frequent meals.\n\n3. **Hydration**: Ensure your puppy stays hydrated. You can offer an electrolyte solution designed for pets.\n\n4. **Monitor**: Keep an eye on your puppy's condition. If diarrhea persists for more than 24-48 hours, or if there are additional symptoms like vomiting, lethargy, or blood in the stool, consult a veterinarian.\n\n5. **Veterinary Care**: Seek professional advice if the condition doesn't improve, as it could indicate an underlying health issue.\n\nAlways consult your vet before making significant changes to your puppy's diet or health regimen."
-        }
-      }
-    },
-    {
-      "question_id": 15,
-      "question": "what is the difference between a medical doctor and a doctor of osteopathic",
-      "worker": "Worker-3",
-      "answer": "A Medical Doctor (MD) and a Doctor of Osteopathic Medicine (DO) are both fully licensed physicians, but they have different training philosophies. MDs practice allopathic medicine, which focuses on diagnosing and treating diseases primarily through medication and surgery. DOs practice osteopathic medicine, which includes a holistic approach and emphasizes the body's musculoskeletal system, preventive care, and the body's ability to heal itself. DOs receive additional training in osteopathic manipulative treatment (OMT), a hands-on technique to diagnose and treat illnesses. Both MDs and DOs can specialize in any area of medicine, prescribe medications, and perform surgeries.",
-      "response_time": 1.5352139472961426,
-      "timestamp": 1756070402.4314198,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "A Medical Doctor (MD) and a Doctor of Osteopathic Medicine (DO) are both fully licensed physicians, but they have different training philosophies. MDs practice allopathic medicine, which focuses on diagnosing and treating diseases primarily through medication and surgery. DOs practice osteopathic medicine, which includes a holistic approach and emphasizes the body's musculoskeletal system, preventive care, and the body's ability to heal itself. DOs receive additional training in osteopathic manipulative treatment (OMT), a hands-on technique to diagnose and treat illnesses. Both MDs and DOs can specialize in any area of medicine, prescribe medications, and perform surgeries.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "A Medical Doctor (MD) and a Doctor of Osteopathic Medicine (DO) are both fully licensed physicians, but they have different training philosophies. MDs practice allopathic medicine, which focuses on diagnosing and treating diseases primarily through medication and surgery. DOs practice osteopathic medicine, which includes a holistic approach and emphasizes the body's musculoskeletal system, preventive care, and the body's ability to heal itself. DOs receive additional training in osteopathic manipulative treatment (OMT), a hands-on technique to diagnose and treat illnesses. Both MDs and DOs can specialize in any area of medicine, prescribe medications, and perform surgeries."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "A Medical Doctor (MD) and a Doctor of Osteopathic Medicine (DO) are both fully licensed physicians, but they have different training philosophies. MDs practice allopathic medicine, which focuses on diagnosing and treating diseases primarily through medication and surgery. DOs practice osteopathic medicine, which includes a holistic approach and emphasizes the body's musculoskeletal system, preventive care, and the body's ability to heal itself. DOs receive additional training in osteopathic manipulative treatment (OMT), a hands-on technique to diagnose and treat illnesses. Both MDs and DOs can specialize in any area of medicine, prescribe medications, and perform surgeries."
-        }
-      }
-    },
-    {
-      "question_id": 13,
-      "question": "what disease do roof rats cause",
-      "worker": "Worker-2",
-      "answer": "Roof rats can spread several diseases to humans, either directly or indirectly. Direct transmission can occur through contact with their urine, droppings, or saliva, while indirect transmission can happen through fleas, mites, or ticks that have fed on infected rats. Some diseases associated with roof rats include:\n\n1. **Leptospirosis**: Spread through contact with water or soil contaminated with infected rat urine.\n2. **Salmonellosis**: Contracted by consuming food or water contaminated with rat feces.\n3. **Rat-bite fever**: Transmitted through bites or scratches from infected rats or by consuming contaminated food or water.\n4. **Plague**: Although rare, it can be spread by fleas that have fed on infected rats.\n\nPreventing infestations and maintaining good hygiene can help reduce the risk of these diseases.",
-      "response_time": 3.1787168979644775,
-      "timestamp": 1756070402.655186,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "Roof rats can spread several diseases to humans, either directly or indirectly. Direct transmission can occur through contact with their urine, droppings, or saliva, while indirect transmission can happen through fleas, mites, or ticks that have fed on infected rats. Some diseases associated with roof rats include:\n\n1. **Leptospirosis**: Spread through contact with water or soil contaminated with infected rat urine.\n2. **Salmonellosis**: Contracted by consuming food or water contaminated with rat feces.\n3. **Rat-bite fever**: Transmitted through bites or scratches from infected rats or by consuming contaminated food or water.\n4. **Plague**: Although rare, it can be spread by fleas that have fed on infected rats.\n\nPreventing infestations and maintaining good hygiene can help reduce the risk of these diseases.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Roof rats can spread several diseases to humans, either directly or indirectly. Direct transmission can occur through contact with their urine, droppings, or saliva, while indirect transmission can happen through fleas, mites, or ticks that have fed on infected rats. Some diseases associated with roof rats include:\n\n1. **Leptospirosis**: Spread through contact with water or soil contaminated with infected rat urine.\n2. **Salmonellosis**: Contracted by consuming food or water contaminated with rat feces.\n3. **Rat-bite fever**: Transmitted through bites or scratches from infected rats or by consuming contaminated food or water.\n4. **Plague**: Although rare, it can be spread by fleas that have fed on infected rats.\n\nPreventing infestations and maintaining good hygiene can help reduce the risk of these diseases."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "Roof rats can spread several diseases to humans, either directly or indirectly. Direct transmission can occur through contact with their urine, droppings, or saliva, while indirect transmission can happen through fleas, mites, or ticks that have fed on infected rats. Some diseases associated with roof rats include:\n\n1. **Leptospirosis**: Spread through contact with water or soil contaminated with infected rat urine.\n2. **Salmonellosis**: Contracted by consuming food or water contaminated with rat feces.\n3. **Rat-bite fever**: Transmitted through bites or scratches from infected rats or by consuming contaminated food or water.\n4. **Plague**: Although rare, it can be spread by fleas that have fed on infected rats.\n\nPreventing infestations and maintaining good hygiene can help reduce the risk of these diseases."
-        }
-      }
-    },
-    {
-      "question_id": 17,
-      "question": "where is the graphic card located in the cpu",
-      "worker": "Worker-4",
-      "answer": "The term \"CPU\" typically refers to the central processing unit, which is a component of a computer. However, if you're asking about the location of a graphics card in a computer, it is usually installed in a PCIe (Peripheral Component Interconnect Express) slot on the motherboard inside the computer case. The graphics card is a separate component from the CPU and is responsible for rendering images and video. If you are referring to integrated graphics, these are built into the CPU itself and do not have a separate physical location.",
-      "response_time": 1.6165461540222168,
-      "timestamp": 1756070403.557143,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "The term \"CPU\" typically refers to the central processing unit, which is a component of a computer. However, if you're asking about the location of a graphics card in a computer, it is usually installed in a PCIe (Peripheral Component Interconnect Express) slot on the motherboard inside the computer case. The graphics card is a separate component from the CPU and is responsible for rendering images and video. If you are referring to integrated graphics, these are built into the CPU itself and do not have a separate physical location.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The term \"CPU\" typically refers to the central processing unit, which is a component of a computer. However, if you're asking about the location of a graphics card in a computer, it is usually installed in a PCIe (Peripheral Component Interconnect Express) slot on the motherboard inside the computer case. The graphics card is a separate component from the CPU and is responsible for rendering images and video. If you are referring to integrated graphics, these are built into the CPU itself and do not have a separate physical location."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "The term \"CPU\" typically refers to the central processing unit, which is a component of a computer. However, if you're asking about the location of a graphics card in a computer, it is usually installed in a PCIe (Peripheral Component Interconnect Express) slot on the motherboard inside the computer case. The graphics card is a separate component from the CPU and is responsible for rendering images and video. If you are referring to integrated graphics, these are built into the CPU itself and do not have a separate physical location."
+          "text": ""
         }
       }
     },
@@ -444,134 +240,151 @@
       "question_id": 16,
       "question": "where is the graphic card located in the cpu",
       "worker": "Worker-1",
-      "answer": "The graphics card is not located inside the CPU itself. Instead, it is typically installed in a slot on the motherboard inside the computer case. Most modern graphics cards are inserted into a PCIe (Peripheral Component Interconnect Express) slot on the motherboard. If your computer has integrated graphics, the graphics processing is handled by the CPU or the motherboard itself, without a separate graphics card.",
-      "response_time": 1.97601318359375,
-      "timestamp": 1756070403.692218,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305354.7845054,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "The graphics card is not located inside the CPU itself. Instead, it is typically installed in a slot on the motherboard inside the computer case. Most modern graphics cards are inserted into a PCIe (Peripheral Component Interconnect Express) slot on the motherboard. If your computer has integrated graphics, the graphics processing is handled by the CPU or the motherboard itself, without a separate graphics card.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The graphics card is not located inside the CPU itself. Instead, it is typically installed in a slot on the motherboard inside the computer case. Most modern graphics cards are inserted into a PCIe (Peripheral Component Interconnect Express) slot on the motherboard. If your computer has integrated graphics, the graphics processing is handled by the CPU or the motherboard itself, without a separate graphics card."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "The graphics card is not located inside the CPU itself. Instead, it is typically installed in a slot on the motherboard inside the computer case. Most modern graphics cards are inserted into a PCIe (Peripheral Component Interconnect Express) slot on the motherboard. If your computer has integrated graphics, the graphics processing is handled by the CPU or the motherboard itself, without a separate graphics card."
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 13,
+      "question": "what disease do roof rats cause",
+      "worker": "Worker-4",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305355.3429844,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 15,
+      "question": "what is the difference between a medical doctor and a doctor of osteopathic",
+      "worker": "Worker-3",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305355.8400185,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 14,
+      "question": "when was niagara falls created",
+      "worker": "Worker-2",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305356.1515694,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 17,
+      "question": "where is the graphic card located in the cpu",
+      "worker": "Worker-1",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305363.546413,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
         }
       }
     },
     {
       "question_id": 19,
       "question": "property premises meaning",
-      "worker": "Worker-2",
-      "answer": "The term \"property premises\" generally refers to the land and buildings that are owned or rented by an individual or organization. It encompasses the physical location, including any structures or improvements on the land. In legal and real estate contexts, \"premises\" often denotes the specific area covered by a lease or property agreement.",
-      "response_time": 1.0387792587280273,
-      "timestamp": 1756070403.693988,
-      "status": "success",
+      "worker": "Worker-3",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305364.7225916,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "The term \"property premises\" generally refers to the land and buildings that are owned or rented by an individual or organization. It encompasses the physical location, including any structures or improvements on the land. In legal and real estate contexts, \"premises\" often denotes the specific area covered by a lease or property agreement.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The term \"property premises\" generally refers to the land and buildings that are owned or rented by an individual or organization. It encompasses the physical location, including any structures or improvements on the land. In legal and real estate contexts, \"premises\" often denotes the specific area covered by a lease or property agreement."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "The term \"property premises\" generally refers to the land and buildings that are owned or rented by an individual or organization. It encompasses the physical location, including any structures or improvements on the land. In legal and real estate contexts, \"premises\" often denotes the specific area covered by a lease or property agreement."
+          "text": ""
         }
       }
     },
     {
       "question_id": 18,
       "question": "what are hamitic peoples",
-      "worker": "Worker-3",
-      "answer": "The term \"Hamitic peoples\" is an outdated and discredited classification that was historically used to describe certain groups in Africa, particularly in North and East Africa. It was based on the now-rejected Hamitic hypothesis, which suggested that these groups were distinct from other African populations and were responsible for any cultural or technological advancements in Africa. This hypothesis was rooted in racial theories that have since been debunked. Modern anthropology and genetics recognize the diversity and complexity of African populations without resorting to such simplistic and erroneous classifications. The term is no longer used in contemporary scholarship.",
-      "response_time": 1.8438339233398438,
-      "timestamp": 1756070404.275278,
-      "status": "success",
+      "worker": "Worker-4",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305365.342683,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "The term \"Hamitic peoples\" is an outdated and discredited classification that was historically used to describe certain groups in Africa, particularly in North and East Africa. It was based on the now-rejected Hamitic hypothesis, which suggested that these groups were distinct from other African populations and were responsible for any cultural or technological advancements in Africa. This hypothesis was rooted in racial theories that have since been debunked. Modern anthropology and genetics recognize the diversity and complexity of African populations without resorting to such simplistic and erroneous classifications. The term is no longer used in contemporary scholarship.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The term \"Hamitic peoples\" is an outdated and discredited classification that was historically used to describe certain groups in Africa, particularly in North and East Africa. It was based on the now-rejected Hamitic hypothesis, which suggested that these groups were distinct from other African populations and were responsible for any cultural or technological advancements in Africa. This hypothesis was rooted in racial theories that have since been debunked. Modern anthropology and genetics recognize the diversity and complexity of African populations without resorting to such simplistic and erroneous classifications. The term is no longer used in contemporary scholarship."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "The term \"Hamitic peoples\" is an outdated and discredited classification that was historically used to describe certain groups in Africa, particularly in North and East Africa. It was based on the now-rejected Hamitic hypothesis, which suggested that these groups were distinct from other African populations and were responsible for any cultural or technological advancements in Africa. This hypothesis was rooted in racial theories that have since been debunked. Modern anthropology and genetics recognize the diversity and complexity of African populations without resorting to such simplistic and erroneous classifications. The term is no longer used in contemporary scholarship."
+          "text": ""
         }
       }
     },
     {
       "question_id": 20,
       "question": "does ichigo lose his powers",
-      "worker": "Worker-4",
-      "answer": "Yes, Ichigo Kurosaki loses his powers at several points in the \"Bleach\" series. After defeating Aizen, Ichigo uses the Final Getsuga Tenshō, which results in him losing his Soul Reaper powers. Later, he regains his powers with the help of Rukia and other Soul Reapers. Throughout the series, Ichigo's powers fluctuate due to various battles and transformations, but he ultimately regains and retains his abilities.",
-      "response_time": 1.8893868923187256,
-      "timestamp": 1756070405.446548,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "Yes, Ichigo Kurosaki loses his powers at several points in the \"Bleach\" series. After defeating Aizen, Ichigo uses the Final Getsuga Tenshō, which results in him losing his Soul Reaper powers. Later, he regains his powers with the help of Rukia and other Soul Reapers. Throughout the series, Ichigo's powers fluctuate due to various battles and transformations, but he ultimately regains and retains his abilities.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Yes, Ichigo Kurosaki loses his powers at several points in the \"Bleach\" series. After defeating Aizen, Ichigo uses the Final Getsuga Tenshō, which results in him losing his Soul Reaper powers. Later, he regains his powers with the help of Rukia and other Soul Reapers. Throughout the series, Ichigo's powers fluctuate due to various battles and transformations, but he ultimately regains and retains his abilities."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "Yes, Ichigo Kurosaki loses his powers at several points in the \"Bleach\" series. After defeating Aizen, Ichigo uses the Final Getsuga Tenshō, which results in him losing his Soul Reaper powers. Later, he regains his powers with the help of Rukia and other Soul Reapers. Throughout the series, Ichigo's powers fluctuate due to various battles and transformations, but he ultimately regains and retains his abilities."
-        }
-      }
-    },
-    {
-      "question_id": 22,
-      "question": "does flomax cause liver damage",
       "worker": "Worker-2",
-      "answer": "Flomax (tamsulosin) is primarily used to treat benign prostatic hyperplasia (BPH). It is not commonly associated with liver damage. However, like any medication, it can have side effects. Liver damage is not a typical side effect of Flomax, but if you have pre-existing liver conditions or are taking other medications that affect the liver, it's important to discuss this with your healthcare provider. Always consult a doctor for personalized medical advice.",
-      "response_time": 2.020643949508667,
-      "timestamp": 1756070405.714644,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305366.3324993,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "Flomax (tamsulosin) is primarily used to treat benign prostatic hyperplasia (BPH). It is not commonly associated with liver damage. However, like any medication, it can have side effects. Liver damage is not a typical side effect of Flomax, but if you have pre-existing liver conditions or are taking other medications that affect the liver, it's important to discuss this with your healthcare provider. Always consult a doctor for personalized medical advice.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Flomax (tamsulosin) is primarily used to treat benign prostatic hyperplasia (BPH). It is not commonly associated with liver damage. However, like any medication, it can have side effects. Liver damage is not a typical side effect of Flomax, but if you have pre-existing liver conditions or are taking other medications that affect the liver, it's important to discuss this with your healthcare provider. Always consult a doctor for personalized medical advice."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "Flomax (tamsulosin) is primarily used to treat benign prostatic hyperplasia (BPH). It is not commonly associated with liver damage. However, like any medication, it can have side effects. Liver damage is not a typical side effect of Flomax, but if you have pre-existing liver conditions or are taking other medications that affect the liver, it's important to discuss this with your healthcare provider. Always consult a doctor for personalized medical advice."
+          "text": ""
         }
       }
     },
@@ -579,161 +392,94 @@
       "question_id": 21,
       "question": "what structure are located in the abdominal  cavity?",
       "worker": "Worker-1",
-      "answer": "The abdominal cavity contains several vital organs and structures, including:\n\n1. **Stomach** - involved in digestion.\n2. **Liver** - processes nutrients and detoxifies substances.\n3. **Gallbladder** - stores bile produced by the liver.\n4. **Pancreas** - produces enzymes and hormones like insulin.\n5. **Spleen** - filters blood and supports the immune system.\n6. **Small Intestine** - absorbs nutrients from digested food.\n7. **Large Intestine (Colon)** - absorbs water and forms waste.\n8. **Kidneys** - filter blood to produce urine.\n9. **Adrenal Glands** - produce hormones like adrenaline.\n10. **Appendix** - a small, tube-like structure attached to the large intestine.\n\nThese organs are supported by blood vessels, nerves, and connective tissues within the cavity.",
-      "response_time": 2.073754072189331,
-      "timestamp": 1756070405.766,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305373.731556,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "The abdominal cavity contains several vital organs and structures, including:\n\n1. **Stomach** - involved in digestion.\n2. **Liver** - processes nutrients and detoxifies substances.\n3. **Gallbladder** - stores bile produced by the liver.\n4. **Pancreas** - produces enzymes and hormones like insulin.\n5. **Spleen** - filters blood and supports the immune system.\n6. **Small Intestine** - absorbs nutrients from digested food.\n7. **Large Intestine (Colon)** - absorbs water and forms waste.\n8. **Kidneys** - filter blood to produce urine.\n9. **Adrenal Glands** - produce hormones like adrenaline.\n10. **Appendix** - a small, tube-like structure attached to the large intestine.\n\nThese organs are supported by blood vessels, nerves, and connective tissues within the cavity.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The abdominal cavity contains several vital organs and structures, including:\n\n1. **Stomach** - involved in digestion.\n2. **Liver** - processes nutrients and detoxifies substances.\n3. **Gallbladder** - stores bile produced by the liver.\n4. **Pancreas** - produces enzymes and hormones like insulin.\n5. **Spleen** - filters blood and supports the immune system.\n6. **Small Intestine** - absorbs nutrients from digested food.\n7. **Large Intestine (Colon)** - absorbs water and forms waste.\n8. **Kidneys** - filter blood to produce urine.\n9. **Adrenal Glands** - produce hormones like adrenaline.\n10. **Appendix** - a small, tube-like structure attached to the large intestine.\n\nThese organs are supported by blood vessels, nerves, and connective tissues within the cavity."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "The abdominal cavity contains several vital organs and structures, including:\n\n1. **Stomach** - involved in digestion.\n2. **Liver** - processes nutrients and detoxifies substances.\n3. **Gallbladder** - stores bile produced by the liver.\n4. **Pancreas** - produces enzymes and hormones like insulin.\n5. **Spleen** - filters blood and supports the immune system.\n6. **Small Intestine** - absorbs nutrients from digested food.\n7. **Large Intestine (Colon)** - absorbs water and forms waste.\n8. **Kidneys** - filter blood to produce urine.\n9. **Adrenal Glands** - produce hormones like adrenaline.\n10. **Appendix** - a small, tube-like structure attached to the large intestine.\n\nThese organs are supported by blood vessels, nerves, and connective tissues within the cavity."
+          "text": ""
         }
       }
     },
     {
-      "question_id": 24,
-      "question": "who discovered the element carbon",
-      "worker": "Worker-4",
-      "answer": "Carbon was not \"discovered\" in the way many other elements were, as it has been known since ancient times. It is one of the few elements that has been known since antiquity, primarily in the form of charcoal and soot. The name \"carbon\" comes from the Latin word \"carbo,\" meaning coal. While no single person is credited with its discovery, Antoine Lavoisier was instrumental in recognizing carbon as an element in the late 18th century through his work in chemistry.",
-      "response_time": 1.8858017921447754,
-      "timestamp": 1756070407.332381,
-      "status": "success",
+      "question_id": 22,
+      "question": "does flomax cause liver damage",
+      "worker": "Worker-3",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305374.7860346,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "Carbon was not \"discovered\" in the way many other elements were, as it has been known since ancient times. It is one of the few elements that has been known since antiquity, primarily in the form of charcoal and soot. The name \"carbon\" comes from the Latin word \"carbo,\" meaning coal. While no single person is credited with its discovery, Antoine Lavoisier was instrumental in recognizing carbon as an element in the late 18th century through his work in chemistry.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Carbon was not \"discovered\" in the way many other elements were, as it has been known since ancient times. It is one of the few elements that has been known since antiquity, primarily in the form of charcoal and soot. The name \"carbon\" comes from the Latin word \"carbo,\" meaning coal. While no single person is credited with its discovery, Antoine Lavoisier was instrumental in recognizing carbon as an element in the late 18th century through his work in chemistry."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "Carbon was not \"discovered\" in the way many other elements were, as it has been known since ancient times. It is one of the few elements that has been known since antiquity, primarily in the form of charcoal and soot. The name \"carbon\" comes from the Latin word \"carbo,\" meaning coal. While no single person is credited with its discovery, Antoine Lavoisier was instrumental in recognizing carbon as an element in the late 18th century through his work in chemistry."
+          "text": ""
         }
       }
     },
     {
       "question_id": 23,
       "question": "what is printing mechanism",
-      "worker": "Worker-3",
-      "answer": "A printing mechanism refers to the method or technology used to transfer ink or toner onto a substrate, such as paper, to produce text or images. Common printing mechanisms include:\n\n1. **Inkjet Printing**: Uses tiny nozzles to spray liquid ink onto paper. It's versatile and suitable for both text and high-quality images.\n\n2. **Laser Printing**: Uses a laser beam to produce an image on a drum, which is then transferred to paper using toner. It's fast and efficient for high-volume text printing.\n\n3. **Offset Printing**: Involves transferring an inked image from a plate to a rubber blanket, then onto the printing surface. It's ideal for high-volume commercial printing.\n\n4. **Dot Matrix Printing**: Uses a print head that moves back-and-forth, striking an ink-soaked ribbon against the paper. It's mostly used for multipart forms.\n\nEach mechanism has its own advantages and is chosen based on the specific printing needs.",
-      "response_time": 3.1731228828430176,
-      "timestamp": 1756070407.448422,
-      "status": "success",
+      "worker": "Worker-4",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305374.7863383,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "A printing mechanism refers to the method or technology used to transfer ink or toner onto a substrate, such as paper, to produce text or images. Common printing mechanisms include:\n\n1. **Inkjet Printing**: Uses tiny nozzles to spray liquid ink onto paper. It's versatile and suitable for both text and high-quality images.\n\n2. **Laser Printing**: Uses a laser beam to produce an image on a drum, which is then transferred to paper using toner. It's fast and efficient for high-volume text printing.\n\n3. **Offset Printing**: Involves transferring an inked image from a plate to a rubber blanket, then onto the printing surface. It's ideal for high-volume commercial printing.\n\n4. **Dot Matrix Printing**: Uses a print head that moves back-and-forth, striking an ink-soaked ribbon against the paper. It's mostly used for multipart forms.\n\nEach mechanism has its own advantages and is chosen based on the specific printing needs.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "A printing mechanism refers to the method or technology used to transfer ink or toner onto a substrate, such as paper, to produce text or images. Common printing mechanisms include:\n\n1. **Inkjet Printing**: Uses tiny nozzles to spray liquid ink onto paper. It's versatile and suitable for both text and high-quality images.\n\n2. **Laser Printing**: Uses a laser beam to produce an image on a drum, which is then transferred to paper using toner. It's fast and efficient for high-volume text printing.\n\n3. **Offset Printing**: Involves transferring an inked image from a plate to a rubber blanket, then onto the printing surface. It's ideal for high-volume commercial printing.\n\n4. **Dot Matrix Printing**: Uses a print head that moves back-and-forth, striking an ink-soaked ribbon against the paper. It's mostly used for multipart forms.\n\nEach mechanism has its own advantages and is chosen based on the specific printing needs."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "A printing mechanism refers to the method or technology used to transfer ink or toner onto a substrate, such as paper, to produce text or images. Common printing mechanisms include:\n\n1. **Inkjet Printing**: Uses tiny nozzles to spray liquid ink onto paper. It's versatile and suitable for both text and high-quality images.\n\n2. **Laser Printing**: Uses a laser beam to produce an image on a drum, which is then transferred to paper using toner. It's fast and efficient for high-volume text printing.\n\n3. **Offset Printing**: Involves transferring an inked image from a plate to a rubber blanket, then onto the printing surface. It's ideal for high-volume commercial printing.\n\n4. **Dot Matrix Printing**: Uses a print head that moves back-and-forth, striking an ink-soaked ribbon against the paper. It's mostly used for multipart forms.\n\nEach mechanism has its own advantages and is chosen based on the specific printing needs."
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 24,
+      "question": "who discovered the element carbon",
+      "worker": "Worker-2",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305378.7348468,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
         }
       }
     },
     {
       "question_id": 25,
       "question": "is the hawb the tracking number",
-      "worker": "Worker-2",
-      "answer": "The House Air Waybill (HAWB) is not the same as a tracking number, but it can be used for tracking purposes. The HAWB is a document issued by a freight forwarder to a shipper, detailing the shipment of goods and serving as a receipt. It includes information such as the shipper's and consignee's details, description of the goods, and other shipment specifics. While the HAWB itself is not a tracking number, it often contains a unique number that can be used to track the shipment's progress through the logistics network.",
-      "response_time": 1.862663984298706,
-      "timestamp": 1756070407.5773299,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "The House Air Waybill (HAWB) is not the same as a tracking number, but it can be used for tracking purposes. The HAWB is a document issued by a freight forwarder to a shipper, detailing the shipment of goods and serving as a receipt. It includes information such as the shipper's and consignee's details, description of the goods, and other shipment specifics. While the HAWB itself is not a tracking number, it often contains a unique number that can be used to track the shipment's progress through the logistics network.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The House Air Waybill (HAWB) is not the same as a tracking number, but it can be used for tracking purposes. The HAWB is a document issued by a freight forwarder to a shipper, detailing the shipment of goods and serving as a receipt. It includes information such as the shipper's and consignee's details, description of the goods, and other shipment specifics. While the HAWB itself is not a tracking number, it often contains a unique number that can be used to track the shipment's progress through the logistics network."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "The House Air Waybill (HAWB) is not the same as a tracking number, but it can be used for tracking purposes. The HAWB is a document issued by a freight forwarder to a shipper, detailing the shipment of goods and serving as a receipt. It includes information such as the shipper's and consignee's details, description of the goods, and other shipment specifics. While the HAWB itself is not a tracking number, it often contains a unique number that can be used to track the shipment's progress through the logistics network."
-        }
-      }
-    },
-    {
-      "question_id": 26,
-      "question": "lewiston idaho fedex express phone number",
       "worker": "Worker-1",
-      "answer": "The phone number for FedEx Express in Lewiston, Idaho, can typically be found by visiting the FedEx website and using their location finder tool, or by searching online directories like Google Maps. If you need immediate assistance, you can also contact FedEx customer service at 1-800-463-3339 for help with locating the specific phone number for the Lewiston location.",
-      "response_time": 2.0533080101013184,
-      "timestamp": 1756070407.8193269,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305383.430885,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "The phone number for FedEx Express in Lewiston, Idaho, can typically be found by visiting the FedEx website and using their location finder tool, or by searching online directories like Google Maps. If you need immediate assistance, you can also contact FedEx customer service at 1-800-463-3339 for help with locating the specific phone number for the Lewiston location.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The phone number for FedEx Express in Lewiston, Idaho, can typically be found by visiting the FedEx website and using their location finder tool, or by searching online directories like Google Maps. If you need immediate assistance, you can also contact FedEx customer service at 1-800-463-3339 for help with locating the specific phone number for the Lewiston location."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "The phone number for FedEx Express in Lewiston, Idaho, can typically be found by visiting the FedEx website and using their location finder tool, or by searching online directories like Google Maps. If you need immediate assistance, you can also contact FedEx customer service at 1-800-463-3339 for help with locating the specific phone number for the Lewiston location."
-        }
-      }
-    },
-    {
-      "question_id": 28,
-      "question": "what is the empirical formula for phosphorus selenide",
-      "worker": "Worker-3",
-      "answer": "The empirical formula for phosphorus selenide can vary depending on the specific compound. However, a common form of phosphorus selenide is phosphorus pentaselenide, which has the empirical formula P2Se5. Another form is phosphorus triselenide, with the empirical formula P2Se3. The specific empirical formula depends on the stoichiometry of the compound in question.",
-      "response_time": 1.0253517627716064,
-      "timestamp": 1756070408.473803,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "The empirical formula for phosphorus selenide can vary depending on the specific compound. However, a common form of phosphorus selenide is phosphorus pentaselenide, which has the empirical formula P2Se5. Another form is phosphorus triselenide, with the empirical formula P2Se3. The specific empirical formula depends on the stoichiometry of the compound in question.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The empirical formula for phosphorus selenide can vary depending on the specific compound. However, a common form of phosphorus selenide is phosphorus pentaselenide, which has the empirical formula P2Se5. Another form is phosphorus triselenide, with the empirical formula P2Se3. The specific empirical formula depends on the stoichiometry of the compound in question."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "The empirical formula for phosphorus selenide can vary depending on the specific compound. However, a common form of phosphorus selenide is phosphorus pentaselenide, which has the empirical formula P2Se5. Another form is phosphorus triselenide, with the empirical formula P2Se3. The specific empirical formula depends on the stoichiometry of the compound in question."
+          "text": ""
         }
       }
     },
@@ -741,80 +487,75 @@
       "question_id": 27,
       "question": "what is one role of the element phosphorus?",
       "worker": "Worker-4",
-      "answer": "Phosphorus plays a crucial role in living organisms, primarily as a component of DNA and RNA, where it forms part of the backbone of these molecules. It is also essential in the formation of ATP (adenosine triphosphate), which is a key energy carrier in cells. Additionally, phosphorus is a critical element in the structure of cell membranes, as it is a component of phospholipids. In plants, phosphorus is vital for photosynthesis, energy transfer, and nutrient transport.",
-      "response_time": 1.5026581287384033,
-      "timestamp": 1756070408.8350651,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305384.1131015,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "Phosphorus plays a crucial role in living organisms, primarily as a component of DNA and RNA, where it forms part of the backbone of these molecules. It is also essential in the formation of ATP (adenosine triphosphate), which is a key energy carrier in cells. Additionally, phosphorus is a critical element in the structure of cell membranes, as it is a component of phospholipids. In plants, phosphorus is vital for photosynthesis, energy transfer, and nutrient transport.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Phosphorus plays a crucial role in living organisms, primarily as a component of DNA and RNA, where it forms part of the backbone of these molecules. It is also essential in the formation of ATP (adenosine triphosphate), which is a key energy carrier in cells. Additionally, phosphorus is a critical element in the structure of cell membranes, as it is a component of phospholipids. In plants, phosphorus is vital for photosynthesis, energy transfer, and nutrient transport."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "Phosphorus plays a crucial role in living organisms, primarily as a component of DNA and RNA, where it forms part of the backbone of these molecules. It is also essential in the formation of ATP (adenosine triphosphate), which is a key energy carrier in cells. Additionally, phosphorus is a critical element in the structure of cell membranes, as it is a component of phospholipids. In plants, phosphorus is vital for photosynthesis, energy transfer, and nutrient transport."
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 26,
+      "question": "lewiston idaho fedex express phone number",
+      "worker": "Worker-3",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305384.7960062,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 28,
+      "question": "what is the empirical formula for phosphorus selenide",
+      "worker": "Worker-2",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305387.8238428,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
         }
       }
     },
     {
       "question_id": 29,
       "question": "what is abbreviated dialing",
-      "worker": "Worker-2",
-      "answer": "Abbreviated dialing is a telecommunication feature that allows users to dial a short sequence of numbers to reach a specific phone number or service. This is often used to simplify the process of calling frequently dialed numbers or accessing certain services. For example, instead of dialing a full phone number, a user might dial a two or three-digit code. Common examples include emergency services like 911 or customer service numbers like 611. This feature is particularly useful for speed and convenience.",
-      "response_time": 1.79795503616333,
-      "timestamp": 1756070409.3753102,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "Abbreviated dialing is a telecommunication feature that allows users to dial a short sequence of numbers to reach a specific phone number or service. This is often used to simplify the process of calling frequently dialed numbers or accessing certain services. For example, instead of dialing a full phone number, a user might dial a two or three-digit code. Common examples include emergency services like 911 or customer service numbers like 611. This feature is particularly useful for speed and convenience.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Abbreviated dialing is a telecommunication feature that allows users to dial a short sequence of numbers to reach a specific phone number or service. This is often used to simplify the process of calling frequently dialed numbers or accessing certain services. For example, instead of dialing a full phone number, a user might dial a two or three-digit code. Common examples include emergency services like 911 or customer service numbers like 611. This feature is particularly useful for speed and convenience."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "Abbreviated dialing is a telecommunication feature that allows users to dial a short sequence of numbers to reach a specific phone number or service. This is often used to simplify the process of calling frequently dialed numbers or accessing certain services. For example, instead of dialing a full phone number, a user might dial a two or three-digit code. Common examples include emergency services like 911 or customer service numbers like 611. This feature is particularly useful for speed and convenience."
-        }
-      }
-    },
-    {
-      "question_id": 30,
-      "question": "fastest cell phone processor",
       "worker": "Worker-1",
-      "answer": "As of the latest information in 2023, the fastest cell phone processor is the Apple A17 Pro, used in the iPhone 15 Pro models. It is built on a 3nm process, offering significant improvements in performance and efficiency over its predecessors. For Android devices, the Snapdragon 8 Gen 2 from Qualcomm is among the top performers, providing excellent speed and power efficiency. Both processors are designed to handle demanding tasks, including gaming, AI applications, and multitasking, with ease.",
-      "response_time": 1.6581230163574219,
-      "timestamp": 1756070409.477479,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305392.2709138,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "As of the latest information in 2023, the fastest cell phone processor is the Apple A17 Pro, used in the iPhone 15 Pro models. It is built on a 3nm process, offering significant improvements in performance and efficiency over its predecessors. For Android devices, the Snapdragon 8 Gen 2 from Qualcomm is among the top performers, providing excellent speed and power efficiency. Both processors are designed to handle demanding tasks, including gaming, AI applications, and multitasking, with ease.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "As of the latest information in 2023, the fastest cell phone processor is the Apple A17 Pro, used in the iPhone 15 Pro models. It is built on a 3nm process, offering significant improvements in performance and efficiency over its predecessors. For Android devices, the Snapdragon 8 Gen 2 from Qualcomm is among the top performers, providing excellent speed and power efficiency. Both processors are designed to handle demanding tasks, including gaming, AI applications, and multitasking, with ease."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "As of the latest information in 2023, the fastest cell phone processor is the Apple A17 Pro, used in the iPhone 15 Pro models. It is built on a 3nm process, offering significant improvements in performance and efficiency over its predecessors. For Android devices, the Snapdragon 8 Gen 2 from Qualcomm is among the top performers, providing excellent speed and power efficiency. Both processors are designed to handle demanding tasks, including gaming, AI applications, and multitasking, with ease."
+          "text": ""
         }
       }
     },
@@ -822,134 +563,113 @@
       "question_id": 31,
       "question": "what are the three monetary policy tools of the fed",
       "worker": "Worker-3",
-      "answer": "The Federal Reserve (the Fed) uses three primary monetary policy tools to manage the economy:\n\n1. **Open Market Operations (OMO):** This involves the buying and selling of government securities in the open market to influence the level of reserves in the banking system and thus interest rates.\n\n2. **Discount Rate:** This is the interest rate charged to commercial banks and other depository institutions on loans they receive from the Federal Reserve's discount window. Adjusting the discount rate influences borrowing costs and liquidity.\n\n3. **Reserve Requirements:** This refers to the amount of funds that a bank must hold in reserve against deposits made by customers. Changing reserve requirements can influence the amount of money banks can lend.\n\nThese tools are used to control inflation, manage employment levels, and stabilize the financial system.",
-      "response_time": 1.7120931148529053,
-      "timestamp": 1756070410.185927,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305393.3869956,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "The Federal Reserve (the Fed) uses three primary monetary policy tools to manage the economy:\n\n1. **Open Market Operations (OMO):** This involves the buying and selling of government securities in the open market to influence the level of reserves in the banking system and thus interest rates.\n\n2. **Discount Rate:** This is the interest rate charged to commercial banks and other depository institutions on loans they receive from the Federal Reserve's discount window. Adjusting the discount rate influences borrowing costs and liquidity.\n\n3. **Reserve Requirements:** This refers to the amount of funds that a bank must hold in reserve against deposits made by customers. Changing reserve requirements can influence the amount of money banks can lend.\n\nThese tools are used to control inflation, manage employment levels, and stabilize the financial system.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The Federal Reserve (the Fed) uses three primary monetary policy tools to manage the economy:\n\n1. **Open Market Operations (OMO):** This involves the buying and selling of government securities in the open market to influence the level of reserves in the banking system and thus interest rates.\n\n2. **Discount Rate:** This is the interest rate charged to commercial banks and other depository institutions on loans they receive from the Federal Reserve's discount window. Adjusting the discount rate influences borrowing costs and liquidity.\n\n3. **Reserve Requirements:** This refers to the amount of funds that a bank must hold in reserve against deposits made by customers. Changing reserve requirements can influence the amount of money banks can lend.\n\nThese tools are used to control inflation, manage employment levels, and stabilize the financial system."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "The Federal Reserve (the Fed) uses three primary monetary policy tools to manage the economy:\n\n1. **Open Market Operations (OMO):** This involves the buying and selling of government securities in the open market to influence the level of reserves in the banking system and thus interest rates.\n\n2. **Discount Rate:** This is the interest rate charged to commercial banks and other depository institutions on loans they receive from the Federal Reserve's discount window. Adjusting the discount rate influences borrowing costs and liquidity.\n\n3. **Reserve Requirements:** This refers to the amount of funds that a bank must hold in reserve against deposits made by customers. Changing reserve requirements can influence the amount of money banks can lend.\n\nThese tools are used to control inflation, manage employment levels, and stabilize the financial system."
+          "text": ""
         }
       }
     },
     {
-      "question_id": 33,
-      "question": "what were the brothers grimm names",
-      "worker": "Worker-2",
-      "answer": "The Brothers Grimm were Jacob Grimm and Wilhelm Grimm. They were German scholars and authors known for collecting and publishing folklore during the 19th century.",
-      "response_time": 1.1314537525177002,
-      "timestamp": 1756070410.506786,
-      "status": "success",
+      "question_id": 30,
+      "question": "fastest cell phone processor",
+      "worker": "Worker-4",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305395.243718,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "The Brothers Grimm were Jacob Grimm and Wilhelm Grimm. They were German scholars and authors known for collecting and publishing folklore during the 19th century.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The Brothers Grimm were Jacob Grimm and Wilhelm Grimm. They were German scholars and authors known for collecting and publishing folklore during the 19th century."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "The Brothers Grimm were Jacob Grimm and Wilhelm Grimm. They were German scholars and authors known for collecting and publishing folklore during the 19th century."
-        }
-      }
-    },
-    {
-      "question_id": 34,
-      "question": "what is an insta pot?",
-      "worker": "Worker-1",
-      "answer": "An Instant Pot is a brand of multi-cooker that combines several kitchen appliances into one. It can function as a pressure cooker, slow cooker, rice cooker, steamer, sauté pan, yogurt maker, and warmer. The Instant Pot is popular for its versatility and ability to cook meals quickly, especially using the pressure cooking function. It has programmable settings and safety features, making it user-friendly for a variety of cooking tasks.",
-      "response_time": 1.3541901111602783,
-      "timestamp": 1756070410.8316932,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "An Instant Pot is a brand of multi-cooker that combines several kitchen appliances into one. It can function as a pressure cooker, slow cooker, rice cooker, steamer, sauté pan, yogurt maker, and warmer. The Instant Pot is popular for its versatility and ability to cook meals quickly, especially using the pressure cooking function. It has programmable settings and safety features, making it user-friendly for a variety of cooking tasks.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "An Instant Pot is a brand of multi-cooker that combines several kitchen appliances into one. It can function as a pressure cooker, slow cooker, rice cooker, steamer, sauté pan, yogurt maker, and warmer. The Instant Pot is popular for its versatility and ability to cook meals quickly, especially using the pressure cooking function. It has programmable settings and safety features, making it user-friendly for a variety of cooking tasks."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "An Instant Pot is a brand of multi-cooker that combines several kitchen appliances into one. It can function as a pressure cooker, slow cooker, rice cooker, steamer, sauté pan, yogurt maker, and warmer. The Instant Pot is popular for its versatility and ability to cook meals quickly, especially using the pressure cooking function. It has programmable settings and safety features, making it user-friendly for a variety of cooking tasks."
+          "text": ""
         }
       }
     },
     {
       "question_id": 32,
       "question": "what did maria theresa do for the serfs",
-      "worker": "Worker-4",
-      "answer": "Maria Theresa, the Habsburg Empress, implemented several reforms to improve the conditions of serfs in her empire. In 1771, she introduced the Robot Patent, which aimed to regulate and limit the labor obligations of serfs to their landlords. This reform sought to reduce the burden of forced labor and improve the serfs' living conditions. Additionally, she promoted agricultural reforms and education, which indirectly benefited the serf population by enhancing their economic and social status. However, her reforms were limited and did not abolish serfdom entirely, leaving significant changes to her successor, Joseph II.",
-      "response_time": 2.346489906311035,
-      "timestamp": 1756070411.1815832,
-      "status": "success",
+      "worker": "Worker-2",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305399.446572,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "Maria Theresa, the Habsburg Empress, implemented several reforms to improve the conditions of serfs in her empire. In 1771, she introduced the Robot Patent, which aimed to regulate and limit the labor obligations of serfs to their landlords. This reform sought to reduce the burden of forced labor and improve the serfs' living conditions. Additionally, she promoted agricultural reforms and education, which indirectly benefited the serf population by enhancing their economic and social status. However, her reforms were limited and did not abolish serfdom entirely, leaving significant changes to her successor, Joseph II.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Maria Theresa, the Habsburg Empress, implemented several reforms to improve the conditions of serfs in her empire. In 1771, she introduced the Robot Patent, which aimed to regulate and limit the labor obligations of serfs to their landlords. This reform sought to reduce the burden of forced labor and improve the serfs' living conditions. Additionally, she promoted agricultural reforms and education, which indirectly benefited the serf population by enhancing their economic and social status. However, her reforms were limited and did not abolish serfdom entirely, leaving significant changes to her successor, Joseph II."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "Maria Theresa, the Habsburg Empress, implemented several reforms to improve the conditions of serfs in her empire. In 1771, she introduced the Robot Patent, which aimed to regulate and limit the labor obligations of serfs to their landlords. This reform sought to reduce the burden of forced labor and improve the serfs' living conditions. Additionally, she promoted agricultural reforms and education, which indirectly benefited the serf population by enhancing their economic and social status. However, her reforms were limited and did not abolish serfdom entirely, leaving significant changes to her successor, Joseph II."
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 33,
+      "question": "what were the brothers grimm names",
+      "worker": "Worker-1",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305402.416268,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 34,
+      "question": "what is an insta pot?",
+      "worker": "Worker-3",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305402.6044452,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
         }
       }
     },
     {
       "question_id": 35,
       "question": "side effects for diclofenac topical",
-      "worker": "Worker-3",
-      "answer": "Diclofenac topical, a nonsteroidal anti-inflammatory drug (NSAID), can cause side effects. Common side effects include skin reactions at the application site, such as redness, itching, dryness, or rash. Less common but more serious side effects may include gastrointestinal issues like stomach pain or ulcers, liver problems, and kidney issues. Allergic reactions, though rare, can occur and may present as hives, difficulty breathing, or swelling of the face, lips, or throat. It's important to use diclofenac topical as directed and consult a healthcare professional if you experience severe or persistent side effects.",
-      "response_time": 1.8722097873687744,
-      "timestamp": 1756070412.0581539,
-      "status": "success",
+      "worker": "Worker-4",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305405.754784,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "Diclofenac topical, a nonsteroidal anti-inflammatory drug (NSAID), can cause side effects. Common side effects include skin reactions at the application site, such as redness, itching, dryness, or rash. Less common but more serious side effects may include gastrointestinal issues like stomach pain or ulcers, liver problems, and kidney issues. Allergic reactions, though rare, can occur and may present as hives, difficulty breathing, or swelling of the face, lips, or throat. It's important to use diclofenac topical as directed and consult a healthcare professional if you experience severe or persistent side effects.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Diclofenac topical, a nonsteroidal anti-inflammatory drug (NSAID), can cause side effects. Common side effects include skin reactions at the application site, such as redness, itching, dryness, or rash. Less common but more serious side effects may include gastrointestinal issues like stomach pain or ulcers, liver problems, and kidney issues. Allergic reactions, though rare, can occur and may present as hives, difficulty breathing, or swelling of the face, lips, or throat. It's important to use diclofenac topical as directed and consult a healthcare professional if you experience severe or persistent side effects."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "Diclofenac topical, a nonsteroidal anti-inflammatory drug (NSAID), can cause side effects. Common side effects include skin reactions at the application site, such as redness, itching, dryness, or rash. Less common but more serious side effects may include gastrointestinal issues like stomach pain or ulcers, liver problems, and kidney issues. Allergic reactions, though rare, can occur and may present as hives, difficulty breathing, or swelling of the face, lips, or throat. It's important to use diclofenac topical as directed and consult a healthcare professional if you experience severe or persistent side effects."
+          "text": ""
         }
       }
     },
@@ -957,26 +677,18 @@
       "question_id": 36,
       "question": "where does spermatogenesis occur?",
       "worker": "Worker-2",
-      "answer": "Spermatogenesis occurs in the seminiferous tubules of the testes. These tubules are tightly coiled structures where the process of sperm cell development takes place. Within the seminiferous tubules, spermatogonial stem cells undergo a series of divisions and transformations to eventually become mature spermatozoa. The process is supported by Sertoli cells, which provide nourishment and structural support, and is regulated by hormones such as testosterone and follicle-stimulating hormone (FSH).",
-      "response_time": 1.6717209815979004,
-      "timestamp": 1756070412.1785269,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305411.3804586,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "Spermatogenesis occurs in the seminiferous tubules of the testes. These tubules are tightly coiled structures where the process of sperm cell development takes place. Within the seminiferous tubules, spermatogonial stem cells undergo a series of divisions and transformations to eventually become mature spermatozoa. The process is supported by Sertoli cells, which provide nourishment and structural support, and is regulated by hormones such as testosterone and follicle-stimulating hormone (FSH).",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Spermatogenesis occurs in the seminiferous tubules of the testes. These tubules are tightly coiled structures where the process of sperm cell development takes place. Within the seminiferous tubules, spermatogonial stem cells undergo a series of divisions and transformations to eventually become mature spermatozoa. The process is supported by Sertoli cells, which provide nourishment and structural support, and is regulated by hormones such as testosterone and follicle-stimulating hormone (FSH)."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "Spermatogenesis occurs in the seminiferous tubules of the testes. These tubules are tightly coiled structures where the process of sperm cell development takes place. Within the seminiferous tubules, spermatogonial stem cells undergo a series of divisions and transformations to eventually become mature spermatozoa. The process is supported by Sertoli cells, which provide nourishment and structural support, and is regulated by hormones such as testosterone and follicle-stimulating hormone (FSH)."
+          "text": ""
         }
       }
     },
@@ -984,26 +696,56 @@
       "question_id": 37,
       "question": "where is baby beach hi",
       "worker": "Worker-1",
-      "answer": "Baby Beach in Hawaii is located on the island of Maui. Specifically, it is situated in the town of Lahaina on the island's west side. This beach is known for its calm, shallow waters, making it ideal for families with young children. The protective offshore reef helps keep the waves gentle, providing a safe environment for swimming and snorkeling.",
-      "response_time": 1.4222462177276611,
-      "timestamp": 1756070412.253967,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305412.1875782,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "Baby Beach in Hawaii is located on the island of Maui. Specifically, it is situated in the town of Lahaina on the island's west side. This beach is known for its calm, shallow waters, making it ideal for families with young children. The protective offshore reef helps keep the waves gentle, providing a safe environment for swimming and snorkeling.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Baby Beach in Hawaii is located on the island of Maui. Specifically, it is situated in the town of Lahaina on the island's west side. This beach is known for its calm, shallow waters, making it ideal for families with young children. The protective offshore reef helps keep the waves gentle, providing a safe environment for swimming and snorkeling."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "Baby Beach in Hawaii is located on the island of Maui. Specifically, it is situated in the town of Lahaina on the island's west side. This beach is known for its calm, shallow waters, making it ideal for families with young children. The protective offshore reef helps keep the waves gentle, providing a safe environment for swimming and snorkeling."
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 38,
+      "question": "what cleans your liver and kidneys",
+      "worker": "Worker-3",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305412.7476969,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 39,
+      "question": "how many milligrams of ritalin should an adult take",
+      "worker": "Worker-4",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305414.1701727,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
         }
       }
     },
@@ -1011,80 +753,37 @@
       "question_id": 41,
       "question": "what county is mitchell south dakota in",
       "worker": "Worker-1",
-      "answer": "Mitchell, South Dakota, is located in Davison County.",
-      "response_time": 0.8272800445556641,
-      "timestamp": 1756070413.081297,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305421.2140114,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "Mitchell, South Dakota, is located in Davison County.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Mitchell, South Dakota, is located in Davison County."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "Mitchell, South Dakota, is located in Davison County."
+          "text": ""
         }
       }
     },
     {
-      "question_id": 38,
-      "question": "what cleans your liver and kidneys",
-      "worker": "Worker-4",
-      "answer": "To support liver and kidney health, focus on a balanced diet, hydration, and lifestyle choices. Drink plenty of water to help the kidneys filter waste. Eat a diet rich in fruits, vegetables, whole grains, and lean proteins to provide essential nutrients. Foods like garlic, berries, and leafy greens are beneficial. Limit alcohol, processed foods, and excessive salt. Regular exercise and maintaining a healthy weight also support organ function. Avoid unnecessary medications and consult a healthcare provider before taking supplements or detox products, as they can sometimes harm the liver and kidneys.",
-      "response_time": 2.0593929290771484,
-      "timestamp": 1756070413.241002,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "To support liver and kidney health, focus on a balanced diet, hydration, and lifestyle choices. Drink plenty of water to help the kidneys filter waste. Eat a diet rich in fruits, vegetables, whole grains, and lean proteins to provide essential nutrients. Foods like garlic, berries, and leafy greens are beneficial. Limit alcohol, processed foods, and excessive salt. Regular exercise and maintaining a healthy weight also support organ function. Avoid unnecessary medications and consult a healthcare provider before taking supplements or detox products, as they can sometimes harm the liver and kidneys.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "To support liver and kidney health, focus on a balanced diet, hydration, and lifestyle choices. Drink plenty of water to help the kidneys filter waste. Eat a diet rich in fruits, vegetables, whole grains, and lean proteins to provide essential nutrients. Foods like garlic, berries, and leafy greens are beneficial. Limit alcohol, processed foods, and excessive salt. Regular exercise and maintaining a healthy weight also support organ function. Avoid unnecessary medications and consult a healthcare provider before taking supplements or detox products, as they can sometimes harm the liver and kidneys."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "To support liver and kidney health, focus on a balanced diet, hydration, and lifestyle choices. Drink plenty of water to help the kidneys filter waste. Eat a diet rich in fruits, vegetables, whole grains, and lean proteins to provide essential nutrients. Foods like garlic, berries, and leafy greens are beneficial. Limit alcohol, processed foods, and excessive salt. Regular exercise and maintaining a healthy weight also support organ function. Avoid unnecessary medications and consult a healthcare provider before taking supplements or detox products, as they can sometimes harm the liver and kidneys."
-        }
-      }
-    },
-    {
-      "question_id": 39,
-      "question": "how many milligrams of ritalin should an adult take",
+      "question_id": 42,
+      "question": "who is the judge michael day district court of south dakota",
       "worker": "Worker-3",
-      "answer": "The appropriate dosage of Ritalin (methylphenidate) for adults varies based on individual needs and medical guidance. Typically, the starting dose for adults is 10 mg taken 2-3 times daily, with adjustments made by a healthcare provider. The maximum recommended daily dose is generally 60 mg. However, it's crucial to follow a doctor's prescription and guidance, as they will tailor the dosage to the individual's specific condition and response to the medication. Always consult a healthcare professional before starting or adjusting any medication.",
-      "response_time": 1.8472800254821777,
-      "timestamp": 1756070413.9054642,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305421.7123787,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "The appropriate dosage of Ritalin (methylphenidate) for adults varies based on individual needs and medical guidance. Typically, the starting dose for adults is 10 mg taken 2-3 times daily, with adjustments made by a healthcare provider. The maximum recommended daily dose is generally 60 mg. However, it's crucial to follow a doctor's prescription and guidance, as they will tailor the dosage to the individual's specific condition and response to the medication. Always consult a healthcare professional before starting or adjusting any medication.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The appropriate dosage of Ritalin (methylphenidate) for adults varies based on individual needs and medical guidance. Typically, the starting dose for adults is 10 mg taken 2-3 times daily, with adjustments made by a healthcare provider. The maximum recommended daily dose is generally 60 mg. However, it's crucial to follow a doctor's prescription and guidance, as they will tailor the dosage to the individual's specific condition and response to the medication. Always consult a healthcare professional before starting or adjusting any medication."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "The appropriate dosage of Ritalin (methylphenidate) for adults varies based on individual needs and medical guidance. Typically, the starting dose for adults is 10 mg taken 2-3 times daily, with adjustments made by a healthcare provider. The maximum recommended daily dose is generally 60 mg. However, it's crucial to follow a doctor's prescription and guidance, as they will tailor the dosage to the individual's specific condition and response to the medication. Always consult a healthcare professional before starting or adjusting any medication."
+          "text": ""
         }
       }
     },
@@ -1092,53 +791,18 @@
       "question_id": 40,
       "question": "who is dakota meyer",
       "worker": "Worker-2",
-      "answer": "Dakota Meyer is a former United States Marine and a recipient of the Medal of Honor, the highest military decoration awarded by the U.S. government. He was born on June 26, 1988, in Columbia, Kentucky. Meyer received the Medal of Honor for his actions during the Battle of Ganjgal in Afghanistan on September 8, 2009, where he repeatedly risked his life to save fellow soldiers and recover the bodies of fallen comrades. After his military service, Meyer has been involved in various ventures, including public speaking and advocacy for veterans' issues.",
-      "response_time": 2.1338138580322266,
-      "timestamp": 1756070414.312365,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305422.4578948,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "Dakota Meyer is a former United States Marine and a recipient of the Medal of Honor, the highest military decoration awarded by the U.S. government. He was born on June 26, 1988, in Columbia, Kentucky. Meyer received the Medal of Honor for his actions during the Battle of Ganjgal in Afghanistan on September 8, 2009, where he repeatedly risked his life to save fellow soldiers and recover the bodies of fallen comrades. After his military service, Meyer has been involved in various ventures, including public speaking and advocacy for veterans' issues.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Dakota Meyer is a former United States Marine and a recipient of the Medal of Honor, the highest military decoration awarded by the U.S. government. He was born on June 26, 1988, in Columbia, Kentucky. Meyer received the Medal of Honor for his actions during the Battle of Ganjgal in Afghanistan on September 8, 2009, where he repeatedly risked his life to save fellow soldiers and recover the bodies of fallen comrades. After his military service, Meyer has been involved in various ventures, including public speaking and advocacy for veterans' issues."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "Dakota Meyer is a former United States Marine and a recipient of the Medal of Honor, the highest military decoration awarded by the U.S. government. He was born on June 26, 1988, in Columbia, Kentucky. Meyer received the Medal of Honor for his actions during the Battle of Ganjgal in Afghanistan on September 8, 2009, where he repeatedly risked his life to save fellow soldiers and recover the bodies of fallen comrades. After his military service, Meyer has been involved in various ventures, including public speaking and advocacy for veterans' issues."
-        }
-      }
-    },
-    {
-      "question_id": 42,
-      "question": "who is the judge michael day district court of south dakota",
-      "worker": "Worker-1",
-      "answer": "As of my last update, there is no record of a Judge Michael Day serving on the United States District Court for the District of South Dakota. It's possible that you may be referring to a state-level judge or a different jurisdiction. For the most current and specific information, you may want to check the official website of the South Dakota Unified Judicial System or contact the court directly.",
-      "response_time": 1.6423261165618896,
-      "timestamp": 1756070414.723646,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "As of my last update, there is no record of a Judge Michael Day serving on the United States District Court for the District of South Dakota. It's possible that you may be referring to a state-level judge or a different jurisdiction. For the most current and specific information, you may want to check the official website of the South Dakota Unified Judicial System or contact the court directly.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "As of my last update, there is no record of a Judge Michael Day serving on the United States District Court for the District of South Dakota. It's possible that you may be referring to a state-level judge or a different jurisdiction. For the most current and specific information, you may want to check the official website of the South Dakota Unified Judicial System or contact the court directly."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "As of my last update, there is no record of a Judge Michael Day serving on the United States District Court for the District of South Dakota. It's possible that you may be referring to a state-level judge or a different jurisdiction. For the most current and specific information, you may want to check the official website of the South Dakota Unified Judicial System or contact the court directly."
+          "text": ""
         }
       }
     },
@@ -1146,80 +810,56 @@
       "question_id": 43,
       "question": "where is wild creek reservoir",
       "worker": "Worker-4",
-      "answer": "Wild Creek Reservoir is located in Carbon County, Pennsylvania, USA. It is part of the water supply system for the city of Bethlehem. The reservoir is situated in the Pocono Mountains region, providing a scenic area for outdoor activities and serving as a crucial resource for the surrounding communities.",
-      "response_time": 1.483328104019165,
-      "timestamp": 1756070414.724363,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305422.8941207,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "Wild Creek Reservoir is located in Carbon County, Pennsylvania, USA. It is part of the water supply system for the city of Bethlehem. The reservoir is situated in the Pocono Mountains region, providing a scenic area for outdoor activities and serving as a crucial resource for the surrounding communities.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Wild Creek Reservoir is located in Carbon County, Pennsylvania, USA. It is part of the water supply system for the city of Bethlehem. The reservoir is situated in the Pocono Mountains region, providing a scenic area for outdoor activities and serving as a crucial resource for the surrounding communities."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "Wild Creek Reservoir is located in Carbon County, Pennsylvania, USA. It is part of the water supply system for the city of Bethlehem. The reservoir is situated in the Pocono Mountains region, providing a scenic area for outdoor activities and serving as a crucial resource for the surrounding communities."
-        }
-      }
-    },
-    {
-      "question_id": 44,
-      "question": "what make up the pistil in the female flower",
-      "worker": "Worker-3",
-      "answer": "The pistil is the female reproductive part of a flower and is typically composed of three main parts: the stigma, style, and ovary. The stigma is the top part that receives pollen. The style is a slender stalk that connects the stigma to the ovary. The ovary is the enlarged basal portion that contains ovules, which develop into seeds after fertilization. Together, these structures facilitate the process of pollination and fertilization in flowering plants.",
-      "response_time": 1.329207181930542,
-      "timestamp": 1756070415.234703,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "The pistil is the female reproductive part of a flower and is typically composed of three main parts: the stigma, style, and ovary. The stigma is the top part that receives pollen. The style is a slender stalk that connects the stigma to the ovary. The ovary is the enlarged basal portion that contains ovules, which develop into seeds after fertilization. Together, these structures facilitate the process of pollination and fertilization in flowering plants.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The pistil is the female reproductive part of a flower and is typically composed of three main parts: the stigma, style, and ovary. The stigma is the top part that receives pollen. The style is a slender stalk that connects the stigma to the ovary. The ovary is the enlarged basal portion that contains ovules, which develop into seeds after fertilization. Together, these structures facilitate the process of pollination and fertilization in flowering plants."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "The pistil is the female reproductive part of a flower and is typically composed of three main parts: the stigma, style, and ovary. The stigma is the top part that receives pollen. The style is a slender stalk that connects the stigma to the ovary. The ovary is the enlarged basal portion that contains ovules, which develop into seeds after fertilization. Together, these structures facilitate the process of pollination and fertilization in flowering plants."
+          "text": ""
         }
       }
     },
     {
       "question_id": 45,
       "question": "where is metro ny distribution center",
-      "worker": "Worker-2",
-      "answer": "The Metro NY Distribution Center is typically associated with the United States Postal Service (USPS) and is located in New York. However, the exact address can vary depending on the specific facility being referred to, as there are multiple distribution centers in the New York metropolitan area. For precise information, it's best to contact USPS directly or check their official website for details on specific distribution center locations.",
-      "response_time": 1.4168000221252441,
-      "timestamp": 1756070415.729197,
-      "status": "success",
+      "worker": "Worker-3",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305430.058578,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "The Metro NY Distribution Center is typically associated with the United States Postal Service (USPS) and is located in New York. However, the exact address can vary depending on the specific facility being referred to, as there are multiple distribution centers in the New York metropolitan area. For precise information, it's best to contact USPS directly or check their official website for details on specific distribution center locations.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "The Metro NY Distribution Center is typically associated with the United States Postal Service (USPS) and is located in New York. However, the exact address can vary depending on the specific facility being referred to, as there are multiple distribution centers in the New York metropolitan area. For precise information, it's best to contact USPS directly or check their official website for details on specific distribution center locations."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "The Metro NY Distribution Center is typically associated with the United States Postal Service (USPS) and is located in New York. However, the exact address can vary depending on the specific facility being referred to, as there are multiple distribution centers in the New York metropolitan area. For precise information, it's best to contact USPS directly or check their official website for details on specific distribution center locations."
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 44,
+      "question": "what make up the pistil in the female flower",
+      "worker": "Worker-1",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305430.1815698,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
         }
       }
     },
@@ -1227,26 +867,37 @@
       "question_id": 47,
       "question": "lakegirl address",
       "worker": "Worker-4",
-      "answer": "It seems like you're looking for information about \"lakegirl,\" which could refer to a brand, business, or location. If you're seeking an address for a specific business or brand named \"lakegirl,\" I recommend checking their official website or contacting them directly for accurate and up-to-date information. If you have more context or details, feel free to provide them, and I can try to assist further.",
-      "response_time": 1.7365891933441162,
-      "timestamp": 1756070416.460963,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305431.2382026,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "It seems like you're looking for information about \"lakegirl,\" which could refer to a brand, business, or location. If you're seeking an address for a specific business or brand named \"lakegirl,\" I recommend checking their official website or contacting them directly for accurate and up-to-date information. If you have more context or details, feel free to provide them, and I can try to assist further.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "It seems like you're looking for information about \"lakegirl,\" which could refer to a brand, business, or location. If you're seeking an address for a specific business or brand named \"lakegirl,\" I recommend checking their official website or contacting them directly for accurate and up-to-date information. If you have more context or details, feel free to provide them, and I can try to assist further."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "It seems like you're looking for information about \"lakegirl,\" which could refer to a brand, business, or location. If you're seeking an address for a specific business or brand named \"lakegirl,\" I recommend checking their official website or contacting them directly for accurate and up-to-date information. If you have more context or details, feel free to provide them, and I can try to assist further."
+          "text": ""
+        }
+      }
+    },
+    {
+      "question_id": 46,
+      "question": "how to find device ip",
+      "worker": "Worker-2",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305434.57841,
+      "status": "failed",
+      "error": null,
+      "raw": {
+        "answer": "No answer received",
+        "raw": {
+          "raw": {
+            "events": []
+          },
+          "text": ""
         }
       }
     },
@@ -1254,53 +905,18 @@
       "question_id": 48,
       "question": "shopko kennewick address",
       "worker": "Worker-3",
-      "answer": "Shopko stores have been closed since 2019, including the one in Kennewick, Washington. If you are looking for the former location, it was at 867 N Columbia Center Blvd, Kennewick, WA 99336. However, the building may now be occupied by a different business.",
-      "response_time": 1.5471508502960205,
-      "timestamp": 1756070416.781885,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305438.340388,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "Shopko stores have been closed since 2019, including the one in Kennewick, Washington. If you are looking for the former location, it was at 867 N Columbia Center Blvd, Kennewick, WA 99336. However, the building may now be occupied by a different business.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Shopko stores have been closed since 2019, including the one in Kennewick, Washington. If you are looking for the former location, it was at 867 N Columbia Center Blvd, Kennewick, WA 99336. However, the building may now be occupied by a different business."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "Shopko stores have been closed since 2019, including the one in Kennewick, Washington. If you are looking for the former location, it was at 867 N Columbia Center Blvd, Kennewick, WA 99336. However, the building may now be occupied by a different business."
-        }
-      }
-    },
-    {
-      "question_id": 46,
-      "question": "how to find device ip",
-      "worker": "Worker-1",
-      "answer": "To find your device's IP address, follow these steps:\n\n**On Windows:**\n1. Open the Command Prompt by typing `cmd` in the search bar and pressing Enter.\n2. Type `ipconfig` and press Enter.\n3. Look for the \"IPv4 Address\" under your active network connection.\n\n**On macOS:**\n1. Open \"System Preferences\" and select \"Network.\"\n2. Choose your active network connection (e.g., Wi-Fi or Ethernet).\n3. Your IP address will be displayed on the right.\n\n**On iOS:**\n1. Go to \"Settings\" > \"Wi-Fi.\"\n2. Tap the information icon (i) next to your connected network.\n3. Your IP address will be listed.\n\n**On Android:**\n1. Go to \"Settings\" > \"Network & Internet\" > \"Wi-Fi.\"\n2. Tap on your connected network.\n3. Your IP address will be displayed.\n\nThese steps will show your local IP address within your network. For your public IP, search \"What is my IP\" in a web browser.",
-      "response_time": 2.661393880844116,
-      "timestamp": 1756070417.3850691,
-      "status": "success",
-      "error": null,
-      "raw": {
-        "answer": "To find your device's IP address, follow these steps:\n\n**On Windows:**\n1. Open the Command Prompt by typing `cmd` in the search bar and pressing Enter.\n2. Type `ipconfig` and press Enter.\n3. Look for the \"IPv4 Address\" under your active network connection.\n\n**On macOS:**\n1. Open \"System Preferences\" and select \"Network.\"\n2. Choose your active network connection (e.g., Wi-Fi or Ethernet).\n3. Your IP address will be displayed on the right.\n\n**On iOS:**\n1. Go to \"Settings\" > \"Wi-Fi.\"\n2. Tap the information icon (i) next to your connected network.\n3. Your IP address will be listed.\n\n**On Android:**\n1. Go to \"Settings\" > \"Network & Internet\" > \"Wi-Fi.\"\n2. Tap on your connected network.\n3. Your IP address will be displayed.\n\nThese steps will show your local IP address within your network. For your public IP, search \"What is my IP\" in a web browser.",
-        "raw": {
-          "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "To find your device's IP address, follow these steps:\n\n**On Windows:**\n1. Open the Command Prompt by typing `cmd` in the search bar and pressing Enter.\n2. Type `ipconfig` and press Enter.\n3. Look for the \"IPv4 Address\" under your active network connection.\n\n**On macOS:**\n1. Open \"System Preferences\" and select \"Network.\"\n2. Choose your active network connection (e.g., Wi-Fi or Ethernet).\n3. Your IP address will be displayed on the right.\n\n**On iOS:**\n1. Go to \"Settings\" > \"Wi-Fi.\"\n2. Tap the information icon (i) next to your connected network.\n3. Your IP address will be listed.\n\n**On Android:**\n1. Go to \"Settings\" > \"Network & Internet\" > \"Wi-Fi.\"\n2. Tap on your connected network.\n3. Your IP address will be displayed.\n\nThese steps will show your local IP address within your network. For your public IP, search \"What is my IP\" in a web browser."
-                }
-              ]
-            },
-            "status": "success"
-          },
-          "text": "To find your device's IP address, follow these steps:\n\n**On Windows:**\n1. Open the Command Prompt by typing `cmd` in the search bar and pressing Enter.\n2. Type `ipconfig` and press Enter.\n3. Look for the \"IPv4 Address\" under your active network connection.\n\n**On macOS:**\n1. Open \"System Preferences\" and select \"Network.\"\n2. Choose your active network connection (e.g., Wi-Fi or Ethernet).\n3. Your IP address will be displayed on the right.\n\n**On iOS:**\n1. Go to \"Settings\" > \"Wi-Fi.\"\n2. Tap the information icon (i) next to your connected network.\n3. Your IP address will be listed.\n\n**On Android:**\n1. Go to \"Settings\" > \"Network & Internet\" > \"Wi-Fi.\"\n2. Tap on your connected network.\n3. Your IP address will be displayed.\n\nThese steps will show your local IP address within your network. For your public IP, search \"What is my IP\" in a web browser."
+          "text": ""
         }
       }
     },
@@ -1308,53 +924,37 @@
       "question_id": 50,
       "question": "how do i find my Ip address",
       "worker": "Worker-4",
-      "answer": "To find your IP address, you can follow these steps:\n\n1. **On Windows:**\n   - Open the Command Prompt by typing `cmd` in the search bar and pressing Enter.\n   - Type `ipconfig` and press Enter.\n   - Look for the \"IPv4 Address\" under your active network connection.\n\n2. **On macOS:**\n   - Open System Preferences and select \"Network.\"\n   - Choose your active network connection (e.g., Wi-Fi or Ethernet).\n   - Your IP address will be displayed on the right.\n\n3. **On Linux:**\n   - Open a terminal.\n   - Type `hostname -I` and press Enter to see your IP address.\n\n4. **On a smartphone:**\n   - Go to Settings > Wi-Fi.\n   - Tap on the connected network to see the IP address.\n\nFor your public IP address, you can search \"What is my IP\" on a web browser.",
-      "response_time": 2.355496883392334,
-      "timestamp": 1756070418.81649,
-      "status": "success",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305442.3649075,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "To find your IP address, you can follow these steps:\n\n1. **On Windows:**\n   - Open the Command Prompt by typing `cmd` in the search bar and pressing Enter.\n   - Type `ipconfig` and press Enter.\n   - Look for the \"IPv4 Address\" under your active network connection.\n\n2. **On macOS:**\n   - Open System Preferences and select \"Network.\"\n   - Choose your active network connection (e.g., Wi-Fi or Ethernet).\n   - Your IP address will be displayed on the right.\n\n3. **On Linux:**\n   - Open a terminal.\n   - Type `hostname -I` and press Enter to see your IP address.\n\n4. **On a smartphone:**\n   - Go to Settings > Wi-Fi.\n   - Tap on the connected network to see the IP address.\n\nFor your public IP address, you can search \"What is my IP\" on a web browser.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "To find your IP address, you can follow these steps:\n\n1. **On Windows:**\n   - Open the Command Prompt by typing `cmd` in the search bar and pressing Enter.\n   - Type `ipconfig` and press Enter.\n   - Look for the \"IPv4 Address\" under your active network connection.\n\n2. **On macOS:**\n   - Open System Preferences and select \"Network.\"\n   - Choose your active network connection (e.g., Wi-Fi or Ethernet).\n   - Your IP address will be displayed on the right.\n\n3. **On Linux:**\n   - Open a terminal.\n   - Type `hostname -I` and press Enter to see your IP address.\n\n4. **On a smartphone:**\n   - Go to Settings > Wi-Fi.\n   - Tap on the connected network to see the IP address.\n\nFor your public IP address, you can search \"What is my IP\" on a web browser."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "To find your IP address, you can follow these steps:\n\n1. **On Windows:**\n   - Open the Command Prompt by typing `cmd` in the search bar and pressing Enter.\n   - Type `ipconfig` and press Enter.\n   - Look for the \"IPv4 Address\" under your active network connection.\n\n2. **On macOS:**\n   - Open System Preferences and select \"Network.\"\n   - Choose your active network connection (e.g., Wi-Fi or Ethernet).\n   - Your IP address will be displayed on the right.\n\n3. **On Linux:**\n   - Open a terminal.\n   - Type `hostname -I` and press Enter to see your IP address.\n\n4. **On a smartphone:**\n   - Go to Settings > Wi-Fi.\n   - Tap on the connected network to see the IP address.\n\nFor your public IP address, you can search \"What is my IP\" on a web browser."
+          "text": ""
         }
       }
     },
     {
       "question_id": 49,
       "question": "how to change ip address on netgear router",
-      "worker": "Worker-2",
-      "answer": "To change the IP address on a Netgear router, follow these steps:\n\n1. **Access the Router Interface:**\n   - Connect your computer to the router via Ethernet or Wi-Fi.\n   - Open a web browser and enter `http://www.routerlogin.net` or the router's default IP address (usually `192.168.1.1` or `192.168.0.1`).\n\n2. **Log In:**\n   - Enter the admin username and password. The default is usually `admin` and `password`, unless changed.\n\n3. **Navigate to LAN Setup:**\n   - Go to the \"Advanced\" tab.\n   - Select \"Setup\" and then \"LAN Setup.\"\n\n4. **Change IP Address:**\n   - In the \"LAN TCP/IP Setup\" section, change the IP address to your desired one.\n   - Ensure the new IP is within the same subnet.\n\n5. **Apply Changes:**\n   - Click \"Apply\" to save changes. The router will reboot.\n\nEnsure devices connected to the network are updated with the new IP settings.",
-      "response_time": 3.3915891647338867,
-      "timestamp": 1756070419.120825,
-      "status": "success",
+      "worker": "Worker-1",
+      "answer": "No answer received",
+      "response_time": null,
+      "timestamp": 1756305442.454955,
+      "status": "failed",
       "error": null,
       "raw": {
-        "answer": "To change the IP address on a Netgear router, follow these steps:\n\n1. **Access the Router Interface:**\n   - Connect your computer to the router via Ethernet or Wi-Fi.\n   - Open a web browser and enter `http://www.routerlogin.net` or the router's default IP address (usually `192.168.1.1` or `192.168.0.1`).\n\n2. **Log In:**\n   - Enter the admin username and password. The default is usually `admin` and `password`, unless changed.\n\n3. **Navigate to LAN Setup:**\n   - Go to the \"Advanced\" tab.\n   - Select \"Setup\" and then \"LAN Setup.\"\n\n4. **Change IP Address:**\n   - In the \"LAN TCP/IP Setup\" section, change the IP address to your desired one.\n   - Ensure the new IP is within the same subnet.\n\n5. **Apply Changes:**\n   - Click \"Apply\" to save changes. The router will reboot.\n\nEnsure devices connected to the network are updated with the new IP settings.",
+        "answer": "No answer received",
         "raw": {
           "raw": {
-            "output": {
-              "content": [
-                {
-                  "type": "text",
-                  "text": "To change the IP address on a Netgear router, follow these steps:\n\n1. **Access the Router Interface:**\n   - Connect your computer to the router via Ethernet or Wi-Fi.\n   - Open a web browser and enter `http://www.routerlogin.net` or the router's default IP address (usually `192.168.1.1` or `192.168.0.1`).\n\n2. **Log In:**\n   - Enter the admin username and password. The default is usually `admin` and `password`, unless changed.\n\n3. **Navigate to LAN Setup:**\n   - Go to the \"Advanced\" tab.\n   - Select \"Setup\" and then \"LAN Setup.\"\n\n4. **Change IP Address:**\n   - In the \"LAN TCP/IP Setup\" section, change the IP address to your desired one.\n   - Ensure the new IP is within the same subnet.\n\n5. **Apply Changes:**\n   - Click \"Apply\" to save changes. The router will reboot.\n\nEnsure devices connected to the network are updated with the new IP settings."
-                }
-              ]
-            },
-            "status": "success"
+            "events": []
           },
-          "text": "To change the IP address on a Netgear router, follow these steps:\n\n1. **Access the Router Interface:**\n   - Connect your computer to the router via Ethernet or Wi-Fi.\n   - Open a web browser and enter `http://www.routerlogin.net` or the router's default IP address (usually `192.168.1.1` or `192.168.0.1`).\n\n2. **Log In:**\n   - Enter the admin username and password. The default is usually `admin` and `password`, unless changed.\n\n3. **Navigate to LAN Setup:**\n   - Go to the \"Advanced\" tab.\n   - Select \"Setup\" and then \"LAN Setup.\"\n\n4. **Change IP Address:**\n   - In the \"LAN TCP/IP Setup\" section, change the IP address to your desired one.\n   - Ensure the new IP is within the same subnet.\n\n5. **Apply Changes:**\n   - Click \"Apply\" to save changes. The router will reboot.\n\nEnsure devices connected to the network are updated with the new IP settings."
+          "text": ""
         }
       }
     }
