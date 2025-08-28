@@ -22,13 +22,25 @@ except Exception:
     RECOVERY_TIME = _Dummy()
 
 # 仅依赖抽象通信后端
+import sys
+from pathlib import Path
+
+# Add streaming_queue to path for imports
+streaming_queue_path = Path(__file__).parent.parent
+if str(streaming_queue_path) not in sys.path:
+    sys.path.insert(0, str(streaming_queue_path))
+
 try:
-    from ..comm.base import BaseCommBackend  # 包内相对
-except Exception:
+    from comm.base import BaseCommBackend  # 直接从 streaming_queue 根目录导入
+except ImportError:
+    # 兜底：使用绝对导入路径
     try:
-        from comm.base import BaseCommBackend  # 直接
-    except Exception:
-        from script.streaming_queue.comm.base import BaseCommBackend  # 兜底
+        current_file = Path(__file__).resolve()
+        comm_path = current_file.parent.parent / "comm"
+        sys.path.insert(0, str(comm_path.parent))
+        from comm.base import BaseCommBackend
+    except ImportError as e:
+        raise ImportError(f"Cannot import BaseCommBackend: {e}")
 
 
 class NetworkBase:

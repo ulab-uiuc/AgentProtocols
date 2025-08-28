@@ -13,31 +13,22 @@ import json
 import time
 from typing import Dict, Any, Optional, List
 
+import sys
+from pathlib import Path
+
+# Add streaming_queue to path for imports
+current_file = Path(__file__).resolve()
+streaming_queue_path = current_file.parent.parent.parent  # Go up from a2a -> protocol_backend -> streaming_queue
+if str(streaming_queue_path) not in sys.path:
+    sys.path.insert(0, str(streaming_queue_path))
+
 from core.qa_coordinator_base import QACoordinatorBase
 
-# --- A2A 原生 SDK（可选依赖） ---
-try:
-    from a2a.server.agent_execution import AgentExecutor, RequestContext
-    from a2a.server.events import EventQueue
-    from a2a.utils import new_agent_text_message
-    A2A_AVAILABLE = True
-except ImportError:
-    # 兜底（没有 a2a-sdk 也能导入，便于单元测试）
-    A2A_AVAILABLE = False
-
-    class AgentExecutor:  # type: ignore
-        pass
-
-    class RequestContext:  # type: ignore
-        def get_user_input(self) -> str:
-            return "status"
-
-    class EventQueue:  # type: ignore
-        def enqueue_event(self, event: Dict[str, Any]) -> None:
-            print(f"[EventQueue] {event}")
-
-    def new_agent_text_message(text: str) -> Dict[str, Any]:  # type: ignore
-        return {"type": "text", "content": text}
+# --- A2A 原生 SDK（必需依赖） ---
+from a2a.server.agent_execution import AgentExecutor, RequestContext
+from a2a.server.events import EventQueue
+from a2a.utils import new_agent_text_message
+A2A_AVAILABLE = True
 
 
 # ============ A2A Coordinator ============
@@ -69,14 +60,18 @@ class A2AQACoordinator(QACoordinatorBase):
         # 解析 A2A 事件流，提取文本答案
         answer: Optional[str] = None
         try:
-            events = response.get("events") if isinstance(response, dict) else None
-            if events:
-                for ev in events:
-                    if ev.get("kind") == "message" and "parts" in ev:
-                        parts = ev.get("parts") or []
-                        if parts and isinstance(parts[0], dict) and "text" in parts[0]:
-                            answer = parts[0]["text"]
-                            break
+            # 处理嵌套的响应结构，检查是否有 "raw" 键
+            if isinstance(response, dict):
+                actual_response = response.get("raw", response)
+                events = actual_response.get("events") if isinstance(actual_response, dict) else None
+                
+                if events:
+                    for ev in events:
+                        if ev.get("kind") == "message" and "parts" in ev:
+                            parts = ev.get("parts") or []
+                            if parts and isinstance(parts[0], dict) and "text" in parts[0]:
+                                answer = parts[0]["text"]
+                                break
         except Exception:
             answer = None
 
@@ -115,24 +110,15 @@ class QACoordinatorExecutor(AgentExecutor):
             else:
                 result = f"Unknown command: {cmd}. Available commands: dispatch, status"
 
-            # A2A 事件
-            if A2A_AVAILABLE:
-                event_queue.enqueue_event(new_agent_text_message(result))
-            else:
-                print(f"[QACoordinatorExecutor] {result}")
+            # A2A 事件 - 使用真正的 A2A SDK
+            event_queue.enqueue_event(new_agent_text_message(result))
 
         except Exception as e:
             msg = f"QA Coordinator execution failed: {e}"
-            if A2A_AVAILABLE:
-                event_queue.enqueue_event(new_agent_text_message(msg))
-            else:
-                print(f"[QACoordinatorExecutor] {msg}")
+            event_queue.enqueue_event(new_agent_text_message(msg))
 
     async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:  # type: ignore[override]
-        if A2A_AVAILABLE:
-            event_queue.enqueue_event(new_agent_text_message("QA Coordinator operations cancelled."))
-        else:
-            print("[QACoordinatorExecutor] Operations cancelled.")
+        event_queue.enqueue_event(new_agent_text_message("QA Coordinator operations cancelled."))
 
     # ---- helpers ----
     def _extract_command(self, user_input: Any) -> str:

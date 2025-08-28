@@ -62,10 +62,18 @@ class QACoordinatorBase(ABC):
     async def load_questions(self) -> List[Dict[str, str]]:
         """从 JSONL 读取题目，返回 [{'id':..., 'question':...}, ...]"""
         questions: List[Dict[str, str]] = []
-        p = Path(self.data_path)
+        
+        # 如果是相对路径，相对于 streaming_queue 目录
+        if not Path(self.data_path).is_absolute():
+            # 找到 streaming_queue 目录
+            current_file = Path(__file__).resolve()
+            streaming_queue_dir = current_file.parent.parent  # 从 core 目录回到 streaming_queue
+            p = streaming_queue_dir / self.data_path
+        else:
+            p = Path(self.data_path)
 
         if not p.exists():
-            self._o("error", f"Question file does not exist: {self.data_path}")
+            self._o("error", f"Question file does not exist: {p}")
             return questions
 
         with p.open("r", encoding="utf-8") as f:
@@ -200,7 +208,13 @@ class QACoordinatorBase(ABC):
 
     async def save_results(self, results: List[Dict[str, Any]]) -> None:
         try:
-            p = Path(self.result_file)
+            # 如果是相对路径，相对于 streaming_queue 目录
+            if not Path(self.result_file).is_absolute():
+                current_file = Path(__file__).resolve()
+                streaming_queue_dir = current_file.parent.parent  # 从 core 目录回到 streaming_queue
+                p = streaming_queue_dir / self.result_file
+            else:
+                p = Path(self.result_file)
             p.parent.mkdir(parents=True, exist_ok=True)
 
             times = [r["response_time"] for r in results if r.get("response_time")]

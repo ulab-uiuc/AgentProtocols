@@ -24,17 +24,29 @@ class QAWorkerBase:
         self.use_mock = False
         self.core = None
 
-        # 允许从项目根下的 utils/core.py 引入 Core
+        # 使用 agent_network/src/utils/core.py 中的 Core
         try:
-            sys.path.insert(0, str(Path(__file__).resolve().parents[3]))  # …/agent_network
+            agent_network_root = Path(__file__).resolve().parents[3]  # …/agent_network
+            src_path = agent_network_root / "src"
+            if str(src_path) not in sys.path:
+                sys.path.insert(0, str(src_path))
+            
             from utils.core import Core  # type: ignore
 
             cfg = config or self._get_default_config()
+            self._log(f"[QAWorkerBase] Initializing Core with config: {cfg}")
+            
+            # 确保配置格式正确
+            if not cfg or "model" not in cfg:
+                raise ValueError("Invalid config: missing 'model' section")
+                
             self.core = Core(cfg)
+            self.use_mock = False  # 确保不使用 mock
             self._log(f"[QAWorkerBase] Core LLM ready: {cfg.get('model', {}).get('name', 'unknown')}")
         except Exception as e:
-            self._log(f"[QAWorkerBase] Core init failed, fallback to mock. reason={e}")
-            self.use_mock = True
+            self._log(f"[QAWorkerBase] Core init failed, will NOT use mock. Error: {e}")
+            # 不要设置 use_mock = True，而是抛出异常，强制解决问题
+            raise RuntimeError(f"Core initialization failed: {e}. Mock answers are not allowed.")
 
     # --------------------- utils ---------------------
     def _log(self, msg: str) -> None:
@@ -73,14 +85,12 @@ class QAWorkerBase:
     # --------------------- public API ---------------------
     async def answer(self, question: str) -> str:
         """
-        对外统一问答接口。内部若有 Core 则调用 Core，否则返回 mock。
+        对外统一问答接口。必须使用真正的 Core LLM，禁止 mock。
         """
+        if self.core is None:
+            raise RuntimeError("Core is not initialized. Mock answers are not allowed.")
+            
         try:
-            if self.use_mock or self.core is None:
-                await asyncio.sleep(0.05)
-                q = (question or "").strip()
-                return f"Mock answer: {q[:80]}{'...' if len(q) > 80 else ''}"
-
             messages: List[Dict[str, Any]] = [
                 {
                     "role": "system",
@@ -93,10 +103,14 @@ class QAWorkerBase:
             ]
 
             loop = asyncio.get_event_loop()
-            # 假设 Core.execute 是同步阻塞方法，这里丢到线程池执行
-            result: str = await loop.run_in_executor(None, self.core.execute, messages)  # type: ignore
-            return (result or "Unable to generate response").strip()
+            # Core.execute 是同步方法，放到线程池执行
+            result: str = await loop.run_in_executor(None, self.core.execute, messages)
+            
+            if not result or result.strip() == "":
+                raise RuntimeError("Core returned empty response")
+                
+            return result.strip()
         except Exception as e:
-            self._log(f"[QAWorkerBase] error: {e}")
-            return f"Error: {str(e)[:100]}..."
+            self._log(f"[QAWorkerBase] Core execution error: {e}")
+            raise RuntimeError(f"LLM execution failed: {e}. Mock answers are not allowed.")
 

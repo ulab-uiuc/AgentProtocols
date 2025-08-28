@@ -18,23 +18,23 @@ from typing import Any, Dict, Optional
 
 import httpx
 
-try:
-    # a2a 的执行器接口（用户自带）
-    from a2a.server.agent_execution import AgentExecutor  # type: ignore
-except Exception:
-    class AgentExecutor:  # 最小替身（仅用于类型提示/降级运行）
-        async def execute(self, context, event_queue): ...
-        async def cancel(self, context, event_queue): ...
+# A2A 的执行器接口（必需依赖）
+from a2a.server.agent_execution import AgentExecutor  # type: ignore
 
-# ------------------- Comm Base 引用（相对路径） -------------------
+# ------------------- Comm Base 引用 -------------------
+import sys
+from pathlib import Path
+
+# Add streaming_queue to path for imports
+current_file = Path(__file__).resolve()
+streaming_queue_path = current_file.parent.parent.parent  # Go up from a2a -> protocol_backend -> streaming_queue
+if str(streaming_queue_path) not in sys.path:
+    sys.path.insert(0, str(streaming_queue_path))
+
 try:
-    # a2a/ 在 protocol_backend/ 下，comm/ 在 streaming_queue/ 下，需三级相对
-    from ...comm.base import BaseCommBackend  # type: ignore
-except Exception:
-    try:
-        from script.streaming_queue.comm.base import BaseCommBackend  # type: ignore
-    except Exception:
-        from comm.base import BaseCommBackend  # 最后兜底（在 sys.path 直达时）
+    from comm.base import BaseCommBackend  # type: ignore
+except ImportError as e:
+    raise ImportError(f"Cannot import BaseCommBackend from comm.base: {e}")
 
 
 # ==========================
@@ -44,19 +44,7 @@ except Exception:
 # 为了最小依赖/快速启动，我们把 FastAPI、Uvicorn 的导入放在用到时再做（延迟导入）。
 # 这样不用 Host 功能也不会强依赖它们。
 
-class _SimpleContext:
-    """极简上下文，给 executor 提供 get_user_input()"""
-    def __init__(self, user_input: Any):
-        self._user_input = user_input
-    def get_user_input(self) -> Any:
-        return self._user_input
-
-class _SimpleEventQueue:
-    """极简事件队列，executor 调用 enqueue_event() 即可"""
-    def __init__(self):
-        self.events = []
-    async def enqueue_event(self, event: Dict[str, Any]) -> None:
-        self.events.append(event)
+# 移除简化类，使用真正的 A2A 组件
 
 @dataclass
 class A2AAgentHandle:
@@ -103,11 +91,60 @@ async def _start_a2a_host(agent_id: str, host: str, port: int, executor: AgentEx
             # 兼容 {"kind":"text","text":"..."} / {"kind":"text","data":"..."}
             text = parts[0].get("text") or parts[0].get("data") or ""
 
-        ctx = _SimpleContext(user_input=text)
-        eq = _SimpleEventQueue()
+        # 导入真正的 A2A 组件
+        from a2a.server.agent_execution import RequestContext
+        from a2a.server.events import EventQueue
+        from a2a.types import Message, MessageSendParams, Role, TextPart
+        
+        # 创建真正的 A2A Message 对象
+        if text:
+            # 手动创建用户消息
+            message = Message(
+                role=Role.user,
+                parts=[TextPart(text=text)],
+                messageId=str(time.time_ns())
+            )
+        else:
+            # 尝试从原始 payload 构造 Message
+            msg_data = payload.get("params", {}).get("message", {})
+            if msg_data:
+                # 从字典构造 Message 对象
+                message = Message.model_validate(msg_data)
+            else:
+                # 默认状态消息
+                message = Message(
+                    role=Role.user,
+                    parts=[TextPart(text="status")],
+                    messageId=str(time.time_ns())
+                )
+        
+        # 创建 MessageSendParams 和 RequestContext
+        params = MessageSendParams(message=message)
+        ctx = RequestContext(params)
+        eq = EventQueue()
+        
         await executor.execute(context=ctx, event_queue=eq)
 
-        return JSONResponse({"events": eq.events})
+        # 从 A2A EventQueue 中获取所有事件
+        serializable_events = []
+        try:
+            while not eq.queue.empty():
+                event = await eq.dequeue_event()
+                if event:
+                    if hasattr(event, 'model_dump'):
+                        # Pydantic v2 方式 - 使用 mode='json' 确保枚举等被正确序列化
+                        serializable_events.append(event.model_dump(mode='json'))
+                    elif hasattr(event, 'dict'):
+                        # Pydantic v1 方式
+                        serializable_events.append(event.dict())
+                    else:
+                        # 如果已经是字典，直接使用
+                        serializable_events.append(event)
+        except:
+            # 如果队列为空或出现异常，使用空列表
+            pass
+
+        return JSONResponse({"events": serializable_events})
 
     async def health_endpoint(_request: Request):
         return JSONResponse({"ok": True, "agent_id": agent_id})
@@ -283,13 +320,9 @@ class A2ACommBackend(BaseCommBackend):
 from typing import Optional
 
 try:
-    # NetworkBase 在 core/ 目录下
-    from ...core.network_base import NetworkBase  # type: ignore
-except Exception:
-    try:
-        from script.streaming_queue.core.network_base import NetworkBase  # type: ignore
-    except Exception:
-        from core.network_base import NetworkBase  # 最后兜底
+    from core.network_base import NetworkBase  # type: ignore
+except ImportError as e:
+    raise ImportError(f"Cannot import NetworkBase from core.network_base: {e}")
 
 
 class A2ANetwork(NetworkBase):

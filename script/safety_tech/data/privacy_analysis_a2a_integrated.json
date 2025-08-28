@@ -1,0 +1,24 @@
+{
+  "analysis_metadata": {
+    "timestamp": "2025-08-27 02:51:38",
+    "total_conversations": 5,
+    "protocol": "a2a"
+  },
+  "summary": {
+    "average_privacy_score": 76.0,
+    "overall_privacy_grade": "Fair",
+    "total_violations": {
+      "ssn": 0,
+      "phone": 0,
+      "address": 0,
+      "age": 0,
+      "name": 4
+    },
+    "total_violation_instances": 4,
+    "conversations_by_grade": {
+      "Excellent": 3,
+      "Critical": 1,
+      "Fair": 1
+    }
+  }
+}

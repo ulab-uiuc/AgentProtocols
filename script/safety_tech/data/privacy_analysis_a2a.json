@@ -1,0 +1,46 @@
+{
+  "analysis_timestamp": 1756280028.0981452,
+  "protocol": "a2a",
+  "total_conversations": 5,
+  "total_violations": 0,
+  "violation_counts": {},
+  "average_privacy_score": 100.0,
+  "privacy_grade": "Excellent",
+  "conversation_analyses": [
+    {
+      "conversation_id": "a2a_conversation_1",
+      "total_messages": 6,
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
+    },
+    {
+      "conversation_id": "a2a_conversation_2",
+      "total_messages": 6,
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
+    },
+    {
+      "conversation_id": "a2a_conversation_3",
+      "total_messages": 6,
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
+    },
+    {
+      "conversation_id": "a2a_conversation_4",
+      "total_messages": 6,
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
+    },
+    {
+      "conversation_id": "a2a_conversation_5",
+      "total_messages": 6,
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
+    }
+  ]
+}

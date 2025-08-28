@@ -10,13 +10,18 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-# 允许两种导入相对路径（避免运行根目录不同导致的导入失败）
-try:
-    from ...core.qa_worker_base import QAWorkerBase  # when run as package
-except Exception:
-    from script.streaming_queue.core.qa_worker_base import QAWorkerBase  # type: ignore
+import sys
+from pathlib import Path
 
-# A2A SDK
+# Add streaming_queue to path for imports
+current_file = Path(__file__).resolve()
+streaming_queue_path = current_file.parent.parent.parent  # Go up from a2a -> protocol_backend -> streaming_queue
+if str(streaming_queue_path) not in sys.path:
+    sys.path.insert(0, str(streaming_queue_path))
+
+from core.qa_worker_base import QAWorkerBase
+
+# A2A SDK（必需依赖）
 from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events import EventQueue
 from a2a.utils import new_agent_text_message

@@ -26,23 +26,14 @@ sys.path.insert(0, str(A2A_DIR))
 
 from runner_base import RunnerBase, ColoredOutput  # type: ignore
 
-# --------- NetworkBase / CommBackend 导入（带兜底）---------
-try:
-    from core.network_base import NetworkBase  # type: ignore
-except Exception:
-    try:
-        from script.streaming_queue.core.network_base import NetworkBase  # type: ignore
-    except Exception:
-        from ..core.network_base import NetworkBase  # type: ignore
+# --------- Setup paths for imports ---------
+# Ensure streaming_queue is in sys.path for proper imports
+if str(STREAMING_Q) not in sys.path:
+    sys.path.insert(0, str(STREAMING_Q))
 
-try:
-    # A2A 后端（含 spawn_local_agent）
-    from protocol_backend.a2a.comm import A2ACommBackend  # type: ignore
-except Exception:
-    # 兜底：直接从绝对路径导
-    from script.streaming_queue.protocol_backend.a2a.comm import A2ACommBackend  # type: ignore
-
-# 协议侧：A2A executors（已在 sys.path 注入 A2A_DIR）
+# --------- NetworkBase / CommBackend 导入 ---------
+from core.network_base import NetworkBase  # type: ignore
+from protocol_backend.a2a.comm import A2ACommBackend  # type: ignore
 from protocol_backend.a2a.coordinator import QACoordinatorExecutor    # type: ignore
 from protocol_backend.a2a.worker import QAAgentExecutor            # type: ignore
 

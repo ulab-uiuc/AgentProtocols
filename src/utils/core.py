@@ -29,10 +29,43 @@ class Core:
         
 
         elif self.config["model"]["type"] == "openai":
-            client = OpenAI(
-                api_key=self.config["model"]["openai_api_key"],
-                base_url=self.config["model"].get("openai_base_url", "https://api.openai.com/v1"),
-            )
+            import httpx
+            
+            # 创建一个干净的 httpx 客户端，明确不传递任何代理设置
+            http_client = httpx.Client()
+            
+            try:
+                client = OpenAI(
+                    api_key=self.config["model"]["openai_api_key"],
+                    base_url=self.config["model"].get("openai_base_url", "https://api.openai.com/v1"),
+                    http_client=http_client
+                )
+                print(f"[Core] OpenAI client initialized with custom httpx client")
+            except Exception as e:
+                print(f"[Core] Failed with custom httpx client: {e}")
+                # 尝试完全避免 httpx 客户端自定义
+                try:
+                    import os
+                    # 临时清除可能的代理环境变量
+                    old_env = {}
+                    proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']
+                    for var in proxy_vars:
+                        if var in os.environ:
+                            old_env[var] = os.environ.pop(var)
+                    
+                    client = OpenAI(
+                        api_key=self.config["model"]["openai_api_key"],
+                        base_url=self.config["model"].get("openai_base_url", "https://api.openai.com/v1"),
+                    )
+                    
+                    # 恢复环境变量
+                    for var, value in old_env.items():
+                        os.environ[var] = value
+                        
+                    print(f"[Core] OpenAI client initialized after clearing proxy env vars")
+                except Exception as e2:
+                    raise RuntimeError(f"All OpenAI client initialization attempts failed. Last error: {e2}")
+                
             self.model = client
             self.client = client
     
