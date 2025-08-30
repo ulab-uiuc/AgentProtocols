@@ -25,32 +25,18 @@ sys.path.insert(0, str(parent_dir))
 shard_qa_path = parent_dir / "shard_qa"
 sys.path.insert(0, str(shard_qa_path))
 
-# Import local components (after path setup)
-sys.path.insert(0, str(parent_dir / "local_deps"))
+# Import core components (after path setup)
 sys.path.insert(0, str(parent_dir / "core"))
 sys.path.insert(0, str(parent_dir))
 
-# Use absolute imports with full path
-import importlib.util
-import sys
+# Import native core components (no src dependencies)
+from core.mesh_network_native import NativeMeshNetwork
 
-# Import BaseAgent
-spec = importlib.util.spec_from_file_location("base_agent", parent_dir / "local_deps" / "base_agent.py")
-base_agent_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(base_agent_module)
-BaseAgent = base_agent_module.BaseAgent
+# Use native mesh network implementation
+MeshNetwork = NativeMeshNetwork
 
-# Import MeshNetwork  
-spec = importlib.util.spec_from_file_location("mesh_network", parent_dir / "core" / "mesh_network.py")
-mesh_network_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mesh_network_module)
-MeshNetwork = mesh_network_module.MeshNetwork
-
-# Import FailStormMetricsCollector
-spec = importlib.util.spec_from_file_location("failstorm_metrics", parent_dir / "core" / "failstorm_metrics.py")
-failstorm_metrics_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(failstorm_metrics_module)
-FailStormMetricsCollector = failstorm_metrics_module.FailStormMetricsCollector
+# Import FailStormMetricsCollector directly
+from core.failstorm_metrics import FailStormMetricsCollector
 from shard_worker.agent_executor import ShardWorkerExecutor
 
 # Import colorama for output

@@ -173,12 +173,12 @@ class ShardWorker:
     def _init_core(self):
         """Initialize Core LLM"""
         try:
-            # Use absolute import path for better reliability
+            # Use utils.core from src for LLM calls (as requested)
             project_root = Path(__file__).parent.parent.parent.parent.parent
             src_path = project_root / "src"
             sys.path.insert(0, str(src_path))
             
-            # Try both import methods for maximum compatibility
+            # Import Core from utils (the standard LLM interface)
             try:
                 from utils.core import Core
             except ImportError:
