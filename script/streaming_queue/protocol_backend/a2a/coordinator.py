@@ -111,14 +111,14 @@ class QACoordinatorExecutor(AgentExecutor):
                 result = f"Unknown command: {cmd}. Available commands: dispatch, status"
 
             # A2A 事件 - 使用真正的 A2A SDK
-            event_queue.enqueue_event(new_agent_text_message(result))
+            await event_queue.enqueue_event(new_agent_text_message(result))
 
         except Exception as e:
             msg = f"QA Coordinator execution failed: {e}"
-            event_queue.enqueue_event(new_agent_text_message(msg))
+            await event_queue.enqueue_event(new_agent_text_message(msg))
 
     async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:  # type: ignore[override]
-        event_queue.enqueue_event(new_agent_text_message("QA Coordinator operations cancelled."))
+        await event_queue.enqueue_event(new_agent_text_message("QA Coordinator operations cancelled."))
 
     # ---- helpers ----
     def _extract_command(self, user_input: Any) -> str:

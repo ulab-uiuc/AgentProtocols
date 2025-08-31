@@ -76,7 +76,7 @@ class QACoordinatorBase(ABC):
             self._o("error", f"Question file does not exist: {p}")
             return questions
 
-        with p.open("r", encoding="utf-8") as f:
+        with p.open("r", encoding="utf-8-sig") as f:
             for line in f:
                 line = line.strip()
                 if not line:
