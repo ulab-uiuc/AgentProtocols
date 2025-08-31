@@ -29,13 +29,19 @@ from typing import Any, Dict, Optional
 import httpx
 import time
 import uuid
+import sys
+from pathlib import Path
+
+# Add streaming_queue to path for imports
+current_file = Path(__file__).resolve()
+streaming_queue_path = current_file.parent.parent.parent  # Go up from anp -> protocol_backend -> streaming_queue
+if str(streaming_queue_path) not in sys.path:
+    sys.path.insert(0, str(streaming_queue_path))
+
 try:
-    from ...comm.base import BaseCommBackend
-except ImportError:
-    try:
-        from comm.base import BaseCommBackend
-    except ImportError:
-        from script.streaming_queue.comm.base import BaseCommBackend
+    from comm.base import BaseCommBackend  # type: ignore
+except ImportError as e:
+    raise ImportError(f"Cannot import BaseCommBackend from comm.base: {e}")
 from fastapi import FastAPI, Request
 from uvicorn import Config, Server
 import asyncio

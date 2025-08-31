@@ -16,7 +16,7 @@ ANP Protocol Features:
 - Synchronous and asynchronous communication support
 """
 
-from .comm import ANPCommBackend
+from .anp_comm import ANPCommBackend
 from .coordinator import ANPCoordinatorExecutor, ANPQACoordinator
 from .worker import ANPWorkerExecutor, ANPQAWorker
 

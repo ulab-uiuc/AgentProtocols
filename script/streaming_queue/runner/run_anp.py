@@ -34,10 +34,10 @@ except Exception:
 
 try:
     # ANP 后端（含 spawn_local_agent）
-    from protocol_backend.anp.comm import ANPCommBackend  # type: ignore
+    from protocol_backend.anp.anp_comm import ANPCommBackend  # type: ignore
 except Exception:
     # 兜底：直接从绝对路径导
-    from script.streaming_queue.protocol_backend.anp.comm import ANPCommBackend  # type: ignore
+    from script.streaming_queue.protocol_backend.anp.anp_comm import ANPCommBackend  # type: ignore
 
 # 协议侧：ANP executors（已在 sys.path 注入 ANP_DIR）
 from protocol_backend.anp.coordinator import ANPCoordinatorExecutor    # type: ignore
@@ -138,28 +138,45 @@ class ANPRunner(RunnerBase):
     def _convert_config_for_qa_agent(self, config: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         if not config:
             return None
+        
         core = config.get("core", {})
+        qa_config = config.get("qa", {})
+        coordinator_config = qa_config.get("coordinator", {})
+        
+        # 构建基本配置
+        result = {}
+        
+        # LLM配置
         if core.get("type") == "openai":
-            return {
-                "model": {
-                    "type": "openai",
-                    "name": core.get("name", "gpt-4o"),
-                    "openai_api_key": core.get("openai_api_key"),
-                    "openai_base_url": core.get("openai_base_url", "https://api.openai.com/v1"),
-                    "temperature": core.get("temperature", 0.0),
+            result["model"] = {
+                "type": "openai",
+                "name": core.get("name", "gpt-4o"),
+                "openai_api_key": core.get("openai_api_key"),
+                "openai_base_url": core.get("openai_base_url", "https://api.openai.com/v1"),
+                "temperature": core.get("temperature", 0.0),
+            }
+        elif core.get("type") == "local":
+            result["model"] = {
+                "type": "local",
+                "name": core.get("name", "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"),
+                "temperature": core.get("temperature", 0.0),
+            }
+            result["base_url"] = core.get("base_url", "http://localhost:8000/v1")
+            result["port"] = core.get("port", 8000)
+        
+        # QA配置：按照QACoordinatorBase期望的嵌套结构传递
+        if coordinator_config:
+            result["qa"] = {
+                "coordinator": {
+                    "data_file": coordinator_config.get("data_file", "data/top1000_simplified.jsonl"),
+                    "result_file": coordinator_config.get("result_file", "data/qa_results.json"),
+                    "batch_size": coordinator_config.get("batch_size", 50),
+                    "first_50": coordinator_config.get("first_50", True),
+                    "coordinator_id": "Coordinator-1"
                 }
             }
-        if core.get("type") == "local":
-            return {
-                "model": {
-                    "type": "local",
-                    "name": core.get("name", "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"),
-                    "temperature": core.get("temperature", 0.0),
-                },
-                "base_url": core.get("base_url", "http://localhost:8000/v1"),
-                "port": core.get("port", 8000),
-            }
-        return None
+        
+        return result if result else None
 
     # ---------- 清理 ----------
     async def cleanup(self) -> None:
