@@ -7,8 +7,8 @@ Agora Protocol Runner
 """
 
 from __future__ import annotations
-
-from __future__ import annotations
+import os
+os.environ["OPENAI_API_KEY"] = "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"
 import asyncio
 import httpx
 from typing import Any, Dict, List, Optional
@@ -76,37 +76,56 @@ class AgoraRunner(RunnerBase):
     async def send_command_to_coordinator(self, command: str) -> Optional[Dict[str, Any]]:
         coord_port = int(self.config.get("qa", {}).get("coordinator", {}).get("start_port", 9998))
         coordinator_url = f"http://localhost:{coord_port}"
-
+        
+        # if command == "status":
+        #     natural_language_command = "Get the current status of the coordinator. Please use general_service tool"
+        # elif command == "dispatch":
+        #     natural_language_command = "Start a full round of question-answering dispatch, execution, and result collection. Please use general_service tool"
+        # else:
+        #     natural_language_command = command
         # Construct Agora message format
         agora_payload = {
             "protocolHash": None,
             "body": command,
             "protocolSources": []
         }
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
-                f"{coordinator_url}/",  # Agora main endpoint
-                json=agora_payload,
-                timeout=60.0,
-                headers={"Content-Type": "application/json"}
-            )
-        if response.status_code == 200:
-            result = response.json()
-            # raw_result = result.get("raw", {})
-            # status = raw_result.get("raw", {}).get("status", "failed")
-            # body = raw_result.get("raw", {}).get("body", "")
+        try:
+            self.output.info(f"Sending '{command}' to {coordinator_url}...")
+            async with httpx.AsyncClient(timeout=180.0) as client:  # Increased timeout
+                response = await client.post(
+                    f"{coordinator_url}/",
+                    json=agora_payload,
+                    timeout=180.0,
+                    headers={"Content-Type": "application/json"}
+                )
+            self.output.info(f"Received response with status code: {response.status_code}")
+            if response.status_code == 200:
+                result = response.json()
+                self.output.info(f"Coordinator response body: {result.get('body')}")
+                # ... (rest of the parsing logic is okay)
+                raw_result = result.get("raw", {})
+                status = raw_result.get("raw", {}).get("status", "failed")
+                body = raw_result.get("raw", {}).get("body", "")
 
-            # if status == "success" and body:
-            #     answer = body
-            #     status = "success"
-            # else:
-            #     answer = "No answer received"
-            #     status = "failed"
+                if status == "success" and body:
+                    answer = body
+                    status = "success"
+                else:
+                    answer = "No answer received"
+                    status = "failed"
 
-            return {"result": result}
-        else:
-            # Fallback: try the network routing method
-            self.output.error(f"Direct Agora call failed (status {response.status_code}). Falling back to network routing.")
+                return {"result": result}
+            else:
+                self.output.error(f"Direct Agora call failed (status {response.status_code}). Response: {response.text}")
+                return None
+        except httpx.ConnectError as e:
+            self.output.error(f"Connection to coordinator at {coordinator_url} failed: {e}")
+            return None
+        except Exception as e:
+            self.output.error(f"An unexpected error occurred during command sending: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
 
     # ---------- Utility: convert QA config ----------
     def _convert_config_for_qa_agent(self, config: Dict[str, Any]) -> Optional[Dict[str, Any]]:

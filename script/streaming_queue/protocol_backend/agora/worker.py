@@ -50,23 +50,7 @@ def _sender(func):
 
 class AgoraQAWorker(QAWorkerBase):
     """Agora专用的QA Worker，目前不需要额外逻辑，保留扩展点。"""
-    agora_payload = {
-                    "protocolHash": None,  # No formal protocol, using natural language
-                    "body": command,       # The actual message content
-                    "protocolSources": []  # Empty array since no protocol is used
-                }
-                
-                # Use HTTP POST to Agora endpoint
-                response = await self.httpx_client.post(
-                    f"{coordinator_url}/",  # Agora main endpoint
-                    json=agora_payload,
-                    timeout=60.0,
-                    headers={"Content-Type": "application/json"}
-                )
-                
-                if response.status_code == 200:
-                    result = response.json()
-                    return {"result": result}
+    pass
 
 
 class AgoraWorkerExecutor:

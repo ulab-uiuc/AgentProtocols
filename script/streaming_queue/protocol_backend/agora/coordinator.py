@@ -34,7 +34,20 @@ class AgoraQACoordinator(QACoordinatorBase):
             payload=payload
         )
 
-        return response
+        # Adapt the response to the format expected by QACoordinatorBase
+        # The actual answer is in response['text'] or response['raw']['raw']['body']
+        answer = (response or {}).get("text")
+        print(f'>>> answer: {answer}')
+        if not answer:
+            try:
+                answer = response["raw"]["raw"]["body"]
+            except (KeyError, TypeError):
+                answer = None
+
+        return {
+            "answer": answer,
+            "raw": response
+        }
     
 class AgoraCoordinatorExecutor:
     """

@@ -1,7 +1,7 @@
 core:
   protocol: agora
   type: "openai"  # "local" or "openai"
-  name: "gpt-4o-mini"  # Model name, e.g., "gpt-4o", "gpt-3.5-turbo", or local model name
+  name: "gpt-4o"  # Model name, e.g., "gpt-4o", "gpt-3.5-turbo", or local model name
   temperature: 0.0
   # For local models
   base_url: "http://localhost:8000/v1"
@@ -20,7 +20,7 @@ qa:
     count: 1          # Define the number of coordinators
     start_port: 9998   # Coordinator starting port
     data_file: "script/streaming_queue/data/top1000_simplified.jsonl"  # Question file path
-    result_file: "script/streaming_queue/data/qa_results_agora.json"  # Result storage file path
+    result_file: "script/streaming_queue/data/qa_results_agora_0901.json"  # Result storage file path
     batch_size: 50  # Number of questions to dispatch per round
     first_50: true  # Whether to process only the first 50 questions
   worker:
