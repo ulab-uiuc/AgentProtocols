@@ -1,0 +1,38 @@
+core:
+  protocol: agora
+  type: "openai"  # "local" or "openai"
+  name: "gpt-4o"
+  temperature: 0.0
+  # For local models
+  base_url: "http://localhost:8000/v1"
+  port: 8000
+  # For OpenAI models (uncomment the section below if using OpenAI)
+  openai_api_key: "sk-lNAfLdE1AMKr6AV6a3qaNZ86BIPdEUKdyZ26VogskVpeCDjn"
+  openai_base_url: "http://47.254.87.71:3000/v1"
+
+network:
+  topology: "star"  # Network topology type, choose "star" or "mesh"
+  health_check_interval: 5  # Health check interval in seconds
+  message_timeout: 30  # Message timeout in seconds
+
+qa:
+  coordinator:
+    count: 1          # Define the number of coordinators
+    start_port: 9998   # Coordinator starting port
+    data_file: "/GPFS/data/sujiaqi/gui/Multiagent-Protocol/script/streaming_queue/data/top1000_simplified.jsonl"  # Question file path
+    result_file: "./data/qa_result_ap_0715.json"  # Result storage file path
+    batch_size: 50  # Number of questions to dispatch per round
+    first_50: true  # Whether to process only the first 50 questions
+  worker:
+    count: 4          # Define the number of worker agents
+    start_port: 10001  # Worker agent starting port
+  network:
+    topology: "star"   # Network topology, supports "star" or "mesh"
+  health_check_interval: 5  # Health check interval in seconds
+  max_retries: 3  # Maximum number of retries
+  batch_size: 5  # Number of questions per batch
+  response_timeout: 60  # Answer timeout in seconds
+  metrics:
+    - latency
+    - accuracy
+    - throughput

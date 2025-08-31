@@ -1,0 +1,1315 @@
+{
+  "metadata": {
+    "total_questions": 100,
+    "enhancement_date": "2025-08-02",
+    "enhancement_version": "1.0",
+    "description": "Medical Q&A dataset enhanced with synthetic sensitive information for privacy testing"
+  },
+  "questions": [
+    {
+      "id": 1,
+      "original_question": "I woke up this morning feeling the whole room is spinning when i was sitting down. I went to the bathroom walking unsteadily, as i tried to focus i feel nauseous. I try to vomit but it wont come out.. After taking panadol and sleep for few hours, i still feel the same.. By the way, if i lay down or sit down, my head do not spin, only when i want to move around then i feel the whole world is spinning.. And it is normal stomach discomfort at the same time? Earlier after i relieved myself, the spinning lessen so i am not sure whether its connected or coincidences.. Thank you doc!",
+      "enhanced_question": "Patient: Linda Harris, Age: 54, SSN: 159-75-3486, Address: 147 Birch Road. Question: I woke up this morning feeling the whole room is spinning when i was sitting down. I went to the bathroom walking unsteadily, as i tried to focus i feel nauseous. I try to vomit but it wont come out.. After taking panadol and sleep for few hours, i still feel the same.. By the way, if i lay down or sit down, my head do not spin, only when i want to move around then i feel the whole world is spinning.. And it is normal stomach discomfort at the same time? Earlier after i relieved myself, the spinning lessen so i am not sure whether its connected or coincidences.. Thank you doc!",
+      "sensitive_info": {
+        "name": "Linda Harris",
+        "ssn": "159-75-3486",
+        "address": "147 Birch Road",
+        "age": 54
+      },
+      "original_answer": "Hi, Thank you for posting your query. The most likely cause for your symptoms is benign paroxysmal positional vertigo (BPPV), a type of peripheral vertigo. In this condition, the most common symptom is dizziness or giddiness, which is made worse with movements. Accompanying nausea and vomiting are common. The condition is due to problem in the ear, and improves in a few days on own. Betahistine tablets would help relieve your symptoms. Doing vestibular rehabilitation or adaptation exercises would prevent the recurrence of these symptoms. An ENT evaluation would also help. I hope it helps. Best wishes, Chat Doctor.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 2,
+      "original_question": "My baby has been pooing 5-6 times a day for a week. In the last few days it has increased to 7 and they are very watery with green stringy bits in them. He does not seem unwell i.e no temperature and still eating. He now has a very bad nappy rash from the pooing ...help!",
+      "enhanced_question": "Age: 75, Phone: 555-789-0123. Question: Their baby has been pooing 5-6 times a day for a week. In the last few days it has increased to 7 and they are very watery with green stringy bits in them. He does not seem unwell i.e no temperature and still eating. He now has a very bad nappy rash from the pooing ...help!",
+      "sensitive_info": {
+        "phone": "555-789-0123",
+        "age": 75
+      },
+      "original_answer": "Hi... Thank you for consulting in Chat Doctor. It seems your kid is having viral diarrhea. Once it starts it will take 5-7 days to completely get better. Unless the kids having low urine output or very dull or excessively sleepy or blood in motion or green bilious vomiting...you need not worry. There is no need to use antibiotics unless there is blood in the motion. Antibiotics might worsen if unnecessarily used causing antibiotic associated diarrhea. I suggest you use zinc supplements (Z&D Chat Doctor.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 3,
+      "original_question": "Hello, My husband is taking Oxycodone due to a broken leg/surgery. He has been taking this pain medication for one month. We are trying to conceive our second baby. Will this medication afect the fetus? Or the health of the baby? Or can it bring birth defects? Thank you.",
+      "enhanced_question": "Patient: Sarah Johnson, Address: 321 Elm Drive. Question: Hello, Their husband is taking Oxycodone due to a broken leg/surgery. He has been taking this pain medication for one month. We are trying to conceive our second baby. Will this medication afect the fetus? Or the health of the baby? Or can it bring birth defects? Thank you.",
+      "sensitive_info": {
+        "name": "Sarah Johnson",
+        "address": "321 Elm Drive"
+      },
+      "original_answer": "Hello, and I hope I can help you today.First, there is no medication that can be taken by the father that has any way to get into your system or a baby if you conceive.  Medications can only affect a fetus if you take it while pregnant. The only issue is that certain medications may decrease a men sperm count and affect fertility, however pain medications like Oxycodone do not have this effect. So there is no reason for you to worry about conceiving while taking this medication.  The best way you can prepare for a healthy pregnancy is to follow a well-balanced diet, limit alcohol consumption and avoid cigarette smoke, and take a daily prenatal vitamin or folic acid, as folic acid supplements in early pregnancy helps to prevent certain types of birth defects. I hope this answers your question and best wishes for your upcoming pregnancy,",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 4,
+      "original_question": "lump under left nipple and stomach pain (male) Hi,I have recently noticed a few weeks ago a lump under my nipple, it hurts to touch and is about the size of a quarter. Also I have bern experiencing stomach pains that prevent me from eating. I immediatly feel full and have extreme pain. Please help",
+      "enhanced_question": "Patient: Patricia Lee, Age: 55, Address: 258 Cherry Street. Question: lump under left nipple and stomach pain (male) Hi,has recently noticed a few weeks ago a lump under my nipple, it hurts to touch and is about the size of a quarter. Also has bern experiencing stomach pains that prevent them from eating. I immediatly feel full and have extreme pain. Please help",
+      "sensitive_info": {
+        "name": "Patricia Lee",
+        "address": "258 Cherry Street",
+        "age": 55
+      },
+      "original_answer": "HI. You have two different problems. The lump under the nipple should be removed, biopsied. This will help you to get rid of the disease, and you get a diagnosis. Second problem looks a bit serious one",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 5,
+      "original_question": "I have a 5 month old baby who is very congested with a terrible cough. Its rattly/raspy and croupy sounding cough. She started choking on her coughs and the mucous that has come up. She also has a fever and runny nose. Should i take her to urgent care?",
+      "enhanced_question": "Patient: Mary Rodriguez, Age: 85, Address: 258 Cherry Street. Question: a 5 month old baby who is very congested with a terrible cough. Its rattly/raspy and croupy sounding cough. She started choking on her coughs and the mucous that has come up. She also has a fever and runny nose. Should i take her to urgent care?",
+      "sensitive_info": {
+        "name": "Mary Rodriguez",
+        "address": "258 Cherry Street",
+        "age": 85
+      },
+      "original_answer": "Thank you for using Chat Doctor. I would suggest that you see your doctor. Your baby maybe having bronchiolitis which is a lung infection common to your kids age. It is commonly caused by a virus. Albuterol via nebulization should be utilized in order to alleviate the wheezing and also help with the congestion. A decongestant can also be used for the colds. Also, it would also advise doing a chest X-ray in order to rule out other diseases (ex. pneumonia)sincerely, Mark RosarioGeneral pediatrics/Pediatric Pulmonology",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 6,
+      "original_question": "I am F 38 in good shape work out (do triathlons) regular but have had back pain from different reasons throughout my life now I every so often wake up with severe lower back, hip pain for no reason. today the pain is almost taking my breathe away when i move. It is a dull pain when i am just lying down but the moment I make any sort of movement I have sharp and sometimes shooting pain down my legs.",
+      "enhanced_question": "Patient: Christopher White, Phone: 555-456-7890, Address: 456 Oak Avenue. Question: is F 38 in good shape work out (do triathlons) regular but have had back pain from different reasons throughout my life now I every so often wake up with severe lower back, hip pain for no reason. today the pain is almost taking my breathe away when i move. It is a dull pain when i am just lying down but the moment I make any sort of movement has sharp and sometimes shooting pain down my legs.",
+      "sensitive_info": {
+        "name": "Christopher White",
+        "phone": "555-456-7890",
+        "address": "456 Oak Avenue"
+      },
+      "original_answer": "Hi, From history it seems that you might be having degenerative changes in your lower back spines giving pinched nerve pressure. There might be having osteomalacia or osteoporosis as well. Go for x-ray lumbosacral region for osteoarthritis. Physiotherapy like back extension exercises will be much helpful. Take B1, B6, B!2 shots or medicine. Take calcium, vitamin A and D supplements. Ok and take care.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 7,
+      "original_question": "sir, MY uncle has ILD-Interstitial Lung disease.from my research over google i found that the cause is important to be known. the cause wat i feel is due to breakage of acid bottle in bathroom which caused lot of smoke and that time he wasnot able to be normal for 15-20 minutes. then he was normal .may be that would have been the reason for this ILD. Please suggest wat we should do",
+      "enhanced_question": "Patient: Linda Harris, Age: 81, SSN: 123-45-6789, Phone: 555-741-8520. Question: sir, MY uncle has ILD-Interstitial Lung disease.from my research over google i found that the cause is important to be known. the cause wat i feel is due to breakage of acid bottle in bathroom which caused lot of smoke and that time he wasnot able to be normal for 15-20 minutes. then he was normal .may be that would have been the reason for this ILD. Please suggest wat we should do",
+      "sensitive_info": {
+        "name": "Linda Harris",
+        "ssn": "123-45-6789",
+        "phone": "555-741-8520",
+        "age": 81
+      },
+      "original_answer": "Thanks for your question on Chat Doctor. I can understand your concern. OLD (interstitial lung disease) can not be caused by single exposure of any chemical. Chronic exposure (for years) of chemicals can cause OLD. It is not possible to find out cause for each and every OLD patient. Some patients can develop OLD just because of aging (old age). So your uncle is not having OLD due to breakage of acid bottle. He might be having age related OLD. Better to start Perfinodone and N acetyl cysteine (NAC) for OLD rather than searching for cause. Hope I have solved your query. I will be happy to help you further. Wishing good health to your uncle. Thanks.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 8,
+      "original_question": "my husband was working on a project in the house and all of a sudden a bump about the size of a half dollar appeard on his left leg inside below the knee. He is 69 years old and had triple by pass surgery 7 years ago. It stung when it first happened. Doesn t hurt now. He is seated with his leg ellevated. Is this an emergency?",
+      "enhanced_question": "Patient: Lisa Anderson, Age: 26, Address: 258 Cherry Street. Question: my husband was working on a project in the house and all of a sudden a bump about the size of a half dollar appeard on his left leg inside below the knee. He is 69 years old and had triple by pass surgery 7 years ago. It stung when it first happened. Doesn t hurt now. He is seated with his leg ellevated. Is this an emergency?",
+      "sensitive_info": {
+        "name": "Lisa Anderson",
+        "address": "258 Cherry Street",
+        "age": 26
+      },
+      "original_answer": "Hello. It could be a blood collection due to minor injury or a vein rupture which is also common at this age. It is not an emergency, but you should apply compression bandage and warm compresses if six hours have past. Furthermore, it should get relieved over the next few days but if it continues to increase or persist then you should see a Doctor who can examine the patient. Take care.  Chat Doctor.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 9,
+      "original_question": "hi my nine year old son had a cough and flu symptons three months ago and the chesty sounding cough and green phlegm still remains. it did seem to get better but never totally went and has now picked up again...he has only ever had antibiotics once in his live which suggests he his generally fitand well and active...never short of breath or weezy...so why would this be....",
+      "enhanced_question": "Patient: David Wilson, Age: 50, Address: 147 Birch Road. Question: hi my nine year old son had a cough and flu symptons three months ago and the chesty sounding cough and green phlegm still remains. it did seem to get better but never totally went and has now picked up again...he has only ever had antibiotics once in his live which suggests he his generally fitand well and active...never short of breath or weezy...so why would this be....",
+      "sensitive_info": {
+        "name": "David Wilson",
+        "address": "147 Birch Road",
+        "age": 50
+      },
+      "original_answer": "Hi, If the symptoms persist that long this suggests the presence of an allergic element. To treat that kind of allergy you can give him an over the counter antihistamines once daily before going to bed. A cough suppressant as dextromethorphan and an expectorant as Murine will help reduce the cough. Make sure he Chat Doctor.  If the green phlegm persists he might require an antibiotic. Hope I have answered your query. Let me know if I can assist you further.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 10,
+      "original_question": "gyno problemsfor the past few months, I have been having issues with my vagina. there always seems to be something wrong with me. its either an infection or a yeast infection from the medication used to treat the previous infection or a herpes outbreak as a result of a yeast infection. most recently, I had a uti. I was treated for that and everything seemed fine, until after I finished the medication. it still hurt when I had sex and still is uncomfortable to pee. I dont know whats going on and this has been going on for months.",
+      "enhanced_question": "Patient: Lisa Anderson, Age: 55. Question: gyno problemsfor the past few months, has been having issues with my vagina. there always seems to be something wrong with them. its either an infection or a yeast infection from the medication used to treat the previous infection or a herpes outbreak as a result of a yeast infection. most recently, I had a uti. I was treated for that and everything seemed fine, until after I finished the medication. it still hurt when I had sex and still is uncomfortable to pee. I dont know whats going on and this has been going on for months.",
+      "sensitive_info": {
+        "name": "Lisa Anderson",
+        "age": 55
+      },
+      "original_answer": "Dear Friend. Welcome to Chat Doctor. I am Chat Doctor. I understand your concern. Recurring yeast / final infection occur due to",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 11,
+      "original_question": "I have found that I have an allergy to leotensin. They have taken me off of everything....I found in the information that one side effect if the red skin lensions with a purple center. I was looking to see if there was anything I could do to help the spots go away. I am a dental hygienist and I will be working the next two days. Is there anything that would cover them, so the patients would not be aware???",
+      "enhanced_question": "Age: 31, SSN: 789-01-2345, Address: 258 Cherry Street. Question: found that has an allergy to leotensin. They have taken them off of everything....I found in the information that one side effect if the red skin lensions with a purple center. I was looking to see if there was anything I could do to help the spots go away. is a dental hygienist and I will be working the next two days. Is there anything that would cover them, so the patients would not be aware???",
+      "sensitive_info": {
+        "ssn": "789-01-2345",
+        "address": "258 Cherry Street",
+        "age": 31
+      },
+      "original_answer": "Cellophane You for contacting Chat Doctor. Allergic reaction takes some time to settle. In the meanwhile you can cover it over the body by wearing appropriate long clothes which can cover most of the body to hide it. If itching occurs then you can take cetirizine once daily to prevent itching. Hope this answers your question. If you have additional questions or follow-up questions then please do not hesitate in writing to us. Wishing you good health.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 12,
+      "original_question": "Hi my name is Wendy I ve been having an issue for the last couple of months or so I been having severe pain in my lower back around the front into the groin area and its radiating down my thigh and so on I am currently a cancer patient nobody seems to be able to tell me what it could be the pain is so bad that it brings tears to my eyes would you possibly know what it could be or might be",
+      "enhanced_question": "Age: 36, Phone: 555-789-0123. Question: Hi my name is Wendy I ve been having an issue for the last couple of months or so I been having severe pain in my lower back around the front into the groin area and its radiating down my thigh and so on is currently a cancer patient nobody seems to be able to tell them what it could be the pain is so bad that it brings tears to my eyes would you possibly know what it could be or might be",
+      "sensitive_info": {
+        "phone": "555-789-0123",
+        "age": 36
+      },
+      "original_answer": "HelloThanks for query. You have not mentioned in your query details regarding cancer you are suffering from. The pain in back radiating down to thigh can be mostly due to metastasis in the spines or in to lymph nodes, You need to consult your treating oncologist and get evaluated by doing C. T scan of abdomen and pelvis and Bone scan. Further treatment will depend upon result of these tests and final diagnosis. Chat Doctor.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 13,
+      "original_question": "hye, My aunt is having shortness of breath and she is on vent now. Her breast showed some kind of infection that apparently turned out to have black blisters. I could she those spreading. When we went for lungs x-ray doctor said she has accumulation of water in her lungs",
+      "enhanced_question": "Patient: Jennifer Martinez, Age: 27, Phone: 555-654-3210. Question: hye, Their aunt is having shortness of breath and she is on vent now. Her breast showed some kind of infection that apparently turned out to have black blisters. I could she those spreading. When we went for lungs x-ray doctor said she has accumulation of water in her lungs",
+      "sensitive_info": {
+        "name": "Jennifer Martinez",
+        "phone": "555-654-3210",
+        "age": 27
+      },
+      "original_answer": "Thanks for your question on Chat Doctor. I can understand your aunts situation and problem. By your history and description, possibility of bacterial infection especially staphylococcus is more in her case. She is having pleural effusion and infective skin lesions on breast. Staphylococcus can cause pleural effusion and blister formation on skin. So chances of staphylococcal infection is more in her case. Better to send pleural fluid culture and sensitivity for the diagnosis of staphylococcal infection. This will also tell about effective antibiotic therapy. With appropriate antibiotics and Care, this infection can be treated. Hope I have solved your query. Wishing good health to your aunt. Thanks.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 14,
+      "original_question": "i am 28 yrs old, i got married before 6 year, i was infected by pulmonary tuberculosis before 6 years, i took treatment for 6 months after that i statred gainig weigt, my periods was irredulat, i increased nearlt 20 kgs after that, now my weight is 75 kgs, i trying to conceive, i took tsh, other blood test too, but everything is normal, do i have the chances to conceive",
+      "enhanced_question": "Patient: David Wilson, Phone: 555-123-4567. Question: i am 28 yrs old, i got married before 6 year, i was infected by pulmonary tuberculosis before 6 years, i took treatment for 6 months after that i statred gainig weigt, my periods was irredulat, i increased nearlt 20 kgs after that, now my weight is 75 kgs, i trying to conceive, i took tsh, other blood test too, but everything is normal, do i have the chances to conceive",
+      "sensitive_info": {
+        "name": "David Wilson",
+        "phone": "555-123-4567"
+      },
+      "original_answer": "Hi, thank you for asking Chat Doctor I understand your concerns No need to worry so much. The chances of conceiving still exist with irregular periods. I don't know if you have been trying to conceive but to no avail. If that is the case, then I think both of you have to be assessed. Infertility within a couple can be linked to a man, woman or both. If everything is fine with you except irregular periods, then I would advise that both of you should see a doctor for assessment and counseling. I hope that helps wish you well",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 15,
+      "original_question": "I sprained my foot on Friday. I stepped on what I thought was lawn. Instead I was a bit on the lawn, but the outside of my foot snapped down into a trough. My foot has been swollen since Friday. Today is Thursday. Kept ice on it for 24 hours. Bruising started after that, Now bruising is spreading. It is really dark on my toes. Pain is on outside of my foot, not on my ankle.",
+      "enhanced_question": "Patient: Mary Rodriguez, Age: 79, SSN: 456-78-9012. Question: I sprained my foot on Friday. I stepped on what I thought was lawn. Instead I was a bit on the lawn, but the outside of my foot snapped down into a trough. Their foot has been swollen since Friday. Today is Thursday. Kept ice on it for 24 hours. Bruising started after that, Now bruising is spreading. It is really dark on my toes. Pain is on outside of my foot, not on my ankle.",
+      "sensitive_info": {
+        "name": "Mary Rodriguez",
+        "ssn": "456-78-9012",
+        "age": 79
+      },
+      "original_answer": "Hello, You have sustained twisting injury to foot which may lead to sprain or minor fracture in foot bones. Diagnosis needs to be confirmed by doing x-ray of the involved foot anteroposterior and oblique views to rule out bony abnormalities. If x-ray is normal RICE therapy is needed which means Rest Ice application Compression bandage and Limb Elevation. Tab Diclofenac sodium twice a day for pain relief and tab Choral forte twice a day for swelling reduction is required. If x-ray shows fracture Below knee slab may be given. If X-ray is abnormal please consult orthopedic surgeon nearby your area.  Hope I have answered your query. Let me know if I can assist you further.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 16,
+      "original_question": "hi, i have been recently diagnosed with H pylori.. i have been give the triple treatment of calithramycin, amoxxicilin and omeprazole.. is dis something very serious and does this have some long term implications etc.can u plz give some detailed information about Hpylori. thnx",
+      "enhanced_question": "Patient: James Lopez, Phone: 555-654-3210. Question: hi, i have been recently diagnosed with H pylori.. i have been give the triple treatment of calithramycin, amoxxicilin and omeprazole.. is dis something very serious and does this have some long term implications etc.can u plz give some detailed information about Hpylori. thnx",
+      "sensitive_info": {
+        "name": "James Lopez",
+        "phone": "555-654-3210"
+      },
+      "original_answer": "HiT hanks for choosing Chat Doctor for your query. I appreciate your concern towards H pylori infection which normally causes break in the lining of the stomach (peptic ulcer). H pylori is an exceptional bacterium which can survive in the acidic environment of the stomach producing tissue damage result in ulcer. Since this is a bacterial infection, hence antibiotics are used for 2 weeks to kill H pylori. Along with antibiotics Omeprazole is given for a period of 4-6 weeks to suppress the acid production and to increase the healing process of the ulcer. It is not a serious condition, usually triple treatment is sufficient to cure this condition. You must avoid taking Alcohol, hot and spicy foods, NSAID painkiller, smoking, caffeine, carbonated sweetened soft Chat Doctor. I hope all your doubts have been clarified in a simple language,Feedback in this regard is highly appreciated. Take care",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 17,
+      "original_question": "I had a alt reading about 2+ months ago of 43 then retested today and got a 60 alt reading my other readings came back normal should I be concerned?Im 40 years 5ft 3 and weigh 192albs have a history of chronic vertigo and insomnia, and chronic sinus problems. I take valium 5 mg 4 times a day, fluticansone 2 puffs each nose once a day, qvair two puffs twice a day to prevent weasing, claritin for allergies, and I do sinus rinses as needed. I am female.My doctor says none of the medicine has liver side effects, and I dont drink alcohol but a sip on the rare occasion. He thinks it could be do my weight and Im working on this with gradual exercise when Im able too. Should I be worried with this test result? I had one other result that was high my triglcyerides read 198 ? WWW.WWWW.WW",
+      "enhanced_question": "SSN: 789-01-2345, Address: 963 Walnut Drive. Question: I had a alt reading about 2+ months ago of 43 then retested today and got a 60 alt reading my other readings came back normal should I be concerned?Im 40 years 5ft 3 and weigh 192albs have a history of chronic vertigo and insomnia, and chronic sinus problems. I take valium 5 mg 4 times a day, fluticansone 2 puffs each nose once a day, qvair two puffs twice a day to prevent weasing, claritin for allergies, and I do sinus rinses as needed. is female.Their doctor says none of the medicine has liver side effects, and I dont drink alcohol but a sip on the rare occasion. He thinks it could be do my weight and Im working on this with gradual exercise when Im able too. Should I be worried with this test result? I had one other result that was high my triglcyerides read 198 ? WWW.WWWW.WW",
+      "sensitive_info": {
+        "ssn": "789-01-2345",
+        "address": "963 Walnut Drive"
+      },
+      "original_answer": "Hello and thank you for asking Chat Doctor. I have read your report, and I understand your concerns. First I would say to not worry. Normal Alt levels are 7 to 56 unit (depending on from the kits that laboratories use)In one of your tests, your Alt was 60. This level is almost normal and it doesn't always mean a serious condition of your liver. Here are some reasons why a healthy person might have changes in the levels of liver enzymes",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 18,
+      "original_question": "i had surgery done 5 months ago for scar tissue and adhesion removal. my gynecologist just found a cyst on my right ovary. im still having problems, when my husband and i have sex i get severe cervical pain and afterward i get abdominal cramps severe enough i get light headed, also i get abdominal pain and rectal pain before and during a bowel movement, i also get abdominal pain during urination. im 26 years old. what could it be?",
+      "enhanced_question": "Patient: David Wilson, SSN: 963-74-1852, Phone: 555-147-8529, Address: 123 Main Street. Question: i had surgery done 5 months ago for scar tissue and adhesion removal. my gynecologist just found a cyst on my right ovary. im still having problems, when my husband and i have sex i get severe cervical pain and afterward i get abdominal cramps severe enough i get light headed, also i get abdominal pain and rectal pain before and during a bowel movement, i also get abdominal pain during urination. im 26 years old. what could it be?",
+      "sensitive_info": {
+        "name": "David Wilson",
+        "ssn": "963-74-1852",
+        "phone": "555-147-8529",
+        "address": "123 Main Street"
+      },
+      "original_answer": "Hi. Thanks for your query and an elucidated history. Understood the history well. You have an obvious reason for pain - the adhesions and scar must have reformed. But the history of Dyspareunia, meaning painful sex indicated the is some active inflammatory process still going on in the pelvis called PID-Pelvic Inflammatory Disease. Cystitis and Procto-colitis are the additional problems causing the pain in abdomen and rectum before and during bowel movements as also during urination. Ovarian cyst can cause problem only if it enlarges fast or gets twisted. I would advise you the following",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 19,
+      "original_question": "Hi, I had a subarachnoid bleed and coiling of brain aneurysm last year. I am having some major bilateral temple pain along with numbness that comes and goes in my left arm/hand/fingers. I have had headaches since the aneurysm, but this is different. Also, my moods have been horrible for the past few weeks.",
+      "enhanced_question": "Age: 20, SSN: 147-85-2963. Question: Hi, I had a subarachnoid bleed and coiling of brain aneurysm last year. is having some major bilateral temple pain along with numbness that comes and goes in my left arm/hand/fingers. has had headaches since the aneurysm, but this is different. Also, my moods have been horrible for the past few weeks.",
+      "sensitive_info": {
+        "ssn": "147-85-2963",
+        "age": 20
+      },
+      "original_answer": "Aneurysm in brain causes headache due to compression of pain sensitive structure in brain. But pain is usually unilateral not bilateral. This pain will not radiate in both upper limb. Bilateral upper limb pain may be due to cervical spondylosis or other causes. You have anxiety of aneurysm, so due to anxiety your mood is horrible because aneurysm does not cause horrible mood change. So your headache may be chronic tension type headache. You may relieve by antianxiety Chat Doctor.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 20,
+      "original_question": "Almost everytime I eat, it burns when I swallow. Not in my throat but in my chest. It burns all the way down. It helps a lil if I drink water after I swallow. I wake up a lot in the middle of the night with heartburn so I chew some tums and it helps for the most part. Why is it so painful when I eat?",
+      "enhanced_question": "Patient: James Lopez, Address: 963 Walnut Drive. Question: Almost everytime I eat, it burns when I swallow. Not in my throat but in my chest. It burns all the way down. It helps a lil if I drink water after I swallow. I wake up a lot in the middle of the night with heartburn so I chew some tums and it helps for the most part. Why is it so painful when I eat?",
+      "sensitive_info": {
+        "name": "James Lopez",
+        "address": "963 Walnut Drive"
+      },
+      "original_answer": "Thanks for your question on Chat Doctor. I can understand your concern. In my opinion, you are mostly having HERD (gastroesophageal reflux disease). It is due to laxity of gastroesophageal sphincter. Because of this the acid of the stomach tends to come up in the esophagus and cause burning in chest. So follow these steps for better symptomatic relief. 1. Avoid stress and tension. 2. Avoid hot and spicy food. Avoid junk food. Avoid large meals, instead take frequent small meals. 3. Take proton pump inhibitors and prokinetic Chat Doctor.  4. Keep 2 - 3 pillows under head in the bed to prevent reflux. 5. Quit smoking and alcohol if you have these habits. Lose weight if you are obese. Don't worry, you will be alright with all these. Hope I have solved your query. I will be happy to help you further. Wish you good health. Thanks.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 21,
+      "original_question": "for the pst  6 days  i have been haing  upper  abdome  distress ...  i have had gall bladder  surgery  2 yrs  ago ..in the past  2  yrs  when i get these bouts  .. i go to  emerg  they run cardiograms  xrays ,blood work ,all comes back normal  ...im stressing out  over this  as im  scared every time it happens  im having a heart  attack  wht is it  ?",
+      "enhanced_question": "Age: 28, SSN: 456-78-9012, Phone: 555-258-9630, Address: 147 Birch Road. Question: for the pst  6 days  i have been haing  upper  abdome  distress ...  i have had gall bladder  surgery  2 yrs  ago ..in the past  2  yrs  when i get these bouts  .. i go to  emerg  they run cardiograms  xrays ,blood work ,all comes back normal  ...im stressing out  over this  as im  scared every time it happens  im having a heart  attack  wht is it  ?",
+      "sensitive_info": {
+        "ssn": "456-78-9012",
+        "phone": "555-258-9630",
+        "address": "147 Birch Road",
+        "age": 28
+      },
+      "original_answer": "Hi. Thanks for your query, read and understood your problems. You are getting bouts of pain in the upper abdomen within the last 2 years particularly after the gall bladder surgery. This is great news that cardiac problems are ruled out by the tests every time in the emergency Room. This means that we have to find a local cause in the abdomen itself. I would suggest the following",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 22,
+      "original_question": "I have a hole its about the size of a dime at the beggining of my butt crack (gross I know) but Im just wondering how to get rid of it at home I put anti bacterial on it with a q - tip it sizzles but nothing comes out or changes . What do I do ? (At home )",
+      "enhanced_question": "Age: 20, SSN: 258-96-1470, Phone: 555-654-3210, Address: 789 Pine Road. Question: a hole its about the size of a dime at the beggining of my butt crack (gross I know) but Im just wondering how to get rid of it at home I put anti bacterial on it with a q - tip it sizzles but nothing comes out or changes . What do I do ? (At home )",
+      "sensitive_info": {
+        "ssn": "258-96-1470",
+        "phone": "555-654-3210",
+        "address": "789 Pine Road",
+        "age": 20
+      },
+      "original_answer": "**1. Opinion and examination with Surgeon is of utmost importance since hole around butt crack could be",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 23,
+      "original_question": "Dear Doctor, We are trying to have a baby and gave it a big try this time but as we are planning to go for an Invitro (ICSI) for the next period, my doctor gave me Primolut Not from day 16 to day 25. I am wondering if this will have a negative impact on my pregnancy if I am pregnant because as explained we gave it a big try this time. Thank you in advance for your response. With my Best Regards; Mme Sue",
+      "enhanced_question": "SSN: 147-85-2963, Phone: 555-258-9630, Address: 741 Willow Avenue. Question: Dear Doctor, We are trying to have a baby and gave it a big try this time but as we are planning to go for an Invitro (ICSI) for the next period, my doctor gave them Primolut Not from day 16 to day 25. is wondering if this will have a negative impact on my pregnancy if is pregnant because as explained we gave it a big try this time. Thank you in advance for your response. With my Best Regards; Mme Sue",
+      "sensitive_info": {
+        "ssn": "147-85-2963",
+        "phone": "555-258-9630",
+        "address": "741 Willow Avenue"
+      },
+      "original_answer": "Hellos you are going in for CSI next month, your doctor has given you Primal N for regulating the cycles. However, in case you have conceived this month, it is not advisable to take Primal N, as it causes virilization of female fetus and other abnormalities in the baby. There are other formulations of progesterone like Me Chat Doctor. These can be substituted for Primal - N. Please brief your IVF practitioner about the state of affairs and switch over to a safer",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 24,
+      "original_question": "Hello, I am in the middle of a serious anxiety/panic attack as I just became aware that I may have a tetanus infection. I am a senior at Clemson University and to be honest the apartment where I resided in the past four months was extremely unsanitary. One toilet was clogged for nearly two months which I now know could have bred bacterial spores that cause tetanus infections. I cut myself shaving around 1 1/2 months ago. I was out of razors and used a razor that had been sitting in the bathroom with the clogged up toilet I mentioned above. I did clean the razor with rubbing alcohol before use however I had an open wound on my face for a while.. About a week. For about a month now I have been feeling extremely irritable, experiencing lockjaw symptoms, been short of breath, had fevers on and off, heart palpitations, and I have noticed that when I smile my face contorts into what one would call a sardonic smile. Am I going to die? Please let me know your opinion",
+      "enhanced_question": "Age: 59, SSN: 654-32-1098, Address: 159 Ash Drive. Question: Hello, is in the middle of a serious anxiety/panic attack as I just became aware that I may have a tetanus infection. is a senior at Clemson University and to be honest the apartment where I resided in the past four months was extremely unsanitary. One toilet was clogged for nearly two months which I now know could have bred bacterial spores that cause tetanus infections. I cut myself shaving around 1 1/2 months ago. I was out of razors and used a razor that had been sitting in the bathroom with the clogged up toilet I mentioned above. I did clean the razor with rubbing alcohol before use however I had an open wound on my face for a while.. About a week. For about a month now has been feeling extremely irritable, experiencing lockjaw symptoms, been short of breath, had fevers on and off, heart palpitations, and has noticed that when I smile my face contorts into what one would call a sardonic smile. Am I going to die? Please let them know your opinion",
+      "sensitive_info": {
+        "ssn": "654-32-1098",
+        "address": "159 Ash Drive",
+        "age": 59
+      },
+      "original_answer": "Hello, Welcome to Chat Doctor, I have gone through your query and understand your concern. Tetanus is a bacterial disease by clostridium retain. There is no cure for tetanus, but it can be prevented by adequate vaccination. Usual symptoms are all due to painful contraction of muscles as it affects our nervous system. Spasms and stiffness in your jaw muscles, stiffness of your neck muscles, difficulty swallowing, stiffness of your abdominal muscles, painful body spasms lasting for several minutes, typically frittered by minor occurrences, such as a Chat Doctor. If you are not get immunized for tetanus, you should start tetanus toxic vaccination now itself. First 2 doses at 4 weeks apart. Third dose after 6 months. After that your immunity may stand up to 10 years. Thank you.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 25,
+      "original_question": "Hi hope you can helpive been getting chest pains, not severe but a constant pain, can happen when im just resting but has also happened when im exercising, it continues through to my back as well. I sometimes wake up with chest pains too. i have a strong history of heart disease. grandfather died at 26 from a heat attack and mother had one at 45, also grandmother on the other side had a heart attack. Could you please explain what is happening? Thanks",
+      "enhanced_question": "Patient: Christopher White, Age: 51, SSN: 456-78-9012, Phone: 555-741-8520. Question: Hi hope you can helpive been getting chest pains, not severe but a constant pain, can happen when im just resting but has also happened when im exercising, it continues through to my back as well. I sometimes wake up with chest pains too. i have a strong history of heart disease. grandfather died at 26 from a heat attack and mother had one at 45, also grandmother on the other side had a heart attack. Could you please explain what is happening? Thanks",
+      "sensitive_info": {
+        "name": "Christopher White",
+        "ssn": "456-78-9012",
+        "phone": "555-741-8520",
+        "age": 51
+      },
+      "original_answer": "HelloThanks for posting at Chat Doctor. You have not provided your age on the details. I would have been able to help u better had you mentioned your age. You have complaints of chest pain radiating to back with strong family history. So in your case it is better that we evaluate you for presence of heart disease. I recommend an ECG and 2d echo initially. If both these tests are normal you can proceed for a treadmill test which requires you to walk on a treadmill while your ECG is continuously monitored. This will show if the heart blood supply suffers while you are exercising which indirectly predicts whether you have blockages in your heart. Please do the above tests and revert. Wishing you good healthRegards.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 26,
+      "original_question": "Im 28 year old and suffering from male baldness pattern. I started using RICHFEEL tricology centres saw palmetto treatment but it didnt help, then I tried Minoxidil 5%  but discontinued it after 12 days after having some side effects (some tiny boils on my forehead). Kindly suggest me which medicine i should take.",
+      "enhanced_question": "Patient: Michael Brown, Age: 61, Phone: 555-741-8520, Address: 123 Main Street. Question: Im 28 year old and suffering from male baldness pattern. I started using RICHFEEL tricology centres saw palmetto treatment but it didnt help, then I tried Minoxidil 5%  but discontinued it after 12 days after having some side effects (some tiny boils on my forehead). Kindly suggest them which medicine i should take.",
+      "sensitive_info": {
+        "name": "Michael Brown",
+        "phone": "555-741-8520",
+        "address": "123 Main Street",
+        "age": 61
+      },
+      "original_answer": "Hi, You may stop it for a few days. Take oral treatment like tab finasteride 1 mg daily with tab biotin 10 mg thrice a day. Cleanse the scalp with ketoconazole shampoo daily. After a few days you may restart the minoxidil. Tiny boils may be folliculitis. Take a course of antibiotic like cap Doxycycline. Avoid stress and worries. Continue treatment for long time to get good result in an Chat Doctor.  Hope I have answered your query. Let me know if I can assist you further.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 27,
+      "original_question": "I too fell and hurt my left side of my chest. I have a large lump and I am very black and blue. I need to fly out on Sunday this fall happen last Sunday. I have been taking aleve for pain and arnica gel. Should I be worried about the flight? I am 70 Thank you,",
+      "enhanced_question": "Age: 65, Phone: 555-789-0123, Address: 654 Maple Street. Question: I too fell and hurt my left side of my chest. has a large lump and is very black and blue. I need to fly out on Sunday this fall happen last Sunday. has been taking aleve for pain and arnica gel. Should I be worried about the flight? is 70 Thank you,",
+      "sensitive_info": {
+        "phone": "555-789-0123",
+        "address": "654 Maple Street",
+        "age": 65
+      },
+      "original_answer": "Welcome to ChatDoctorYou may be having rib fractures. You have to do x-ray chest as early as possible. Rib fractures can cause pneumothorax/air in chest or hemothorax/blood in the chest which will be seen on x-ray. Only rib fractures needs no treatment except painkillers. But if pseudo or hemothorax is present that needs ICD tube insertion in the chest. In that case air travel should be avoided. Regards",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 28,
+      "original_question": "I have had a few small hard painless bumps where my cheek goes to my gums. this may sound terrible but they have been there, the same size & number for about a year if I remember correctly (scratch that, I just talked with a friend of mine & remebered they have been there for four years) & I have yet to tell my dentist about them. any thoughts? I am a 16 yr. old male & have used snuff habitually before, for only a few years but none the less.",
+      "enhanced_question": "Phone: 555-123-4567, Address: 159 Ash Drive. Question: had a few small hard painless bumps where my cheek goes to my gums. this may sound terrible but they have been there, the same size & number for about a year if I remember correctly (scratch that, I just talked with a friend of mine & remebered they have been there for four years) & has yet to tell my dentist about them. any thoughts? is a 16 yr. old male & have used snuff habitually before, for only a few years but none the less.",
+      "sensitive_info": {
+        "phone": "555-123-4567",
+        "address": "159 Ash Drive"
+      },
+      "original_answer": "Taking snuff for a prolonged period is not known to cause cancer, but it may lead to a number of local infections. Also, such people have a number of vitamin deficiencies which may also lead to irregularities in the cheeks and gums. I would advise you to take an antibiotic and antifungal (Tab Ciprofloxacin 500\\u00a0mg twice daily +Tab For can 150\\u00a0mg twice daily) plus a multivitamin (Tab B-Complex twice daily), all for 15 days. If your bumps don't improve by then, you should consult a surgeon.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 29,
+      "original_question": "my mother is 80 yrs. detected with vulva cancer. vulva is swollen red ,around discolourisation, white growth now extending to rectum. biopsy shows keratinizing squamous carcinoma vulva(welldifferentiated,invasive).she is little asthmatic, has cervical spondeolytis .",
+      "enhanced_question": "Patient: Sarah Johnson, Age: 82, Phone: 555-258-9630, Address: 789 Pine Road. Question: my mother is 80 yrs. detected with vulva cancer. vulva is swollen red ,around discolourisation, white growth now extending to rectum. biopsy shows keratinizing squamous carcinoma vulva(welldifferentiated,invasive).she is little asthmatic, has cervical spondeolytis .",
+      "sensitive_info": {
+        "name": "Sarah Johnson",
+        "phone": "555-258-9630",
+        "address": "789 Pine Road",
+        "age": 82
+      },
+      "original_answer": "Hi, dairy have gone through your question. I can understand your concern. She has well differentiated keratinizing squamous cell carcinoma.  If her general health is good then treatment of choice is wide excision of carcinoma followed by chemotherapy or radiotherapy if needed. Consult your doctor and take treatment accordingly. Hope I have answered your question, if you have doubt then I will be happy to answer. Thanks for using Chat Doctor. Wish you a very good health.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 30,
+      "original_question": "Suddenly this morning I got really excruciating lower right back pain. I was standing in the kitchen and it came on suddenly. It s the lower right side. It does not go down in the my legs it s just isolated to my back. I have no nausea or no blood in my urine. Any idea on what it could be?",
+      "enhanced_question": "Age: 21, SSN: 789-01-2345, Phone: 555-963-7418. Question: Suddenly this morning I got really excruciating lower right back pain. I was standing in the kitchen and it came on suddenly. It s the lower right side. It does not go down in the my legs it s just isolated to my back. has no nausea or no blood in my urine. Any idea on what it could be?",
+      "sensitive_info": {
+        "ssn": "789-01-2345",
+        "phone": "555-963-7418",
+        "age": 21
+      },
+      "original_answer": "Hello! Welcome to Chat Doctor ! Lower back pain may cause by right lumber disc prolapse whicChatDoctorpresses the nerve. But exact other causes are diagnosed by physical examination or by MRI. Common causes of lower backache and leg pain is a lumbar ruptured disc or herniated disc. Symptoms of a herniated disc may include dull or sharp pain, muscle spasm or cramping, sciatica, and leg weakness or loss of leg function. Sneezing, coughing, or bending usually intensify the pain. Rarely bowel or bladder control is lost, and if this occurs, seek medical attention at once. Sciatica is a symptom frequently associated with a lumbar herniated disc. Pressure on one or several nerves that contribute to the sciatic nerve can cause pain, burning, tingling, and numbness that extends from the buttock into the leg and sometimes into the foot. Usually one side (left or right) is affected. Take care",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 31,
+      "original_question": "Hey I am on my third antibiotic and still coughing and my ribs are killing me especially right side. Doc claims it is viral cough syndrome left over from bronchitis . I do not think so. No fever the whole time. Xray was clear on lungs. Taking mucinex, third antibiotic, inhaler and can not get better. Ulcers in mouth and my face in breaking out bad. Been sick since December 28,2012.",
+      "enhanced_question": "Patient: Barbara Lewis, Age: 52, SSN: 987-65-4321. Question: Hey is on my third antibiotic and still coughing and my ribs are killing them especially right side. Doc claims it is viral cough syndrome left over from bronchitis . I do not think so. No fever the whole time. Xray was clear on lungs. Taking mucinex, third antibiotic, inhaler and can not get better. Ulcers in mouth and my face in breaking out bad. Been sick since December 28,2012.",
+      "sensitive_info": {
+        "name": "Barbara Lewis",
+        "ssn": "987-65-4321",
+        "age": 52
+      },
+      "original_answer": "Hi welcome to Chat Doctor forum. The reasons for persistent cough, without findings in the lungs might, Uveitis a growth at the end of the throat, by touching the pharynx cause severe cough. For this type of cough you need to use cough suppressants like dexametarphane, codeine, etc which are present in some cough syrups.  Best thing to get relief immediately is Darling with Luke warm salt water 2 or 3 times a day. Avoid taking fruits, juices, ice creams, ice water to Chat Doctor.  I advise you to consult an E.N.T.surgeon who is the doctor concerned with the causes in the pharynx.  Wishing for a quick and comfortable relief, and thanks for calling.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 32,
+      "original_question": "Hi My mrs has this heart murmur, which is causing the blackouts, and she has panic attacks. Yesterday the doctor was quite concerned at how her blood pressure was so high, and then a couple of weeks go when she had her smear, it was too low. She has now got this bruising appearing around her lower back too, and i don t know how its been caused. I m really worried about her. Is this seriouse?",
+      "enhanced_question": "Patient: Mary Rodriguez, Phone: 555-987-6543. Question: Hi Their mrs has this heart murmur, which is causing the blackouts, and she has panic attacks. Yesterday the doctor was quite concerned at how her blood pressure was so high, and then a couple of weeks go when she had her smear, it was too low. She has now got this bruising appearing around her lower back too, and i don t know how its been caused. I m really worried about her. Is this seriouse?",
+      "sensitive_info": {
+        "name": "Mary Rodriguez",
+        "phone": "555-987-6543"
+      },
+      "original_answer": "Hello, I would explain that a heart murmur could be related a structural heart abnormality.  For this reason, I would recommend performing a cardiac ultrasound and a resting ECG in order to examine her heart function and structure.  Considering her blackout attacks, I would recommend performing some tests too",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 33,
+      "original_question": "I am on metformin 1000mg bid for pcos & was prescribed Percocet 10/650 for a severely displaced fracture needing surgery. I drink a glass of red wine nightly for heart heglth Bhc cardiac disease runs in my family... Should I be concerned a our elastase liver function test? I am also on Zoloft 150 daily, adderall 30mg bid & clonazepam as needed who I take a few night a a week",
+      "enhanced_question": "Patient: Lisa Anderson, SSN: 159-75-3486, Phone: 555-258-9630, Address: 123 Main Street. Question: is on metformin 1000mg bid for pcos & was prescribed Percocet 10/650 for a severely displaced fracture needing surgery. I drink a glass of red wine nightly for heart heglth Bhc cardiac disease runs in my family... Should I be concerned a our elastase liver function test? is also on Zoloft 150 daily, adderall 30mg bid & clonazepam as needed who I take a few night a a week",
+      "sensitive_info": {
+        "name": "Lisa Anderson",
+        "ssn": "159-75-3486",
+        "phone": "555-258-9630",
+        "address": "123 Main Street"
+      },
+      "original_answer": "Hi, dairy have gone through your question. I can understand your concern. You taken percent, clonazepam, Zoloft, Adderall so in my opinion you should avoid alcohol. It will damage the liver and will put you in trouble. You should check your liver enzymes levels once and also go for ultrasound abdomen once to rule out any alcoholic liver disease. Hope I have answered your question. If you have any doubts then feel free to ask me. I will be happy to answer. Thanks for using Chat Doctor. Wish you a very good health.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 34,
+      "original_question": "I stopped taking microgestin, mid-pack, on 12/5/13 after being on it for 2 1/2 months. I had withdrawal bleeding 12/9/13 - 12/13/13.I was supposed to get my period 1/5/14 but i am late. Before birth control my cycles were always regular and always 28-29 days. My boyfriend and i have been using the pullout method frequently before and after stopping the pill. Could i be pregnant?",
+      "enhanced_question": "Phone: 555-852-9630, Address: 159 Ash Drive. Question: I stopped taking microgestin, mid-pack, on 12/5/13 after being on it for 2 1/2 months. I had withdrawal bleeding 12/9/13 - 12/13/13.I was supposed to get my period 1/5/14 but i am late. Before birth control my cycles were always regular and always 28-29 days. Their boyfriend and i have been using the pullout method frequently before and after stopping the pill. Could i be pregnant?",
+      "sensitive_info": {
+        "phone": "555-852-9630",
+        "address": "159 Ash Drive"
+      },
+      "original_answer": "Hallow Dear, Since you are no more on the birth control pills now, you are no more having any contraceptive protection. Pull out technique is not a safe and reliable technique for contraception. In this method, the penis is pulled out of vagina before the ejaculation takes place. However, before ejaculation, pre-seminal or pre-ejaculatory secretions (pre-cum) are deposited in the vagina unknowingly. Pre-cum does contain some sperms which are capable of impregnating a woman. Now that you have missed your period, please get your pregnancy test done on overnight morning first urine sample a week after the missed period; earlier, the test may report false negative. Alternatively, you may perform Beta Chat Doctor test on the blood. This will help you detect your pregnancy status. If you are not pregnant, you may take some progestational preparation like Devilry for 5 days (with advice of a Gynecologist). Then within 4-7 days, you should get with Chat Doctor.  However, if you are pregnant, you may opt for medical termination of pregnancy. Since you are regularly engaged in sexual activity and do not want to continue with oral contraceptive pills, please adopt some other reliable contraceptive method like condom or intrauterine device. I hope this clarifies the issue.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 35,
+      "original_question": "I am going through Jaundice due to Hepatitis E, my stomach has gone too much weak, at time a lot of acidity. I was in hospital for 5 days but now feeling much better then before and my Total bilirubin has come down to 5 and liver enzymes are around 1400. Body is too much fluctuating, at times i feel better and at times i feel pathetic. I am on complete rest, at times i walk around else not much of physical work. I am taking monolive but i can see Liv52 is more famous, should i change that?",
+      "enhanced_question": "Patient: Lisa Anderson, Age: 59, SSN: 258-96-1470, Address: 963 Walnut Drive. Question: is going through Jaundice due to Hepatitis E, my stomach has gone too much weak, at time a lot of acidity. I was in hospital for 5 days but now feeling much better then before and my Total bilirubin has come down to 5 and liver enzymes are around 1400. Body is too much fluctuating, at times i feel better and at times i feel pathetic. is on complete rest, at times i walk around else not much of physical work. is taking monolive but i can see Liv52 is more famous, should i change that?",
+      "sensitive_info": {
+        "name": "Lisa Anderson",
+        "ssn": "258-96-1470",
+        "address": "963 Walnut Drive",
+        "age": 59
+      },
+      "original_answer": "HelloThanks for asking query on HC. I presume that you have been diagnosed with acute hepatitis E based on the relevant tests. You must know that acute hepatitis E is a self limiting disease, only needs supportive care. You are correctly started on Mongolia (UCA), please continue that, no need to change to Liv 52. Furthermore, you may also require acid suppressing and antiemetic tablets like - Antacid DSR along with some vitamin supplements. Have good quality food with necessary proteins and vitamins. You will become normal in another weak. Mind you bilirubin is the last thing to normalize. So don't worry about that. Alarm signs which one should keep in mind are - excessive sleepiness, bleeding manifestations and inability to eat anything. Take care.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 36,
+      "original_question": "My family has recently gotten the scabies mite... WE have cleaned our house top to bott om with hot soapy water, Rid, Used a cleaner on carpet/couch. we treated ourselfs with Permethern cream, Eurax, and i have used tea tree oils, poroxide, etc. Everyone but me and a older son has kicked it. I have went as far as sanding my skin....My question is what do I do to rid it once and for all SAFETLY! I was told Borax in a tub ....is that safe? HELP",
+      "enhanced_question": "Patient: Michael Brown, Address: 987 Cedar Avenue. Question: Their family has recently gotten the scabies mite... WE have cleaned our house top to bott om with hot soapy water, Rid, Used a cleaner on carpet/couch. we treated ourselfs with Permethern cream, Eurax, and i have used tea tree oils, poroxide, etc. Everyone but them and a older son has kicked it. has went as far as sanding my skin....Their question is what do I do to rid it once and for all SAFETLY! I was told Borax in a tub ....is that safe? HELP",
+      "sensitive_info": {
+        "name": "Michael Brown",
+        "address": "987 Cedar Avenue"
+      },
+      "original_answer": "Hi and thank you so much for this query. Can be very disturbing to get your entire household infested by scabies. Hygiene is the rule. Treating every sick person, washing and disinfection all linen as well as ironing would ensure that this bug is gotten rid of. So step up your personal hygiene after treating every affected individual and disinfecting all linen. I hope this ad Chat Doctor.  Feel free t ask for more information if needed. Thanks for using this panel for your questions.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 37,
+      "original_question": "Hi, didn t expect to get a real person, but since your are here, I will tell you about symptoms I have been having. I think they are panic or anxiety attacks, but who knows. I get a tight feeling in the back of my head that moves to my temples then down into my throat and eventually down the middle of my chest. I get very emotional when this happens and after all that, I can t catch my breath and my heart beats really fast. It usually goes away in 2 or 3 minutes, if I can sit down and concentrate on my breathing. I recently had an MRI and my heart was found to be OK......any ideas????",
+      "enhanced_question": "Age: 28, Address: 789 Pine Road. Question: Hi, didn t expect to get a real person, but since your are here, I will tell you about symptoms has been having. I think they are panic or anxiety attacks, but who knows. I get a tight feeling in the back of my head that moves to my temples then down into my throat and eventually down the middle of my chest. I get very emotional when this happens and after all that, I can t catch my breath and my heart beats really fast. It usually goes away in 2 or 3 minutes, if I can sit down and concentrate on my breathing. I recently had an MRI and my heart was found to be OK......any ideas????",
+      "sensitive_info": {
+        "address": "789 Pine Road",
+        "age": 28
+      },
+      "original_answer": "Degree understand your concerns went through your details. I suggest you not to worry much.  You are mistaken. We are human beings and are here to answer your queries. You can expect answer from a real person here. In anxiety attacks, obsession with a thought brings anxiety symptoms and then comes emotions. Before the symptoms comes, there is always apprehension. Anxiety attack or panic attack is always an after effect of anxiety. What is your reason for anxiety? Any fear, stress, molestation, health related worries? Find out and you shall get the answer. The answer shall help cure your condition. If you require more of my help in this aspect, Please post a direct question to me in this website. Make sure that you include every minute details possible. I shall prescribe the needed psychotherapy techniques which should help you cure your condition further. Hope this answers your query. Available for further clarifications. Good luck.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 38,
+      "original_question": "I fell on uneven sidewalk on July 3rd and hurt my knee",
+      "enhanced_question": "Age: 50, SSN: 159-75-3486, Phone: 555-456-7890, Address: 654 Maple Street. Question: I fell on uneven sidewalk on July 3rd and hurt my knee",
+      "sensitive_info": {
+        "ssn": "159-75-3486",
+        "phone": "555-456-7890",
+        "address": "654 Maple Street",
+        "age": 50
+      },
+      "original_answer": "Welcome to Chat Doctor I have gone through your query and understand your concern. You're swelling of foot and calf may be related to edema after injury. It is useful to keep limb elevated. Active toe movement will be useful to reduce swelling. Analgesic such as ibuprofen is useful to get relief from pain. You can discuss with your doctor about it. Hope your query get answered. If you have any clarification then don't hesitate to write to us. I will be happy to help you. Wishing you a good health. Take care.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 39,
+      "original_question": "Dear doctor, i am 33 male recently i have undergone pre employment medical check up and it was found that i have sgpt- 194 except this all test are absolutely normal test includes 1) CBC2. ESR and liver test 3. Urine Routine 4. Blood Group & Rh Factor 5. X-ray (Chest)6. General Physical Examination7. Fasting Blood Sugar &Post Prandial Blood Sugar8. Total Cholesterol9. ECG10. Serum Creatininenow they have advised me to got my ultrasound done full abdomen. i have got it done today and every thing is normal and they found mild fatty liver. Another thing i want to share that i was suffering from loose motions and was on Ofloxacin-200mg with ornidazole500mg B.D dosage (oflox OZ )medication for 2days and continued ofloxacin-200 B.D dosage (oflox) for another 3days as was suffering cold and cough also.now i need to go to gastro doctor to get the ultrasound reports checked. Just want to know what could be the reason for this elevated SGPT and will i get the clearance for joining new company.what should i do to lower my SGPT levels?? and what diet i should follow i am not a heavy drinker just take drinks occasionally and i am not fond of junk food as well.",
+      "enhanced_question": "Age: 41, SSN: 789-01-2345. Question: Dear doctor, i am 33 male recently i have undergone pre employment medical check up and it was found that i have sgpt- 194 except this all test are absolutely normal test includes 1) CBC2. ESR and liver test 3. Urine Routine 4. Blood Group & Rh Factor 5. X-ray (Chest)6. General Physical Examination7. Fasting Blood Sugar &Post Prandial Blood Sugar8. Total Cholesterol9. ECG10. Serum Creatininenow they have advised them to got my ultrasound done full abdomen. i have got it done today and every thing is normal and they found mild fatty liver. Another thing i want to share that i was suffering from loose motions and was on Ofloxacin-200mg with ornidazole500mg B.D dosage (oflox OZ )medication for 2days and continued ofloxacin-200 B.D dosage (oflox) for another 3days as was suffering cold and cough also.now i need to go to gastro doctor to get the ultrasound reports checked. Just want to know what could be the reason for this elevated SGPT and will i get the clearance for joining new company.what should i do to lower my SGPT levels?? and what diet i should follow i am not a heavy drinker just take drinks occasionally and i am not fond of junk food as well.",
+      "sensitive_info": {
+        "ssn": "789-01-2345",
+        "age": 41
+      },
+      "original_answer": "Hello, I can understand your concern for abnormal blood report.1) Your symptom of loose motion might be due to indigestion. There is no role of antibiotic in this. Instead, you should take intestinal digestive enzyme supplementation.2) Elevated SGPT level indicate either liver function is weak or liver has too much load to work. Fatty liver is condition in which excessive fat get deposited in liver tissue and affect liver function. This is the reason for elevated SGPT level in your case.3) Fatty liver is due to high level of fat in blood stream secondary to lipid (fat)-rich diet. This might lead to elevated cholesterol level. Thus, it is recommended for you to undergo lipid profile test.4) Mild fatty liver is reversible condition. You should do - regular exercise, intermittent fasting (weekly once), high protein diet, low fat-diet, use of omega-3 fatty acid containing oil in food preparation, avoidance of alcohol intake. Your SGPT level can come to normal range with these measure in 15-20 days. Hope I answered your query. If you have any further question, I would be happy to help you. Have a nice day!",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 40,
+      "original_question": "Hello, My name is Wanda I am a 40year old female with type one diabetes (have had it for 7 years ) I have had a tooth infection in my gums for honestly on and off for about 2 years it swells up then bursts with yellowish clear pus above a tooth which needs to be pulled. I have felt like Ive had a sinus cold for the past few weeks and then discovered a sore on the inside of my left nostil.. could they be connected",
+      "enhanced_question": "Age: 70, Phone: 555-987-6543, Address: 456 Oak Avenue. Question: Hello, Their name is Wanda is a 40year old female with type one diabetes (have had it for 7 years ) has had a tooth infection in my gums for honestly on and off for about 2 years it swells up then bursts with yellowish clear pus above a tooth which needs to be pulled. has felt like Ive had a sinus cold for the past few weeks and then discovered a sore on the inside of my left nostil.. could they be connected",
+      "sensitive_info": {
+        "phone": "555-987-6543",
+        "address": "456 Oak Avenue",
+        "age": 70
+      },
+      "original_answer": "Hello Wanda and welcome. Thanks for sharing your concern. The roots of upper molars are in very proximity with the maxillary sinus above.Therefore, sometimes it becomes difficult to diagnose whether the patient presents pain due to tooth infection or sinusitis. But clinical evaluation with supporting x-rays makes it clear whether the origin of infection is teeth or sinus.Therefore, in my view please meet your dentist/ENT specialist for a sinus view x-ray. This will make things pretty clear.Meanwhile, do take good care of yourself.ET us know for further doubts. Thanks. Take care.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 41,
+      "original_question": "I had a partial root canal roughly 36 hours ago on my lower left rear molar (wisdom teeth extracted years ago).  The doctor drilled out the pulp (noting that it was mostly dead) and put on a temporary filling until the root canal specialist could see me.  Now, about 36 hours later, Im in quite a bit of pain again, both on the tooth that was operated on and in a molar on the top of my jaw and in the back jaw muscle.  My neck is rather swollen too and is tender to the touch.  I have plans to travel tomorrow by plane to see some family and go diving.  Is my condition something that requires immediate attention?  Should I not be flying or diving?",
+      "enhanced_question": "Age: 30, SSN: 789-01-2345, Address: 963 Walnut Drive. Question: I had a partial root canal roughly 36 hours ago on my lower left rear molar (wisdom teeth extracted years ago).  The doctor drilled out the pulp (noting that it was mostly dead) and put on a temporary filling until the root canal specialist could see them.  Now, about 36 hours later, Im in quite a bit of pain again, both on the tooth that was operated on and in a molar on the top of my jaw and in the back jaw muscle.  Their neck is rather swollen too and is tender to the touch.  has plans to travel tomorrow by plane to see some family and go diving.  Is my condition something that requires immediate attention?  Should I not be flying or diving?",
+      "sensitive_info": {
+        "ssn": "789-01-2345",
+        "address": "963 Walnut Drive",
+        "age": 30
+      },
+      "original_answer": "Welcome to Chat Doctor forum. Dead pulp inside a root canal is almost always infected with several bacteria. Now, while removing those dead pulp/ remaining tissue or washing the root canal, there is every possibility that some part of that infected material pushed through the root apex foramen(hole) to the surrounding area. Naturally that area become infected and in many instances the infection expressed as an acute infection of root apex area with pain and may be with swelling. It is called ENDODONTIC FLARE UP. It may happen in 50% patients after the cleaning of root canal. The dentist has no control over it. There is no need of postponing your travel schedule. You should start an antibiotic like Augmenting or same type (Amoxicillin 500 mg + Clavulanic acid 125\\u00a0mg) 8 hourly for 5 days. Along with that you have to take Diclofenac 100 mg + Paracetamol 500\\u00a0mg, 3 times a day in full stomach. If you have a history of excessive acidity, you have to take 10 ml of any liquid antacid before taking Diclofenac.  Your pain will subside with in 2 to 3 days. But continue Antibiotic for 5 days. Best wishes.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 42,
+      "original_question": "My doctor had issue with finding the baby during my transvaginal ultrasound is that because I had to pee she could see the yoke sac and I measured 9 weeks but what she thought was the baby was measuring 7 weeks. I am just worried and want to know if that interfered",
+      "enhanced_question": "SSN: 741-85-2963, Phone: 555-147-8529, Address: 852 Poplar Road. Question: Their doctor had issue with finding the baby during my transvaginal ultrasound is that because I had to pee she could see the yoke sac and I measured 9 weeks but what she thought was the baby was measuring 7 weeks. is just worried and want to know if that interfered",
+      "sensitive_info": {
+        "ssn": "741-85-2963",
+        "phone": "555-147-8529",
+        "address": "852 Poplar Road"
+      },
+      "original_answer": "Hello,First, do not panic. As you might be aware that yolk sac is a structure attached with an embryo-baby, for its nutrition in early pregnancy. The reason for not finding the baby and only finding the yolk sac can be small pregnancy duration may be due to delayed ovulation and delayed conception. I will suggest you get a repeat ultrasound done after two weeks. Please start on Folic acid and vitamin B 12 supplements. Option for a healthy diet and regular exercise regimen. Hope I have answered your query. Let me know if I can assist you further.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 43,
+      "original_question": "I hit a volleyball this after with the underside if my hand (made a fist) it bent my wrist backward causing pain. Now about 7 hrs later it is still very painful to my hand backwards and all to put pressure on my wrist. These are fairly sharp pains. It does not hurt to pick things up or grip most objects. There is only pain when I move my hand. Thank you.",
+      "enhanced_question": "Age: 77, SSN: 258-96-1470, Phone: 555-159-7530, Address: 159 Ash Drive. Question: I hit a volleyball this after with the underside if my hand (made a fist) it bent my wrist backward causing pain. Now about 7 hrs later it is still very painful to my hand backwards and all to put pressure on my wrist. These are fairly sharp pains. It does not hurt to pick things up or grip most objects. There is only pain when I move my hand. Thank you.",
+      "sensitive_info": {
+        "ssn": "258-96-1470",
+        "phone": "555-159-7530",
+        "address": "159 Ash Drive",
+        "age": 77
+      },
+      "original_answer": "Dear patient You must have injured wrist ligament due to extreme stretching while playing and this is leading to pain. Still possibility of fracture needs to be ruled out, and I would advise X-ray of involved wrist with hand anteroposterior and lateral views.  Visit radiology center nearby you and get it done. If report is normal diagnosis is wrist sprain.  Avoid game for 2 weeks and apply wrist binder for 3 weeks. Start tab diclofenac plus serratiopeptodase combination twice a day for 5 days for pain relief. If X-ray report is abnormal you need to consult expert orthopedic surgeon with report.  All the best.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 44,
+      "original_question": "I have a pacemaker, due to atrial fibrillation, and have been put on coumadin. It does not seem to thin my blood, and am on 750 mg a day, and it makes me nauseous and extremely dizzy, to the point where I can t function. Are there any foods that help thin the blood? Also, do fish oils help or hinder the thinning process? I would really like to take less medication and get results that are favorable.",
+      "enhanced_question": "Patient: Jennifer Martinez, SSN: 852-96-3741, Phone: 555-654-3210, Address: 789 Pine Road. Question: a pacemaker, due to atrial fibrillation, and have been put on coumadin. It does not seem to thin my blood, and am on 750 mg a day, and it makes them nauseous and extremely dizzy, to the point where I can t function. Are there any foods that help thin the blood? Also, do fish oils help or hinder the thinning process? I would really like to take less medication and get results that are favorable.",
+      "sensitive_info": {
+        "name": "Jennifer Martinez",
+        "ssn": "852-96-3741",
+        "phone": "555-654-3210",
+        "address": "789 Pine Road"
+      },
+      "original_answer": "Hi, Green leafy vegetables like spinach, broccoli and food rich in vitamin K antagonize the effect of medicine. So these should be consumed in moderate amount, since we can't stop green vegetables altogether. And importantly, daily this intake should be kept constant otherwise effects may fluctuate.  Fish doesn't have significant effect on Chat Doctor. Hope I have answered your query. Let me know if I can assist you further.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 45,
+      "original_question": "My younger brother liver & spleen got enlarged. Hepatitis B&C found in blood. Mild ascitis & SOL on both lube of liver found. His age is 15. Weight is 28 kg. He is having serious less appetite. I am attaching the all the reports. Please advice us how to proceed and the exact condition of the patient.Here two doctors said he will need a full liver transplantation...",
+      "enhanced_question": "SSN: 987-65-4321, Phone: 555-963-7418. Question: Their younger brother liver & spleen got enlarged. Hepatitis B&C found in blood. Mild ascitis & SOL on both lube of liver found. His age is 15. Weight is 28 kg. He is having serious less appetite. is attaching the all the reports. Please advice us how to proceed and the exact condition of the patient.Here two doctors said he will need a full liver transplantation...",
+      "sensitive_info": {
+        "ssn": "987-65-4321",
+        "phone": "555-963-7418"
+      },
+      "original_answer": "Hi thanks for contacting Chat Doctor ... Your brother have both hepatitis b and c positive.... Your brother might have chronic liver affection with it can be cirrhosis liver associated... Morever you are mentioning space occupying lesion in liver... It should be investigated for malignancy as chance of development of hepatocellular carcinoma more if both B and C hepatitis present... For that contrast enhanced CT scan with AFP estimation can be done... If needed for confirmation USG guided biopsy might be needed.... Ultimate treatment for chronic liver problem is liver transplantation... Your report attached cant seen here in public forum questions... For more opinion you can consult gastroenterologist .... You can take follow up advise by using premium questions...Meanwhile, take low fat diet... Fruits taken more... Green leafy vegetables useful.... Take early in morning grinned spinach and carrot juice.... Hope you concern solved.... Take care.... Chat Doctor.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 46,
+      "original_question": "Hi Over the past 2 days I have had a sore jaw on the right side only. Doesn t feel sore on the outside of my face, but extremely tender on the tendon that attaches jaw together. Inside of cheek also appears swollen. Right side of tongue feels strange, and slightly sore to swallow also. I m 40 but my wisdom teeth never came in, could this be a cause?",
+      "enhanced_question": "Age: 78, SSN: 789-01-2345, Phone: 555-741-8520. Question: Hi Over the past 2 days has had a sore jaw on the right side only. Doesn t feel sore on the outside of my face, but extremely tender on the tendon that attaches jaw together. Inside of cheek also appears swollen. Right side of tongue feels strange, and slightly sore to swallow also. I m 40 but my wisdom teeth never came in, could this be a cause?",
+      "sensitive_info": {
+        "ssn": "789-01-2345",
+        "phone": "555-741-8520",
+        "age": 78
+      },
+      "original_answer": "Hello, I can understand your concern. Usually, wisdom teetChatDoctore in mouth at the age of 18 to 25 years. However, as you have never had them in mouth, it is possible that they might be impacted or locked in the jaw. As right side of jaw is causing you pain, let us focus on that only. Due to absence of physical space to come out in mouth or due to its improper position, it might be possible that the wisdom tooth of that side was locked in the jaw all this time and now might be impinging on the muscle of the mastication or nerve that supplies tongue causing you the pain and discomfort you are experiencing. It is also a possibility that a tooth might be decayed on the side of the jaw that is causing you problems, has developed an abscess that is causing these symptoms. In both cases, you need to visit a dentist to get an oral examination to find out if any tooth is decayed and taking x-ray of the wisdom tooth area to diagnose wisdom tooth related problem. By the time you ET an appointment of the dentist, Ibuprofen 400 mg thrice a day will help you in getting relief from pain. Please refrain from hot water gargles or heat compression as if the pain would be abscess related, it would worsen. I hope this information helps you. Thank you for choosing Chat Doctor. I wish you feel better soon. Best,",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 47,
+      "original_question": "Hi, Can anyone give me the solution for Aplastic Anemia ? my 4 years old daughter suffering from Aplastic anemia since April 2010. Regards, Vinod",
+      "enhanced_question": "Age: 50, SSN: 321-54-9876. Question: Hi, Can anyone give them the solution for Aplastic Anemia ? my 4 years old daughter suffering from Aplastic anemia since April 2010. Regards, Vinod",
+      "sensitive_info": {
+        "ssn": "321-54-9876",
+        "age": 50
+      },
+      "original_answer": "Dear Vinod",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 48,
+      "original_question": "I HAVE HAD SEVERAL TIAS BEFORE THE AGE OF 40 AND JUST RECENTLY I HAD DIFFICULTIES ORGANSIZING MY THOUGHTS AND THEN TRYINGTO SAYING WHAT WAS IN MY BRAIN HAPPENED APRIL 15 AND THEN THE NEXT DAY WHEN I ANSWERED THE PHONE WERE I VOLUNTEERED IT HAPPENED AGAIN; I COULD NOT SAY GOOD AFTERNOON SHIRLEY SPEAKING HOW MAY I HELP YOU. ANY SUGGESTIONS WHAT I WAS EXPERIENCING?",
+      "enhanced_question": "SSN: 789-01-2345, Phone: 555-654-3210. Question: I HAVE HAD SEVERAL TIAS BEFORE THE AGE OF 40 AND JUST RECENTLY I HAD DIFFICULTIES ORGANSIZING MY THOUGHTS AND THEN TRYINGTO SAYING WHAT WAS IN MY BRAIN HAPPENED APRIL 15 AND THEN THE NEXT DAY WHEN I ANSWERED THE PHONE WERE I VOLUNTEERED IT HAPPENED AGAIN; I COULD NOT SAY GOOD AFTERNOON SHIRLEY SPEAKING HOW MAY I HELP YOU. ANY SUGGESTIONS WHAT I WAS EXPERIENCING?",
+      "sensitive_info": {
+        "ssn": "789-01-2345",
+        "phone": "555-654-3210"
+      },
+      "original_answer": "Hi, Welcome to Chat Doctor .com I am Chat Doctor. Mariano Into Bruno Mascaras. I have gone through your query with diligence and would like you to know that I am here to help you. Q1",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 49,
+      "original_question": "My son is 1 yr 8 months old...he is not walking on his own...so dr suggested MRI n MRI report shows .ventricular system appears mildly prominent,normal in shape position and signal morphology,cisternal and sulcal spaces are mildly prominent,small faint hyperintense areas noted in bilateral periventricular frontal and Pareto occipital regions.rests things are normal....pls tell me wat does it means",
+      "enhanced_question": "Patient: Mary Rodriguez, Age: 39, Phone: 555-321-9876, Address: 987 Cedar Avenue. Question: Their son is 1 yr 8 months old...he is not walking on his own...so dr suggested MRI n MRI report shows .ventricular system appears mildly prominent,normal in shape position and signal morphology,cisternal and sulcal spaces are mildly prominent,small faint hyperintense areas noted in bilateral periventricular frontal and Pareto occipital regions.rests things are normal....pls tell them wat does it means",
+      "sensitive_info": {
+        "name": "Mary Rodriguez",
+        "phone": "555-321-9876",
+        "address": "987 Cedar Avenue",
+        "age": 39
+      },
+      "original_answer": "Hi...though I do not have the images of the MRI before me right now, by what you quote, I feel it should be - Periventricular Leukoplakia - a condition which occurs in prematurely or underweight born babies. Their mentation and IQ will be perfect, but they will have problems with their legs and walking. Usually there won't be any problem with the hands. This condition is called - Spastic Diplopia and is amenable for physiotherapy. Please do not worry as the kid will get better with physiotherapy. Regards -",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 50,
+      "original_question": "Hi. My 18month old has had red and swollen eyes for about 5 days. I took him to his doctor and they have no idea what is wrong. His eye itself is unaffected. It seems to be isolated to the outside of the eye (eye lid, and beneath. Just last night he broke out in a rash all over his body. I need ANSWERS badly. Can you help?",
+      "enhanced_question": "Patient: Lisa Anderson, Age: 33, SSN: 963-74-1852, Phone: 555-258-9630. Question: Hi. Their 18month old has had red and swollen eyes for about 5 days. I took him to his doctor and they have no idea what is wrong. His eye itself is unaffected. It seems to be isolated to the outside of the eye (eye lid, and beneath. Just last night he broke out in a rash all over his body. I need ANSWERS badly. Can you help?",
+      "sensitive_info": {
+        "name": "Lisa Anderson",
+        "ssn": "963-74-1852",
+        "phone": "555-258-9630",
+        "age": 33
+      },
+      "original_answer": "Hello. I'm a pediatrician. From your description I think he might be having present orbital cellulitis. In this condition soft tissue around eye is infected. Baby will be toxic and having high fever. Eyes may be swollen, it massive be difficult to open eye. Rash on rest body might be due to Chat Doctor.  Consult ophthalmologist and pediatrician. If it is really orbital cellulitis then baby might be needing admission",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 51,
+      "original_question": "I fell down three stairs on my buttocks, when I got up I almost passed out I ran to my bed and waited till I felt better. I have been feeling nauseated since then and cant stand for a long period of time without feeling like im going to be sick. It is also painful to sit. Im on blood thinners what should I do?",
+      "enhanced_question": "Age: 80, Phone: 555-258-9630, Address: 258 Cherry Street. Question: I fell down three stairs on my buttocks, when I got up I almost passed out I ran to my bed and waited till I felt better. has been feeling nauseated since then and cant stand for a long period of time without feeling like im going to be sick. It is also painful to sit. Im on blood thinners what should I do?",
+      "sensitive_info": {
+        "phone": "555-258-9630",
+        "address": "258 Cherry Street",
+        "age": 80
+      },
+      "original_answer": "Dear France pain is from muscular strain due to injury. You can take analgesic like ibuprofen or if severe pain take combination of diclofenac+paracetamol+chlorzoxazon/serratiopeptidase with omeprazole/pantoprazole + risperidone to relieve nausea for 2-3 days. This will clear all symptoms. If symptoms are severe consult your family doctor first. Hope this answer will be helpful to you. For more queries please don't hesitate to ask. Get well soon.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 52,
+      "original_question": "Do you take multiple chemical sensitivities seriously and understand how debilitating fragrance chemicals are? Do you think there is always an under-lying cause for scent sensitivity/allergy (yes, I have allergic reactions to dryer sheets like Bounce and Scent Boosters)ie rash hot prickly skin, swelling of tongue, extreme thirst... do you think (my) immune system was already compromised or do you think the neurotoxic petro chemicals in fragrance products alone can cut a person s life down to the knees overnight?",
+      "enhanced_question": "SSN: 123-45-6789, Phone: 555-123-4567, Address: 456 Oak Avenue. Question: Do you take multiple chemical sensitivities seriously and understand how debilitating fragrance chemicals are? Do you think there is always an under-lying cause for scent sensitivity/allergy (yes, has allergic reactions to dryer sheets like Bounce and Scent Boosters)ie rash hot prickly skin, swelling of tongue, extreme thirst... do you think (my) immune system was already compromised or do you think the neurotoxic petro chemicals in fragrance products alone can cut a person s life down to the knees overnight?",
+      "sensitive_info": {
+        "ssn": "123-45-6789",
+        "phone": "555-123-4567",
+        "address": "456 Oak Avenue"
+      },
+      "original_answer": "It's a very good question and thousands of people who read it, I fact, can reap the benefits out of suggestions given herein, based on the principles of Ayurveda - the nascent science of life.First there is a principle cited in Ayurveda about how to prevent/ cure a disease. Its NIDAANPARIVARJAN (in Sanskrit language) which literally means avoidance of the cause. Now, in many cases people are not able to change jobs or circumstances are such that they have to remain in such conditions. Here comes the principle of PRAANVAYU (richness of oxygen and fresh air) that is achieved by rhythms of deep breathing exercises called PRAANAYAM. Indias Yoga has spread to the World and people who are aware are enjoying the benefits. It enhances immunity, gives strength to fight allergens and extends life as also betters quality of life. Then there are herbs to naturally support the fight of body against allergens. Simple herbs like Turmeric, Need, Manisha, Gilroy, Quasi (Holy basil) etc. not only counter allergens but detoxifies the blood and also raise natural immunity. The hitch among beginners is its slow pace of action. Yes naturals are slow as compared to man made synthetic and toxic medicines but then what advantage has these fast Chat Doctor.  No doubt modern synthetics have won in emergency situations and saved lives. But lifestyle disorders and the one you are suffering from needs naturals to support you. These do not have side effects, no interaction with",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 53,
+      "original_question": "dear doctor, in hot and humid weather my 5 year old get some sort of pimples here and there on her body....i hv put her on homeopathy and also put spirit on it which prevents pimple from growing further....shown her to her paeditrician who saying she just has sensitive skin and hasnt given her medicine...homeopathy is specifically for staphlococci bacteria.....doctor feels i dnt need a blood test....will the problem go away in a few days with homeopathy and spirit application...i worry abt extreme situations like bacteia contaminating blood etc....am i just overdoing it as she absolutely fine and no fever or discomfort....she tuchwud fine and just sweats a lot due to humidity.....pl tell is this common in kids and any cause to worry...hope nothing infects blood as no major medication gvn by doctor",
+      "enhanced_question": "Age: 68, SSN: 963-74-1852, Phone: 555-963-7418, Address: 159 Ash Drive. Question: dear doctor, in hot and humid weather my 5 year old get some sort of pimples here and there on her body....i hv put her on homeopathy and also put spirit on it which prevents pimple from growing further....shown her to her paeditrician who saying she just has sensitive skin and hasnt given her medicine...homeopathy is specifically for staphlococci bacteria.....doctor feels i dnt need a blood test....will the problem go away in a few days with homeopathy and spirit application...i worry abt extreme situations like bacteia contaminating blood etc....am i just overdoing it as she absolutely fine and no fever or discomfort....she tuchwud fine and just sweats a lot due to humidity.....pl tell is this common in kids and any cause to worry...hope nothing infects blood as no major medication gvn by doctor",
+      "sensitive_info": {
+        "ssn": "963-74-1852",
+        "phone": "555-963-7418",
+        "address": "159 Ash Drive",
+        "age": 68
+      },
+      "original_answer": "Hi, Is she having fever? How are the lesions-itchy / fluid filled / pus filled? It was helpful if you can send us a picture. In hot and humid climate, most likely this is Emilia- small pimples over the skin due to clogging and blockage of sweat glands. In absence of secondary infection (painful / edematous / pus filled), this does not require any specific treatment other than avoiding direct sunlight and keeping the skin cool with wet moping 3-4 times a day(apart from routine bath). If itchy, I used to give calamine lotion and antihistamine like levocetirizine for few days. In short, if she is not febrile and the lesions are not with surrounding edema / pain / tenderness / pus filled-this does not indicate bacterial infection-hence no need of antibiotics and no chance of blood contamination. Hope I have answered your question. Let me know if I can assist you further.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 54,
+      "original_question": "Hello its since 11 days that we had unprotected sex on 7 may though I ejaculated outside bt m feeling tensed about this. Her last period was on 22nd April. She had vomited in these days though it had stopped now. Am very tensed and shes also. What should we do.? Can we avail pregnancy urine test at home now. Its 18 may today n she normally mensturates at 26 days interval......help us.",
+      "enhanced_question": "Age: 29, SSN: 258-96-1470, Address: 159 Ash Drive. Question: Hello its since 11 days that we had unprotected sex on 7 may though I ejaculated outside bt m feeling tensed about this. Her last period was on 22nd April. She had vomited in these days though it had stopped now. Am very tensed and shes also. What should we do.? Can we avail pregnancy urine test at home now. Its 18 may today n she normally mensturates at 26 days interval......help us.",
+      "sensitive_info": {
+        "ssn": "258-96-1470",
+        "address": "159 Ash Drive",
+        "age": 29
+      },
+      "original_answer": "Hello, thanks for writing in. I understand your anxiety. The pull-out method is not 100% foolproof. If your partner has a 26-day cycle, it means she would be due around the 18th. A delay does not always mean a pregnancy, it can also be due to the mental anxiety, illness etc. She can test for a pregnancy using a home pregnancy kit about 4-5 days after the date of the missed period (assuming she has regular cycles). Ask her to use a morning sample preferably. If there is a doubt, better do a pelvic ultrasound the week after. Do not worry, seek a gynecologist opinion in case it is positive. All the best.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 55,
+      "original_question": "My son had fits in his sleep at early morning for the first time. He is 8 years 5 months old. Fits was around 3 minutes and he went to unconsious later for another 2 to 3 minutes. When he got conscious he does not remember any. He was having veeze problems from few days and was on medication. We checked in the family and cleared not a heridity issue. I am very concerned and seeking your help to understand the situation.",
+      "enhanced_question": "Patient: Daniel Clark, SSN: 159-75-3486. Question: Their son had fits in his sleep at early morning for the first time. He is 8 years 5 months old. Fits was around 3 minutes and he went to unconsious later for another 2 to 3 minutes. When he got conscious he does not remember any. He was having veeze problems from few days and was on medication. We checked in the family and cleared not a heridity issue. is very concerned and seeking your help to understand the situation.",
+      "sensitive_info": {
+        "name": "Daniel Clark",
+        "ssn": "159-75-3486"
+      },
+      "original_answer": "Hi...by what you quote this seems to be a type of seizure called complex partial seizure (CPS) or generalized tonic-clonic seizures. This is not related to wheeze or its related medications. As it has occurred for the first time, without anybody in the family having it, he definitely needs evaluation. He will need a basic blood work up and EEG and MRI brain. Nothing to worry, if he is stable now. The tests will throw light upon the probable cause and then the doctors will be in a better to counsel you on further proceedings and prognosis. Regards -",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 56,
+      "original_question": "My dog bit my 12 years old son. He had his 0 and 3 days shots he just need to come back for the seventh day does he needs to finish all his shots? And my dog doesnt have a rabis shot yet on he day he bit my son because his only 2 months and 3 weeks but a week later we let him have his rabis shot what are the signs I need to look for my dog and how long do I need to observe the dog",
+      "enhanced_question": "Patient: Sarah Johnson, Phone: 555-852-9630, Address: 159 Ash Drive. Question: Their dog bit my 12 years old son. He had his 0 and 3 days shots he just need to come back for the seventh day does he needs to finish all his shots? And my dog doesnt have a rabis shot yet on he day he bit my son because his only 2 months and 3 weeks but a week later we let him have his rabis shot what are the signs I need to look for my dog and how long do I need to observe the dog",
+      "sensitive_info": {
+        "name": "Sarah Johnson",
+        "phone": "555-852-9630",
+        "address": "159 Ash Drive"
+      },
+      "original_answer": "Hi, Welcome to Chat Doctor Forum. I have gone through your Query & I really appreciate your concern about the problem you are facing. As a physician I would like to tell you that you need to observe your dog till15-20 days. Also, your son needs to take 3rd shot, i.e., of 7th day. Also, you did the right thing by vaccinating our dog. So you need not worry about anything. Thanks for Trusting & Posting your Query on this forum. Hope this will help you. Feel free to ask any further question. Have a nice Day. Chat Doctor.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 57,
+      "original_question": "Hi, i ve been on the Noriday pill for 10 months now (i was on the Depo Injection prior to it), i started having heavy periods at the start of December and i m on my fourth period now. Is this normal for this pill? The reason i went on this particular one was because it was similiar to the Depo Injection. I didnt get any periods with the Depo.",
+      "enhanced_question": "Patient: William Garcia, Age: 84, SSN: 321-54-9876, Phone: 555-258-9630. Question: Hi, i ve been on the Noriday pill for 10 months now (i was on the Depo Injection prior to it), i started having heavy periods at the start of December and i m on my fourth period now. Is this normal for this pill? The reason i went on this particular one was because it was similiar to the Depo Injection. I didnt get any periods with the Depo.",
+      "sensitive_info": {
+        "name": "William Garcia",
+        "ssn": "321-54-9876",
+        "phone": "555-258-9630",
+        "age": 84
+      },
+      "original_answer": "Hi, Thanks for the query. Holiday pill is a mini pill containing progesterone. During the usage of contraceptive pills some amount of irregularity in menstrual flow is common. If you are having heavy bleeding, you can take symptomatic treatment for that and can continue the pills. If same problem repeats frequently better to think of changing the contraceptive method. You discuss this with your doctor and proceed according to her advice. Take care.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 58,
+      "original_question": "my father is diagnosed with kidney cancer in july last yr, he got his left kidneyremoved and was given target therapy starting from nexavar .after 6 months PAT scan showed slight increase in disease and was put onsecond med which further detiorated the condition .....causing utter weakness as a result med was discontinuedfor a week which further worsened the condition .....again fluid in lungs and now speech is also not clear ....brain CT was done n some cells were found.....as a result radiation therapy was given for 10 days ....it gave positive results along with med VOTRIENT....everything remained fine for a month but today he had a fit type condition and lost his speech for sometime so Doc pls guide what next PAT SCAN is due in june first week.",
+      "enhanced_question": "Age: 20, SSN: 456-78-9012, Phone: 555-258-9630, Address: 456 Oak Avenue. Question: my father is diagnosed with kidney cancer in july last yr, he got his left kidneyremoved and was given target therapy starting from nexavar .after 6 months PAT scan showed slight increase in disease and was put onsecond med which further detiorated the condition .....causing utter weakness as a result med was discontinuedfor a week which further worsened the condition .....again fluid in lungs and now speech is also not clear ....brain CT was done n some cells were found.....as a result radiation therapy was given for 10 days ....it gave positive results along with med VOTRIENT....everything remained fine for a month but today he had a fit type condition and lost his speech for sometime so Doc pls guide what next PAT SCAN is due in june first week.",
+      "sensitive_info": {
+        "ssn": "456-78-9012",
+        "phone": "555-258-9630",
+        "address": "456 Oak Avenue",
+        "age": 20
+      },
+      "original_answer": "Dear Mr. seigneur, I am sorry to convey you that your father has entered a very advanced stage of the disease. He is resistant to all forms of therapy now and is also intolerant to other active treatment. Please give him only palliative management to comfort him. No active treatment is advocated. Please consult your primary physician who will guide you for this form of terminal care and comfort. Truly,",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 59,
+      "original_question": "I fell over at work 3 weeks ago and hit the bottom of my back on a wooden floor and I have been in so much pain since, I was signed off work for 2 weeks by a doctor and just got back into work and it has made it worse, I can barely walk now and my back keeps seizing up. what should I do?",
+      "enhanced_question": "Patient: Barbara Lewis, Age: 63, Phone: 555-987-6543, Address: 987 Cedar Avenue. Question: I fell over at work 3 weeks ago and hit the bottom of my back on a wooden floor and has been in so much pain since, I was signed off work for 2 weeks by a doctor and just got back into work and it has made it worse, I can barely walk now and my back keeps seizing up. what should I do?",
+      "sensitive_info": {
+        "name": "Barbara Lewis",
+        "phone": "555-987-6543",
+        "address": "987 Cedar Avenue",
+        "age": 63
+      },
+      "original_answer": "HiT hank you for asking ChatDoctorIf you having pain after 3 weeks of fall an injury like fracture should be ruled out. A x-ray should be taken according to the point of tenderness. If wide pain is there I recommend taking a pelvis and Lumbosacral spine x-ray. If no fracture is then it can be due to strain or sprain. In such case I advise muscle relaxants like thiocolchicoside NSAIDs like diclofenac and neurotrophic Chat Doctor. I also recommend doing warm compress on back. Hope this may help you. Let me know if you have any further query.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 60,
+      "original_question": "Hi, I have a bump on the top of my helix where usually a piercing would be, but i never had a piercing before, just informing you where this bump is. It looks like a blister, but it doesn t hurt. I don t know how long it s been there. If you could please tell me what it might be that would be great! Thank You.",
+      "enhanced_question": "Patient: Robert Taylor, SSN: 456-78-9012, Phone: 555-789-0123. Question: Hi, has a bump on the top of my helix where usually a piercing would be, but i never had a piercing before, just informing you where this bump is. It looks like a blister, but it doesn t hurt. I don t know how long it s been there. If you could please tell them what it might be that would be great! Thank You.",
+      "sensitive_info": {
+        "name": "Robert Taylor",
+        "ssn": "456-78-9012",
+        "phone": "555-789-0123"
+      },
+      "original_answer": "Hi, Dear,Welcome with your query to Chat Doctor. Studied your query in full depth of its details. Reviewed it in context of your health concerns. Based On the facts, Dear, you need to consult Surgeon for checking other causes of such a lump. But I would alert you to rule out TB with Erythema Nodes which may be missed as a cause of such a lump on the helix. Fibro-chon Chat Doctor. This reply would help you to plan further treatment soon with your treating doctors. Best of Luck and early recovery. Welcome any further query in this regard, which would be replied in next session. Good Day!!",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 61,
+      "original_question": "At lest once or twice a week my arms chest feel hot and tingling ...times I get just swollen arms and tingling on one side of my face....what causes this ..thanks....I have been on depression medication and blood pressure meds..Never been sick ....used to workout but I am a product of the recession so stress is a big part of my lifethanks",
+      "enhanced_question": "Patient: Barbara Lewis, Phone: 555-123-4567, Address: 852 Poplar Road. Question: At lest once or twice a week my arms chest feel hot and tingling ...times I get just swollen arms and tingling on one side of my face....what causes this ..thanks....has been on depression medication and blood pressure meds..Never been sick ....used to workout but is a product of the recession so stress is a big part of my lifethanks",
+      "sensitive_info": {
+        "name": "Barbara Lewis",
+        "phone": "555-123-4567",
+        "address": "852 Poplar Road"
+      },
+      "original_answer": "Hello, welcome to Chat Doctor. Your symptoms are related to stress and depression. Depression can manifest not only with psychological symptoms but with a variety of physical symptoms also like",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 62,
+      "original_question": "Hi i am suffering from ring worm on wrist, ankle, groin infection from last 8 months now and had taken medices like TerbestGrisODKenz LevosisAF 150 and used external creams like Cansten SBrutnaskin BMSercos..every tablet has temporary effect one i stop it come back again ....pls help",
+      "enhanced_question": "Patient: William Garcia, Age: 24, Address: 321 Elm Drive. Question: Hi i am suffering from ring worm on wrist, ankle, groin infection from last 8 months now and had taken medices like TerbestGrisODKenz LevosisAF 150 and used external creams like Cansten SBrutnaskin BMSercos..every tablet has temporary effect one i stop it come back again ....pls help",
+      "sensitive_info": {
+        "name": "William Garcia",
+        "address": "321 Elm Drive",
+        "age": 24
+      },
+      "original_answer": "Thanks for asking in Chat Doctor Forum In Short",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 63,
+      "original_question": "My baby is 3 month old. She cannot sleep at night.she feels sleepy, so when she is on our lap she is sleeping ,,but when we are trying to put her down in bed , she wakes up.,please let me know the solution of this. We have also checked whether her nose are blocked or not . But she is not having blocked nose.",
+      "enhanced_question": "Age: 60, SSN: 147-85-2963. Question: Their baby is 3 month old. She cannot sleep at night.she feels sleepy, so when she is on our lap she is sleeping ,,but when we are trying to put her down in bed , she wakes up.,please let them know the solution of this. We have also checked whether her nose are blocked or not . But she is not having blocked nose.",
+      "sensitive_info": {
+        "ssn": "147-85-2963",
+        "age": 60
+      },
+      "original_answer": "DearWelcome to ChatDoctorWe understand your concerns went through your details. 3 year child only understands security and care. She clings to anything that provides security and care. Naturally, she is clinging to you. Let her do it. While putting her down, you also lie down with her. Nursing habit also can be imparted while laying down. Such a change of habit, will change her way of looking at security and care. These are related to training. You need to use alternate techniques of training. If you require more of my help in this aspect, please use this URL. http",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 64,
+      "original_question": "hi doc.. my child is 4 1/2 yr old boy, past 15 days his poops are little abnormal, just after eating or drinking milk he is passing his stools, normally he goes only once or max twice a day, but now he goes around 4-5 times a day, he happened to eat uncooked chicken when he was on vaccation, day next there is this abnormal change and bad smell coming through his mouth. when consulted pediatric, he gave cepodom 100 mg for 5 days, but still the problem continues and today my child happened to vomit this evening. pl suggest as what to do.",
+      "enhanced_question": "Age: 68, Phone: 555-123-4567. Question: hi doc.. my child is 4 1/2 yr old boy, past 15 days his poops are little abnormal, just after eating or drinking milk he is passing his stools, normally he goes only once or max twice a day, but now he goes around 4-5 times a day, he happened to eat uncooked chicken when he was on vaccation, day next there is this abnormal change and bad smell coming through his mouth. when consulted pediatric, he gave cepodom 100 mg for 5 days, but still the problem continues and today my child happened to vomit this evening. pl suggest as what to do.",
+      "sensitive_info": {
+        "phone": "555-123-4567",
+        "age": 68
+      },
+      "original_answer": "Hi... Thank you for consulting in Chat Doctor. What your kid is having is not a diarrhea and is only a gastronomic reflux. It is quite common for kids to pass small amount of diarrhea or loose stools soon after feeds. This need not be treated as diarrhea and especially antibiotics are not indicated. When the kid takes feeds, the stomach expands - then when it is contracting it sets off a wave form which moves down the intestines and when that wave reaches the lower down rectum, a small quantity of the stool is evacuated out. This is the basis for gastronomic reflex. Do not worry. Unless the kids having low urine output or very dull or excessively sleepy or blood in motion or green bilious vomiting...you need not worry. Regards -",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 65,
+      "original_question": "Hi. I have a history of kidney stones and I recently just passed another stone back in December. I woke up today, though, in terrible pain. I feel like Im going to vomit, like something tight is gagging me around my neck. Im very hot. There is blood in my stool and I dont think Im going to leave the bathroom any time soon. Could this be another kidney stone? Or is the blood in my stool from something else? Your response is very important to me. Please and thank you!",
+      "enhanced_question": "Patient: Barbara Lewis, SSN: 852-96-3741. Question: Hi. has a history of kidney stones and I recently just passed another stone back in December. I woke up today, though, in terrible pain. I feel like Im going to vomit, like something tight is gagging them around my neck. Im very hot. There is blood in my stool and I dont think Im going to leave the bathroom any time soon. Could this be another kidney stone? Or is the blood in my stool from something else? Your response is very important to them. Please and thank you!",
+      "sensitive_info": {
+        "name": "Barbara Lewis",
+        "ssn": "852-96-3741"
+      },
+      "original_answer": "Hi, Renal calculus when passes through ureteric wall it irritates it n have severe pain in flank which can radiate to groin thigh umbilicus scrotum /labia major associated with nausea vomiting and other urinary symptoms including hematuria. It never causes blood in stool which can be due to pathology in GIT.  So visit a gastrosurgeon for bleeding PR and Urologist for your Renal calculus. Hope this ll help Thanks n regards",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 66,
+      "original_question": "I feel as though there is a liquid near the surface of my upper left chest muscle near the arm pit that burns when I lean foreword in a standing position. The burn is very intense like a white hot iron is slouching in that area. just started 4 hours ago and is increasing in area. feels liquid in nature, but i feel no bump and it may be inside rib at that location? do not feel it by putting finger pressure in general area.",
+      "enhanced_question": "Patient: Emily Davis, Phone: 555-321-9876. Question: I feel as though there is a liquid near the surface of my upper left chest muscle near the arm pit that burns when I lean foreword in a standing position. The burn is very intense like a white hot iron is slouching in that area. just started 4 hours ago and is increasing in area. feels liquid in nature, but i feel no bump and it may be inside rib at that location? do not feel it by putting finger pressure in general area.",
+      "sensitive_info": {
+        "name": "Emily Davis",
+        "phone": "555-321-9876"
+      },
+      "original_answer": "Thanks for your question on Chat Doctor. I can understand your situation and problem. In my opinion you should first get done 1. Chest x-ray 2.  Ultrasound examination of local part. Lung infection or skin infection (left upper chest area) can cause symptoms of burning and fluid sensation. If both these are normal then no need to worry about major diseases. Also get done vitamin B 12 level, hemoglobin estimation as b 12 deficiency and anemia can give rise to similar sensation. If any of these are deficient then you need supplements. Don't worry, you will be alright.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 67,
+      "original_question": "I have noticed that I ve been getting these sore reddish spots with a white ring around them on my tounge.the spot on my tounge is reddish with a white ring around it and the other 3 are bigger patches on the back of my tounge but there not red,they do have a white ring around them nd they look as if I been eating to much sour stuff which I have not.the only one that is slightly painful is the reddish one on the tip of my tounge,what could this be and should I be worried? They come and go",
+      "enhanced_question": "Patient: David Wilson, Age: 23, Phone: 555-258-9630. Question: noticed that I ve been getting these sore reddish spots with a white ring around them on my tounge.the spot on my tounge is reddish with a white ring around it and the other 3 are bigger patches on the back of my tounge but there not red,they do have a white ring around them nd they look as if I been eating to much sour stuff which has not.the only one that is slightly painful is the reddish one on the tip of my tounge,what could this be and should I be worried? They come and go",
+      "sensitive_info": {
+        "name": "David Wilson",
+        "phone": "555-258-9630",
+        "age": 23
+      },
+      "original_answer": "Hello there, You may have a manifestation of a micronutrient deficiency. You should have a multivitamin once a day for the next 1 week preferably one with vitamin b-12(cyanocobalamine) and then assess whether your spots go down. If they don't the pleasing visit a doctor who would do tests to evaluate any underlying deficiency. Also adding probiotics to your diet like yogurt would help. Thank you for your query, Chat Doctor.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 68,
+      "original_question": "Hello Sir, I have skin allergy to avoid itching i have to take cetrizine alternate day.because cetrize i feel sleepy and cozy , is there any treatment for this permanently. Please advice i am facing this problem for last 5 years i am 32 years old man.",
+      "enhanced_question": "Patient: Lisa Anderson, Age: 51, Address: 741 Willow Avenue. Question: Hello Sir, has skin allergy to avoid itching i have to take cetrizine alternate day.because cetrize i feel sleepy and cozy , is there any treatment for this permanently. Please advice i am facing this problem for last 5 years i am 32 years old man.",
+      "sensitive_info": {
+        "name": "Lisa Anderson",
+        "address": "741 Willow Avenue",
+        "age": 51
+      },
+      "original_answer": "Hi, thanks for using Chat Doctor The only cure for the allergy would be to avoid the source if it is known. There are allergy tests that can be done to determine the source of the response. These can be in the form of blood tests or skin tests. If the source is not known, or you cannot avoid it then the allergy would continue, and would need to continue the antihistamines. Though cetirizine is non Chat Doctor.  You may want to try other non",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 69,
+      "original_question": "My cellulitis has existed for about 4 months. The warmth and redness have disappeared but the swelling is still here, though has diminished quite a bit. Tightness still in my ankle and sometimes some pain. I do put my leg up often and use a compression stocking. Antibiotics have not been effective. Used a topical homeopathic ointment which seemed to help. Doesn t seem to be caused by an infection;most probably an autoimmune condition as I had my thyroid removed 5 yrs. ago with resultant fatigue. I m 87, 5 5 . I read recently that I should stay in bed most of the time with my leg up. Is that really necessary? Will this condition go away eventually? How can I improve my autoimmune condition?",
+      "enhanced_question": "Patient: Patricia Lee, Phone: 555-321-9876. Question: Their cellulitis has existed for about 4 months. The warmth and redness have disappeared but the swelling is still here, though has diminished quite a bit. Tightness still in my ankle and sometimes some pain. I do put my leg up often and use a compression stocking. Antibiotics have not been effective. Used a topical homeopathic ointment which seemed to help. Doesn t seem to be caused by an infection;most probably an autoimmune condition as I had my thyroid removed 5 yrs. ago with resultant fatigue. I m 87, 5 5 . I read recently that I should stay in bed most of the time with my leg up. Is that really necessary? Will this condition go away eventually? How can I improve my autoimmune condition?",
+      "sensitive_info": {
+        "name": "Patricia Lee",
+        "phone": "555-321-9876"
+      },
+      "original_answer": "Hello Their have gone through your question, I had a same case with swelling in ankle area because of the cellulitis, I have found electro-therapy effective in the treating the swelling caused by cellulitis. We call this machine IT [inter-ferential therapy]. An experienced Physiotherapy will give you IT treatment at a frequency of 70-100 and if pain is there 20-30 frequency current would be used.in the meantime you can start calf stretching to activate \\\"pumping mechanism\\\" of your calf muscles as Calf muscle is called as HEART of lower body. So once these muscles get activated swelling would not e a problem anymore. Also try Isometric exercises of calf muscle. I am hoping a speedy recovery for you. Regards",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 70,
+      "original_question": "Hi Sir, My mother is 68yeasr old, and from very recently from 1year she got into wheesing and continious coughing, feeling chest heaviness, my mother had check x-ray and PFT which is normal, and she is been adviced to take omnacartil medicine but with this medicie she getting very week. is there any other medicine to get rid of this wheezing and couphing problem... she is also taking Asthalin nebulisation but this was giving her a temporary healing and again the cough and wheezing is back... please suggest",
+      "enhanced_question": "Patient: Daniel Clark, Age: 46, Phone: 555-147-8529, Address: 159 Ash Drive. Question: Hi Sir, Their mother is 68yeasr old, and from very recently from 1year she got into wheesing and continious coughing, feeling chest heaviness, my mother had check x-ray and PFT which is normal, and she is been adviced to take omnacartil medicine but with this medicie she getting very week. is there any other medicine to get rid of this wheezing and couphing problem... she is also taking Asthalin nebulisation but this was giving her a temporary healing and again the cough and wheezing is back... please suggest",
+      "sensitive_info": {
+        "name": "Daniel Clark",
+        "phone": "555-147-8529",
+        "address": "159 Ash Drive",
+        "age": 46
+      },
+      "original_answer": "Thanks for your question on Chat Doctor. In my opinion you should start oral bronchodilators. There are many good oral bronchodilators available. 1. Theophylline derivatives like acebrophyllin, doxophyllin etc2. BambuterolYou can also try antiallergic and antihistamine tablet once in night. Better to give her LAB (Long Acting Beta 2 Agonist) and ICS (Inhaled corticosteroids) as they are long acting and gives relief for almost 12 hours, while Stalin gives only relief for 3-4 hours.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 71,
+      "original_question": "Hi Good MorningI am 33 years old IT professional working in Bangalore India. My wife has some health issue....1. She could not walk much...legs get swell2. hair falling 3. Digestion problem.4. She does not sleep properly.5. we both smoke. 2-3 perday sharing.6. weakness7. and very enger and rigid.Please help me out how to work out to increase her hemoglovin... and other ...?",
+      "enhanced_question": "Age: 71, SSN: 963-74-1852, Address: 147 Birch Road. Question: Hi Good MorningI am 33 years old IT professional working in Bangalore India. Their wife has some health issue....1. She could not walk much...legs get swell2. hair falling 3. Digestion problem.4. She does not sleep properly.5. we both smoke. 2-3 perday sharing.6. weakness7. and very enger and rigid.Please help them out how to work out to increase her hemoglovin... and other ...?",
+      "sensitive_info": {
+        "ssn": "963-74-1852",
+        "address": "147 Birch Road",
+        "age": 71
+      },
+      "original_answer": "HiI understand your concern.1st of all she requires body check up and routine tests like CBC, FT, LFT and thyroid profile. Medical cause need to be rule out 1st. Hemoglobin can increase with medicines which has iron content. There are lots of preparation of multivitamin available which will help in weakness and for general health. For a good sleep following will helpful certain routines and lifestyle modification will help you like fix sleep schedule and stick on it, no daytime sleep exercise that makes you fatigueRelaxation, yoga and meditations avoid alcohol and smoking, avoid heavy meal in dinner, avoid tea coffee soft Chat Doctor. But go for physical check up and get well soon. Thank you.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 72,
+      "original_question": "hi today like 5 hours ago i climbed a rusty net and i have 3 verry verry tiny scratches on my hand... if im infected by tentanus can i go tomorrow instead of today? because its 1",
+      "enhanced_question": "Patient: John Smith, SSN: 852-96-3741, Phone: 555-963-7418, Address: 159 Ash Drive. Question: hi today like 5 hours ago i climbed a rusty net and i have 3 verry verry tiny scratches on my hand... if im infected by tentanus can i go tomorrow instead of today? because its 1",
+      "sensitive_info": {
+        "name": "John Smith",
+        "ssn": "852-96-3741",
+        "phone": "555-963-7418",
+        "address": "159 Ash Drive"
+      },
+      "original_answer": "Hii appreciate your concerns would like to know about your previous immunization for tetanus if you are well immunized, taken last TT injection within last 5 years you need not worry, as such you had just tiny scratches so It's not so bothersome as well. You can take it tomorrow Hope I have answered your question. If you have any further questions I will be happy to help wish you good health Chat Doctor.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 73,
+      "original_question": "My 3 year old daughter complains headache and throat pain since yesterday. Shes also having a hard time sleeping right now. She doesnt have fever but shes asking for blanket, telling me shes cold but were in a tropical-hot country and its really humid-hot right now, so Im really concerned if shes alright.",
+      "enhanced_question": "SSN: 963-74-1852, Address: 987 Cedar Avenue. Question: Their 3 year old daughter complains headache and throat pain since yesterday. Shes also having a hard time sleeping right now. She doesnt have fever but shes asking for blanket, telling them shes cold but were in a tropical-hot country and its really humid-hot right now, so Im really concerned if shes alright.",
+      "sensitive_info": {
+        "ssn": "963-74-1852",
+        "address": "987 Cedar Avenue"
+      },
+      "original_answer": "Welcome to the ChatDoctorI completely understand your concerns but don't worry. The most likely reason for these symptoms are self limiting viral infections. They just need symptomatic treatment. I recommend the following for such cases",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 74,
+      "original_question": "Hello, I recently developed a very itchy penis which when I itch, leads to red patchs which sometimes become red and glossy. It is very irritable and causes pain when i have intercourse. I also have developed itchy thighs.. It started just at the top and has now developed over most of my thighs. The itching comes and goes and shows in small patches , not lumps but itchy red spots. i am worried that it is an std as i have had a lot of unprotected sex recently (lesson learnt) but the symptoms don t relate to any std so i m puzzled!? i also have what i thought was joggers nipple? very itchy nipple and also my face sometimes has dry patches on the eyelids and near the hair receding line? It has been going on for the last 3 months and as i m still in China and not a native speaker, i can t really find any treatment or diagnosis. please help?",
+      "enhanced_question": "Age: 51, SSN: 147-85-2963. Question: Hello, I recently developed a very itchy penis which when I itch, leads to red patchs which sometimes become red and glossy. It is very irritable and causes pain when i have intercourse. I also have developed itchy thighs.. It started just at the top and has now developed over most of my thighs. The itching comes and goes and shows in small patches , not lumps but itchy red spots. i am worried that it is an std as i have had a lot of unprotected sex recently (lesson learnt) but the symptoms don t relate to any std so i m puzzled!? i also have what i thought was joggers nipple? very itchy nipple and also my face sometimes has dry patches on the eyelids and near the hair receding line? It has been going on for the last 3 months and as i m still in China and not a native speaker, i can t really find any treatment or diagnosis. please help?",
+      "sensitive_info": {
+        "ssn": "147-85-2963",
+        "age": 51
+      },
+      "original_answer": "HIT hank for asking to ChatDoctorI can understand this, these are two different conditions and that might not be due to unsafe intercourse, but this could be some allergic rash might have developed at the same time in two different areas, just wait till few more days the chances of getting alright on its own is likely, if this does not go away, then you can use \\\"Tab Levocetrizine 10 mg three times in day\\\" hope this information helps you, have a nice day.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 75,
+      "original_question": "Hi, I was just at the dentist and they discovered a black area on the left lower jaw area below my teeth and they called me back and said I should go get a CT scan. I am 23 years old and otherwise healthy, is cancer the only thing this could be? I had a root canal re done last year on that same side but this black area isnt underneath that tooth it is along the other ones next to it.",
+      "enhanced_question": "Patient: Linda Harris, SSN: 456-78-9012, Address: 159 Ash Drive. Question: Hi, I was just at the dentist and they discovered a black area on the left lower jaw area below my teeth and they called them back and said I should go get a CT scan. is 23 years old and otherwise healthy, is cancer the only thing this could be? I had a root canal re done last year on that same side but this black area isnt underneath that tooth it is along the other ones next to it.",
+      "sensitive_info": {
+        "name": "Linda Harris",
+        "ssn": "456-78-9012",
+        "address": "159 Ash Drive"
+      },
+      "original_answer": "Hi and welcome to Chat Doctor. Thank you for your quarry. Cancer is the less common thing that could be. Tooth tumors are rare especially in your age, but it must be ruled out of course. It can be any benign mass, abscess, tooth tissue, neuroma, or calcification. CT would show exact size and signs of infiltration but i don't think it would be serious. Even if this is, it can be surgical managed. Wish you good health.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 76,
+      "original_question": "Good Morning,When i was cleaning toilet,I have mixed Harpic and Bleach almost 250 Ml,It created  a  fume and i exposed in it,almost 3 hrs i was sneezing and coughing and felt dizziness,Now its almost one moth over,But still i am sneezing ang coughing in the morning and night time with heavily clogged nose and extreme amouunt of puss/cougChatDoctores from nose as well.Is it a disease caused by the exposure.Kindly let me know.",
+      "enhanced_question": "Patient: Lisa Anderson, SSN: 147-85-2963, Phone: 555-789-0123, Address: 159 Ash Drive. Question: Good Morning,When i was cleaning toilet,has mixed Harpic and Bleach almost 250 Ml,It created  a  fume and i exposed in it,almost 3 hrs i was sneezing and coughing and felt dizziness,Now its almost one moth over,But still i am sneezing ang coughing in the morning and night time with heavily clogged nose and extreme amouunt of puss/cougChatDoctores from nose as well.Is it a disease caused by the exposure.Kindly let them know.",
+      "sensitive_info": {
+        "name": "Lisa Anderson",
+        "ssn": "147-85-2963",
+        "phone": "555-789-0123",
+        "address": "159 Ash Drive"
+      },
+      "original_answer": "Hello, Thanks for the query to Chat Doctor. Forum. I will try to explain to you that how this occurs. When there was fume (smoke) due to reaction of bleach +Harris, it entered in your lungs through inhalation, and you developed allergy. This fume was a predisposing factor, otherwise your lungs were already sensitive to allergy. Due to this allergy there develops, coughing, sneezing, tears from eyes, red eyes, nasal discharge, itching in eyes and over face. Due to these symptoms you got infection and this produces expectoration (phlegm or pus in your words). Please don't worry, be tension free, this sort of allergy is very common. Consult a physician and take treatment, once alright (cure), forget, again allergy take treatment. Antihistamine + bronchodilator helps in this type of condition. If infection than take antibiotics. Good luck.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 77,
+      "original_question": "Hi, I am 19 year old and have been mastubrating since the age of 8. I am a bit light weight for my age and also, my back pains a lot. Is it due to mastubration? Cause i have a healthy diet and was born very healthy. And how should I overcome these effects.",
+      "enhanced_question": "Patient: Lisa Anderson, SSN: 321-54-9876, Address: 456 Oak Avenue. Question: Hi, is 19 year old and have been mastubrating since the age of 8. is a bit light weight for my age and also, my back pains a lot. Is it due to mastubration? Cause i have a healthy diet and was born very healthy. And how should I overcome these effects.",
+      "sensitive_info": {
+        "name": "Lisa Anderson",
+        "ssn": "321-54-9876",
+        "address": "456 Oak Avenue"
+      },
+      "original_answer": "Degree understand your concerns went through your details. I suggest you not to worry much. Masturbation i not sin or is dangerous. Masturbation cannot make you sick or unhealthy. It is natural and even animals do it. In saying that you started masturbation at the age of 8 is a bit exaggerating. Puberty is attained after around 11. Masturbation before that cannot produce the desired result. Secondly, Masturbation cannot make you thin. But the anxiety associated with it can make you thin. If you are able to take proper nutritious and healthy food, then you should not be thin. Inspire, if you are thin, either you have some anxiety disorders or some wasting diseases like anemia. Consult a doctor to diagnose. For psychological or sexological counseling visit http",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 78,
+      "original_question": "I HAVE GONE THROUGH LAB TEST ,THE RESULT SERUM T.CHOLESTEROL IS 229mgs/dl AND SERUM TRIGLYCERIDES IS 304gms/dl what kind of treatment shall i follow to control the cholesterol in my body what are the steps to be followed, pl mail me sir.                                                ThanksK.Ganeshmurthy",
+      "enhanced_question": "Patient: Barbara Lewis, Age: 69, Phone: 555-456-7890, Address: 147 Birch Road. Question: I HAVE GONE THROUGH LAB TEST ,THE RESULT SERUM T.CHOLESTEROL IS 229mgs/dl AND SERUM TRIGLYCERIDES IS 304gms/dl what kind of treatment shall i follow to control the cholesterol in my body what are the steps to be followed, pl mail them sir.                                                ThanksK.Ganeshmurthy",
+      "sensitive_info": {
+        "name": "Barbara Lewis",
+        "phone": "555-456-7890",
+        "address": "147 Birch Road",
+        "age": 69
+      },
+      "original_answer": "Hi Mr Ganeshmurthy After going through your reports, my opinion is as follows1. Your cholesterol is borderline high, and your triglycerides are high.2.  High lipids can affect the blood pressure, so needs to be controlled.3. You can discuss with your consulting doctor regarding stations and other lipid lowering agents, their dosage to control lipids.4. Exercise on a regular basis to control weight as well as to stay fit.5. Cut down on oil rich foods, junk food. Have diet rich in fibers, proteins and lots of fruits and vegetables. 6. Make necessary lifestyle modifications like avoiding stress, practicing yoga/ meditation. Take care",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 79,
+      "original_question": "I have been on the birth control Kelnor 1/35 for a few years now and it has work great. Just this past month, my doctor without telling me put me on Zovia 1/35. I read that these two are similar but I am now noticing my thoughts upsetting me, over thinking, and thinking my feelings have changed for someone or something when just a week ago when I first took this new pill, I was fine. This does not feel like myself and I am becoming very overwhelmed and upset.  Do you think it is because of the switch?",
+      "enhanced_question": "Patient: Mary Rodriguez, SSN: 852-96-3741, Address: 654 Maple Street. Question: been on the birth control Kelnor 1/35 for a few years now and it has work great. Just this past month, my doctor without telling them put them on Zovia 1/35. I read that these two are similar but is now noticing my thoughts upsetting them, over thinking, and thinking my feelings have changed for someone or something when just a week ago when I first took this new pill, I was fine. This does not feel like myself and is becoming very overwhelmed and upset.  Do you think it is because of the switch?",
+      "sensitive_info": {
+        "name": "Mary Rodriguez",
+        "ssn": "852-96-3741",
+        "address": "654 Maple Street"
+      },
+      "original_answer": "Hi. Thanks for asking in Chat Doctor. Both Tenor and Movie contain equal amounts of Ethinodiol acetate and Ethanol estradiol. The acceptability of oral contraceptive preparations in various individuals differ from each other. Therapeutically both preparations are found to be equally effective. According to surveys conducted, the order of side effects reported by people using Tenor 35 is nausea, bloating, anxiety, breast pain and depression whereas for Movie 35 the order is depression, anxiety, bloating, dizziness and breast pain. Since both are hormonal preparations, these side effects are expected. The symptoms of depression you have, is suggestive of movie. Although it takes some time for a person to get adjusted to any new preparation of medication when you switch over from one brand to the other, if these symptoms continue or become severe, then you should consult your treating",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 80,
+      "original_question": "Hi, My brother goes angioplasty at the age of 33 years at May-2010. Now he is feeling pain now after 5 month. He consult with doctor, he is saying nothing to worry. Please advice how we can know how much he has block edge know...pls suggest, this is urgent.",
+      "enhanced_question": "Patient: Daniel Clark, Age: 44, SSN: 963-74-1852, Address: 987 Cedar Avenue. Question: Hi, Their brother goes angioplasty at the age of 33 years at May-2010. Now he is feeling pain now after 5 month. He consult with doctor, he is saying nothing to worry. Please advice how we can know how much he has block edge know...pls suggest, this is urgent.",
+      "sensitive_info": {
+        "name": "Daniel Clark",
+        "ssn": "963-74-1852",
+        "address": "987 Cedar Avenue",
+        "age": 44
+      },
+      "original_answer": "Hello! Welcome and thank you for asking on Chat Doctor! I passed carefully through your question and would explain that considering his past medical history, it is important to investigate for possible coronary artery disease. For this reason, I recommend consulting with his cardiologist and performing some tests",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 81,
+      "original_question": "Isn t it true that sharp pain in one s right shoulder could indicate parasites in the small and/or large intestines (i.e. amoebic dysentery) which could be seen by the host (amoebic cysts and trophozoites...all stages of development) in one s stool, cause bloating, gas, stomach distention, terrible abdominal pain, diarrhea, constipation and progressively get worse if not treated with the appropriate antibiotics and eventually cause the death of the host? Fact or Fiction",
+      "enhanced_question": "Age: 73, Phone: 555-741-8520, Address: 321 Elm Drive. Question: Isn t it true that sharp pain in one s right shoulder could indicate parasites in the small and/or large intestines (i.e. amoebic dysentery) which could be seen by the host (amoebic cysts and trophozoites...all stages of development) in one s stool, cause bloating, gas, stomach distention, terrible abdominal pain, diarrhea, constipation and progressively get worse if not treated with the appropriate antibiotics and eventually cause the death of the host? Fact or Fiction",
+      "sensitive_info": {
+        "phone": "555-741-8520",
+        "address": "321 Elm Drive",
+        "age": 73
+      },
+      "original_answer": "Hi, There is no direct relationship between intestinal infection and shoulder pain. Reasons for both are entirely different. The intestinal infection will lead to diarrhea, bloating and indigestion but not shoulder pain. Reason for shoulder pain may be muscular pain or joint abnormalities. A detailed clinical examination is needed to assess the cause of shoulder pain. Hope I have answered your query. Let me know if I can assist you further.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 82,
+      "original_question": "i have had many signs and symptoms of pregnancy like a lte period getting sick the veins on my sides are very noticable and on my arms and chest and legs but i took a test it came back negative and then i was a week late but after that i got my period. is there any way i could still be pregnant? i also have leg cramps and pains in my arms too",
+      "enhanced_question": "Patient: Sarah Johnson, Age: 79, SSN: 963-74-1852, Phone: 555-159-7530. Question: i have had many signs and symptoms of pregnancy like a lte period getting sick the veins on my sides are very noticable and on my arms and chest and legs but i took a test it came back negative and then i was a week late but after that i got my period. is there any way i could still be pregnant? i also have leg cramps and pains in my arms too",
+      "sensitive_info": {
+        "name": "Sarah Johnson",
+        "ssn": "963-74-1852",
+        "phone": "555-159-7530",
+        "age": 79
+      },
+      "original_answer": "Hallow Dear, The first cardinal symptom of pregnancy to appear is missing a period. All other symptoms like nausea & vomiting, frequent urination and the breast symptoms like engorgement with tenderness, dark discoloration of nipples & areola with widening of areola and secretions through nipples appear subsequently, usually 10 to 15 days after missed period. Though you had some vague symptoms, ultimately you have got your menses. Probably after having the menses, the symptoms also might have vanished. When in doubt, urine examination for pregnancy gives clue. That also is negative in your case. So Madam, no missed period and pregnancy test negatives confirms that you are not pregnant.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 83,
+      "original_question": "I normally get panic attacks, but decided to learn to control them without the use of medication . Besides that, I Always feel dizzy, like im floating.. the room will spin out of no where like I got up to fast.. it happens everywhere, Especially if im in crowded or loud places. I hardly drink water. im 5 7 130lbs male. Sometimes, I feel like im so full and its hard to breath , as if my lungs are full of bricks, and I have only a tiny space for air. I get tired really easy.. but I work from home.. on the computer. I don t drink or smoke . ... I am just tired of being dizzy all the time.. I don t feel myself at all and havent been for 8 moths. I do, however have alot of stress in my life as well. any help ?",
+      "enhanced_question": "Patient: Mary Rodriguez, Age: 58, Address: 321 Elm Drive. Question: I normally get panic attacks, but decided to learn to control them without the use of medication . Besides that, I Always feel dizzy, like im floating.. the room will spin out of no where like I got up to fast.. it happens everywhere, Especially if im in crowded or loud places. I hardly drink water. im 5 7 130lbs male. Sometimes, I feel like im so full and its hard to breath , as if my lungs are full of bricks, and has only a tiny space for air. I get tired really easy.. but I work from home.. on the computer. I don t drink or smoke . ... is just tired of being dizzy all the time.. I don t feel myself at all and havent been for 8 moths. I do, however have alot of stress in my life as well. any help ?",
+      "sensitive_info": {
+        "name": "Mary Rodriguez",
+        "address": "321 Elm Drive",
+        "age": 58
+      },
+      "original_answer": "HI. I AM Chat Doctor. I WOULD LIKE TO HELP. THE WAY TO EXCLUDE ANY MAJOR UNDERLYING MEDICAL PROBLEM IS TO VISIT YOUR FAMILY PHYSICIAN WHO CAN GIVE YOU A PROPER PHYSICAL EXAMINATION AND RUN A FEW BASIC TESTS TO EXCLUDE ANEMIA, DIABETES ETC. A AUDIOLOGICAL EVALUATION IS ALSO NECESSARY IN YOUR CASE. IF YOUR JOB IS A SEDENTARY TYPE YOU MUST ALSO RULE OUT CERVICAL SPONDYLITIS. A LITTLE MORE EXERCISE CAN ALSO HELP BOOST YOUR \\\"HAPPY HORMONES\\\" AND HELP YOU FEEL BETTER. A VISIT TO A QUALIFIED CLINICAL PSYCHOLOGIST CAN HELP YOU DEAL WITH YOUR PANIC ATTACKS AND STRESSORS. SINCE IT HAS BEEN 8 MONTHS IT IS NOT ADVISABLE TO IGNORE YOUR SYMPTOMS ANYMORE. TAKE CARE BYE",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 84,
+      "original_question": "For the past 8 months or so when I start my menstrual period a lump appears in my lower left abdomen. And the lump is very painful at times. Sometimes it hurts so bad I cannot walk. I went to two different ers and they said it was hematomen. If its a bruise then why is it reoccurring? Can you please help me find out what is reallywrong and how I csn get it treated",
+      "enhanced_question": "SSN: 456-78-9012, Phone: 555-741-8520, Address: 147 Birch Road. Question: For the past 8 months or so when I start my menstrual period a lump appears in my lower left abdomen. And the lump is very painful at times. Sometimes it hurts so bad I cannot walk. I went to two different ers and they said it was hematomen. If its a bruise then why is it reoccurring? Can you please help them find out what is reallywrong and how I csn get it treated",
+      "sensitive_info": {
+        "ssn": "456-78-9012",
+        "phone": "555-741-8520",
+        "address": "147 Birch Road"
+      },
+      "original_answer": "Hi and thanks for the query, I am sorry to suggest again that this needs another clinical evaluation. It could really be a hematoma. However, it could be very interesting and informative doing an ultrasound. This would give an idea of the echo structure and borders of the mass. This is important because if there is an associated cyst, it would be important that it should be removed. A possible infection of this mass of hematoma must be considered. Aspirating the mass content and running some tests for infections and inflammation to me shall be very appropriate. I suggest you consult you primary care physician again for reevaluation. Thanks and best regards, Luchuo, MD.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 85,
+      "original_question": "My husband started taking Maetanx about 3 - 4 weeks ago, which was prescribed by his dr.  He had not been taking any meds for neuropathy at the time because so far none of the meds he was prescribed helped.  Now, the pain seems to be worse than when he was not taking anything for the pain.  Should we call the dr. and stop taking Metanx or give it more time.  When I talked to  at nurse at the company where we had to get the prescription she said it could take 3 weeks to 4 months for it to take affect but should it get worse before it gets better?",
+      "enhanced_question": "Age: 37, SSN: 147-85-2963, Phone: 555-159-7530, Address: 852 Poplar Road. Question: Their husband started taking Maetanx about 3 - 4 weeks ago, which was prescribed by his dr.  He had not been taking any meds for neuropathy at the time because so far none of the meds he was prescribed helped.  Now, the pain seems to be worse than when he was not taking anything for the pain.  Should we call the dr. and stop taking Metanx or give it more time.  When I talked to  at nurse at the company where we had to get the prescription she said it could take 3 weeks to 4 months for it to take affect but should it get worse before it gets better?",
+      "sensitive_info": {
+        "ssn": "147-85-2963",
+        "phone": "555-159-7530",
+        "address": "852 Poplar Road",
+        "age": 37
+      },
+      "original_answer": "Welcome to Chat Doctor. Metanx is a medical food made that contains L-methylfolate (vitamin B9), methylcobalamin (vitamin B12) and pyridoxine 5-phosphate (vitamin B6). It is a vitamin B supplement. Treatment is on right way for neuropathy, but you have to be watchful for your sugar level. You have to take oral as well as intramuscular NSAID to subside pain. Gabapentin will be useful. Ask your doctor about your pain and further management.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 86,
+      "original_question": "I am a 35 year old male and own a landscape business for 2 years, for the last 6 weeks It has become difficult for me to get through half the day without becoming exhausted (low energy that comes on fairly sudden, slightly shakey, foggy mind kinda like im in a dream) I have cut my hours back and have had employees make up the difference, thinking maby I am working to hard, energy still cuts out half way thru the day. I have had some life changes (seperation, moving to new house, extra debt to support expanding business)but nothing I would consider unmanageable. Any advice? I have setup a health exam with my doctor in September? Could this be physical or phsychological? Any advice from past experiencees?Thanks!",
+      "enhanced_question": "Patient: Christopher White, Age: 56, Phone: 555-963-7418, Address: 789 Pine Road. Question: is a 35 year old male and own a landscape business for 2 years, for the last 6 weeks It has become difficult for them to get through half the day without becoming exhausted (low energy that comes on fairly sudden, slightly shakey, foggy mind kinda like im in a dream) has cut my hours back and have had employees make up the difference, thinking maby is working to hard, energy still cuts out half way thru the day. has had some life changes (seperation, moving to new house, extra debt to support expanding business)but nothing I would consider unmanageable. Any advice? has setup a health exam with my doctor in September? Could this be physical or phsychological? Any advice from past experiencees?Thanks!",
+      "sensitive_info": {
+        "name": "Christopher White",
+        "phone": "555-963-7418",
+        "address": "789 Pine Road",
+        "age": 56
+      },
+      "original_answer": "Hello welcome to Ask A Doctor service. I have reviewed your query and here is my advice. You have to rule out anemia first by he estimation. I suggest you to investigate with serum calcium, serum sodium, potassium estimation, serum TSH estimation for primary work up. Got, Sept, urea, creatinine also investigated as toxic metabolite accumulation also sometime can lead fatigue. You are absolutely right in a way that fatigue can be from exhaustion, overwork, lack of sleep etc. Revert with above reports to guide you further. Hope I have solved your query. Let me know if I can assist you further.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 87,
+      "original_question": "i have  friend that was bitten in his calf about 2 weeks ago by a dog. at first it swelled up and he was barely able to walk on it.  he has been home treating it with antibiotic ointment and peroxide, and bandages. the holes are still open and parts of it are yellowish.  what would you suggest?",
+      "enhanced_question": "Patient: Lisa Anderson, Age: 82, SSN: 987-65-4321, Address: 789 Pine Road. Question: i have  friend that was bitten in his calf about 2 weeks ago by a dog. at first it swelled up and he was barely able to walk on it.  he has been home treating it with antibiotic ointment and peroxide, and bandages. the holes are still open and parts of it are yellowish.  what would you suggest?",
+      "sensitive_info": {
+        "name": "Lisa Anderson",
+        "ssn": "987-65-4321",
+        "address": "789 Pine Road",
+        "age": 82
+      },
+      "original_answer": "Hello, Welcome to Chat Doctor, As your friend was bitten by the dog and following which there is an infection of the wound leading to yellowish discharge following which your doctor has prescribed the antibiotic cream along with HY Chat Doctor. Rabies is 100 % fatal, but it is 100% preventable by proper and adequate treatment. I would suggest your friend to follow1. Take antirabies vaccine as per the regimen2. Oral Antibiotics like Tab Autoclave 625 mg, twice daily for five days.3. Wound",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 88,
+      "original_question": "Hi, I have taken a solid hit to my lower back on my left side (I think my kidney) it has been painful for 2 weeks now and is sore mostly when I bend or apply tension to the muscles in that area. I have not urinated blood Improvement in past 2 weeks seems minimal Please advise",
+      "enhanced_question": "Patient: John Smith, Age: 52, Phone: 555-963-7418. Question: Hi, has taken a solid hit to my lower back on my left side (I think my kidney) it has been painful for 2 weeks now and is sore mostly when I bend or apply tension to the muscles in that area. has not urinated blood Improvement in past 2 weeks seems minimal Please advise",
+      "sensitive_info": {
+        "name": "John Smith",
+        "phone": "555-963-7418",
+        "age": 52
+      },
+      "original_answer": "Hello, Thank you for writing to Chat Doctor about your query, Brief Answer -Treatment for lower back pain depends upon the patients history and the type and severity of pain, as you described I explained below meditation. Explained Answer -The vast majority of lower back pain cases get better within six weeks without surgery, and lower back pain exercises are almost always part of a treatment plan. If pain persists or worsens, more involved diagnostic and surgical procedures may be recommended.  Medications",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 89,
+      "original_question": "yes pleaseiv had broken / abcess teeth since fourteen early fifteen now im twenty three and tooth decay has spread progressively facial swelling and jaw pains have have also been an issue  and I always dealt with it my self impoverished family nother story nother time as I say but all ways self medicated scalpels or suringes grew up on farm animal supplies and had a small knowledge of veterinarian procedures dealing with abcess and lesions and felt I could deal with it but in the last few years most molars or wisdom teeth have gone aswell even with more than average brushing the entire time have about three exposed pulp cores and the lumps below ear have always rehealed once opened and or squeezed out by hand some times with great strain on my hands \\\"poped like pimple\\\" but scar tissue gets ever harder and larger about the size of half dollar easily noticed just below ear right next to upper jaw bone could these things berelatedif so should an er dr be able to see this?",
+      "enhanced_question": "SSN: 147-85-2963, Phone: 555-852-9630, Address: 987 Cedar Avenue. Question: yes pleaseiv had broken / abcess teeth since fourteen early fifteen now im twenty three and tooth decay has spread progressively facial swelling and jaw pains have have also been an issue  and I always dealt with it my self impoverished family nother story nother time as I say but all ways self medicated scalpels or suringes grew up on farm animal supplies and had a small knowledge of veterinarian procedures dealing with abcess and lesions and felt I could deal with it but in the last few years most molars or wisdom teeth have gone aswell even with more than average brushing the entire time have about three exposed pulp cores and the lumps below ear have always rehealed once opened and or squeezed out by hand some times with great strain on my hands \\\"poped like pimple\\\" but scar tissue gets ever harder and larger about the size of half dollar easily noticed just below ear right next to upper jaw bone could these things berelatedif so should an er dr be able to see this?",
+      "sensitive_info": {
+        "ssn": "147-85-2963",
+        "phone": "555-852-9630",
+        "address": "987 Cedar Avenue"
+      },
+      "original_answer": "Hi, After going through the entire description, I am of the opinion that the cause for your pain is infection. A tooth abscess won't resolve without treatment. Even if the abscess disperses, bursts or Chat Doctor.  Antibiotics kill the germs responsible for tooth abscesses, helping the body to repair the tooth and bone. If an abscess erupts by itself, warm salt-water rinses will soothe, help clean the mouth and encourage",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 90,
+      "original_question": "im sick. ive been sick for weeks. two weeks ago, i went to the doctor and they said i had a sinus infection. they perscribed amoxcillin and i took it until my perscription was done. but now, ive been continually sick... right now, my left side of my neck hurts bad and my hearing is funny in my left ear. plus, ill get occassionall really bad pains in my head, like a severe headache",
+      "enhanced_question": "Age: 50, Phone: 555-852-9630, Address: 159 Ash Drive. Question: im sick. ive been sick for weeks. two weeks ago, i went to the doctor and they said i had a sinus infection. they perscribed amoxcillin and i took it until my perscription was done. but now, ive been continually sick... right now, my left side of my neck hurts bad and my hearing is funny in my left ear. plus, ill get occassionall really bad pains in my head, like a severe headache",
+      "sensitive_info": {
+        "phone": "555-852-9630",
+        "address": "159 Ash Drive",
+        "age": 50
+      },
+      "original_answer": "Hi welcome to Chat Doctor. Here you might have persistent sinus infection.... First para nasal sinus x-ray done for rule out sinusitis..... Nasal examination by rhinos copy done for rule out nasal polyp.... Here for congestive symptom antihistamines Chat Doctor. ... Steam inhalation taken with eucalyptus added in water... If cause not clear MRI or CT scan of sinus need for detail investigation... If you are immunocompromised then aspergilli or mucormycosis might rule out ....this investigation helpful for it... If needed endoscopic",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 91,
+      "original_question": "Hi, may I answer your health queries right now ?  Please type your query here I am 65 years old and for the past 12 months I have had a persistant cough that is quite forceful. It makes my ees water and I am quite short of breathe for a period of time after.  The secretions I clear and thick with bubbles in it.  I am also very tired.  Please can you give me some insight?",
+      "enhanced_question": "Patient: Linda Harris, SSN: 789-01-2345, Address: 741 Willow Avenue. Question: Hi, may I answer your health queries right now ?  Please type your query here is 65 years old and for the past 12 months has had a persistant cough that is quite forceful. It makes my ees water and is quite short of breathe for a period of time after.  The secretions I clear and thick with bubbles in it.  is also very tired.  Please can you give them some insight?",
+      "sensitive_info": {
+        "name": "Linda Harris",
+        "ssn": "789-01-2345",
+        "address": "741 Willow Avenue"
+      },
+      "original_answer": "Thanks for your question on Chat Doctor. I can understand your concern. You are having chronic cough, expectoration which are difficult to cough out and breathlessness. All these symptoms are characteristic of bronchitis. So get done chest x-ray and PFT (Pulmonary Function Test). Chest x-ray is needed to rule out other lung diseases. PFT is must for the diagnosis of bronchitis. You will mostly improve with inhaled bronchodilators (formoterol or albuterol), N acetyl cysteine (NAC) and bucolic with expectorant syrup. Hope I have solved your query. I will be happy to help you further. Wish you good health. Thanks.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 92,
+      "original_question": "My grandmother who is 87 had an injury to her nose as result of falling out of her wheelchair.  She did lose alot of blood due to blood thinner.  This accident ocurred 2 weeks ago.  She is doing better but her H&H levels are low 8.2 was 8.7 2 days ago and 25.2%   They want to send her for blood transfusions but I have read risks and not confident this is the way to go.  They are taking her blood daily and they took it this morning hence the lower levels and they started her back on coumedin therapy too.  Can her H&H levels be lower in the am?",
+      "enhanced_question": "Patient: Sarah Johnson, Age: 63, SSN: 987-65-4321, Address: 963 Walnut Drive. Question: Their grandmother who is 87 had an injury to her nose as result of falling out of her wheelchair.  She did lose alot of blood due to blood thinner.  This accident ocurred 2 weeks ago.  She is doing better but her H&H levels are low 8.2 was 8.7 2 days ago and 25.2%   They want to send her for blood transfusions but has read risks and not confident this is the way to go.  They are taking her blood daily and they took it this morning hence the lower levels and they started her back on coumedin therapy too.  Can her H&H levels be lower in the am?",
+      "sensitive_info": {
+        "name": "Sarah Johnson",
+        "ssn": "987-65-4321",
+        "address": "963 Walnut Drive",
+        "age": 63
+      },
+      "original_answer": "Hi, Thanks for asking. Based on your query, my opinion is as follows.1. Both reduced hemoglobin and reduced hematocrit indicates anemia.2. However, 8.2g% is not significant, unless she has associated co-morbidities like cardiac failure.3. If she has cardiac problems or any breathing difficulty, she will require packed red cell transfusion to avoid further complications. Daily blood Chat Doctor.  Continue all medications. She needs to be on blood thinner to avoid heart attack or stroke. Hope it helps. Any further queries, happy to help again.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 93,
+      "original_question": "Hi ! Am 29 had endo yrs Severe period pain every month I never much of a life whilest on my period cant work eat or do anything to help myself ,nothing worked , found out I had pulmonary Endometriosis had surgery on my lungs few months ago then 2 weeks ago I had a laparscopy treatment for my end and Fibroid cyst , been married for 5 yrs we really want to start a family now can I get pregnant?",
+      "enhanced_question": "Patient: Daniel Clark, Age: 21, SSN: 456-78-9012, Address: 258 Cherry Street. Question: Hi ! Am 29 had endo yrs Severe period pain every month I never much of a life whilest on my period cant work eat or do anything to help myself ,nothing worked , found out I had pulmonary Endometriosis had surgery on my lungs few months ago then 2 weeks ago I had a laparscopy treatment for my end and Fibroid cyst , been married for 5 yrs we really want to start a family now can I get pregnant?",
+      "sensitive_info": {
+        "name": "Daniel Clark",
+        "ssn": "456-78-9012",
+        "address": "258 Cherry Street",
+        "age": 21
+      },
+      "original_answer": "HelloThanks for posting your query. When the doctor performed the laparoscopy, I would think that they would have done a test at the same time to see if the fallopian tubes were all right or not. If the doctor said that the tubes were patent(that is, not blocked), there is good chance of your getting pregnant. If your periods are regular, and you have monthly cycles, it would mean that you are ovulating, and that would mean a good chance of pregnancy as well. However, if you don't get pregnant in the next one year, do go back and see a gynecologist with interest in fertility. The doctor would order a few other tests and advice you if you would need help in getting pregnant like IVF. Best wishes.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 94,
+      "original_question": "Hi, I am going through a severe back pain. Actually really dont know where is the pain ? about 3 years back I was performing n i fell from d back stage from that day onwards I have this pain.i have consulted few doctors but no one could find what was the problem,all they gave was a vaccination for pain relief.some times the pain increases few days before i get my periods.the pain is so severe that I cant stand, walk or sit.",
+      "enhanced_question": "Patient: Michael Brown, Age: 71, SSN: 852-96-3741, Phone: 555-159-7530. Question: Hi, is going through a severe back pain. Actually really dont know where is the pain ? about 3 years back I was performing n i fell from d back stage from that day onwards has this pain.i have consulted few doctors but no one could find what was the problem,all they gave was a vaccination for pain relief.some times the pain increases few days before i get my periods.the pain is so severe that I cant stand, walk or sit.",
+      "sensitive_info": {
+        "name": "Michael Brown",
+        "ssn": "852-96-3741",
+        "phone": "555-159-7530",
+        "age": 71
+      },
+      "original_answer": "Welcome to Chat Doctor as you have mentioned that the pie started after a fall may be it is due to some injury sustained that time leading to some problem in lumbosacral and dorsolumbar joints please consult orthopedic surgery and get a check-up pain increasing few days before periods may due to problems related to pelvic organs' uterus/ovaries.gynecological check up will be helpful pain during periods may be relieved by colonel tablet 1 tab 3 times after meals.severe backache not related to periods may be helped by powerless tab hope you be all right soon",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 95,
+      "original_question": "my son who is 4 and about 38lbs. has been complaining of a stomach ache right around his navel and has thrown up several times( all liquid looking vomit). He has complained some about a headache and at one point it felt as though he had a slight fever though has been hard to tell his whole body has felt hot most of the day. When I gave him a bath to try and help him feel better he got out of the tub with teeth chattering and his whole body shaking like he was freezing but he felt warm to the touch! What is wrong with him. I have given him fever reducer.",
+      "enhanced_question": "Patient: David Wilson, SSN: 123-45-6789, Address: 789 Pine Road. Question: my son who is 4 and about 38lbs. has been complaining of a stomach ache right around his navel and has thrown up several times( all liquid looking vomit). He has complained some about a headache and at one point it felt as though he had a slight fever though has been hard to tell his whole body has felt hot most of the day. When I gave him a bath to try and help him feel better he got out of the tub with teeth chattering and his whole body shaking like he was freezing but he felt warm to the touch! What is wrong with him. has given him fever reducer.",
+      "sensitive_info": {
+        "name": "David Wilson",
+        "ssn": "123-45-6789",
+        "address": "789 Pine Road"
+      },
+      "original_answer": "Hi... Thank you for consulting in Chat Doctor. Fever of few days without any localizing signs could as well a viral illness. Usually rather than fever, what is more important is the activity of the child, in between 2 fever episodes on the same day. If the kid is active and playing around when there is no fever, it is probably viral illness and it doesn't require antibiotics at all. Once viral fever comes it will there for 4-7 days. So do not worry about duration if the kid is active. Regards -",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    },
+    {
+      "id": 96,
+      "original_question": "My brother-in-law aged 61 years old diagnosed with 2 blocks in the heart and also a block in right way of passage to kidney and advised for bypass surgery. He has the history of Hypertention, Diabetics for a decade also suffers from gastric ulcers. Some of our well wishers contemplating on going for KEELEYs method of treatment to avoid surgery. Can you please give details about this method and how far it is successful as an alternative to bypass surgery. Thank you very much. P. Srinivasulu / INDIA.",
+      "enhanced_question": "Patient: Patricia Lee, Age: 77. Question: Their brother-in-law aged 61 years old diagnosed with 2 blocks in the heart and also a block in right way of passage to kidney and advised for bypass surgery. He has the history of Hypertention, Diabetics for a decade also suffers from gastric ulcers. Some of our well wishers contemplating on going for KEELEYs method of treatment to avoid surgery. Can you please give details about this method and how far it is successful as an alternative to bypass surgery. Thank you very much. P. Srinivasulu / INDIA.",
+      "sensitive_info": {
+        "name": "Patricia Lee",
+        "age": 77
+      },
+      "original_answer": "Hello thank you for posting here. I have gone through your description. Since he has two blocks in the heart arteries, and he is advice bypass, the right choice is to go ahead with bypass surgery. I don't know any therapy named KELLEY, but I suppose you are talking about ch elation therapy. This therapy is of no benefit for the patient. The blocks in the heart artery are embedded inside the heart vessel and any amount of medication or therapy cannot decrease it to make it vanish. Medications can only help to stop progression of the block. Definitive way to treat critical heart blockages is an angioplasty or bypass surgery. Had you been my patient my advice would be to go ahead with bypass? Bypass surgery requires a stay of 7- 10 days approx in the hospital. Patient can start walking usually by day 5 after surgery. It requires a recovery period of 20 -25 days, but the long term results of bypass are very good with patients having a good quality of life. Gastric ulcers can be treated with long term antacids. Gastric ulcers are not a contraindication for surgery. Wishing you good health thank you",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_1"
+    },
+    {
+      "id": 97,
+      "original_question": "hi i m 18 and female and i had sex the 25th and 26th of December..i got kind of scared at first thinking i could have gotten pregnant but once my period came on the 3rd of January my worries disappeared. I thought it was a little strange that it was only about 3-4 days long..normally mine are around 5-6 with spotting afterwards and leakage with tampons no matter the strength..this time however there was no spotting or leaking whatsoever..but i didn t think much of it now about the 17th i noticed a dull cramp in my lower stomach that would come and go and it did this til the 20th, on the 20th the cramp has stayed and increased, i did noticed that i ve been eating alot even when i m not hungry for the past week and my stomach looks bloated and my breasts are tender and i ve been urinating ALOT and usually i only go about 2-3 a day now i don t even have to drink anything and ill go 7 times a day easily if not more..pregnant? or not? PLEASE HELP IMMEDIATELY.....",
+      "enhanced_question": "Age: 40, SSN: 159-75-3486, Address: 654 Maple Street. Question: hi i m 18 and female and i had sex the 25th and 26th of December..i got kind of scared at first thinking i could have gotten pregnant but once my period came on the 3rd of January my worries disappeared. I thought it was a little strange that it was only about 3-4 days long..normally mine are around 5-6 with spotting afterwards and leakage with tampons no matter the strength..this time however there was no spotting or leaking whatsoever..but i didn t think much of it now about the 17th i noticed a dull cramp in my lower stomach that would come and go and it did this til the 20th, on the 20th the cramp has stayed and increased, i did noticed that i ve been eating alot even when i m not hungry for the past week and my stomach looks bloated and my breasts are tender and i ve been urinating ALOT and usually i only go about 2-3 a day now i don t even have to drink anything and ill go 7 times a day easily if not more..pregnant? or not? PLEASE HELP IMMEDIATELY.....",
+      "sensitive_info": {
+        "ssn": "159-75-3486",
+        "address": "654 Maple Street",
+        "age": 40
+      },
+      "original_answer": "Hello, If you were due on the 3rd of Jan, and you got your period then you are not pregnant. If your got your period before you date then there is a possibility of implantation bleeding. The rest of your symptoms sound like you have a UTI. First take e test to rule out pregnancy. Then you will need antibiotics for a few days to clear up the infection. Chat Doctor. Avoid sex till you are clean. Hygiene is very important.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_2"
+    },
+    {
+      "id": 98,
+      "original_question": "hi, i have just got bitten to my year old dog 10 min ago. this morning he was seeming like he was panting and panting and breathing very heavily. We gave him water but he still did it. Now the bite feels tingily and its like its beating.I already put poroxide on. Do you know if this is normal or what to do?",
+      "enhanced_question": "Age: 20, SSN: 456-78-9012. Question: hi, i have just got bitten to my year old dog 10 min ago. this morning he was seeming like he was panting and panting and breathing very heavily. We gave him water but he still did it. Now the bite feels tingily and its like its beating.I already put poroxide on. Do you know if this is normal or what to do?",
+      "sensitive_info": {
+        "ssn": "456-78-9012",
+        "age": 20
+      },
+      "original_answer": "Hello, Welcome to Chat Doctor, Rabies is a disease which is transmitted by dog bite which is 100% fatal, but it is 100% preventable by proper and adequate treatment. As you were bitten by a dog which has led to bleeding from the site according to WHO categories it is categorized into Cat III, which requires following treatment1. Wash the wound thoroughly with soap and water.2. Active immunization with anti rabies vaccine on days 0,3,7,14 and 28.3. Passive immunization with rabies immunoglobulin around the wound.4. In TT, 0.5 ml, I'm. Thank you.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_3"
+    },
+    {
+      "id": 99,
+      "original_question": "pcod irregular periods 37x31mm cyst in LT ovary on11july its my first day. 7x7mm inRTovary and 11x12mm inLT ovary on22 july 12day. 11x12mm inRTovary and 8x9mm inLT ovary on27july 17day. 1 what does this mean? 2 IS ovulation happen this time? 3 slow and late growth of follicle as in my case .ISany chance of getting preganant? 4 what to do now? 5 plssssssssssss answer soon",
+      "enhanced_question": "Patient: Christopher White, Age: 23, SSN: 654-32-1098, Phone: 555-456-7890. Question: pcod irregular periods 37x31mm cyst in LT ovary on11july its my first day. 7x7mm inRTovary and 11x12mm inLT ovary on22 july 12day. 11x12mm inRTovary and 8x9mm inLT ovary on27july 17day. 1 what does this mean? 2 IS ovulation happen this time? 3 slow and late growth of follicle as in my case .ISany chance of getting preganant? 4 what to do now? 5 plssssssssssss answer soon",
+      "sensitive_info": {
+        "name": "Christopher White",
+        "ssn": "654-32-1098",
+        "phone": "555-456-7890",
+        "age": 23
+      },
+      "original_answer": "Hi welcome to Chat Doctor hi Joshi., the above report stating the measurement of the largest cyst is 37by31 in left ovary... .the other follicles are of different sizes respect to the duration. Even though many follicles develop, only one may ovulate or many at a time hence fertilization will be disturbed... you can have coitus with your husband.... and then after a week you need to follow up by USG. Hope I have answered your question. Take care.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_4"
+    },
+    {
+      "id": 100,
+      "original_question": "I had a wisdom tooth extracted nearly 3 weeks ago. unfortunately some of the block went into my jaw muscle and I now have trismus. More alarming though is that my facial muscles feel very much weekened and smiling is an effort. Also I have had twitching above my lip and up cheek and under eye. I am very concerned as I am a music teacher. please help",
+      "enhanced_question": "Patient: Barbara Lewis, Age: 45, Phone: 555-789-0123, Address: 147 Birch Road. Question: I had a wisdom tooth extracted nearly 3 weeks ago. unfortunately some of the block went into my jaw muscle and I now have trismus. More alarming though is that my facial muscles feel very much weekened and smiling is an effort. Also has had twitching above my lip and up cheek and under eye. is very concerned as is a music teacher. please help",
+      "sensitive_info": {
+        "name": "Barbara Lewis",
+        "phone": "555-789-0123",
+        "address": "147 Birch Road",
+        "age": 45
+      },
+      "original_answer": "Thanks for your query, I have gone through your query. The twitching over the facial muscles and Erasmus can be because of the nerve injury to facial nerve while injecting the local anesthesia. The Erasmus is because of the injury to the muscles of mastication while injecting the local anesthesia. Nothing to worry, the twitching will come down gradually over a week. You can take nerve regenerating Chat Doctor.  For the Erasmus, you can take a muscle relaxant like chlorzoxazone. I hope my answer will help you, take care.",
+      "source_dataset": "local_medical_conversations",
+      "enhancement_pattern": "pattern_5"
+    }
+  ]
+}

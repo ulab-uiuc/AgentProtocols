@@ -1,0 +1,76 @@
+#original data
+script/streaming_queue/data/*
+!script/streaming_queue/data/top1000_simplified.jsonl
+
+script/shard_qa/logs/*
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.venv/
+agent_env/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# OS / Editor specific
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Environment variables
+.env
+
+.git
+#original data
+
+script/streaming_queue/data/*
+script/shard_qa/data/*
+script/gaia/*
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+debug/
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# OS / Editor specific
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Environment variables
+.env
+
+.git

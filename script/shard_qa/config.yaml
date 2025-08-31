@@ -1,0 +1,96 @@
+core:
+  base_url: http://localhost:8000/v1
+  max_tokens: 4096
+  name: gpt-4o
+  openai_api_key: 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
+  openai_base_url: https://api.openai.com/v1
+  port: 8000
+  temperature: 0.0
+  type: openai
+data:
+  agent_files:
+    shard0: data/shards/shard0.jsonl
+    shard1: data/shards/shard1.jsonl
+    shard2: data/shards/shard2.jsonl
+    shard3: data/shards/shard3.jsonl
+    shard4: data/shards/shard4.jsonl
+    shard5: data/shards/shard5.jsonl
+    shard6: data/shards/shard6.jsonl
+    shard7: data/shards/shard7.jsonl
+  base_dir: data/shards
+  manifest_file: data/shards/manifest.json
+  version: v2.0_shuffled
+environment:
+  data_version: v1.1
+  group_id: 0
+network:
+  health_check_interval: 5
+  message_timeout: 30
+  topology: ring
+prometheus:
+  enabled: true
+  metrics_path: /metrics
+  port: 8000
+shard_qa:
+  coordinator:
+    count: 1
+    metrics:
+      avg_hop: true
+      first_answer_latency: true
+      msg_bytes_total: true
+      ttl_exhausted_total: true
+    result_file: data/shards/results.json
+    start_port: 9998
+    total_groups: 24075
+  history:
+    max_len: 20
+  ring_config:
+    shard0:
+      next_id: shard1
+      prev_id: shard7
+    shard1:
+      next_id: shard2
+      prev_id: shard0
+    shard2:
+      next_id: shard3
+      prev_id: shard1
+    shard3:
+      next_id: shard4
+      prev_id: shard2
+    shard4:
+      next_id: shard5
+      prev_id: shard3
+    shard5:
+      next_id: shard6
+      prev_id: shard4
+    shard6:
+      next_id: shard7
+      prev_id: shard5
+    shard7:
+      next_id: shard0
+      prev_id: shard6
+  timeouts:
+    max_retries: 3
+    response_timeout: 30
+    task_timeout: 60
+  tool_schema:
+    max_function_calls: 10
+    max_ttl: 7
+  workers:
+    count: 8
+    data_files:
+    - data/shards/shard0.jsonl
+    - data/shards/shard1.jsonl
+    - data/shards/shard2.jsonl
+    - data/shards/shard3.jsonl
+    - data/shards/shard4.jsonl
+    - data/shards/shard5.jsonl
+    - data/shards/shard6.jsonl
+    - data/shards/shard7.jsonl
+    max_pending: 16
+    start_port: 10001
+system:
+  agents_per_group: 8
+  dataset_name: 2WikiMultiHopQA版「8-Agent Ring 分片检索基准 v2.0」
+  description: 基于2WikiMultiHopQA的多跳推理环形协议测试，snippet已打乱
+  total_groups: 24075
