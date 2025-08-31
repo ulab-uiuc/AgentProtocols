@@ -146,7 +146,7 @@ class RunnerBase:
         if resp:
             # The dispatch was sent successfully, results are handled internally
             self.output.success("Dispatch completed!")
-            return []
+            return [] # MODIFIED: Return response
         else:
             self.output.error("Failed to communicate with coordinator")
             return []

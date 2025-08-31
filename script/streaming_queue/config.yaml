@@ -1,14 +1,14 @@
 core:
-  protocol: anp
-  type: "local"  # "local" or "openai"
-  name: "Qwen2.5-VL-72B-Instruct"
+  protocol: agora
+  type: "openai"  # "local" or "openai"
+  name: "gpt-4o-mini"  # Model name, e.g., "gpt-4o", "gpt-3.5-turbo", or local model name
   temperature: 0.0
   # For local models
   base_url: "http://localhost:8000/v1"
   port: 8000
   # For OpenAI models (uncomment the section below if using OpenAI)
-  # openai_api_key: "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"
-  # openai_base_url: "https://api.openai.com/v1"
+  openai_api_key: "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"
+  openai_base_url: "https://api.openai.com/v1"
 
 network:
   topology: "star"  # Network topology type, choose "star" or "mesh"
@@ -20,7 +20,7 @@ qa:
     count: 1          # Define the number of coordinators
     start_port: 9998   # Coordinator starting port
     data_file: "script/streaming_queue/data/top1000_simplified.jsonl"  # Question file path
-    result_file: "script/streaming_queue/data/qa_results_anp_0828.json"  # Result storage file path
+    result_file: "script/streaming_queue/data/qa_results_agora.json"  # Result storage file path
     batch_size: 50  # Number of questions to dispatch per round
     first_50: true  # Whether to process only the first 50 questions
   worker:
