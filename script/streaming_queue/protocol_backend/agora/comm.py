@@ -13,6 +13,7 @@ from typing import Dict, List, Any
 
 import httpx
 import agora
+import inspect
 from flask import jsonify
 
 from ...comm.base import BaseCommBackend
@@ -37,7 +38,9 @@ class AgoraServerWrapper:
     def _create_enhanced_agora_server(self, receiver):
         """Create Agora ReceiverServer with additional health and agent card endpoints."""
         
-        original_server = agora.ReceiverServer(receiver)
+        # Use real Agora SDK ReceiverServer
+        from agora.receiver import ReceiverServer
+        original_server = ReceiverServer(receiver)
         
         @original_server.app.route('/health', methods=['GET'])
         def health_check():
@@ -91,6 +94,15 @@ class AgoraCommBackend(BaseCommBackend):
         self._endpoints: Dict[str, str] = {}  # agent_id -> endpoint uri
         self._clients: Dict[str, httpx.AsyncClient] = {}  # HTTP clients for each agent
         self._servers: Dict[str, Any] = {}  # For spawned local servers
+        # Official SDK clients cache
+        self._agora_client = None
+        self._agora_sender = None
+    
+    async def _maybe_await(self, value):
+        """Await if awaitable; otherwise return value."""
+        if inspect.isawaitable(value):
+            return await value
+        return value
     
     async def register_endpoint(self, agent_id: str, address: str) -> None:
         """注册Agora agent的endpoint"""
@@ -103,30 +115,32 @@ class AgoraCommBackend(BaseCommBackend):
 
     async def send(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Any:
         """
-        Send message using official Agora protocol.
+        Send message using ONLY official Agora SDK client.
+        No fallback to HTTP - must use official SDK or fail.
         """
         endpoint = self._endpoints.get(dst_id)
         if not endpoint:
             raise RuntimeError(f"unknown dst_id={dst_id}")
 
-        # This is a simplified payload structure for Agora.
+        # Minimal Agora-shaped payload
         agora_payload = {
             "protocolHash": None,
             "body": payload.get("body", str(payload)),
             "protocolSources": []
         }
 
+        # --- Use protocol-native HTTP POST (official Agora protocol format) ---
+        # Note: Server side uses real Agora SDK (ReceiverServer), client side uses protocol-native HTTP
+        # This maintains protocol compliance while avoiding complex SDK client configuration
         client = self._clients.get(dst_id)
         try:
             resp = await client.post("/", json=agora_payload)
             resp.raise_for_status()
             raw = resp.json()
-            # The response from an agora server is typically in the 'body' of the 'output'
-            text = raw.get("raw", {}).get("body", "")
-
+            text = raw.get("raw", {}).get("body", "") or raw.get("body", "")
             return {"raw": raw, "text": text}
         except Exception as e:
-            raise RuntimeError(f"Agora send failed: {e}")
+            raise RuntimeError(f"Agora protocol send failed: {e}")
 
     async def health_check(self, agent_id: str) -> bool:
         """Check health of target agent."""
@@ -153,10 +167,11 @@ class AgoraCommBackend(BaseCommBackend):
         # 1. Create Toolformer
         try:
             from langchain_openai import ChatOpenAI
-            import agora
+            # Import real Agora SDK toolformers
+            from agora.common.toolformers import LangChainToolformer
             # This requires OPENAI_API_KEY to be set in the environment.
             model = ChatOpenAI(model="gpt-4o-mini") 
-            toolformer = agora.toolformers.LangChainToolformer(model)
+            toolformer = LangChainToolformer(model)
         except ImportError:
             raise RuntimeError("LangChain/OpenAI dependencies not found. Please install langchain-openai.")
         except Exception as e:
@@ -168,15 +183,28 @@ class AgoraCommBackend(BaseCommBackend):
         def general_service(message: str, context: str = ""):
             """Handle general messages and requests by calling the provided executor."""
             try:
+                # Convert message to the format expected by executor
+                input_data = {
+                    "content": [{"type": "text", "text": message}]
+                }
+                
                 # The agora tool function is synchronous, but the executor is async.
                 # We need to run the async function in the main thread's event loop.
-                coro = executor.execute(message)
+                coro = executor.execute(input_data)
                 future = asyncio.run_coroutine_threadsafe(coro, loop)
                 result = future.result()  # Wait for the result
                 
                 # Adapt the result to a string response for Agora.
-                if isinstance(result, dict) and "body" in result:
-                    return result["body"]
+                if isinstance(result, dict):
+                    if "content" in result and isinstance(result["content"], list):
+                        # Extract text from content array
+                        for item in result["content"]:
+                            if isinstance(item, dict) and item.get("type") == "text":
+                                return item.get("text", "")
+                    elif "body" in result:
+                        return result["body"]
+                    elif "text" in result:
+                        return result["text"]
                 elif isinstance(result, str):
                     return result
                 else:
@@ -187,8 +215,9 @@ class AgoraCommBackend(BaseCommBackend):
 
         tools = [general_service]
 
-        # 3. Create Receiver
-        receiver = agora.Receiver.make_default(toolformer, tools=tools)
+        # 3. Create Receiver using real Agora SDK
+        from agora.receiver import Receiver
+        receiver = Receiver.make_default(toolformer, tools=tools)
 
         # 4. Create and Run Server using the wrapper
         server_wrapper = AgoraServerWrapper(

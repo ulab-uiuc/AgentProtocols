@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-ACP Worker implementation - simplified but functional.
+ACP Worker implementation using ACP SDK 1.0.3.
 
-Since there's no standard ACP SDK available, this implements a clean
-ACP-style worker that integrates properly with the QA system.
+This implementation uses the official ACP SDK which provides full Agent Communication Protocol support.
 """
 
 from __future__ import annotations
@@ -11,6 +10,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
+import uuid
 
 # Add streaming_queue to path for imports
 current_file = Path(__file__).resolve()
@@ -20,70 +20,63 @@ if str(streaming_queue_path) not in sys.path:
 
 from core.qa_worker_base import QAWorkerBase
 
-
-class ACPQAWorker(QAWorkerBase):
-    """ACP-style QA Worker that provides clean tool interface."""
-    
-    def __init__(self, config: Optional[Dict] = None, output=None):
-        super().__init__(config, output)
-        self.tools = {
-            "answer_question": self._answer_question_tool,
-            "get_status": self._get_status_tool
-        }
-    
-    async def _answer_question_tool(self, question: str) -> str:
-        """Tool: Answer a question using LLM."""
-        try:
-            result = await self.answer(question)
-            return result
-        except Exception as e:
-            return f"Error answering question: {str(e)}"
-    
-    async def _get_status_tool(self) -> str:
-        """Tool: Get worker status."""
-        try:
-            llm_available = hasattr(self, 'llm') and self.llm is not None
-            return f"ACP QA Worker ready - LLM available: {llm_available}"
-        except Exception as e:
-            return f"ACP QA Worker status check failed: {str(e)}"
-    
-    async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> str:
-        """Call a tool by name with arguments."""
-        if tool_name not in self.tools:
-            raise ValueError(f"Unknown tool: {tool_name}. Available: {list(self.tools.keys())}")
-        
-        tool_func = self.tools[tool_name]
-        return await tool_func(**arguments)
+# Import ACP SDK components
+try:
+    from acp_sdk import Message
+    ACP_AVAILABLE = True
+except ImportError:
+    ACP_AVAILABLE = False
 
 
 class ACPWorkerExecutor:
-    """ACP Worker Executor for integration with the runner."""
+    """ACP Worker Executor using ACP SDK patterns."""
     
-    def __init__(self, config: Optional[Dict] = None, output=None):
-        self.worker = ACPQAWorker(config, output)
+    def __init__(self, config: Dict[str, Any]):
+        if not ACP_AVAILABLE:
+            raise RuntimeError("ACP SDK is not available. Please install acp-sdk.")
+        
         self.config = config
-        self.output = output
+        self._worker = None
+        
+        # Import worker after path setup
+        from core.qa_worker_base import QAWorkerBase
+        
+        class ACPWorker(QAWorkerBase):
+            def __init__(self, config):
+                super().__init__(config)
+        
+        self._worker = ACPWorker(config)
     
-    async def execute(self, input_data: Dict) -> Dict:
-        """Execute an ACP-style request."""
+    async def process_message(self, message: Message, run_id: str) -> Message:
+        """Process an incoming message using ACP patterns."""
         try:
-            # Check if this is a tool call request
-            if "tool_name" in input_data:
-                tool_name = input_data["tool_name"]
-                arguments = input_data.get("arguments", {})
-                result = await self.worker.call_tool(tool_name, arguments)
+            # Extract text content
+            text_content = ""
+            if hasattr(message, 'parts') and message.parts:
+                for part in message.parts:
+                    if hasattr(part, 'type') and part.type == "text":
+                        text_content += getattr(part, 'text', "")
+            
+            # Process with worker using LLM
+            if hasattr(self._worker, 'answer'):
+                result = await self._worker.answer(text_content)
             else:
-                # Extract question from content
-                parts = input_data.get("content", [])
-                question = " ".join(p.get("text", "") for p in parts if p.get("type") == "text")
-                
-                if not question:
-                    question = "What is artificial intelligence?"
-                
-                result = await self.worker.call_tool("answer_question", {"question": question})
+                result = f"Error: Worker has no answer method"
             
-            return {"content": [{"type": "text", "text": result}]}
-            
+            # Return response message
+            response_id = str(uuid.uuid4())
+            return Message(
+                id=response_id,
+                parts=[{"type": "text", "text": str(result)}]
+            )
         except Exception as e:
-            error_msg = f"ACP Worker execution failed: {str(e)}"
-            return {"content": [{"type": "text", "text": error_msg}]}
+            error_id = str(uuid.uuid4())
+            return Message(
+                id=error_id,
+                parts=[{"type": "text", "text": f"Error: {str(e)}"}]
+            )
+    
+    @property
+    def worker(self):
+        """Access to the underlying worker."""
+        return self._worker

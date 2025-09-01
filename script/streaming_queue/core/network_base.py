@@ -141,11 +141,11 @@ class NetworkBase:
                     asyncio.create_task(self.connect_agents(src_id, dst_id))
 
     # --------------------------- messaging ---------------------------
-    async def route_message(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Any:
+    async def route_message(self, src_id: str, dst_id: str, payload: Dict[str, Any], **kwargs) -> Any:
         """若拓扑允许，则通过通信后端转发。"""
         if dst_id not in self._graph.get(src_id, set()):
             raise PermissionError(f"{src_id} cannot reach {dst_id}.")
-        return await self._comm.send(src_id, dst_id, payload)
+        return await self._comm.send(src_id, dst_id, payload, **kwargs)
 
     async def broadcast_message(
         self, src_id: str, payload: Dict[str, Any], exclude: Optional[Set[str]] = None

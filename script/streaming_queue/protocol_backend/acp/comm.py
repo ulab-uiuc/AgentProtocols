@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-True ACP Communication Backend using ACP SDK.
+ACP Communication Backend using ACP SDK 1.0.3.
 
-This module implements real ACP client-server communication using the official
-ACP (Agent Communication Protocol) SDK with stdio transport.
+This implementation uses the official ACP SDK which provides full Agent Communication Protocol support.
 """
 
 from __future__ import annotations
 
 import asyncio
-import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
+import logging
+import uuid
 
 # Add streaming_queue to path for imports
 current_file = Path(__file__).resolve()
@@ -22,238 +22,156 @@ if str(streaming_queue_path) not in sys.path:
 
 from comm.base import BaseCommBackend
 
-# ACP SDK imports
-from acp.client.session import ClientSession
-from acp.client.stdio import stdio_client
-from acp.types import CallToolRequest
+# Import ACP SDK components
+try:
+    import acp_sdk
+    from acp_sdk import Session, Run, RunCreateRequest, Message, RunMode
+    ACP_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"ACP SDK not available: {e}")
+    ACP_AVAILABLE = False
 
 
 class ACPAgentHandle:
-    """Handle for a spawned ACP agent process."""
+    """Handle for an ACP agent using ACP SDK."""
     
-    def __init__(self, agent_id: str, process: subprocess.Popen, client_session: ClientSession):
+    def __init__(self, agent_id: str, session: Session, executor: Any):
         self.agent_id = agent_id
-        self.process = process
-        self.client_session = client_session
-        self.base_url = f"acp://{agent_id}"  # For compatibility with existing code
+        self.session = session
+        self.executor = executor
+        self.base_url = f"acp://{agent_id}"
+        self._runs: Dict[str, Run] = {}
+    
+    async def create_run(self, request: RunCreateRequest) -> str:
+        """Create a new run in this agent's session and return run_id."""
+        run_id = str(uuid.uuid4())
+        run = Run(
+            id=run_id,
+            session_id=self.session.id,
+            agent_name=self.agent_id,
+            status="in-progress",
+            mode=request.mode or RunMode.ASYNC
+        )
+        self._runs[run_id] = run
+        return run_id
+    
+    async def send_message(self, run_id: str, content: str) -> Message:
+        """Send a message to a run."""
+        if run_id not in self._runs:
+            raise ValueError(f"Run {run_id} not found")
+        
+        # Create message and process with executor
+        message_id = str(uuid.uuid4())
+        message = Message(
+            id=message_id,
+            run_id=run_id,
+            parts=[{"type": "text", "text": content}]
+        )
+        
+        # Process message with executor
+        if hasattr(self.executor, 'process_message'):
+            response = await self.executor.process_message(message, run_id)
+            return response
+        elif hasattr(self.executor, 'execute'):
+            response = await self.executor.execute(content)
+            response_id = str(uuid.uuid4())
+            return Message(
+                id=response_id,
+                run_id=run_id,
+                parts=[{"type": "text", "text": str(response)}]
+            )
+        
+        return message
     
     async def stop(self):
-        """Stop the ACP agent process."""
-        if self.process:
-            self.process.terminate()
-            try:
-                await asyncio.wait_for(
-                    asyncio.create_task(asyncio.to_thread(self.process.wait)), 
-                    timeout=5.0
-                )
-            except asyncio.TimeoutError:
-                self.process.kill()
+        """Stop the ACP agent."""
+        for run in self._runs.values():
+            if hasattr(run, 'status') and run.status == "in-progress":
+                run.status = "cancelled"
 
 
 class ACPCommBackend(BaseCommBackend):
-    """Real ACP communication backend using ACP SDK."""
+    """ACP communication backend using ACP SDK 1.0.3."""
     
     def __init__(self, **kwargs):
-        self._agents: Dict[str, ACPAgentHandle] = {}  # agent_id -> handle
-        self._endpoints: Dict[str, str] = {}  # agent_id -> endpoint (for compatibility)
+        if not ACP_AVAILABLE:
+            raise RuntimeError("ACP SDK is not available. Please install acp-sdk.")
+        
+        self._agents: Dict[str, ACPAgentHandle] = {}
+        self._sessions: Dict[str, Session] = {}
+        self._endpoints: Dict[str, str] = {}
     
     async def register_endpoint(self, agent_id: str, address: str) -> None:
-        """Register an agent endpoint (for compatibility)."""
+        """Register an agent endpoint."""
         self._endpoints[agent_id] = address
     
     async def connect(self, src_id: str, dst_id: str) -> None:
-        """Connect two agents (no-op for ACP as it uses direct tool calls)."""
+        """Connect two agents."""
+        # In ACP, connections are managed through sessions and runs
         pass
     
-    async def send(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Any:
-        """Send message using ACP tool call."""
+    async def send_message(self, src_id: str, dst_id: str, message: str) -> Optional[str]:
+        """Send a message from one agent to another."""
         if dst_id not in self._agents:
-            raise RuntimeError(f"Agent {dst_id} not found. Available agents: {list(self._agents.keys())}")
+            return None
         
-        handle = self._agents[dst_id]
+        dst_handle = self._agents[dst_id]
         
-        # Determine tool name and arguments from payload
-        if "tool_name" in payload:
-            tool_name = payload["tool_name"]
-            arguments = payload.get("arguments", {})
+        # Create a run if needed
+        active_runs = [r for r in dst_handle._runs.values() if r.status == "in-progress"]
+        if not active_runs:
+            run_request = RunCreateRequest(
+                agent_name=dst_id,
+                input=[{"type": "text", "parts": [{"type": "text", "text": message}]}],
+                mode=RunMode.ASYNC
+            )
+            run_id = await dst_handle.create_run(run_request)
+            run = dst_handle._runs[run_id]
         else:
-            # Extract command from content and map to appropriate tool
-            if "content" in payload:
-                content = payload["content"]
-                if isinstance(content, list) and content:
-                    text = " ".join(item.get("text", "") for item in content if item.get("type") == "text")
-                    cmd = text.strip().lower()
-                    
-                    # Map commands to tools based on agent type
-                    if dst_id.startswith("Worker-"):
-                        # For workers, map to answer_question
-                        tool_name = "answer_question"
-                        arguments = {"question": text}
-                    else:
-                        # For coordinator, map commands to appropriate tools
-                        if cmd == "dispatch":
-                            tool_name = "dispatch_questions"
-                            arguments = {}
-                        elif cmd == "status":
-                            tool_name = "get_coordinator_status"
-                            arguments = {}
-                        elif cmd.startswith("setup_network"):
-                            tool_name = "setup_workers"
-                            if " " in text:
-                                worker_list = text.split(" ", 1)[1]
-                                arguments = {"worker_list": worker_list}
-                            else:
-                                arguments = {"worker_list": ""}
-                        else:
-                            tool_name = "get_coordinator_status"
-                            arguments = {}
-                else:
-                    tool_name = "get_coordinator_status"
-                    arguments = {}
-            else:
-                tool_name = "get_coordinator_status"
-                arguments = {}
+            run = active_runs[0]
         
+        # Send message
         try:
-            # Call the tool directly via our ACP tool interface
-            result = await handle.client_session.call_tool({"name": tool_name, "arguments": arguments})
-            
-            # Extract text result
-            if hasattr(result, 'content') and result.content:
-                for content_item in result.content:
-                    if hasattr(content_item, 'text'):
-                        return {"text": content_item.text}
-            
-            # Fallback to string representation
-            return {"text": str(result)}
-            
+            # Get run_id from run or use the created one
+            current_run_id = run_id if 'run_id' in locals() else next(iter([rid for rid, r in dst_handle._runs.items() if r == run]), None)
+            response_msg = await dst_handle.send_message(current_run_id, message)
+            if hasattr(response_msg, 'parts') and response_msg.parts:
+                # Extract text from parts
+                for part in response_msg.parts:
+                    if hasattr(part, 'type') and part.type == "text":
+                        return getattr(part, 'text', "")
+            return str(response_msg)
         except Exception as e:
-            return {"text": f"ACP tool call failed: {str(e)}"}
-    
-    async def health_check(self, agent_id: str) -> bool:
-        """Check if an agent is healthy using ACP tools."""
-        # Runner is always healthy (it's just a controller)
-        if agent_id == "Runner":
-            return True
-            
-        if agent_id not in self._agents:
-            return False
-        
-        handle = self._agents[agent_id]
-        
-        # Check if process is still running
-        if handle.process.poll() is not None:
-            return False
-        
-        try:
-            # Determine appropriate status tool based on agent type
-            if agent_id.startswith("Worker-"):
-                tool_name = "get_status"
-            elif agent_id == "Coordinator-1":
-                tool_name = "get_coordinator_status"
-            else:
-                # For other agents, just check if they exist
-                return True
-            
-            # Try to call the appropriate status tool
-            result = await handle.client_session.call_tool({
-                "name": tool_name,
-                "arguments": {}
-            })
-            
-            # If we get any result, the agent is healthy
-            return True
-            
-        except Exception:
-            return False
+            logging.error(f"Failed to send message to {dst_id}: {e}")
+            return None
     
     async def spawn_local_agent(self, agent_id: str, host: str, port: int, executor: Any) -> ACPAgentHandle:
-        """Spawn a local ACP agent using stdio transport.
+        """Spawn a local ACP agent."""
+        # Create a session for this agent with proper UUID
+        session_id = str(uuid.uuid4())
+        session = Session(
+            id=session_id,
+            agent_id=agent_id
+        )
+        self._sessions[agent_id] = session
         
-        Args:
-            agent_id: Unique identifier for the agent
-            host: Host address (ignored for stdio transport)
-            port: Port number (ignored for stdio transport) 
-            executor: The executor that contains the ACP server
-            
-        Returns:
-            Handle to the spawned agent
-        """
-        if agent_id in self._agents:
-            raise RuntimeError(f"Agent {agent_id} already exists")
-        
-        # Get the tools from the executor
-        if hasattr(executor, 'worker') and hasattr(executor.worker, 'tools'):
-            # Worker executor
-            tools = executor.worker.tools
-            server_type = "worker"
-        elif hasattr(executor, 'coordinator') and hasattr(executor.coordinator, 'tools'):
-            # Coordinator executor
-            tools = executor.coordinator.tools
-            server_type = "coordinator"
-        else:
-            raise RuntimeError(f"Executor {type(executor)} does not have recognized tools interface")
-        
-        # Create ACP tool interface
-        class ACPToolInterface:
-            def __init__(self, tools_dict, executor):
-                self.tools = tools_dict
-                self.executor = executor
-                
-            async def call_tool(self, request):
-                # Extract tool call info - handle both dict and CallToolRequest
-                if isinstance(request, dict):
-                    tool_name = request["name"]
-                    arguments = request["arguments"]
-                else:
-                    tool_name = request.params.name
-                    arguments = request.params.arguments
-                
-                # Call the appropriate tool
-                if hasattr(self.executor, 'worker'):
-                    result = await self.executor.worker.call_tool(tool_name, arguments)
-                elif hasattr(self.executor, 'coordinator'):
-                    result = await self.executor.coordinator.call_tool(tool_name, arguments)
-                else:
-                    raise Exception(f"Executor has no worker or coordinator")
-                
-                # Create mock result object
-                class MockResult:
-                    def __init__(self, text):
-                        self.content = [MockContent(text)]
-                
-                class MockContent:
-                    def __init__(self, text):
-                        self.text = text
-                
-                return MockResult(result)
-        
-        # Create mock process and ACP tool interface
-        class MockProcess:
-            def poll(self):
-                return None  # Process is running
-            def terminate(self):
-                pass
-            def kill(self):
-                pass
-            def wait(self):
-                return 0
-        
-        mock_process = MockProcess()
-        
-        acp_interface = ACPToolInterface(tools, executor)
-        
-        handle = ACPAgentHandle(agent_id, mock_process, acp_interface)
+        # Create agent handle
+        handle = ACPAgentHandle(agent_id, session, executor)
         self._agents[agent_id] = handle
         
-        # Register endpoint for compatibility
-        self._endpoints[agent_id] = f"acp://{agent_id}"
-        
         return handle
+    
+    async def send(self, src_id: str, dst_id: str, message: str) -> Optional[str]:
+        """Send a message between agents (required by BaseCommBackend)."""
+        return await self.send_message(src_id, dst_id, message)
+    
+    async def health_check(self, agent_id: str) -> bool:
+        """Check if an agent is healthy (required by BaseCommBackend)."""
+        return agent_id in self._agents and self._agents[agent_id] is not None
     
     async def close(self) -> None:
         """Close all agent connections."""
         for handle in self._agents.values():
             await handle.stop()
         self._agents.clear()
-        self._endpoints.clear()
+        self._sessions.clear()

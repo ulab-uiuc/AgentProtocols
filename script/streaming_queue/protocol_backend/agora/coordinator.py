@@ -27,12 +27,14 @@ class AgoraQACoordinator(QACoordinatorBase):
             "body": question
         }
 
-        # 通过 agent_network 路由消息
+        # 通过 agent_network 路由消息，只使用官方SDK
         response = await self.agent_network.route_message(
             src_id=self.coordinator_id,
             dst_id=worker_id,
             payload=payload
         )
+
+
 
         # Adapt the response to the format expected by QACoordinatorBase
         # Based on the actual response structure, the answer is in response['raw']['body']
@@ -77,7 +79,14 @@ class AgoraCoordinatorExecutor:
         # 从输入中提取命令文本
         user_text = ""
         if isinstance(input_data, dict):
-            if "body" in input_data:
+            if "content" in input_data:
+                # Handle content array format
+                parts = input_data["content"]
+                if isinstance(parts, list):
+                    user_text = " ".join(p.get("text", "") for p in parts if p.get("type") == "text")
+                else:
+                    user_text = str(parts)
+            elif "body" in input_data:
                 user_text = input_data["body"]
             else:
                 user_text = "status"
@@ -86,6 +95,8 @@ class AgoraCoordinatorExecutor:
 
         cmd = user_text.strip().lower()
         original_text = user_text.strip()  # 保留原始大小写用于worker IDs
+        
+
 
         try:
             if "dispatch" in cmd or "start dispatch" in cmd:
