@@ -62,7 +62,7 @@ class A2ARunner(RunnerBase):
 
         # 1) Coordinator
         coord_port = int(self.config.get("qa", {}).get("coordinator", {}).get("port", 9998))
-        coordinator_executor = QACoordinatorExecutor(qa_cfg, out)
+        coordinator_executor = QACoordinatorExecutor(self.config, out)
         coord_handle = await self._backend.spawn_local_agent(
             agent_id="Coordinator-1", host="localhost", port=coord_port, executor=coordinator_executor
         )
@@ -146,7 +146,7 @@ class A2ARunner(RunnerBase):
             return {
                 "model": {
                     "type": "local",
-                    "name": core.get("name", "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"),
+                    "name": core.get("name", "Qwen2.5-VL-72B-Instruct"),
                     "temperature": core.get("temperature", 0.0),
                 },
                 "base_url": core.get("base_url", "http://localhost:8000/v1"),
