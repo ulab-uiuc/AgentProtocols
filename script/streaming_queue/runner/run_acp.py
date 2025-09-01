@@ -43,37 +43,24 @@ class ACPRunner(RunnerBase):
         # Set star topology
         self.network.setup_star_topology("Coordinator-1")
 
+        # Register Runner as a special agent for communication
+        await self.network.register_agent("Runner", "acp://Runner")
+        
+        # Connect Runner to Coordinator using the correct method
+        await self.network.connect_agents("Runner", "Coordinator-1")
+
         # Tell the coordinator about the network and workers (crucial step!)
         if hasattr(coord_executor, "coordinator"):
             coord_executor.coordinator.set_network(self.network, worker_ids)
-
-        # Send network setup to coordinator via ACP protocol
-        worker_list = ",".join(worker_ids)  # This will be "Worker-1,Worker-2,Worker-3,Worker-4"
-        setup_command = f"setup_network {worker_list}"
-        await self._send_setup_command(setup_command)
+            # Also set coordinator_id
+            coord_executor.coordinator.coordinator_id = "Coordinator-1"
 
         # Give a small delay for setup to complete
         await asyncio.sleep(0.5)
 
         return worker_ids
 
-    async def _send_setup_command(self, command: str) -> None:
-        """Send setup command to coordinator"""
-        coordinator_url = "http://127.0.0.1:9900"
-        acp_payload = {
-            "input": {
-                "content": [{"type": "text", "text": command}]
-            }
-        }
 
-        try:
-            import httpx
-            async with httpx.AsyncClient() as client:
-                resp = await client.post(f"{coordinator_url}/runs", json=acp_payload)
-                resp.raise_for_status()
-                # We don't need to process the response for setup
-        except Exception as e:
-            print(f"Failed to send setup command: {e}")  # Use print since self.output may not be available
 
     def _prepare_core_config(self) -> dict:
         """Convert config.yaml format to QAWorkerBase expected format"""
@@ -94,22 +81,16 @@ class ACPRunner(RunnerBase):
         }
 
     async def send_command_to_coordinator(self, command: str) -> Optional[Dict[str, Any]]:
-        # Send direct HTTP request to coordinator (not via network routing)
-        # since Runner is not part of the agent network topology
-        coordinator_url = "http://127.0.0.1:9900"
-        acp_payload = {
-            "input": {
+        # Send command directly via ACP network routing
+        try:
+            payload = {
                 "content": [{"type": "text", "text": command}]
             }
-        }
-
-        try:
-            import httpx
-            async with httpx.AsyncClient() as client:
-                resp = await client.post(f"{coordinator_url}/runs", json=acp_payload, timeout=60.0)
-                resp.raise_for_status()
-                result = resp.json()
-                return result
+            
+            # Use network routing to communicate with coordinator
+            result = await self.network.route_message("Runner", "Coordinator-1", payload)
+            return result
+            
         except Exception as e:
             self.output.error(f"Failed to send command to coordinator: {e}")
             return None

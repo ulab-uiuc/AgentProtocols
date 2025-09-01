@@ -1,65 +1,89 @@
-# script/streaming_queue/protocol_backend/acp/worker.py
+# -*- coding: utf-8 -*-
 """
-ACP Worker (protocol-specific)
+ACP Worker implementation - simplified but functional.
 
-- 继承 QAWorkerBase，使用 ACP 原生 SDK 将其包装成一个可执行的 Agent
-- 仅负责"通信适配层"：提取用户输入文本 → 调用基类 answer() → 通过 ACP 返回
+Since there's no standard ACP SDK available, this implements a clean
+ACP-style worker that integrates properly with the QA system.
 """
 
 from __future__ import annotations
-from typing import Any, Optional, Dict
 
-# 允许两种导入相对路径（避免运行根目录不同导致的导入失败）
-try:
-    from ...core.qa_worker_base import QAWorkerBase  # when run as package
-except Exception:
-    from script.streaming_queue.core.qa_worker_base import QAWorkerBase  # type: ignore
+import sys
+from pathlib import Path
+from typing import Any, Dict, Optional
 
-# ACP SDK (optional)
-try:
-    from acp_sdk import Client
-    from acp_sdk.models import RunCreateRequest, Input
-    ACP_AVAILABLE = True
-except ImportError:
-    ACP_AVAILABLE = False
-    Client = None
-    RunCreateRequest = None
-    Input = None
+# Add streaming_queue to path for imports
+current_file = Path(__file__).resolve()
+streaming_queue_path = current_file.parent.parent.parent
+if str(streaming_queue_path) not in sys.path:
+    sys.path.insert(0, str(streaming_queue_path))
+
+from core.qa_worker_base import QAWorkerBase
 
 
 class ACPQAWorker(QAWorkerBase):
-    """目前不需要额外逻辑，保留扩展点。"""
-    pass
+    """ACP-style QA Worker that provides clean tool interface."""
+    
+    def __init__(self, config: Optional[Dict] = None, output=None):
+        super().__init__(config, output)
+        self.tools = {
+            "answer_question": self._answer_question_tool,
+            "get_status": self._get_status_tool
+        }
+    
+    async def _answer_question_tool(self, question: str) -> str:
+        """Tool: Answer a question using LLM."""
+        try:
+            result = await self.answer(question)
+            return result
+        except Exception as e:
+            return f"Error answering question: {str(e)}"
+    
+    async def _get_status_tool(self) -> str:
+        """Tool: Get worker status."""
+        try:
+            llm_available = hasattr(self, 'llm') and self.llm is not None
+            return f"ACP QA Worker ready - LLM available: {llm_available}"
+        except Exception as e:
+            return f"ACP QA Worker status check failed: {str(e)}"
+    
+    async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> str:
+        """Call a tool by name with arguments."""
+        if tool_name not in self.tools:
+            raise ValueError(f"Unknown tool: {tool_name}. Available: {list(self.tools.keys())}")
+        
+        tool_func = self.tools[tool_name]
+        return await tool_func(**arguments)
 
 
 class ACPWorkerExecutor:
-    """
-    ACP 原生 Executor 外壳：
-      - 从 input_data 中抽取文本（支持 ACP 结构）
-      - 调用 ACPQAWorker.answer()
-      - 返回 ACP 格式的响应
-    """
-
+    """ACP Worker Executor for integration with the runner."""
+    
     def __init__(self, config: Optional[Dict] = None, output=None):
-        self.worker = ACPQAWorker(config=config, output=output)
-
+        self.worker = ACPQAWorker(config, output)
+        self.config = config
+        self.output = output
+    
     async def execute(self, input_data: Dict) -> Dict:
+        """Execute an ACP-style request."""
         try:
-            # Extract text from ACP input
-            parts = input_data.get("content", [])
-            text = " ".join(p.get("text", "") for p in parts if p.get("type") == "text") or ""
-
-            if not text:
-                text = "What is artificial intelligence?"  # fallback question
-
-            # Add timeout to prevent hanging
-            import asyncio
-            answer = await asyncio.wait_for(self.worker.answer(text), timeout=30.0)
-
-            # Return ACP output format
-            return {"content": [{"type": "text", "text": answer}]}
-
-        except asyncio.TimeoutError:
-            return {"content": [{"type": "text", "text": "Error: Request timed out after 30 seconds"}]}
+            # Check if this is a tool call request
+            if "tool_name" in input_data:
+                tool_name = input_data["tool_name"]
+                arguments = input_data.get("arguments", {})
+                result = await self.worker.call_tool(tool_name, arguments)
+            else:
+                # Extract question from content
+                parts = input_data.get("content", [])
+                question = " ".join(p.get("text", "") for p in parts if p.get("type") == "text")
+                
+                if not question:
+                    question = "What is artificial intelligence?"
+                
+                result = await self.worker.call_tool("answer_question", {"question": question})
+            
+            return {"content": [{"type": "text", "text": result}]}
+            
         except Exception as e:
-            return {"content": [{"type": "text", "text": f"Error: {str(e)}"}]}
+            error_msg = f"ACP Worker execution failed: {str(e)}"
+            return {"content": [{"type": "text", "text": error_msg}]}
