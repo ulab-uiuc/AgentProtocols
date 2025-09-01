@@ -35,14 +35,23 @@ class AgoraQACoordinator(QACoordinatorBase):
         )
 
         # Adapt the response to the format expected by QACoordinatorBase
-        # The actual answer is in response['text'] or response['raw']['raw']['body']
-        answer = (response or {}).get("text")
-        print(f'>>> answer: {answer}')
+        # Based on the actual response structure, the answer is in response['raw']['body']
+        answer = None
+        
+        # First try to get from the correct raw structure (this is where the actual answer is)
+        try:
+            if response and "raw" in response and "body" in response["raw"]:
+                answer = response["raw"]["body"]
+        except (KeyError, TypeError):
+            pass
+        
+        # Fallback: try to get from response['text']
         if not answer:
-            try:
-                answer = response["raw"]["raw"]["body"]
-            except (KeyError, TypeError):
-                answer = None
+            answer = (response or {}).get("text")
+
+        # Ensure the response structure has the text field populated with the same content as body
+        if response and "raw" in response and answer:
+            response["text"] = answer
 
         return {
             "answer": answer,
@@ -79,7 +88,7 @@ class AgoraCoordinatorExecutor:
         original_text = user_text.strip()  # 保留原始大小写用于worker IDs
 
         try:
-            if cmd == "dispatch":
+            if "dispatch" in cmd or "start dispatch" in cmd:
                 result = await self.coordinator.dispatch_round()
             elif cmd.startswith("setup_network"):
                 try:

@@ -77,12 +77,6 @@ class AgoraRunner(RunnerBase):
         coord_port = int(self.config.get("qa", {}).get("coordinator", {}).get("start_port", 9998))
         coordinator_url = f"http://localhost:{coord_port}"
         
-        # if command == "status":
-        #     natural_language_command = "Get the current status of the coordinator. Please use general_service tool"
-        # elif command == "dispatch":
-        #     natural_language_command = "Start a full round of question-answering dispatch, execution, and result collection. Please use general_service tool"
-        # else:
-        #     natural_language_command = command
         # Construct Agora message format
         agora_payload = {
             "protocolHash": None,
