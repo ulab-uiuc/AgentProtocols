@@ -33,8 +33,8 @@ class QACoordinatorBase(ABC):
 
         self.batch_size: int = int(coordinator_cfg.get("batch_size", 50))
         self.first_50: bool = bool(coordinator_cfg.get("first_50", True))
-        self.data_path: str = coordinator_cfg.get("data_file", "script/streaming_queue/data/top1000_simplified.jsonl")
-        self.result_file: str = coordinator_cfg.get("result_file", "script/streaming_queue/data/qa_results_anp_0801.json")
+        self.data_path: str = coordinator_cfg.get("data_file", "data/top1000_simplified.jsonl")
+        self.result_file: str = coordinator_cfg.get("result_file", "data/qa_results_anp_0801.json")
 
         self.coordinator_id: str = coordinator_cfg.get("coordinator_id", "Coordinator-1")
         self.worker_ids: List[str] = []

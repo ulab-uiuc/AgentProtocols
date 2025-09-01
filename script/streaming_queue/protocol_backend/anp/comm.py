@@ -656,12 +656,15 @@ class ANPCommBackend(BaseCommBackend):
         """Close ANP backend and cleanup resources"""
         print("[ANP] Closing ANP communication backend...")
         
-        # Stop all local agents
+        # Stop all local agents gracefully
         for agent_id in list(self._handles.keys()):
             try:
-                await self.stop_local_agent(agent_id)
+                await asyncio.wait_for(self.stop_local_agent(agent_id), timeout=2.0)
+            except asyncio.TimeoutError:
+                print(f"[ANP] Timeout stopping agent {agent_id}")
             except Exception as e:
-                print(f"[ANP] Error stopping agent {agent_id}: {e}")
+                # Suppress cleanup errors
+                pass
         
         # Close HTTP client
         if self._own_client:

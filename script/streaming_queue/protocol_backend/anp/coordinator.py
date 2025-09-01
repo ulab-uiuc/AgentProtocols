@@ -120,6 +120,7 @@ class ANPQACoordinator(QACoordinatorBase):
         self.anp_metrics["http_messages"] += 1
         
         try:
+            print(f"[DEBUG ANP] Sending to {worker_id}: {question[:50]}...")
             # Send via ANP network (will use ANPCommBackend)
             response = await self.agent_network.route_message(
                 self.coordinator_id, 
