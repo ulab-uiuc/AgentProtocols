@@ -404,7 +404,7 @@ class FailStormRunner:
         }
         
         # Use existing shard data files from shard_qa
-        shard_qa_data_dir = Path(__file__).parent.parent / "shard_qa" / "data" / "shards"
+        shard_qa_data_dir = Path(__file__).parent / "shard_qa" / "data" / "shards"
         if not shard_qa_data_dir.exists():
             self.output.error(f"Shard QA data directory not found: {shard_qa_data_dir}")
             raise FileNotFoundError(f"Missing shard QA data: {shard_qa_data_dir}")
