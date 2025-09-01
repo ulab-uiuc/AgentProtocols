@@ -112,8 +112,11 @@ class QACoordinatorBase(ABC):
     async def dispatch_questions_dynamically(self, questions: List[Dict[str, str]]) -> List[Dict[str, Any]]:
         if not self.worker_ids:
             self._o("warning", "No workers configured.")
+            self._o("warning", f"Debug info - agent_network: {self.agent_network is not None}, worker_ids: {self.worker_ids}")
             return []
         self._o("info", f"Starting dynamic dispatch: {len(questions)} questions, {len(self.worker_ids)} workers")
+        self._o("info", f"Worker IDs: {self.worker_ids}")
+        self._o("info", f"Network available: {self.agent_network is not None}")
 
         q_queue: asyncio.Queue = asyncio.Queue()
         for q in questions:

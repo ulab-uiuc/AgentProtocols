@@ -3,8 +3,18 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 import httpx
 from ...comm.base import BaseCommBackend
-from fastapi import FastAPI, Request
-from uvicorn import Config, Server
+# Optional FastAPI imports - handle compatibility issues gracefully
+try:
+    from fastapi import FastAPI, Request
+    from uvicorn import Config, Server
+    FASTAPI_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: FastAPI not available due to compatibility issue: {e}")
+    FastAPI = None
+    Request = None
+    Config = None
+    Server = None
+    FASTAPI_AVAILABLE = False
 import asyncio
 
 class ACPCommBackend(BaseCommBackend):
@@ -57,9 +67,20 @@ class ACPCommBackend(BaseCommBackend):
             await client.aclose()
         for srv in self._servers.values():
             if hasattr(srv, "shutdown"):
-                await srv.shutdown()
+                try:
+                    # Handle different uvicorn versions
+                    if hasattr(srv, "should_exit"):
+                        srv.should_exit = True
+                    await srv.shutdown()
+                except AttributeError:
+                    # Fallback for different uvicorn versions
+                    if hasattr(srv, "should_exit"):
+                        srv.should_exit = True
 
     async def spawn_local_agent(self, agent_id: str, host: str, port: int, executor: Any) -> Any:
+        if not FASTAPI_AVAILABLE:
+            raise RuntimeError("FastAPI is not available due to compatibility issues. Cannot spawn local agent.")
+        
         app = FastAPI()
 
         # ACP /agents endpoint (for discovery/health)

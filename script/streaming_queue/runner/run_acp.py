@@ -24,9 +24,9 @@ class ACPRunner(RunnerBase):
         core_config = self._prepare_core_config()
 
         # Spawn local agents using ACP SDK (via spawn_local_agent)
-        coord_executor = ACPCoordinatorExecutor(core_config)
+        coord_executor = ACPCoordinatorExecutor(core_config, output=self.output)
         coord_handle = await self._backend.spawn_local_agent(
-            "Coordinator-1", "127.0.0.1", 9998, coord_executor
+            "Coordinator-1", "127.0.0.1", 9900, coord_executor
         )
         await self.network.register_agent("Coordinator-1", coord_handle.base_url)
 
@@ -35,7 +35,7 @@ class ACPRunner(RunnerBase):
             wid = f"Worker-{i+1}"
             w_port = int(self.config["qa"]["worker"]["start_port"]) + i
             w_handle = await self._backend.spawn_local_agent(
-                wid, "127.0.0.1", w_port, ACPWorkerExecutor(core_config)
+                wid, "127.0.0.1", w_port, ACPWorkerExecutor(core_config, output=self.output)
             )
             await self.network.register_agent(wid, w_handle.base_url)
             worker_ids.append(wid)
@@ -59,7 +59,7 @@ class ACPRunner(RunnerBase):
 
     async def _send_setup_command(self, command: str) -> None:
         """Send setup command to coordinator"""
-        coordinator_url = "http://127.0.0.1:9998"
+        coordinator_url = "http://127.0.0.1:9900"
         acp_payload = {
             "input": {
                 "content": [{"type": "text", "text": command}]
@@ -96,7 +96,7 @@ class ACPRunner(RunnerBase):
     async def send_command_to_coordinator(self, command: str) -> Optional[Dict[str, Any]]:
         # Send direct HTTP request to coordinator (not via network routing)
         # since Runner is not part of the agent network topology
-        coordinator_url = "http://127.0.0.1:9998"
+        coordinator_url = "http://127.0.0.1:9900"
         acp_payload = {
             "input": {
                 "content": [{"type": "text", "text": command}]

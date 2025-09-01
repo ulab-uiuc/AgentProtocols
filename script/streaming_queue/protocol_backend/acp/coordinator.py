@@ -93,6 +93,8 @@ class ACPCoordinatorExecutor:
         user_text = " ".join(p.get("text", "") for p in parts if p.get("type") == "text") or "status"
         cmd = user_text.strip().lower()
 
+
+
         # For setup_network, preserve the original case for worker IDs
         original_text = user_text.strip()
 
@@ -106,10 +108,14 @@ class ACPCoordinatorExecutor:
                 worker_ids = [w.strip() for w in worker_list.split(",") if w.strip()]
 
                 # Set up the coordinator with network access
-                self.coordinator.worker_ids = worker_ids
-                self.coordinator.coordinator_id = "Coordinator-1"
-
-                result = f"Network setup complete with {len(worker_ids)} workers: {worker_ids}"
+                # Note: agent_network should already be set by the runner via set_network()
+                # This command only updates the worker_ids list
+                if self.coordinator.agent_network is not None:
+                    self.coordinator.worker_ids = worker_ids
+                    self.coordinator.coordinator_id = "Coordinator-1"
+                    result = f"Network setup complete with {len(worker_ids)} workers: {worker_ids}"
+                else:
+                    result = "Error: Network not initialized. Runner should call set_network() first."
             except Exception as e:
                 result = f"Network setup failed: {e}"
         else:

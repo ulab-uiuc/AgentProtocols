@@ -49,13 +49,13 @@ class QAAgentExecutor(AgentExecutor):
             question = self._extract_text(user_input) or "What is artificial intelligence?"
 
             result = await self.worker.answer(question)
-            # A2A enqueue_event 是异步调用，需要 await
-            await event_queue.enqueue_event(new_agent_text_message(result))
+            # A2A enqueue_event 是同步调用，不需要 await
+            event_queue.enqueue_event(new_agent_text_message(result))
         except Exception as e:
-            await event_queue.enqueue_event(new_agent_text_message(f"[QAAgentExecutor] failed: {e}"))
+            event_queue.enqueue_event(new_agent_text_message(f"[QAAgentExecutor] failed: {e}"))
 
     async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:  # type: ignore[override]
-        await event_queue.enqueue_event(new_agent_text_message("cancel not supported"))
+        event_queue.enqueue_event(new_agent_text_message("cancel not supported"))
 
     # ------------- helpers -------------
     def _extract_text(self, payload: Any) -> str:
