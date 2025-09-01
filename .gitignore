@@ -1,9 +1,9 @@
 #original data
-script/streaming_queue/data/*
-!script/streaming_queue/data/top1000_simplified.jsonl
-
-script/shard_qa/logs/*
-script/async_mapf/log/*
+streaming_queue\data\top1000.dev
+streaming_queue\data\qa_results.json
+streaming_queue\data\top1000.jsonl
+streaming_queue/data/*
+dataset/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

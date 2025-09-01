@@ -1,7 +1,7 @@
 core:
   protocol: agora
   type: "openai"  # "local" or "openai"
-  name: "gpt-4o"
+  name: "gpt-4o"  # Model name, e.g., "gpt-4o", "gpt-3.5-turbo", or local model name
   temperature: 0.0
   # For local models
   base_url: "http://localhost:8000/v1"
@@ -18,9 +18,9 @@ network:
 qa:
   coordinator:
     count: 1          # Define the number of coordinators
-    start_port: 9998   # Coordinator starting port
-    data_file: "/GPFS/data/sujiaqi/gui/Multiagent-Protocol/script/streaming_queue/data/top1000_simplified.jsonl"  # Question file path
-    result_file: "./data/qa_result_ap_0715.json"  # Result storage file path
+    start_port: 9900   # Coordinator starting port
+    data_file: "data/top1000_simplified.jsonl"  # Question file path
+    result_file: "data/qa_results.json"  # Result storage file path
     batch_size: 50  # Number of questions to dispatch per round
     first_50: true  # Whether to process only the first 50 questions
   worker:
