@@ -1,0 +1,129 @@
+2025-09-02 08:15:05,422 - network - INFO - [ANP Runner] Initialized with DID auth: True, E2E encryption: True
+2025-09-02 08:15:05,422 - network - INFO - ============================================================
+2025-09-02 08:15:05,422 - network - INFO - [ANP Runner] Starting MAPF simulation with ANP protocol
+2025-09-02 08:15:05,422 - network - INFO - [ANP Runner] DID Authentication: True
+2025-09-02 08:15:05,422 - network - INFO - [ANP Runner] E2E Encryption: True
+2025-09-02 08:15:05,422 - network - INFO - ============================================================
+2025-09-02 08:15:05,422 - network - INFO - Registered agent 0 at (0, 0)
+2025-09-02 08:15:05,422 - network - INFO - 🌐 REGISTER_AGENT
+2025-09-02 08:15:05,423 - network - INFO - Registered agent 1 at (18, 0)
+2025-09-02 08:15:05,423 - network - INFO - 🌐 REGISTER_AGENT
+2025-09-02 08:15:05,423 - network - INFO - Registered agent 2 at (0, 18)
+2025-09-02 08:15:05,423 - network - INFO - 🌐 REGISTER_AGENT
+2025-09-02 08:15:05,423 - network - INFO - Registered agent 3 at (18, 18)
+2025-09-02 08:15:05,423 - network - INFO - 🌐 REGISTER_AGENT
+2025-09-02 08:15:05,423 - network - INFO - [ANP Network] Network coordinator executor initialized with DID authentication
+2025-09-02 08:15:05,423 - network - INFO - [ANP Runner] Network coordinator initialized with DID authentication
+2025-09-02 08:15:06,144 - agent0-anp - INFO - 🎯 Agent 0 configured: start=(0, 0), goal=(18, 18), current=(0, 0)
+2025-09-02 08:15:06,144 - agent0-anp - INFO - ✅ Agent 0 LLM initialized successfully
+2025-09-02 08:15:06,144 - network - INFO - [ANP Agent 0] Executor initialized with DID authentication
+2025-09-02 08:15:06,144 - network - INFO - [ANP Runner] Agent 0 initialized with DID authentication on port 9000
+2025-09-02 08:15:06,461 - agent1-anp - INFO - 🎯 Agent 1 configured: start=(18, 0), goal=(0, 18), current=(18, 0)
+2025-09-02 08:15:06,462 - agent1-anp - INFO - ✅ Agent 1 LLM initialized successfully
+2025-09-02 08:15:06,462 - network - INFO - [ANP Agent 1] Executor initialized with DID authentication
+2025-09-02 08:15:06,462 - network - INFO - [ANP Runner] Agent 1 initialized with DID authentication on port 9001
+2025-09-02 08:15:07,185 - agent2-anp - INFO - 🎯 Agent 2 configured: start=(0, 18), goal=(18, 0), current=(0, 18)
+2025-09-02 08:15:07,185 - agent2-anp - INFO - ✅ Agent 2 LLM initialized successfully
+2025-09-02 08:15:07,185 - network - INFO - [ANP Agent 2] Executor initialized with DID authentication
+2025-09-02 08:15:07,185 - network - INFO - [ANP Runner] Agent 2 initialized with DID authentication on port 9002
+2025-09-02 08:15:07,885 - agent3-anp - INFO - 🎯 Agent 3 configured: start=(18, 18), goal=(0, 0), current=(18, 18)
+2025-09-02 08:15:07,885 - agent3-anp - INFO - ✅ Agent 3 LLM initialized successfully
+2025-09-02 08:15:07,886 - network - INFO - [ANP Agent 3] Executor initialized with DID authentication
+2025-09-02 08:15:07,886 - network - INFO - [ANP Runner] Agent 3 initialized with DID authentication on port 9003
+2025-09-02 08:15:07,886 - network - INFO - [ANP Runner] Waiting for ANP DID authentications...
+2025-09-02 08:15:08,892 - network - INFO - [ANP Network] Network coordinator DID authenticated and ready
+2025-09-02 08:15:08,892 - network - INFO - [ANP Agent 0] DID authenticated and connected to network
+2025-09-02 08:15:08,892 - network - INFO - [ANP Agent 0] 🔄 Starting message processing loop
+2025-09-02 08:15:08,893 - network - INFO - [ANP Agent 2] DID authenticated and connected to network
+2025-09-02 08:15:08,893 - network - INFO - [ANP Agent 3] DID authenticated and connected to network
+2025-09-02 08:15:08,893 - network - INFO - [ANP Agent 2] 🔄 Starting message processing loop
+2025-09-02 08:15:08,893 - network - INFO - [ANP Agent 3] 🔄 Starting message processing loop
+2025-09-02 08:15:08,903 - network - INFO - [ANP Agent 1] DID authenticated and connected to network
+2025-09-02 08:15:08,903 - network - INFO - [ANP Agent 1] 🔄 Starting message processing loop
+2025-09-02 08:15:17,886 - network - INFO - [ANP Runner] ANP connections established (waited 10s)
+2025-09-02 08:15:17,886 - network - INFO - [ANP Agent 0] Sent to NetworkBase via ANP: AGENT_REGISTER
+2025-09-02 08:15:17,886 - network - INFO - [ANP Runner] Agent 0 registered via ANP
+2025-09-02 08:15:17,886 - network - INFO - [ANP Agent 1] Sent to NetworkBase via ANP: AGENT_REGISTER
+2025-09-02 08:15:17,886 - network - INFO - [ANP Runner] Agent 1 registered via ANP
+2025-09-02 08:15:17,886 - network - INFO - [ANP Agent 2] Sent to NetworkBase via ANP: AGENT_REGISTER
+2025-09-02 08:15:17,887 - network - INFO - [ANP Runner] Agent 2 registered via ANP
+2025-09-02 08:15:17,887 - network - INFO - [ANP Agent 3] Sent to NetworkBase via ANP: AGENT_REGISTER
+2025-09-02 08:15:17,887 - network - INFO - [ANP Runner] Agent 3 registered via ANP
+2025-09-02 08:15:17,887 - network - INFO - [ANP Network] Broadcasted CONTROL: START
+2025-09-02 08:15:17,887 - network - INFO - [ANP Runner] Simulation started with ANP protocol
+2025-09-02 08:15:17,887 - network - INFO - [ANP Agent 0] 📨 GENERIC
+2025-09-02 08:15:17,887 - network - INFO - [ANP Agent 0] Routing message type: AGENT_REGISTER
+2025-09-02 08:15:17,887 - network - INFO - [ANP Agent 0] Processing AGENT_REGISTER message
+2025-09-02 08:15:17,887 - network - INFO - [ANP Agent 1] 📨 GENERIC
+2025-09-02 08:15:17,887 - network - INFO - [ANP Agent 1] Routing message type: AGENT_REGISTER
+2025-09-02 08:15:17,887 - network - INFO - [ANP Agent 1] Processing AGENT_REGISTER message
+2025-09-02 08:15:17,887 - network - INFO - [ANP Agent 2] 📨 GENERIC
+2025-09-02 08:15:17,887 - network - INFO - [ANP Agent 2] Routing message type: AGENT_REGISTER
+2025-09-02 08:15:17,887 - network - INFO - [ANP Agent 2] Processing AGENT_REGISTER message
+2025-09-02 08:15:17,887 - network - INFO - [ANP Agent 3] 📨 GENERIC
+2025-09-02 08:15:17,887 - network - INFO - [ANP Agent 3] Routing message type: AGENT_REGISTER
+2025-09-02 08:15:17,887 - network - INFO - [ANP Agent 3] Processing AGENT_REGISTER message
+2025-09-02 08:15:17,887 - network - INFO - Starting NetworkBase with 4 agents
+2025-09-02 08:15:17,887 - network - INFO - Grid size: 19x19, Mode: concurrent
+2025-09-02 08:15:17,887 - network - INFO - NetworkBase running in *concurrent* mode (no ticks)
+2025-09-02 08:15:17,887 - network - INFO - Scheduling delayed start for agents (waiting for services to be ready)...
+2025-09-02 08:15:17,887 - network - WARNING - [ANP Network] Received unhandled message type: dict
+2025-09-02 08:15:17,887 - network - INFO - Waiting 10 seconds for all agent services to fully start...
+2025-09-02 08:15:22,888 - network - DEBUG - NetworkBase metrics: {'total_steps': 0, 'avg_latency_ms': 0.0, 'collision_count': 0, 'collision_rate': 0.0, 'elapsed_time_s': 5.000700950622559}
+2025-09-02 08:15:27,888 - network - INFO - Now sending START signals to all agents...
+2025-09-02 08:15:27,888 - network - INFO - Starting all registered agents...
+2025-09-02 08:15:27,888 - network - INFO - ✅ Sent start signal to agent 0
+2025-09-02 08:15:27,888 - network - INFO - ✅ Sent start signal to agent 1
+2025-09-02 08:15:27,889 - network - INFO - ✅ Sent start signal to agent 2
+2025-09-02 08:15:27,889 - network - INFO - ✅ Sent start signal to agent 3
+2025-09-02 08:15:27,889 - network - INFO - All agents have been signaled to start
+2025-09-02 08:15:27,889 - network - DEBUG - NetworkBase metrics: {'total_steps': 0, 'avg_latency_ms': 0.0, 'collision_count': 0, 'collision_rate': 0.0, 'elapsed_time_s': 10.001436948776245}
+2025-09-02 08:15:27,889 - network - DEBUG - Control message 'START' from/to agent 0
+2025-09-02 08:15:27,889 - network - DEBUG - Control message 'START' from/to agent 1
+2025-09-02 08:15:27,889 - network - DEBUG - Control message 'START' from/to agent 2
+2025-09-02 08:15:27,889 - network - DEBUG - Control message 'START' from/to agent 3
+2025-09-02 08:15:32,889 - network - DEBUG - NetworkBase metrics: {'total_steps': 0, 'avg_latency_ms': 0.0, 'collision_count': 0, 'collision_rate': 0.0, 'elapsed_time_s': 15.002245426177979}
+2025-09-02 08:15:37,890 - network - DEBUG - NetworkBase metrics: {'total_steps': 0, 'avg_latency_ms': 0.0, 'collision_count': 0, 'collision_rate': 0.0, 'elapsed_time_s': 20.002779006958008}
+2025-09-02 08:15:42,890 - network - DEBUG - NetworkBase metrics: {'total_steps': 0, 'avg_latency_ms': 0.0, 'collision_count': 0, 'collision_rate': 0.0, 'elapsed_time_s': 25.003137588500977}
+2025-09-02 08:15:47,891 - network - DEBUG - NetworkBase metrics: {'total_steps': 0, 'avg_latency_ms': 0.0, 'collision_count': 0, 'collision_rate': 0.0, 'elapsed_time_s': 30.003803730010986}
+2025-09-02 08:15:52,891 - network - DEBUG - NetworkBase metrics: {'total_steps': 0, 'avg_latency_ms': 0.0, 'collision_count': 0, 'collision_rate': 0.0, 'elapsed_time_s': 35.00403451919556}
+2025-09-02 08:15:57,892 - network - DEBUG - NetworkBase metrics: {'total_steps': 0, 'avg_latency_ms': 0.0, 'collision_count': 0, 'collision_rate': 0.0, 'elapsed_time_s': 40.00426411628723}
+2025-09-02 08:16:02,892 - network - DEBUG - NetworkBase metrics: {'total_steps': 0, 'avg_latency_ms': 0.0, 'collision_count': 0, 'collision_rate': 0.0, 'elapsed_time_s': 45.00471329689026}
+2025-09-02 08:16:07,892 - network - DEBUG - NetworkBase metrics: {'total_steps': 0, 'avg_latency_ms': 0.0, 'collision_count': 0, 'collision_rate': 0.0, 'elapsed_time_s': 50.00496006011963}
+2025-09-02 08:16:12,893 - network - DEBUG - NetworkBase metrics: {'total_steps': 0, 'avg_latency_ms': 0.0, 'collision_count': 0, 'collision_rate': 0.0, 'elapsed_time_s': 55.00588369369507}
+2025-09-02 08:16:17,888 - network - INFO - [ANP Network] Broadcasted CONTROL: STOP
+2025-09-02 08:16:17,888 - network - INFO - ============================================================
+2025-09-02 08:16:17,888 - network - INFO - [ANP Runner] Simulation Results
+2025-09-02 08:16:17,888 - network - INFO - ============================================================
+2025-09-02 08:16:17,888 - network - INFO - Total agents: 0
+2025-09-02 08:16:17,888 - network - INFO - Total moves: 0
+2025-09-02 08:16:17,888 - network - INFO - Active DID sessions: 0
+2025-09-02 08:16:17,888 - network - INFO - 
+Final agent positions:
+2025-09-02 08:16:17,888 - network - INFO - 
+Success rate: 0/0 (0.0%)
+2025-09-02 08:16:17,888 - network - INFO - Average latency: 0.00ms
+2025-09-02 08:16:17,888 - network - INFO - Collision rate: 0.00%
+2025-09-02 08:16:17,888 - network - INFO - ============================================================
+2025-09-02 08:16:17,888 - network - INFO - [ANP Runner] ANP protocol simulation completed successfully
+2025-09-02 08:16:17,888 - network - INFO - [ANP Runner] Cleaning up ANP resources...
+2025-09-02 08:16:17,888 - network - WARNING - [ANP Network] Received unhandled message type: dict
+2025-09-02 08:16:17,888 - network - INFO - [ANP Agent 0] Cleanup completed
+2025-09-02 08:16:17,888 - network - INFO - [ANP Runner] Agent 0 cleaned up
+2025-09-02 08:16:17,888 - network - INFO - [ANP Agent 1] Cleanup completed
+2025-09-02 08:16:17,888 - network - INFO - [ANP Runner] Agent 1 cleaned up
+2025-09-02 08:16:17,888 - network - INFO - [ANP Agent 2] Cleanup completed
+2025-09-02 08:16:17,888 - network - INFO - [ANP Runner] Agent 2 cleaned up
+2025-09-02 08:16:17,888 - network - INFO - [ANP Agent 3] Cleanup completed
+2025-09-02 08:16:17,888 - network - INFO - [ANP Runner] Agent 3 cleaned up
+2025-09-02 08:16:17,888 - network - INFO - [ANP Network] Network coordinator cleanup completed
+2025-09-02 08:16:17,888 - network - INFO - [ANP Runner] Network executor cleaned up
+2025-09-02 08:16:17,888 - network - INFO - [ANP Runner] ANP resources cleanup completed
+2025-09-02 08:16:17,889 - network - INFO - [ANP Agent 3] Message processing loop cancelled
+2025-09-02 08:16:17,889 - network - INFO - [ANP Agent 1] Message processing loop cancelled
+2025-09-02 08:16:17,889 - network - INFO - [ANP Agent 2] Message processing loop cancelled
+2025-09-02 08:16:17,889 - network - INFO - [ANP Network] Network message loop cancelled
+2025-09-02 08:16:17,889 - network - INFO - [ANP Agent 0] Message processing loop cancelled
+2025-09-02 08:16:17,890 - network - INFO - NetworkBase completed
+2025-09-02 08:16:17,890 - network - INFO - Final metrics: {'total_steps': 0, 'avg_latency_ms': 0.0, 'collision_count': 0, 'collision_rate': 0.0, 'elapsed_time_s': 60.00241804122925}
+2025-09-02 08:16:17,890 - network - INFO - NetworkBase stopped

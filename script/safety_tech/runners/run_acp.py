@@ -19,11 +19,11 @@ HERE = Path(__file__).resolve().parent
 SAFETY_TECH = HERE.parent
 sys.path.insert(0, str(SAFETY_TECH))
 
-from runner_base import RunnerBase
+from .runner_base import RunnerBase
 
 # Import ACP components
 try:
-    from protocol_backend.acp import (
+    from protocol_backends.acp import (
         ACPCommBackend,
         ACPReceptionistExecutor,
         ACPNosyDoctorExecutor,
@@ -162,7 +162,8 @@ class ExtendedACPPrivacyAnalyzer(PrivacyAnalyzerBase):
 class ACPRunner(RunnerBase):
     """ACP-specific privacy testing runner."""
 
-    def __init__(self, config_path: str = "config.yaml"):
+    def __init__(self, config_path: str = "config_acp.yaml"):
+        # Pass bare filename; RunnerBase resolves to configs dir
         super().__init__(config_path)
         self._backend: Optional[ACPCommBackend] = None
         self._simulator: Optional[ACPPrivacySimulator] = None

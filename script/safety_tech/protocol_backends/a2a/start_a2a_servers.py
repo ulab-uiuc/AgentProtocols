@@ -30,8 +30,8 @@ except ImportError as e:
     sys.exit(1)
 
 # Import our executors
-from protocol_backend.a2a import A2AReceptionistExecutor, A2ADoctorExecutor
-from runner.runner_base import SimpleOutput
+from protocol_backends.a2a import A2AReceptionistExecutor, A2ADoctorExecutor
+from runners.runner_base import SimpleOutput
 import yaml
 
 def load_config():

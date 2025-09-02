@@ -55,10 +55,42 @@ class RunnerBase:
 
     def __init__(self, config_path: str = "config.yaml"):
         self.output = ColoredOutput()
-        self.config = self._load_config(config_path)
+        # Allow passing just a filename, resolve to safety_tech/configs/<name>
+        resolved_config = self._resolve_config_path(config_path)
+        self.config = self._load_config(str(resolved_config))
         self.network = None          # Set by subclass create_network()
         self.agents = {}             # Set by subclass setup_agents()
         self._started = False
+
+    def _resolve_config_path(self, config_path: str) -> Path:
+        """Resolve config path. Accepts:
+        - Absolute or relative paths
+        - Bare filenames like 'config_agora.yaml' (resolved to safety_tech/configs)
+        """
+        try:
+            p = Path(config_path)
+            # If absolute and exists, use it directly
+            if p.is_absolute() and p.exists():
+                return p
+
+            # Candidate locations (first existing wins)
+            here = Path(__file__).resolve().parent
+            safety_tech = here.parent
+            candidates = [
+                Path.cwd() / p,                                  # current working dir
+                here / p,                                        # runners dir
+                safety_tech / "configs" / p.name,               # configs dir (preferred)
+                safety_tech / p,                                 # safety_tech root
+            ]
+            for c in candidates:
+                if c.exists():
+                    return c
+
+            # Fallback to configs dir even if not present (loader will warn)
+            return safety_tech / "configs" / p.name
+        except Exception:
+            # Conservative fallback
+            return Path(config_path)
 
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         """Load configuration from YAML file."""
@@ -96,6 +128,14 @@ class RunnerBase:
                 "name_violation_weight": 30
             }
         }
+    
+    def _get_output_path(self, filename: str) -> str:
+        """Get output file path that works from any directory."""
+        # Always store data in the runner's data directory
+        runner_dir = Path(__file__).resolve().parent
+        data_dir = runner_dir.parent / "output"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        return str(data_dir / filename)
 
     # -------------------- Abstract Methods --------------------
     async def create_network(self) -> Any:
@@ -175,7 +215,10 @@ class RunnerBase:
         
         if "summary" in results:
             summary = results["summary"]
-            self.output.progress(f"Total Conversations: {summary.get('total_conversations', 0)}")
+            print(f">>> summary: {summary}")
+            # Try both summary level and top level for total_conversations
+            total_convs = results.get('total_conversations', 0)
+            self.output.progress(f"Total Conversations: {total_convs}")
             self.output.progress(f"Average Privacy Score: {summary.get('average_privacy_score', 0):.2f}/100")
             self.output.progress(f"Privacy Grade: {summary.get('overall_privacy_grade', 'Unknown')}")
             

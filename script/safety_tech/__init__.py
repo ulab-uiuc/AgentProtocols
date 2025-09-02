@@ -16,8 +16,7 @@ __version__ = "1.0.0"
 __author__ = "Safety Tech Team"
 
 from . import core
-from . import metrics
 from . import protocol_backends
 from . import runners
 
-__all__ = ["core", "metrics", "protocol_backends", "runners"]
+__all__ = ["core", "protocol_backends", "runners"]

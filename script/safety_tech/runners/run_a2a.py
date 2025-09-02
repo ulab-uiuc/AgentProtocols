@@ -20,11 +20,11 @@ HERE = Path(__file__).resolve().parent
 SAFETY_TECH = HERE.parent
 sys.path.insert(0, str(SAFETY_TECH))
 
-from runner_base import RunnerBase
+from .runner_base import RunnerBase
 
 # Import A2A components
 try:
-    from protocol_backend.a2a import (
+    from protocol_backends.a2a import (
         A2ACommBackend,
         A2AReceptionistExecutor,
         A2ADoctorExecutor,
@@ -200,37 +200,13 @@ class ExtendedA2APrivacyAnalyzer(PrivacyAnalyzerBase):
 class A2AIntegratedRunner(RunnerBase):
     """A2A runner with integrated agent servers for complete end-to-end testing"""
 
-    def __init__(self, config_path: str = None):
-        if config_path is None:
-            # Default to config file in runner directory
-            runner_dir = Path(__file__).resolve().parent
-            config_path = str(runner_dir / "config_a2a.yaml")
+    def __init__(self, config_path: str = "config_a2a.yaml"):
+        # Pass bare filename; RunnerBase resolves to configs dir
         super().__init__(config_path)
         self._backend: Optional[A2ACommBackend] = None
         self._simulator: Optional[A2APrivacySimulator] = None
         self._analyzer: Optional[A2APrivacyAnalyzer] = None
         self._server_threads: List[threading.Thread] = []
-
-    def _get_output_path(self, filename: str) -> str:
-        """Get output file path that works from any directory."""
-        possible_data_dirs = [
-            "data",  # From safety_tech dir
-            "../data",  # From runner dir  
-            "agent_network/script/safety_tech/data",  # From project root
-            "script/safety_tech/data",  # From agent_network dir
-        ]
-        
-        for data_dir in possible_data_dirs:
-            if Path(data_dir).exists():
-                output_path = Path(data_dir) / filename
-                # Ensure directory exists
-                output_path.parent.mkdir(parents=True, exist_ok=True)
-                return str(output_path)
-        
-        # Fallback: create data directory relative to current location
-        fallback_path = Path("data") / filename
-        fallback_path.parent.mkdir(parents=True, exist_ok=True)
-        return str(fallback_path)
 
     def _create_agent_app(self, agent_type: str, port: int) -> Any:
         """Create A2A agent application"""

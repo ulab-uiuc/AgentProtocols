@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+os.environ["OPENAI_API_KEY"] = "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"
 import sys
 import time
 from pathlib import Path
@@ -20,11 +21,11 @@ HERE = Path(__file__).resolve().parent
 SAFETY_TECH = HERE.parent
 sys.path.insert(0, str(SAFETY_TECH))
 
-from runner_base import RunnerBase
+from .runner_base import RunnerBase
 
 # Import Agora components
 try:
-    from protocol_backend.agora import (
+    from protocol_backends.agora import (
         AgoraCommBackend,
         AgoraReceptionistExecutor,
         AgoraNosyDoctorExecutor,
@@ -195,36 +196,12 @@ class ExtendedAgoraPrivacyAnalyzer(PrivacyAnalyzerBase):
 class AgoraPrivacyRunner(RunnerBase):
     """Agora-specific privacy testing runner."""
 
-    def __init__(self, config_path: str = None):
-        if config_path is None:
-            # Default to config file in runner directory
-            runner_dir = Path(__file__).resolve().parent
-            config_path = str(runner_dir / "config_agora.yaml")
+    def __init__(self, config_path: str = "config_agora.yaml"):
+        # Pass bare filename; RunnerBase resolves to configs dir
         super().__init__(config_path)
         self._backend: Optional[AgoraCommBackend] = None
         self._simulator: Optional[AgoraPrivacySimulator] = None
         self._analyzer: Optional[ExtendedAgoraPrivacyAnalyzer] = None
-
-    def _get_output_path(self, filename: str) -> str:
-        """Get output file path that works from any directory."""
-        possible_data_dirs = [
-            "data",  # From safety_tech dir
-            "../data",  # From runner dir  
-            "agent_network/script/safety_tech/data",  # From project root
-            "script/safety_tech/data",  # From agent_network dir
-        ]
-        
-        for data_dir in possible_data_dirs:
-            if Path(data_dir).exists():
-                output_path = Path(data_dir) / filename
-                # Ensure directory exists
-                output_path.parent.mkdir(parents=True, exist_ok=True)
-                return str(output_path)
-        
-        # Fallback: create data directory relative to current location
-        fallback_path = Path("data") / filename
-        fallback_path.parent.mkdir(parents=True, exist_ok=True)
-        return str(fallback_path)
 
     async def create_network(self) -> NetworkBase:
         """Create Agora network with communication backend."""

@@ -19,11 +19,11 @@ sys.path.insert(0, str(parent_dir))
 
 # Import base classes
 from core.privacy_analyzer_base import PrivacyAnalyzerBase
-from runner.runner_base import RunnerBase
+from runners.runner_base import RunnerBase
 from core.network_base import NetworkBase
 
 # Import ANP components
-from protocol_backend.anp import (
+from protocol_backends.anp import (
     ANPCommBackend, ANPPrivacyAnalyzer, ANPPrivacySimulator
 )
 
@@ -41,11 +41,8 @@ except ImportError:
 class ANPIntegratedRunner(RunnerBase):
     """ANP runner with integrated AgentConnect SimpleNodes for complete end-to-end testing"""
 
-    def __init__(self, config_path: str = None):
-        if config_path is None:
-            # Default to config file in runner directory
-            runner_dir = Path(__file__).resolve().parent
-            config_path = str(runner_dir / "config_anp.yaml")
+    def __init__(self, config_path: str = "config_anp.yaml"):
+        # Pass bare filename; RunnerBase resolves to configs dir
         super().__init__(config_path)
         
         # Set data directory

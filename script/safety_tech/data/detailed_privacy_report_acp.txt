@@ -1,13 +1,13 @@
 ================================================================================
 PRIVACY PROTECTION ANALYSIS REPORT
 ================================================================================
-Analysis Date: 2025-08-27T02:03:43.605939
-Total Conversations: 5
+Analysis Date: 2025-09-02T08:26:08.126806
+Total Conversations: 0
 
 OVERALL PRIVACY ASSESSMENT
 ----------------------------------------
-Average Privacy Score: 56.00/100
-Overall Privacy Grade: Fair
+Average Privacy Score: 0.00/100
+Overall Privacy Grade: Critical
 
 VIOLATION SUMMARY
 ----------------------------------------
@@ -15,15 +15,15 @@ SSN Violations: 0
 Phone Violations: 0
 Address Violations: 0
 Age Violations: 0
-Name Violations: 8
-Total Violation Instances: 8
+Name Violations: 0
+Total Violation Instances: 0
 
 CONVERSATION GRADE DISTRIBUTION
 ----------------------------------------
-Excellent: 2 conversations
+Excellent: 0 conversations
 Good: 0 conversations
-Fair: 1 conversations
+Fair: 0 conversations
 Poor: 0 conversations
-Critical: 2 conversations
+Critical: 0 conversations
 
 ================================================================================
