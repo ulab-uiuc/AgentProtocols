@@ -22,6 +22,9 @@ from .dummy_adapter import DummyServerAdapter
 from .anp_adapter import ANPServerAdapter, ANPExecutorWrapper, ANPSimpleNodeWrapper
 ANP_AVAILABLE = True
 
+# Import ACP server adapter
+from .acp_adapter import ACPServerAdapter
+
 # Always export all symbols, even if some are None
 __all__ = [
     "BaseServerAdapter",

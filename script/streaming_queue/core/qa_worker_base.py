@@ -31,7 +31,11 @@ class QAWorkerBase:
             if str(src_path) not in sys.path:
                 sys.path.insert(0, str(src_path))
             
-            from utils.core import Core  # type: ignore
+            # Try different import paths
+            try:
+                from utils.core import Core  # type: ignore
+            except ImportError:
+                from src.utils.core import Core  # type: ignore
 
             cfg = config or self._get_default_config()
             self._log(f"[QAWorkerBase] Initializing Core with config: {cfg}")

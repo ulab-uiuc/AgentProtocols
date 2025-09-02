@@ -39,7 +39,15 @@ class ACPStarletteApplication:
             Route("/acp/status", self.get_status, methods=["GET"]),
         ]
 
-        return Starlette(routes=routes)
+        # Add lifespan handler to prevent startup issues
+        async def lifespan(app):
+            # Startup
+            logger.debug("ACP Starlette app starting up")
+            yield
+            # Shutdown
+            logger.debug("ACP Starlette app shutting down")
+
+        return Starlette(routes=routes, lifespan=lifespan)
 
     async def get_agent_card(self, request: Request) -> JSONResponse:
         """Return the public agent card."""

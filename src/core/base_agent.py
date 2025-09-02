@@ -563,18 +563,38 @@ class BaseAgent:
         """Wait for server to be ready by polling health endpoint."""
         import time
         start_time = time.time()
+        attempts = 0
+
+        # Use print for debugging since logger might not be available
+        print(f"DEBUG: Waiting for server at http://{self._host}:{self._port}/health to be ready...")
 
         while time.time() - start_time < timeout:
+            attempts += 1
             try:
-                url = f"http://{self._host}:{self._port}/health"
+                # Use 127.0.0.1 for health checks when server binds to 0.0.0.0
+                health_host = "127.0.0.1" if self._host == "0.0.0.0" else self._host
+                url = f"http://{health_host}:{self._port}/health"
                 response = await self._httpx_client.get(url, timeout=2.0)
                 if response.status_code == 200:
+                    print(f"DEBUG: Server ready after {attempts} attempts in {time.time() - start_time:.2f}s")
                     return  # Server is ready
-            except Exception:
-                pass  # Server not ready yet
+                else:
+                    print(f"DEBUG: Attempt {attempts}: Health check returned {response.status_code}")
+            except Exception as e:
+                if attempts % 20 == 0:  # Log every 2 seconds
+                    print(f"DEBUG: Attempt {attempts}: Health check failed: {e}")
 
             await asyncio.sleep(0.1)  # Short polling interval
 
+        print(f"ERROR: Server failed to start within {timeout}s after {attempts} attempts")
+        print(f"ERROR: Server task status: {self._server_task.done() if self._server_task else 'No task'}")
+        if self._server_task and self._server_task.done():
+            try:
+                exc = self._server_task.exception()
+                if exc:
+                    print(f"ERROR: Server task exception: {exc}")
+            except:
+                pass
         raise RuntimeError(f"Server failed to start within {timeout}s")
 
     async def _fetch_self_card(self) -> None:

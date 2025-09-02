@@ -2,12 +2,15 @@
 Agora Coordinator:
 - 继承 QACoordinatorBase
 - 用 Agora 原生 SDK 实现 send_to_worker()
-- 同时提供 QACoordinator Agora Executor，便于把协调器暴露为 Agora Agent
+- 使用真正的Agora SDK功能：Sender, Receiver, Protocol
 """
 
 from __future__ import annotations
 from typing import Dict, Any, Optional, List
 from ...core.qa_coordinator_base import QACoordinatorBase
+
+# Import Agora native SDK components
+import agora
 
 class AgoraQACoordinator(QACoordinatorBase):
     """

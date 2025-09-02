@@ -12,8 +12,8 @@ import time
 import agora
 
 # AgentNetwork Framework imports
-from agent_adapters.base_adapter import BaseProtocolAdapter
-from src.core.protocol_converter import DECODE_TABLE
+from .base_adapter import BaseProtocolAdapter
+from ..core.protocol_converter import DECODE_TABLE
 
 
 class AgoraClientAdapter(BaseProtocolAdapter):

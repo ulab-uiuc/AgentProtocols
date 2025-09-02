@@ -28,23 +28,51 @@ def ute_to_a2a(ute: UTE) -> Dict[str, Any]:
 
 
 def a2a_to_ute(a2a_msg: Dict[str, Any]) -> UTE:
-    """Convert A2A -> UTE."""
+    """Convert A2A -> UTE, supporting both 'params.message.parts' and unified '{"events":[...]}' shape."""
     params = a2a_msg.get("params", {})
+    # Path A: unified response {"events":[...]}
+    if "events" in a2a_msg and isinstance(a2a_msg["events"], list):
+        events = a2a_msg["events"]
+        text = ""
+        # find first textual payload
+        for ev in events:
+            if not isinstance(ev, dict):
+                continue
+            # common shapes: {"type":"agent_text_message","data":"..."} or {"data":{"text":"..."}}
+            data = ev.get("data", None)
+            if isinstance(data, str) and data:
+                text = data
+                break
+            if isinstance(data, dict):
+                t = data.get("text") or data.get("content") or ""
+                if isinstance(t, str) and t:
+                    text = t
+                    break
+        return UTE(
+            id=a2a_msg.get("id", ""),
+            src=params.get("routing", {}).get("source", ""),
+            dst=params.get("routing", {}).get("destination", ""),
+            timestamp=params.get("message", {}).get("time", 0) or 0.0,
+            content={"text": text, "events": events},
+            context=params.get("context", {}),
+            metadata={},
+        )
+
+    # Path B: official A2A message.parts
     parts = params.get("message", {}).get("parts", [{}])
-    # The actual business data is in parts[0]["text"]
-    content = parts[0].get("text", {})
+    content = parts[0].get("text", {}) if parts else {}
     if isinstance(content, str):
         try:
             import json
             content = json.loads(content)
-        except Exception:  # noqa: broad-except
+        except Exception:
             content = {"text": content}
     return UTE(
         id=a2a_msg.get("id", ""),
         src=params.get("routing", {}).get("source", ""),
         dst=params.get("routing", {}).get("destination", ""),
         timestamp=params.get("message", {}).get("time", 0) or 0.0,
-        content=content,
+        content=content or {},
         context=params.get("context", {}),
         metadata={},
     )

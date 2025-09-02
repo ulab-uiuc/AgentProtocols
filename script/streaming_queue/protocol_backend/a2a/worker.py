@@ -60,11 +60,11 @@ class QAAgentExecutor(AgentExecutor):
     # ------------- helpers -------------
     def _extract_text(self, payload: Any) -> str:
         """
-        尽量兼容多种可能的 A2A 输入结构：
-          1) 直接是 str
-          2) {"text": "..."}
+        Accept A2A shapes:
+          1) str
+          2) {"text": "..."} or {"content":"..."}
           3) {"parts":[{"type":"text","text":"..."}]}
-          4) {"parts":[{"kind":"text","text":"..."}]}
+          4) {"parts":[{"type":"json","text":{...}}]}  # serialize to string if dict/list
         """
         if payload is None:
             return ""
@@ -72,19 +72,28 @@ class QAAgentExecutor(AgentExecutor):
             return payload
 
         if isinstance(payload, dict):
-            # 常见的 A2A 结构
+            # Prefer parts
             parts = payload.get("parts") or []
             for p in parts:
-                if isinstance(p, dict) and ("text" in p) and (p.get("type") == "text" or p.get("kind") == "text" or "type" not in p):
-                    return p.get("text") or ""
-            # 退化结构
-            if "text" in payload and isinstance(payload["text"], str):
+                if not isinstance(p, dict):
+                    continue
+                if "text" in p:
+                    t = p.get("text")
+                    # text could be str or dict/list if type=="json"
+                    if isinstance(t, (dict, list)):
+                        try:
+                            import json
+                            return json.dumps(t, ensure_ascii=False)
+                        except Exception:
+                            return str(t)
+                    if isinstance(t, str):
+                        return t
+            # Fallbacks
+            if isinstance(payload.get("text"), str):
                 return payload["text"]
-            # chat 格式
-            if "content" in payload and isinstance(payload["content"], str):
+            if isinstance(payload.get("content"), str):
                 return payload["content"]
 
-        # 其他情况直接转字符串
         try:
             return str(payload)
         except Exception:
