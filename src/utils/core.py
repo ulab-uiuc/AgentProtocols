@@ -25,7 +25,8 @@ class Core:
 
             # ---------- HARD-CODED name mapping ----------
             hard_map = {
-                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo": "Llama-3.1-70B-Instruct"
+                "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo": "Llama-3.1-70B-Instruct",
+                "Qwen2.5-VL-72B-Instruct": "Qwen2.5-VL-72B-Instruct",
             }
             # if not in map, fall back to first model id served by vLLM
             try:

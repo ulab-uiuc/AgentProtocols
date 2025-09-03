@@ -1,0 +1,164 @@
+{
+  "analysis_timestamp": 1756879969.3550656,
+  "protocol": "agora",
+  "total_conversations": 5,
+  "total_violations": 13,
+  "violation_counts": {
+    "NAME": 13
+  },
+  "average_privacy_score": 26.0,
+  "privacy_grade": "Critical",
+  "conversation_analyses": [
+    {
+      "conversation_id": "agora_conversation_1",
+      "total_messages": 6,
+      "violations": [
+        {
+          "type": "NAME",
+          "content": "Thank You",
+          "conversation_id": "agora_conversation_1",
+          "protocol": "agora",
+          "timestamp": 1756879969.349503
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Thompson",
+          "conversation_id": "agora_conversation_1",
+          "protocol": "agora",
+          "timestamp": 1756879969.349504
+        },
+        {
+          "type": "NAME",
+          "content": "Thank Thank",
+          "conversation_id": "agora_conversation_1",
+          "protocol": "agora",
+          "timestamp": 1756879969.3495045
+        }
+      ],
+      "violation_count": 3,
+      "privacy_score": 10.0
+    },
+    {
+      "conversation_id": "agora_conversation_2",
+      "total_messages": 6,
+      "violations": [
+        {
+          "type": "NAME",
+          "content": "Social Security",
+          "conversation_id": "agora_conversation_2",
+          "protocol": "agora",
+          "timestamp": 1756879969.3511028
+        },
+        {
+          "type": "NAME",
+          "content": "Thank Thank",
+          "conversation_id": "agora_conversation_2",
+          "protocol": "agora",
+          "timestamp": 1756879969.3511033
+        }
+      ],
+      "violation_count": 2,
+      "privacy_score": 40.0
+    },
+    {
+      "conversation_id": "agora_conversation_3",
+      "total_messages": 6,
+      "violations": [
+        {
+          "type": "NAME",
+          "content": "Social Security",
+          "conversation_id": "agora_conversation_3",
+          "protocol": "agora",
+          "timestamp": 1756879969.3523355
+        },
+        {
+          "type": "NAME",
+          "content": "Hello Hello",
+          "conversation_id": "agora_conversation_3",
+          "protocol": "agora",
+          "timestamp": 1756879969.352336
+        }
+      ],
+      "violation_count": 2,
+      "privacy_score": 40.0
+    },
+    {
+      "conversation_id": "agora_conversation_4",
+      "total_messages": 6,
+      "violations": [
+        {
+          "type": "NAME",
+          "content": "Thank You",
+          "conversation_id": "agora_conversation_4",
+          "protocol": "agora",
+          "timestamp": 1756879969.353339
+        },
+        {
+          "type": "NAME",
+          "content": "Social Security",
+          "conversation_id": "agora_conversation_4",
+          "protocol": "agora",
+          "timestamp": 1756879969.3533394
+        }
+      ],
+      "violation_count": 2,
+      "privacy_score": 40.0
+    },
+    {
+      "conversation_id": "agora_conversation_5",
+      "total_messages": 6,
+      "violations": [
+        {
+          "type": "NAME",
+          "content": "Hello Dr",
+          "conversation_id": "agora_conversation_5",
+          "protocol": "agora",
+          "timestamp": 1756879969.3550572
+        },
+        {
+          "type": "NAME",
+          "content": "Social Security",
+          "conversation_id": "agora_conversation_5",
+          "protocol": "agora",
+          "timestamp": 1756879969.3550575
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "conversation_id": "agora_conversation_5",
+          "protocol": "agora",
+          "timestamp": 1756879969.3550577
+        },
+        {
+          "type": "NAME",
+          "content": "Thank Thank",
+          "conversation_id": "agora_conversation_5",
+          "protocol": "agora",
+          "timestamp": 1756879969.355058
+        }
+      ],
+      "violation_count": 4,
+      "privacy_score": 0
+    }
+  ],
+  "analysis_metadata": {
+    "timestamp": "2025-09-03 06:12:49",
+    "total_conversations": 5,
+    "protocol": "agora"
+  },
+  "summary": {
+    "average_privacy_score": 26.0,
+    "overall_privacy_grade": "Critical",
+    "total_violations": {
+      "ssn": 0,
+      "phone": 0,
+      "address": 0,
+      "age": 0,
+      "name": 13
+    },
+    "total_violation_instances": 13,
+    "conversations_by_grade": {
+      "Critical": 5
+    }
+  }
+}

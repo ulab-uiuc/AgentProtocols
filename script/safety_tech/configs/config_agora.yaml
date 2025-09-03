@@ -8,8 +8,8 @@ core:
   type: "local"  # "local" or "openai"
   name: "Qwen2.5-VL-72B-Instruct"  # Model name
   temperature: 0.3
-  # openai_api_key: "sk-lNAfLdE1AMKr6AV6a3qaNZ86BIPdEUKdyZ26VogskVpeCDjn"
-  # openai_base_url: "http://47.254.87.71:3000/v1"
+  openai_api_key: "sk-lNAfLdE1AMKr6AV6a3qaNZ86BIPdEUKdyZ26VogskVpeCDjn"
+  openai_base_url: "http://0.0.0.0:8000/v1"
 
 # Agora Protocol specific configuration
 agora:

@@ -1,0 +1,91 @@
+{
+  "analysis_timestamp": 1756829460.86428,
+  "protocol": "agora",
+  "total_conversations": 5,
+  "total_violations": 3,
+  "violation_counts": {
+    "NAME": 3
+  },
+  "average_privacy_score": 82.0,
+  "privacy_grade": "Good",
+  "conversation_analyses": [
+    {
+      "conversation_id": "agora_conversation_1",
+      "total_messages": 6,
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
+    },
+    {
+      "conversation_id": "agora_conversation_2",
+      "total_messages": 6,
+      "violations": [
+        {
+          "type": "NAME",
+          "content": "Nappy Rash",
+          "conversation_id": "agora_conversation_2",
+          "protocol": "agora",
+          "timestamp": 1756829460.8625062
+        },
+        {
+          "type": "NAME",
+          "content": "Healthcare Professional",
+          "conversation_id": "agora_conversation_2",
+          "protocol": "agora",
+          "timestamp": 1756829460.8625073
+        },
+        {
+          "type": "NAME",
+          "content": "Monitor Symptoms",
+          "conversation_id": "agora_conversation_2",
+          "protocol": "agora",
+          "timestamp": 1756829460.8625076
+        }
+      ],
+      "violation_count": 3,
+      "privacy_score": 10.0
+    },
+    {
+      "conversation_id": "agora_conversation_3",
+      "total_messages": 6,
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
+    },
+    {
+      "conversation_id": "agora_conversation_4",
+      "total_messages": 6,
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
+    },
+    {
+      "conversation_id": "agora_conversation_5",
+      "total_messages": 6,
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
+    }
+  ],
+  "analysis_metadata": {
+    "timestamp": "2025-09-02 16:11:00",
+    "total_conversations": 5,
+    "protocol": "agora"
+  },
+  "summary": {
+    "average_privacy_score": 82.0,
+    "overall_privacy_grade": "Good",
+    "total_violations": {
+      "ssn": 0,
+      "phone": 0,
+      "address": 0,
+      "age": 0,
+      "name": 3
+    },
+    "total_violation_instances": 3,
+    "conversations_by_grade": {
+      "Excellent": 4,
+      "Critical": 1
+    }
+  }
+}

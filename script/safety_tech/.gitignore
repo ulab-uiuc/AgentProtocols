@@ -71,10 +71,10 @@ ehthumbs.db
 Thumbs.db
 
 # Privacy Testing Output Files
-data/agent_conversations_*.json
-data/privacy_analysis_*.json
-data/detailed_privacy_report_*.json
-data/enhanced_protocol_testing_*.json
+# data/agent_conversations_*.json
+# data/privacy_analysis_*.json
+# data/detailed_privacy_report_*.json
+# data/enhanced_protocol_testing_*.json
 
 # Keep original dataset and config
 !data/medical_conversations_100.json
