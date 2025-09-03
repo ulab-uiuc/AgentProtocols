@@ -17,8 +17,7 @@ from pathlib import Path
 LLM_AVAILABLE = False
 try:
     # Navigate to agent_network/src from safety_tech/core/
-    sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
-    from utils.core import Core
+    from .llm_wrapper import Core
     LLM_AVAILABLE = True
     print("[LLM] Core imported successfully")
 except ImportError as e:
