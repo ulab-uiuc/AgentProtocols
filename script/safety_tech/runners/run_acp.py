@@ -19,7 +19,7 @@ HERE = Path(__file__).resolve().parent
 SAFETY_TECH = HERE.parent
 sys.path.insert(0, str(SAFETY_TECH))
 
-from .runner_base import RunnerBase
+from runners.runner_base import RunnerBase
 
 # Import ACP components
 try:
@@ -234,8 +234,8 @@ class ACPRunner(RunnerBase):
                 max_rounds
             )
             
-            # Save conversation data
-            conv_output_file = f"../data/agent_conversations_acp.json"
+            # Save conversation data with smart path
+            conv_output_file = self._get_output_path("agent_conversations_acp.json")
             self.save_conversation_data(conversation_results, conv_output_file)
             
             # Analyze privacy violations with extended analyzer
@@ -243,12 +243,12 @@ class ACPRunner(RunnerBase):
             analysis_results = self._analyzer.analyze_conversations_from_data(conversation_results)
             
             # Save analysis results
-            analysis_output_file = f"../data/privacy_analysis_acp.json"
+            analysis_output_file = self._get_output_path("privacy_analysis_acp.json")
             self._analyzer.save_analysis_results(analysis_results, analysis_output_file)
             
             # Generate report
             report = self._analyzer.generate_privacy_report(analysis_results)
-            report_output_file = f"../data/detailed_privacy_report_acp.txt"
+            report_output_file = self._get_output_path("detailed_privacy_report_acp.txt")
             with open(report_output_file, 'w', encoding='utf-8') as f:
                 f.write(report)
             
@@ -263,7 +263,7 @@ class ACPRunner(RunnerBase):
             raise
 
     def save_conversation_data(self, conversation_data: Dict[str, Any], output_file: str) -> None:
-        """Save conversation data to file."""
+        """Save ACP conversation data"""
         try:
             output_path = Path(output_file)
             output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -275,16 +275,45 @@ class ACPRunner(RunnerBase):
             self.output.error(f"Failed to save conversation data: {e}")
             raise
 
+    def display_results(self, results: Dict[str, Any]) -> None:
+        """Display ACP-specific results summary."""
+        try:
+            self.output.info("📊 Privacy Testing Results Summary")
+            self.output.progress("=" * 50)
+            
+            # ACP analyzer returns "summary" in results
+            summary = results.get("summary", {})
+            metadata = results.get("analysis_metadata", {})
+            
+            # Basic info
+            total_convs = metadata.get('total_conversations', 0)
+            self.output.progress(f"Total Conversations: {total_convs}")
+            self.output.progress(f"Average Privacy Score: {summary.get('average_privacy_score', 0):.2f}/100")
+            self.output.progress(f"Privacy Grade: {summary.get('overall_privacy_grade', 'Unknown')}")
+            
+            # Violations
+            violations = summary.get("total_violations", {})
+            total_violations = summary.get("total_violation_instances", 0)
+            self.output.progress(f"Total Privacy Violations: {total_violations}")
+            
+            if total_violations > 0:
+                self.output.warning("Privacy violations detected:")
+                for vtype, count in violations.items():
+                    if count > 0:
+                        self.output.progress(f"  {vtype.upper()}: {count}")
+            else:
+                self.output.success("✅ No privacy violations detected!")
+                
+        except Exception as e:
+            self.output.error(f"Error displaying results: {e}")
+            # Fall back to base class method
+            super().display_results(results)
+
 
 async def main():
     """Main entry point for ACP privacy testing."""
-    try:
-        # Try to use new config file first
-        config_file = "../config_new.yaml"
-        if not Path(config_file).exists():
-            config_file = "../config.yaml"
-        
-        runner = ACPRunner(config_file)
+    try:        
+        runner = ACPRunner()
         await runner.run()
     except KeyboardInterrupt:
         print("\n🛑 Testing interrupted by user")

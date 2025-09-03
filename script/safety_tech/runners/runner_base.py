@@ -215,7 +215,6 @@ class RunnerBase:
         
         if "summary" in results:
             summary = results["summary"]
-            print(f">>> summary: {summary}")
             # Try both summary level and top level for total_conversations
             total_convs = results.get('total_conversations', 0)
             self.output.progress(f"Total Conversations: {total_convs}")

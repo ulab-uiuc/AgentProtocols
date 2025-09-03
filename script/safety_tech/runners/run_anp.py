@@ -45,10 +45,6 @@ class ANPIntegratedRunner(RunnerBase):
         # Pass bare filename; RunnerBase resolves to configs dir
         super().__init__(config_path)
         
-        # Set data directory
-        self.data_dir = Path(__file__).parent.parent / "data"
-        self.data_dir.mkdir(exist_ok=True)
-        
         self.network = None
         self._backend = None
         self._simulator = None
@@ -121,28 +117,27 @@ class ANPIntegratedRunner(RunnerBase):
                 enhanced_questions[:num_conversations], max_rounds
             )
             
-            # Save conversation data
-            conv_file = self.data_dir / "agent_conversations_anp_integrated.json"
-            with open(conv_file, 'w', encoding='utf-8') as f:
-                json.dump(conversation_data, f, indent=2, ensure_ascii=False)
-            
-            self.output.success(f"Conversation data saved: {conv_file}")
+            # Save conversation data with smart path
+            conv_output_file = self._get_output_path("agent_conversations_anp_integrated.json")
+            self.save_conversation_data(conversation_data, conv_output_file)
             
             # Analyze privacy using enhanced analyzer
             self._analyzer = ANPPrivacyAnalyzer(self.config, self.output)
             analysis_results = self._analyzer.analyze_conversations_from_data(conversation_data)
             
             # Save analysis results
-            analysis_file = self.data_dir / "privacy_analysis_anp_integrated.json"
-            with open(analysis_file, 'w', encoding='utf-8') as f:
-                json.dump(analysis_results, f, indent=2, ensure_ascii=False)
+            analysis_output_file = self._get_output_path("privacy_analysis_anp_integrated.json")
+            self._analyzer.save_analysis_results(analysis_results, analysis_output_file)
             
-            self.output.success(f"Analysis results saved: {analysis_file}")
+            # Generate report
+            report = self._analyzer.generate_privacy_report(analysis_results)
+            report_output_file = self._get_output_path("detailed_privacy_report_anp_integrated.txt")
+            with open(report_output_file, 'w', encoding='utf-8') as f:
+                f.write(report)
             
-            # Generate detailed privacy report
-            report_file = self.data_dir / "detailed_privacy_report_anp_integrated.txt"
-            self.generate_privacy_report(analysis_results, report_file)
-            self.output.success(f"Privacy report saved: {report_file}")
+            self.output.success(f"Conversation data saved: {conv_output_file}")
+            self.output.success(f"Analysis results saved: {analysis_output_file}")
+            self.output.success(f"Privacy report saved: {report_output_file}")
             
             return analysis_results
             
@@ -150,104 +145,57 @@ class ANPIntegratedRunner(RunnerBase):
             self.output.error(f"Failed to run ANP privacy test: {e}")
             raise
 
-    def generate_privacy_report(self, analysis_results: Dict[str, Any], report_file: Path):
-        """Generate detailed privacy report for ANP"""
+    def save_conversation_data(self, conversation_data: Dict[str, Any], output_file: str) -> None:
+        """Save ANP conversation data"""
         try:
-            summary = analysis_results.get("analysis_summary", {})
-            scores = analysis_results.get("privacy_scores", {})
-            anp_metrics = analysis_results.get("anp_metrics", {})
+            output_path = Path(output_file)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
             
-            with open(report_file, 'w', encoding='utf-8') as f:
-                f.write("=" * 80 + "\n")
-                f.write("ANP PRIVACY PROTECTION ANALYSIS REPORT\n")
-                f.write("=" * 80 + "\n")
-                f.write(f"Analysis Date: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
-                f.write(f"Total Conversations: {summary.get('total_conversations', 0)}\n")
-                f.write(f"Analysis Focus: {summary.get('analysis_focus', 'agent_responses_only')}\n")
-                f.write("\n")
-                
-                f.write("OVERALL PRIVACY ASSESSMENT\n")
-                f.write("-" * 40 + "\n")
-                f.write(f"Final Privacy Score: {scores.get('final_score', 0.0):.2f}/100\n")
-                f.write(f"Base Score (before ANP bonuses): {scores.get('average_base_score', 0.0):.2f}/100\n")
-                f.write(f"ANP Protocol Bonus: +{scores.get('average_anp_bonus', 0.0):.2f}\n")
-                f.write(f"Overall Privacy Grade: {scores.get('grade', 'Critical')}\n")
-                f.write("\n")
-                
-                f.write("ANP PRIVACY FEATURES\n")
-                f.write("-" * 40 + "\n")
-                anp_effectiveness = scores.get('anp_effectiveness', {})
-                f.write(f"DID Authentication: {anp_effectiveness.get('did_authentication_rate', 1.0)*100:.1f}% coverage\n")
-                f.write(f"Privacy Protection Rate: {anp_effectiveness.get('privacy_protection_rate', 0.0)*100:.1f}%\n")
-                f.write(f"Data Minimization Rate: {anp_effectiveness.get('data_minimization_rate', 0.0)*100:.1f}%\n")
-                f.write(f"Agent Responses Analyzed: {anp_metrics.get('agent_responses_analyzed', 0)}\n")
-                f.write(f"Patient Inputs Ignored: {anp_metrics.get('patient_inputs_ignored', 0)}\n")
-                f.write("\n")
-                
-                f.write("VIOLATION SUMMARY (Agent Responses Only)\n")
-                f.write("-" * 40 + "\n")
-                violations = summary.get('violations_in_agent_responses', {})
-                f.write(f"SSN Violations: {violations.get('SSN', 0)}\n")
-                f.write(f"Phone Violations: {violations.get('PHONE', 0)}\n")
-                f.write(f"Address Violations: {violations.get('ADDRESS', 0)}\n")
-                f.write(f"Age Violations: {violations.get('AGE', 0)}\n")
-                f.write(f"Name Violations: {violations.get('NAME', 0)}\n")
-                f.write(f"Total Agent Violations: {summary.get('total_agent_violations', 0)}\n")
-                f.write("\n")
-                
-                f.write("PRIVACY PROTECTION EFFECTIVENESS\n")
-                f.write("-" * 40 + "\n")
-                if summary.get('total_agent_violations', 0) == 0:
-                    f.write("✅ Excellent: No privacy violations detected in agent responses\n")
-                    f.write("✅ ANP privacy protection mechanisms working effectively\n")
-                else:
-                    f.write(f"⚠️  {summary.get('total_agent_violations', 0)} privacy violations found in agent responses\n")
-                    f.write("🔧 ANP privacy filters may need adjustment\n")
-                f.write("\n")
-                
-                f.write("=" * 80 + "\n")
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(conversation_data, f, indent=2, ensure_ascii=False)
                 
         except Exception as e:
-            self.output.error(f"Error generating privacy report: {e}")
+            self.output.error(f"Failed to save conversation data: {e}")
             raise
 
-    def display_results_summary(self, analysis_results: Dict[str, Any]):
-        """Display enhanced results summary for ANP"""
+    def display_results(self, results: Dict[str, Any]) -> None:
+        """Display ANP-specific results summary."""
         try:
-            summary = analysis_results.get("analysis_summary", {})
-            scores = analysis_results.get("privacy_scores", {})
-            anp_metrics = analysis_results.get("anp_metrics", {})
+            self.output.info("📊 Privacy Testing Results Summary")
+            self.output.progress("=" * 50)
             
-            self.output.info("📊 ANP Privacy Testing Results Summary")
-            self.output.info("=" * 50)
-            self.output.info(f"Analysis Focus: {summary.get('analysis_focus', 'agent_responses_only')}")
-            self.output.info(f"Total Conversations: {summary.get('total_conversations', 0)}")
-            self.output.info(f"Agent Responses Analyzed: {anp_metrics.get('agent_responses_analyzed', 0)}")
-            self.output.info(f"Patient Inputs Ignored: {anp_metrics.get('patient_inputs_ignored', 0)}")
-            self.output.info(f"Final Privacy Score: {scores.get('final_score', 0.0):.2f}/100")
-            self.output.info(f"Privacy Grade: {scores.get('grade', 'Critical')}")
+            # ANP analyzer returns "analysis_summary", not "summary"
+            summary = results.get("analysis_summary", {})
+            scores = results.get("privacy_scores", {})
+            anp_metrics = results.get("anp_metrics", {})
             
-            # ANP Features
-            anp_effectiveness = scores.get('anp_effectiveness', {})
-            self.output.info(f"ANP Privacy Protection Rate: {anp_effectiveness.get('privacy_protection_rate', 0.0)*100:.1f}%")
-            self.output.info(f"ANP Data Minimization Rate: {anp_effectiveness.get('data_minimization_rate', 0.0)*100:.1f}%")
-            self.output.info(f"ANP Protocol Bonus: +{scores.get('average_anp_bonus', 0.0):.2f}")
+            # Basic info
+            total_convs = results.get('total_conversations', summary.get('total_conversations', 0))
+            self.output.progress(f"Total Conversations: {total_convs}")
+            self.output.progress(f"Average Privacy Score: {scores.get('final_score', 0.0):.2f}/100")
+            self.output.progress(f"Privacy Grade: {scores.get('grade', 'Unknown')}")
+            
+            # ANP-specific info
+            self.output.progress(f"Agent Responses Analyzed: {anp_metrics.get('agent_responses_analyzed', 0)}")
+            self.output.progress(f"Patient Inputs Ignored: {anp_metrics.get('patient_inputs_ignored', 0)}")
             
             # Violations (only from agent responses)
             violations = summary.get('violations_in_agent_responses', {})
             total_violations = summary.get('total_agent_violations', 0)
+            self.output.progress(f"Total Privacy Violations: {total_violations}")
             
             if total_violations > 0:
-                self.output.warning("⚠️  Privacy violations detected in agent responses:")
-                for violation_type, count in violations.items():
+                self.output.warning("Privacy violations detected:")
+                for vtype, count in violations.items():
                     if count > 0:
-                        self.output.warning(f"     {violation_type}: {count}")
+                        self.output.progress(f"  {vtype.upper()}: {count}")
             else:
                 self.output.success("✅ No privacy violations detected in agent responses!")
-                self.output.success("✅ ANP privacy protection working effectively!")
-            
+                
         except Exception as e:
             self.output.error(f"Error displaying results: {e}")
+            # Fall back to base class method
+            super().display_results(results)
 
 
 async def main():
