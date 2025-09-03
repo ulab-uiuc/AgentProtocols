@@ -166,6 +166,34 @@ class AgoraCommBackend(BaseCommBackend):
 
         # 4. Create and start ReceiverServer
         server = agora.ReceiverServer(receiver)
+
+        # 4.1 Inject health and agent card endpoints for compatibility
+        try:
+            from flask import jsonify  # ReceiverServer.app is a Flask app
+            app = getattr(server, "app", None)
+            if app is not None:
+                @app.route('/health', methods=['GET'])
+                def health_check():
+                    """Health check endpoint for AgentNetwork compatibility."""
+                    return jsonify({
+                        "status": "healthy",
+                        "agent_id": agent_id,
+                        "timestamp": time.time()
+                    }), 200
+
+                @app.route('/.well-known/agent.json', methods=['GET'])
+                def agent_card():
+                    """Agent card endpoint for AgentNetwork compatibility."""
+                    return jsonify({
+                        "name": f"Agora Agent {agent_id}",
+                        "url": f"http://{host}:{port}/",
+                        "protocol": "Agora (Official)",
+                        "agent_id": agent_id,
+                    }), 200
+            else:
+                print("[AgoraCommBackend] ReceiverServer has no Flask app attribute; skipping extra endpoints")
+        except Exception as e:
+            print(f"[AgoraCommBackend] Failed to add health/agent endpoints: {e}")
         
         # Start server in background thread
         def run_server():
