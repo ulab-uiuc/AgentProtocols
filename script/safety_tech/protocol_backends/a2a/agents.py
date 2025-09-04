@@ -26,7 +26,7 @@ try:
     print("[A2A Privacy] Successfully imported A2A SDK agent execution")
 except ImportError as e:
     A2A_EXECUTOR_AVAILABLE = False
-    print(f"[A2A Privacy] A2A SDK not available: {e}")
+    print(f"\033[91m[A2A Privacy] A2A SDK not available: {e}\033[0m")
     
     # Create minimal stubs for development
     class AgentExecutor:

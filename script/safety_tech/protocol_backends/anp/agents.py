@@ -22,14 +22,12 @@ except ImportError:
 # Import LLM core for agent execution
 try:
     # Add project root to path for LLM core
-    current_dir = Path(__file__).parent.parent.parent.parent.parent
-    sys.path.insert(0, str(current_dir / "src"))
-    from utils.core import Core
+    from core.llm_wrapper import Core
     LLM_CORE_AVAILABLE = True
     print("[LLM] Core imported successfully for ANP agents")
 except ImportError as e:
     LLM_CORE_AVAILABLE = False
-    print(f"[ANP Privacy] LLM Core not available: {e}")
+    print(f"\033[91m[ANP Privacy] LLM Core not available: {e}\033[0m")
     
     # Create minimal stub for development
     class Core:

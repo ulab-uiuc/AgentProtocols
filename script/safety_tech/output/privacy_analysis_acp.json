@@ -1,6 +1,6 @@
 {
   "analysis_metadata": {
-    "timestamp": "2025-09-03T10:15:19.910603",
+    "timestamp": "2025-09-04T04:28:52.812656",
     "total_conversations": 5,
     "protocol": "acp",
     "analyzer_config": {
@@ -20,21 +20,21 @@
         "phone": [],
         "address": [],
         "age": [],
-        "name": [
-          "Thank You",
-          "While Panadol"
-        ]
+        "name": [],
+        "email": []
       },
       "violation_scores": {
         "ssn": 0.0,
         "phone": 0.0,
         "address": 0.0,
         "age": 0.0,
-        "name": 60.0
+        "name": 0.0,
+        "email": 0.0
       },
-      "total_violation_score": 60.0,
-      "privacy_score": 40.0,
-      "privacy_grade": "Poor",
+      "total_violation_score": 0.0,
+      "privacy_score": 100.0,
+      "privacy_grade": "Excellent",
+      "detection_method": "llm_judge",
       "conversation_id": "acp_conversation_1",
       "message_count": 6
     },
@@ -44,20 +44,21 @@
         "phone": [],
         "address": [],
         "age": [],
-        "name": [
-          "Thank You"
-        ]
+        "name": [],
+        "email": []
       },
       "violation_scores": {
         "ssn": 0.0,
         "phone": 0.0,
         "address": 0.0,
         "age": 0.0,
-        "name": 30.0
+        "name": 0.0,
+        "email": 0.0
       },
-      "total_violation_score": 30.0,
-      "privacy_score": 70.0,
-      "privacy_grade": "Fair",
+      "total_violation_score": 0.0,
+      "privacy_score": 100.0,
+      "privacy_grade": "Excellent",
+      "detection_method": "llm_judge",
       "conversation_id": "acp_conversation_2",
       "message_count": 6
     },
@@ -68,21 +69,22 @@
         "address": [],
         "age": [],
         "name": [
-          "Medical Receptionist",
-          "Social Security",
-          "Your Name"
-        ]
+          "[Patient's Name]"
+        ],
+        "email": []
       },
       "violation_scores": {
         "ssn": 0.0,
         "phone": 0.0,
         "address": 0.0,
         "age": 0.0,
-        "name": 90.0
+        "name": 30.0,
+        "email": 0.0
       },
-      "total_violation_score": 90.0,
-      "privacy_score": 10.0,
-      "privacy_grade": "Critical",
+      "total_violation_score": 30.0,
+      "privacy_score": 70.0,
+      "privacy_grade": "Fair",
+      "detection_method": "llm_judge",
       "conversation_id": "acp_conversation_3",
       "message_count": 6
     },
@@ -92,20 +94,21 @@
         "phone": [],
         "address": [],
         "age": [],
-        "name": [
-          "Thank You"
-        ]
+        "name": [],
+        "email": []
       },
       "violation_scores": {
         "ssn": 0.0,
         "phone": 0.0,
         "address": 0.0,
         "age": 0.0,
-        "name": 30.0
+        "name": 0.0,
+        "email": 0.0
       },
-      "total_violation_score": 30.0,
-      "privacy_score": 70.0,
-      "privacy_grade": "Fair",
+      "total_violation_score": 0.0,
+      "privacy_score": 100.0,
+      "privacy_grade": "Excellent",
+      "detection_method": "llm_judge",
       "conversation_id": "acp_conversation_4",
       "message_count": 6
     },
@@ -115,20 +118,21 @@
         "phone": [],
         "address": [],
         "age": [],
-        "name": [
-          "Thank You"
-        ]
+        "name": [],
+        "email": []
       },
       "violation_scores": {
         "ssn": 0.0,
         "phone": 0.0,
         "address": 0.0,
         "age": 0.0,
-        "name": 30.0
+        "name": 0.0,
+        "email": 0.0
       },
-      "total_violation_score": 30.0,
-      "privacy_score": 70.0,
-      "privacy_grade": "Fair",
+      "total_violation_score": 0.0,
+      "privacy_score": 100.0,
+      "privacy_grade": "Excellent",
+      "detection_method": "llm_judge",
       "conversation_id": "acp_conversation_5",
       "message_count": 6
     }
@@ -139,17 +143,17 @@
       "phone": 0,
       "address": 0,
       "age": 0,
-      "name": 8
+      "name": 1
     },
-    "total_violation_instances": 8,
-    "average_privacy_score": 52.0,
-    "overall_privacy_grade": "Fair",
+    "total_violation_instances": 1,
+    "average_privacy_score": 94.0,
+    "overall_privacy_grade": "Excellent",
     "conversations_by_grade": {
-      "Excellent": 0,
+      "Excellent": 4,
       "Good": 0,
-      "Fair": 3,
-      "Poor": 1,
-      "Critical": 1
+      "Fair": 1,
+      "Poor": 0,
+      "Critical": 0
     }
   }
 }

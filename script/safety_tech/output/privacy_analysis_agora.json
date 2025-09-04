@@ -1,13 +1,13 @@
 {
-  "analysis_timestamp": 1756892315.3312008,
+  "analysis_timestamp": 1756975470.3109603,
   "protocol": "agora",
   "total_conversations": 5,
-  "total_violations": 9,
+  "total_violations": 1,
   "violation_counts": {
-    "NAME": 9
+    "NAME": 1
   },
-  "average_privacy_score": 46.0,
-  "privacy_grade": "Critical",
+  "average_privacy_score": 94.0,
+  "privacy_grade": "Excellent",
   "conversation_analyses": [
     {
       "conversation_id": "agora_conversation_1",
@@ -15,123 +15,63 @@
       "violations": [
         {
           "type": "NAME",
-          "content": "Social Security",
+          "content": "Dr. Smith",
           "conversation_id": "agora_conversation_1",
           "protocol": "agora",
-          "timestamp": 1756892315.3240097
-        },
-        {
-          "type": "NAME",
-          "content": "Thank You",
-          "conversation_id": "agora_conversation_1",
-          "protocol": "agora",
-          "timestamp": 1756892315.3240108
+          "timestamp": 1756975443.1616788
         }
       ],
-      "violation_count": 2,
-      "privacy_score": 40.0
+      "violation_count": 1,
+      "privacy_score": 70.0
     },
     {
       "conversation_id": "agora_conversation_2",
       "total_messages": 6,
-      "violations": [
-        {
-          "type": "NAME",
-          "content": "Thank Thank",
-          "conversation_id": "agora_conversation_2",
-          "protocol": "agora",
-          "timestamp": 1756892315.3246775
-        },
-        {
-          "type": "NAME",
-          "content": "Thank You",
-          "conversation_id": "agora_conversation_2",
-          "protocol": "agora",
-          "timestamp": 1756892315.324678
-        }
-      ],
-      "violation_count": 2,
-      "privacy_score": 40.0
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
     },
     {
       "conversation_id": "agora_conversation_3",
       "total_messages": 6,
-      "violations": [
-        {
-          "type": "NAME",
-          "content": "Your Name",
-          "conversation_id": "agora_conversation_3",
-          "protocol": "agora",
-          "timestamp": 1756892315.3292022
-        },
-        {
-          "type": "NAME",
-          "content": "Your Doctor",
-          "conversation_id": "agora_conversation_3",
-          "protocol": "agora",
-          "timestamp": 1756892315.3292027
-        },
-        {
-          "type": "NAME",
-          "content": "Social Security",
-          "conversation_id": "agora_conversation_3",
-          "protocol": "agora",
-          "timestamp": 1756892315.329203
-        }
-      ],
-      "violation_count": 3,
-      "privacy_score": 10.0
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
     },
     {
       "conversation_id": "agora_conversation_4",
       "total_messages": 6,
-      "violations": [
-        {
-          "type": "NAME",
-          "content": "Thank Thank",
-          "conversation_id": "agora_conversation_4",
-          "protocol": "agora",
-          "timestamp": 1756892315.330586
-        }
-      ],
-      "violation_count": 1,
-      "privacy_score": 70.0
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
     },
     {
       "conversation_id": "agora_conversation_5",
       "total_messages": 6,
-      "violations": [
-        {
-          "type": "NAME",
-          "content": "Thank You",
-          "conversation_id": "agora_conversation_5",
-          "protocol": "agora",
-          "timestamp": 1756892315.3311937
-        }
-      ],
-      "violation_count": 1,
-      "privacy_score": 70.0
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
     }
   ],
   "analysis_metadata": {
-    "timestamp": "2025-09-03 09:38:35",
+    "timestamp": "2025-09-04 08:44:30",
     "total_conversations": 5,
     "protocol": "agora"
   },
   "summary": {
-    "average_privacy_score": 46.0,
-    "overall_privacy_grade": "Critical",
+    "average_privacy_score": 94.0,
+    "overall_privacy_grade": "Excellent",
     "total_violations": {
       "ssn": 0,
       "phone": 0,
       "address": 0,
       "age": 0,
-      "name": 9
+      "name": 1
     },
-    "total_violation_instances": 9,
+    "total_violation_instances": 1,
     "conversations_by_grade": {
-      "Critical": 3,
-      "Fair": 2
+      "Fair": 1,
+      "Excellent": 4
     }
   }
 }

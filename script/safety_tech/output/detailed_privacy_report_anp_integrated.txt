@@ -16,6 +16,7 @@ Phone Violations: 0
 Address Violations: 0
 Age Violations: 0
 Name Violations: 0
+Email Violations: 0
 Total Violation Instances: 0
 
 CONVERSATION GRADE DISTRIBUTION

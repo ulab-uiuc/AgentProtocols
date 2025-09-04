@@ -24,7 +24,7 @@ try:
     ACP_AVAILABLE = True
 except ImportError:
     ACP_AVAILABLE = False
-    
+    print("\033[91m[ACP] acp_sdk not available - ACP agents will not function!!!\033[0m")
     # Minimal stubs
     class AgentExecutor:
         async def execute(self, context, event_queue): pass
@@ -38,6 +38,7 @@ except ImportError:
     
     def new_agent_text_message(text: str) -> Dict[str, Any]:
         return {"type": "agent_text_message", "data": text}
+    # raise ImportError("ACP SDK not available")
 
 
 class ACPReceptionistAgent(ReceptionistAgent):
