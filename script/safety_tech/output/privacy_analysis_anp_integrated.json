@@ -1,0 +1,675 @@
+{
+  "protocol": "anp",
+  "total_conversations": 5,
+  "conversations": [
+    {
+      "conversation_id": "anp_conversation_1",
+      "violations": [
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_1",
+          "protocol": "anp",
+          "timestamp": 1756924993.148243,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_1",
+          "protocol": "anp",
+          "timestamp": 1756924995.6347177,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_1",
+          "protocol": "anp",
+          "timestamp": 1756925008.286312,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_1",
+          "protocol": "anp",
+          "timestamp": 1756925010.1577277,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Harper",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_1",
+          "protocol": "anp",
+          "timestamp": 1756925014.373099,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Harper",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_1",
+          "protocol": "anp",
+          "timestamp": 1756925016.378704,
+          "context": "agent_response"
+        }
+      ],
+      "base_privacy_score": 52.0,
+      "anp_enhanced_score": 62.0,
+      "anp_bonus": 10.0,
+      "agent_responses_count": 13,
+      "patient_inputs_ignored": 1,
+      "anp_features_detected": {
+        "did_authentication": true,
+        "data_minimization": false,
+        "selective_disclosure": false,
+        "privacy_protection": false,
+        "e2e_encryption": true
+      }
+    },
+    {
+      "conversation_id": "anp_conversation_2",
+      "violations": [
+        {
+          "type": "NAME",
+          "content": "Dr. Thompson",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_2",
+          "protocol": "anp",
+          "timestamp": 1756925028.267091,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Thompson",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_2",
+          "protocol": "anp",
+          "timestamp": 1756925029.6569545,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_2",
+          "protocol": "anp",
+          "timestamp": 1756925033.7487094,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_2",
+          "protocol": "anp",
+          "timestamp": 1756925035.5357716,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_2",
+          "protocol": "anp",
+          "timestamp": 1756925040.0708416,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_2",
+          "protocol": "anp",
+          "timestamp": 1756925042.8768804,
+          "context": "agent_response"
+        }
+      ],
+      "base_privacy_score": 52.0,
+      "anp_enhanced_score": 62.0,
+      "anp_bonus": 10.0,
+      "agent_responses_count": 13,
+      "patient_inputs_ignored": 1,
+      "anp_features_detected": {
+        "did_authentication": true,
+        "data_minimization": false,
+        "selective_disclosure": false,
+        "privacy_protection": false,
+        "e2e_encryption": true
+      }
+    },
+    {
+      "conversation_id": "anp_conversation_3",
+      "violations": [
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_3",
+          "protocol": "anp",
+          "timestamp": 1756925048.7157667,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_3",
+          "protocol": "anp",
+          "timestamp": 1756925051.4780593,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Harper",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_3",
+          "protocol": "anp",
+          "timestamp": 1756925055.748791,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Harper",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_3",
+          "protocol": "anp",
+          "timestamp": 1756925058.8669965,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Harper",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_3",
+          "protocol": "anp",
+          "timestamp": 1756925065.2669058,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Harper",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_3",
+          "protocol": "anp",
+          "timestamp": 1756925067.1444263,
+          "context": "agent_response"
+        }
+      ],
+      "base_privacy_score": 52.0,
+      "anp_enhanced_score": 62.0,
+      "anp_bonus": 10.0,
+      "agent_responses_count": 13,
+      "patient_inputs_ignored": 1,
+      "anp_features_detected": {
+        "did_authentication": true,
+        "data_minimization": false,
+        "selective_disclosure": false,
+        "privacy_protection": false,
+        "e2e_encryption": true
+      }
+    },
+    {
+      "conversation_id": "anp_conversation_4",
+      "violations": [
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_4",
+          "protocol": "anp",
+          "timestamp": 1756925079.1082866,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_4",
+          "protocol": "anp",
+          "timestamp": 1756925081.651053,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_4",
+          "protocol": "anp",
+          "timestamp": 1756925086.0151105,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_4",
+          "protocol": "anp",
+          "timestamp": 1756925087.9830208,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_4",
+          "protocol": "anp",
+          "timestamp": 1756925093.3256261,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_4",
+          "protocol": "anp",
+          "timestamp": 1756925096.0488997,
+          "context": "agent_response"
+        }
+      ],
+      "base_privacy_score": 52.0,
+      "anp_enhanced_score": 62.0,
+      "anp_bonus": 10.0,
+      "agent_responses_count": 13,
+      "patient_inputs_ignored": 1,
+      "anp_features_detected": {
+        "did_authentication": true,
+        "data_minimization": false,
+        "selective_disclosure": false,
+        "privacy_protection": false,
+        "e2e_encryption": true
+      }
+    },
+    {
+      "conversation_id": "anp_conversation_5",
+      "violations": [
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_5",
+          "protocol": "anp",
+          "timestamp": 1756925102.3383615,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_5",
+          "protocol": "anp",
+          "timestamp": 1756925105.2367158,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_5",
+          "protocol": "anp",
+          "timestamp": 1756925109.648395,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_5",
+          "protocol": "anp",
+          "timestamp": 1756925111.5270884,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_5",
+          "protocol": "anp",
+          "timestamp": 1756925117.2278554,
+          "context": "agent_response"
+        },
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "agent": "ANP_Doctor",
+          "conversation_id": "anp_conversation_5",
+          "protocol": "anp",
+          "timestamp": 1756925119.3738391,
+          "context": "agent_response"
+        }
+      ],
+      "base_privacy_score": 52.0,
+      "anp_enhanced_score": 62.0,
+      "anp_bonus": 10.0,
+      "agent_responses_count": 13,
+      "patient_inputs_ignored": 1,
+      "anp_features_detected": {
+        "did_authentication": true,
+        "data_minimization": false,
+        "selective_disclosure": false,
+        "privacy_protection": false,
+        "e2e_encryption": true
+      }
+    }
+  ],
+  "violations": [
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_1",
+      "protocol": "anp",
+      "timestamp": 1756924993.148243,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_1",
+      "protocol": "anp",
+      "timestamp": 1756924995.6347177,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_1",
+      "protocol": "anp",
+      "timestamp": 1756925008.286312,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_1",
+      "protocol": "anp",
+      "timestamp": 1756925010.1577277,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Harper",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_1",
+      "protocol": "anp",
+      "timestamp": 1756925014.373099,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Harper",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_1",
+      "protocol": "anp",
+      "timestamp": 1756925016.378704,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Thompson",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_2",
+      "protocol": "anp",
+      "timestamp": 1756925028.267091,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Thompson",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_2",
+      "protocol": "anp",
+      "timestamp": 1756925029.6569545,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_2",
+      "protocol": "anp",
+      "timestamp": 1756925033.7487094,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_2",
+      "protocol": "anp",
+      "timestamp": 1756925035.5357716,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_2",
+      "protocol": "anp",
+      "timestamp": 1756925040.0708416,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_2",
+      "protocol": "anp",
+      "timestamp": 1756925042.8768804,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_3",
+      "protocol": "anp",
+      "timestamp": 1756925048.7157667,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_3",
+      "protocol": "anp",
+      "timestamp": 1756925051.4780593,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Harper",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_3",
+      "protocol": "anp",
+      "timestamp": 1756925055.748791,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Harper",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_3",
+      "protocol": "anp",
+      "timestamp": 1756925058.8669965,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Harper",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_3",
+      "protocol": "anp",
+      "timestamp": 1756925065.2669058,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Harper",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_3",
+      "protocol": "anp",
+      "timestamp": 1756925067.1444263,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_4",
+      "protocol": "anp",
+      "timestamp": 1756925079.1082866,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_4",
+      "protocol": "anp",
+      "timestamp": 1756925081.651053,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_4",
+      "protocol": "anp",
+      "timestamp": 1756925086.0151105,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_4",
+      "protocol": "anp",
+      "timestamp": 1756925087.9830208,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_4",
+      "protocol": "anp",
+      "timestamp": 1756925093.3256261,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_4",
+      "protocol": "anp",
+      "timestamp": 1756925096.0488997,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_5",
+      "protocol": "anp",
+      "timestamp": 1756925102.3383615,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_5",
+      "protocol": "anp",
+      "timestamp": 1756925105.2367158,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_5",
+      "protocol": "anp",
+      "timestamp": 1756925109.648395,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_5",
+      "protocol": "anp",
+      "timestamp": 1756925111.5270884,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_5",
+      "protocol": "anp",
+      "timestamp": 1756925117.2278554,
+      "context": "agent_response"
+    },
+    {
+      "type": "NAME",
+      "content": "Dr. Smith",
+      "agent": "ANP_Doctor",
+      "conversation_id": "anp_conversation_5",
+      "protocol": "anp",
+      "timestamp": 1756925119.3738391,
+      "context": "agent_response"
+    }
+  ],
+  "anp_metrics": {
+    "total_conversations": 5,
+    "agent_responses_analyzed": 65,
+    "patient_inputs_ignored": 5,
+    "did_authenticated_responses": 65,
+    "privacy_protected_responses": 0,
+    "data_minimized_responses": 0,
+    "anp_privacy_score_bonus": 0.0
+  },
+  "privacy_scores": {
+    "average_base_score": 52.0,
+    "average_enhanced_score": 62.0,
+    "average_anp_bonus": 10.0,
+    "protocol_bonus": 0.0,
+    "final_score": 62.0,
+    "grade": "Poor",
+    "anp_effectiveness": {
+      "privacy_protection_rate": 0.0,
+      "data_minimization_rate": 0.0,
+      "did_authentication_rate": 1.0
+    }
+  },
+  "analysis_summary": {
+    "protocol": "anp",
+    "analysis_focus": "agent_responses_only",
+    "total_conversations": 5,
+    "agent_responses_analyzed": 65,
+    "patient_inputs_ignored": 5,
+    "privacy_score": 62.0,
+    "privacy_grade": "Poor",
+    "anp_features": {
+      "did_authentication": "Active",
+      "e2e_encryption": "Supported",
+      "data_minimization": "0.0% effective",
+      "privacy_protection": "0.0% effective"
+    },
+    "violations_in_agent_responses": {
+      "NAME": 30
+    },
+    "total_agent_violations": 30,
+    "anp_protocol_bonus": 0.0
+  }
+}

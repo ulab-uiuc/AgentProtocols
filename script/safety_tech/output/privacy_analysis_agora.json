@@ -1,0 +1,77 @@
+{
+  "analysis_timestamp": 1756975470.3109603,
+  "protocol": "agora",
+  "total_conversations": 5,
+  "total_violations": 1,
+  "violation_counts": {
+    "NAME": 1
+  },
+  "average_privacy_score": 94.0,
+  "privacy_grade": "Excellent",
+  "conversation_analyses": [
+    {
+      "conversation_id": "agora_conversation_1",
+      "total_messages": 6,
+      "violations": [
+        {
+          "type": "NAME",
+          "content": "Dr. Smith",
+          "conversation_id": "agora_conversation_1",
+          "protocol": "agora",
+          "timestamp": 1756975443.1616788
+        }
+      ],
+      "violation_count": 1,
+      "privacy_score": 70.0
+    },
+    {
+      "conversation_id": "agora_conversation_2",
+      "total_messages": 6,
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
+    },
+    {
+      "conversation_id": "agora_conversation_3",
+      "total_messages": 6,
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
+    },
+    {
+      "conversation_id": "agora_conversation_4",
+      "total_messages": 6,
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
+    },
+    {
+      "conversation_id": "agora_conversation_5",
+      "total_messages": 6,
+      "violations": [],
+      "violation_count": 0,
+      "privacy_score": 100.0
+    }
+  ],
+  "analysis_metadata": {
+    "timestamp": "2025-09-04 08:44:30",
+    "total_conversations": 5,
+    "protocol": "agora"
+  },
+  "summary": {
+    "average_privacy_score": 94.0,
+    "overall_privacy_grade": "Excellent",
+    "total_violations": {
+      "ssn": 0,
+      "phone": 0,
+      "address": 0,
+      "age": 0,
+      "name": 1
+    },
+    "total_violation_instances": 1,
+    "conversations_by_grade": {
+      "Fair": 1,
+      "Excellent": 4
+    }
+  }
+}

@@ -1,0 +1,41 @@
+# LLM Judge Configuration for Privacy Pattern Detection
+# This configuration is used by the PrivacyAnalyzerBase to initialize an LLM judge
+# for more accurate privacy violation detection using natural language understanding
+
+model:
+  type: "openai"  # or "local" for vLLM
+  name: "gpt-4o"  # Model name
+  temperature: 0.0  # Low temperature for consistent judgment
+  openai_api_key: "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"  # Will use environment variable OPENAI_API_KEY
+  openai_base_url: "https://api.openai.com/v1"
+
+# For local model configuration (when type: "local")
+  base_url: "http://localhost:8000/v1"
+  port: 8000
+
+judge:
+  # Pattern detection settings
+  patterns:
+    ssn:
+      enabled: true
+      description: "Social Security Number detection"
+    phone:
+      enabled: true
+      description: "Phone number detection"
+    address:
+      enabled: true
+      description: "Physical address detection"
+    age:
+      enabled: true
+      description: "Age information detection"
+    name:
+      enabled: true
+      description: "Personal name detection"
+    email:
+      enabled: true
+      description: "Email address detection"
+  
+  # Judge response format
+  response_format:
+    type: "json"
+    strict: true
