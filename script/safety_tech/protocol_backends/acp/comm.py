@@ -20,21 +20,11 @@ try:
 except ImportError:
     from comm.base import BaseCommBackend
 
-# ACP SDK imports (optional dependencies)
-try:
-    from acp_sdk.server import Server, Context, RunYield
-    from acp_sdk import Message, MessagePart
-    import uvicorn
-    ACP_AVAILABLE = True
-except ImportError:
-    ACP_AVAILABLE = False
-    
-    # Minimal stubs for when ACP SDK is not available
-    class Server: pass
-    class Context: pass
-    class RunYield: pass
-    class Message: pass
-    class MessagePart: pass
+# ACP SDK imports (mandatory)
+from acp_sdk.server import Server, Context, RunYield, RunYieldResume
+from acp_sdk.client import Client
+from acp_sdk.models import Message, MessagePart
+import uvicorn
 
 
 @dataclass
@@ -53,7 +43,8 @@ class ACPCommBackend(BaseCommBackend):
     def __init__(self, **kwargs):
         self._endpoints: Dict[str, str] = {}  # agent_id -> endpoint uri
         self._client = httpx.AsyncClient(timeout=30.0)
-        self._local_agents: Dict[str, ACPAgentHandle] = {}  # For locally spawned agents
+        self._local_agents = {}  # For locally spawned agents
+        self._agent_names = {}  # agent_id -> registered server agent name
 
     async def register_endpoint(self, agent_id: str, address: str) -> None:
         """Register ACP agent endpoint."""
@@ -69,30 +60,27 @@ class ACPCommBackend(BaseCommBackend):
         endpoint = self._endpoints.get(dst_id)
         if not endpoint:
             raise RuntimeError(f"Unknown destination agent: {dst_id}")
-
-        # Convert payload to ACP message format
-        acp_message = self._to_acp_message(payload)
         
-        try:
-            # Send HTTP request to ACP agent endpoint
-            response = await self._client.post(
-                f"{endpoint}/message",
-                json=acp_message,
-                headers={"Content-Type": "application/json"}
-            )
-            response.raise_for_status()
-            
-            raw_response = response.json()
-            text_content = self._extract_text_from_acp_response(raw_response)
-            
-            return {
-                "raw": raw_response,
-                "text": text_content
-            }
-            
-        except Exception as e:
-            print(f"[ACPCommBackend] Send failed {src_id} -> {dst_id}: {e}")
-            return {"raw": None, "text": ""}
+        # Convert payload to ACP message format
+        message = self._to_acp_message(payload)
+
+        # Use real ACP client for HTTP endpoints only
+        agent_name = self._agent_names.get(dst_id, dst_id)
+        client = Client(base_url=endpoint)
+        run = client.run_sync(
+            agent=agent_name,
+            input=[message]
+        )
+        # Extract output messages if available
+        text_content = ""
+        raw_output = getattr(run, "output", None)
+        if raw_output:
+            for msg in raw_output:
+                for part in getattr(msg, "parts", []) or []:
+                    content = getattr(part, "content", None)
+                    if isinstance(content, str):
+                        text_content += content
+        return {"raw": raw_output, "text": text_content}
 
     async def health_check(self, agent_id: str) -> bool:
         """Check ACP agent health."""
@@ -127,40 +115,34 @@ class ACPCommBackend(BaseCommBackend):
 
     async def spawn_local_agent(self, agent_id: str, host: str, port: int, executor: Any) -> ACPAgentHandle:
         """Spawn local ACP agent server."""
-        if not ACP_AVAILABLE:
-            raise RuntimeError("ACP SDK not available. Cannot spawn local agents.")
         
         base_url = f"http://{host}:{port}"
         
         # Create ACP server with executor
         server = Server()
         
-        @server.message()
-        async def handle_message(context: Context) -> RunYield:
+        @server.agent()
+        async def privacy_agent(input: list[Message], context: Context):
+            """ACP agent handler for privacy testing."""
             try:
-                # Extract user input from ACP context
-                user_input = self._extract_user_input_from_context(context)
-                
-                # Create mock event queue for executor
-                events = []
-                
-                class MockEventQueue:
-                    async def enqueue_event(self, event):
-                        events.append(event)
-                
-                mock_queue = MockEventQueue()
-                
-                # Execute agent logic
-                await executor.execute(context, mock_queue)
-                
-                # Return events as ACP responses
-                for event in events:
-                    if event.get("type") == "agent_text_message":
-                        yield Message(parts=[MessagePart(text=event.get("data", ""))])
-                
+                async for out in executor.execute(input, context):
+                    # Directly yield acp_sdk Message
+                    if isinstance(out, Message):
+                        yield out
+                        continue
+                    # Map common simple outputs to Message
+                    if isinstance(out, dict) and out.get("type") == "agent_text_message":
+                        yield Message(parts=[MessagePart(content=out.get("data", ""), content_type="text/plain")])
+                    elif isinstance(out, str):
+                        yield Message(parts=[MessagePart(content=out, content_type="text/plain")])
+                    else:
+                        yield Message(parts=[MessagePart(content=str(out), content_type="text/plain")])
             except Exception as e:
                 print(f"[ACPCommBackend] Agent execution error: {e}")
-                yield Message(parts=[MessagePart(text="Internal server error")])
+                yield Message(parts=[MessagePart(content="Internal server error", content_type="text/plain")])
+        
+        # Remember agent name used for client invocation
+        self._agent_names[agent_id] = "privacy_agent"
 
         # Start server in background task
         server_task = asyncio.create_task(
@@ -184,57 +166,27 @@ class ACPCommBackend(BaseCommBackend):
 
     # ---------------------- Helper Methods ----------------------
     
-    def _to_acp_message(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert standard payload to ACP message format."""
-        if "text" in payload:
-            return {
-                "messageId": str(int(time.time() * 1000)),
-                "role": "user",
-                "parts": [{"kind": "text", "text": payload["text"]}]
-            }
+    def _to_acp_message(self, payload: Dict[str, Any]):
+        """Convert standard payload to ACP Message object."""
+    # Create real ACP Message object
+        if isinstance(payload, dict) and "text" in payload:
+            return Message(parts=[MessagePart(content=payload["text"], content_type="text/plain")])
         elif "parts" in payload:
-            return {
-                "messageId": str(int(time.time() * 1000)),
-                "role": "user", 
-                "parts": payload["parts"]
-            }
+            # Convert parts to MessagePart objects
+            message_parts = []
+            for part in payload["parts"]:
+                if isinstance(part, dict):
+                    if "content" in part:
+                        message_parts.append(MessagePart(content=part["content"], content_type=part.get("content_type", "text/plain")))
+                    elif "text" in part:  # backward compat
+                        message_parts.append(MessagePart(content=part["text"], content_type="text/plain"))
+                elif hasattr(part, 'content'):
+                    message_parts.append(part)
+            return Message(parts=message_parts)
         else:
-            return {
-                "messageId": str(int(time.time() * 1000)),
-                "role": "user",
-                "parts": [{"kind": "text", "text": str(payload)}]
-            }
+            return Message(parts=[MessagePart(content=str(payload), content_type="text/plain")])
 
-    def _extract_text_from_acp_response(self, response: Dict[str, Any]) -> str:
-        """Extract text content from ACP response."""
-        try:
-            # ACP response format: {"events": [{"type": "agent_text_message", "data": "..."}]}
-            events = response.get("events", [])
-            for event in events:
-                if event.get("type") == "agent_text_message":
-                    return event.get("data", "")
-            
-            # Fallback: look for text in different response structures
-            if "text" in response:
-                return response["text"]
-            elif "content" in response:
-                return response["content"]
-            elif "message" in response:
-                return response["message"]
-            
-            return ""
-        except Exception:
-            return ""
-
-    def _extract_user_input_from_context(self, context: Context) -> str:
-        """Extract user input text from ACP context."""
-        try:
-            # This would use actual ACP SDK methods
-            if hasattr(context, 'get_user_input'):
-                return context.get_user_input() or ""
-            return ""
-        except Exception:
-            return ""
+    # Removed HTTP simulation helpers; ACP requires real SDK
 
     async def _run_acp_server(self, server: Server, host: str, port: int) -> None:
         """Run ACP server using uvicorn."""

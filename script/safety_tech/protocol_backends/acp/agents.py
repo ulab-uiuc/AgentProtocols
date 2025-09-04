@@ -1,44 +1,24 @@
 # -*- coding: utf-8 -*-
 """
 ACP Protocol Agent Adapters for Privacy Testing
-Bridges between ACP protocol and privacy testing agent logic.
+Bridges between ACP protocol and privacy testing agent logic using real acp_sdk types.
 """
 
 from __future__ import annotations
 
 import asyncio
 import time
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional, List, AsyncGenerator
+
+# acp_sdk real types
+from acp_sdk.server import Context
+from acp_sdk.models import Message, MessagePart
 
 # Import core agent classes
 try:
     from ...core.privacy_agent_base import ReceptionistAgent, NosyDoctorAgent
 except ImportError:
     from core.privacy_agent_base import ReceptionistAgent, NosyDoctorAgent
-
-# ACP SDK imports (optional)
-try:
-    from acp_sdk.server.agent_execution import AgentExecutor, RequestContext
-    from acp_sdk.server.events import EventQueue
-    from acp_sdk.utils import new_agent_text_message
-    ACP_AVAILABLE = True
-except ImportError:
-    ACP_AVAILABLE = False
-    print("\033[91m[ACP] acp_sdk not available - ACP agents will not function!!!\033[0m")
-    # Minimal stubs
-    class AgentExecutor:
-        async def execute(self, context, event_queue): pass
-        async def cancel(self, context, event_queue): pass
-    
-    class RequestContext:
-        def get_user_input(self) -> str: return ""
-    
-    class EventQueue:
-        async def enqueue_event(self, event): pass
-    
-    def new_agent_text_message(text: str) -> Dict[str, Any]:
-        return {"type": "agent_text_message", "data": text}
-    # raise ImportError("ACP SDK not available")
 
 
 class ACPReceptionistAgent(ReceptionistAgent):
@@ -67,7 +47,7 @@ class ACPNosyDoctorAgent(NosyDoctorAgent):
         return response or {"raw": None, "text": ""}
 
 
-class ACPReceptionistExecutor(AgentExecutor):
+class ACPReceptionistExecutor:
     """
     ACP Executor wrapper for receptionist agent.
     Handles ACP protocol integration for privacy-aware agent.
@@ -76,36 +56,36 @@ class ACPReceptionistExecutor(AgentExecutor):
     def __init__(self, config: Optional[dict] = None, output=None):
         self.agent = ACPReceptionistAgent("ACP_Receptionist", config, output)
 
-    async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
-        """Execute receptionist agent logic through ACP interface."""
+    async def execute(self, messages: List[Message], context: Context) -> AsyncGenerator[Message, None]:
+        """Execute receptionist agent logic through ACP interface (streaming)."""
         try:
-            # Extract user input from ACP context
-            user_input = context.get_user_input() if hasattr(context, 'get_user_input') else ""
-            
+            # Extract user input from messages
+            user_input = ""
+            if messages:
+                for part in getattr(messages[0], 'parts', []) or []:
+                    if isinstance(getattr(part, 'content', None), str):
+                        user_input += part.content
             if not user_input:
-                user_input = "status"  # Default command
-            
-            # Process message through privacy-aware agent
+                user_input = "status"
+
             response = await self.agent.process_message("ACP_Client", user_input)
-            
-            # Send response through ACP event queue
-            await event_queue.enqueue_event(new_agent_text_message(response))
-            
+            yield Message(parts=[MessagePart(content=response, content_type="text/plain")])
+
         except Exception as e:
             error_msg = f"Receptionist agent error: {e}"
             print(f"[ACPReceptionistExecutor] {error_msg}")
-            await event_queue.enqueue_event(new_agent_text_message(error_msg))
+            yield Message(parts=[MessagePart(content=error_msg, content_type="text/plain")])
 
-    async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:
-        """Handle ACP cancellation."""
-        await event_queue.enqueue_event(new_agent_text_message("Operation cancelled"))
+    async def cancel(self, messages: List[Message], context: Context) -> AsyncGenerator[Message, None]:
+        """Handle ACP cancellation (streaming)."""
+        yield Message(parts=[MessagePart(content="Operation cancelled", content_type="text/plain")])
 
     def set_network(self, network: Any) -> None:
         """Set network for agent communication."""
         self.agent.set_network(network)
 
 
-class ACPNosyDoctorExecutor(AgentExecutor):
+class ACPNosyDoctorExecutor:
     """
     ACP Executor wrapper for nosy doctor agent.
     Handles ACP protocol integration for privacy-invasive agent.
@@ -114,29 +94,28 @@ class ACPNosyDoctorExecutor(AgentExecutor):
     def __init__(self, config: Optional[dict] = None, output=None):
         self.agent = ACPNosyDoctorAgent("ACP_Doctor", config, output)
 
-    async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
-        """Execute nosy doctor agent logic through ACP interface."""
+    async def execute(self, messages: List[Message], context: Context) -> AsyncGenerator[Message, None]:
+        """Execute nosy doctor agent logic through ACP interface (streaming)."""
         try:
-            # Extract user input from ACP context
-            user_input = context.get_user_input() if hasattr(context, 'get_user_input') else ""
-            
+            user_input = ""
+            if messages:
+                for part in getattr(messages[0], 'parts', []) or []:
+                    if isinstance(getattr(part, 'content', None), str):
+                        user_input += part.content
             if not user_input:
-                user_input = "Please provide patient information"  # Default invasive query
-            
-            # Process message through privacy-invasive agent
+                user_input = "Please provide patient information"
+
             response = await self.agent.process_message("ACP_Client", user_input)
-            
-            # Send response through ACP event queue
-            await event_queue.enqueue_event(new_agent_text_message(response))
-            
+            yield Message(parts=[MessagePart(content=response, content_type="text/plain")])
+
         except Exception as e:
             error_msg = f"Doctor agent error: {e}"
             print(f"[ACPNosyDoctorExecutor] {error_msg}")
-            await event_queue.enqueue_event(new_agent_text_message(error_msg))
+            yield Message(parts=[MessagePart(content=error_msg, content_type="text/plain")])
 
-    async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:
-        """Handle ACP cancellation."""
-        await event_queue.enqueue_event(new_agent_text_message("Operation cancelled"))
+    async def cancel(self, messages: List[Message], context: Context) -> AsyncGenerator[Message, None]:
+        """Handle ACP cancellation (streaming)."""
+        yield Message(parts=[MessagePart(content="Operation cancelled", content_type="text/plain")])
 
     def set_network(self, network: Any) -> None:
         """Set network for agent communication."""
