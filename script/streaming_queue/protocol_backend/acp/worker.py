@@ -22,7 +22,7 @@ from core.qa_worker_base import QAWorkerBase
 
 # Import ACP SDK components
 try:
-    from acp_sdk import Message
+    from acp_sdk.models import Message, MessagePart
     ACP_AVAILABLE = True
 except ImportError:
     ACP_AVAILABLE = False
@@ -63,17 +63,17 @@ class ACPWorkerExecutor:
             else:
                 result = f"Error: Worker has no answer method"
             
-            # Return response message
+            # Return response message with strongly typed MessagePart
             response_id = str(uuid.uuid4())
             return Message(
                 id=response_id,
-                parts=[{"type": "text", "text": str(result)}]
+                parts=[MessagePart(type="text", text=str(result))]
             )
         except Exception as e:
             error_id = str(uuid.uuid4())
             return Message(
                 id=error_id,
-                parts=[{"type": "text", "text": f"Error: {str(e)}"}]
+                parts=[MessagePart(type="text", text=f"Error: {str(e)}")]
             )
     
     @property

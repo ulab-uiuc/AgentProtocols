@@ -49,8 +49,18 @@ class QAAgentExecutor(AgentExecutor):
             question = self._extract_text(user_input) or "What is artificial intelligence?"
 
             result = await self.worker.answer(question)
-            # A2A enqueue_event 是同步调用，不需要 await
-            event_queue.enqueue_event(new_agent_text_message(result))
+            
+            # Try both sync and async enqueue_event
+            try:
+                # First try async (correct way based on RuntimeWarning)
+                await event_queue.enqueue_event(new_agent_text_message(result))
+            except Exception as async_error:
+                try:
+                    # Fallback to sync
+                    event_queue.enqueue_event(new_agent_text_message(result))
+                except Exception:
+                    # Last resort - try simple text event
+                    event_queue.enqueue_event(new_agent_text_message(f"A2A result: {result}"))
         except Exception as e:
             event_queue.enqueue_event(new_agent_text_message(f"[QAAgentExecutor] failed: {e}"))
 

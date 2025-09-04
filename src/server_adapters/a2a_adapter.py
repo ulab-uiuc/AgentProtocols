@@ -100,6 +100,20 @@ class A2AStarletteApplication:
             # Extract message from request body
             if 'params' in body and 'message' in body['params']:
                 message_data = body['params']['message']
+                
+                # Ensure message has required fields for A2A SDK
+                if 'parts' not in message_data:
+                    # Convert text content to parts format
+                    text_content = message_data.get('text', str(message_data))
+                    message_data['parts'] = [{"type": "text", "text": text_content}]
+                
+                if 'messageId' not in message_data:
+                    import uuid
+                    message_data['messageId'] = str(uuid.uuid4())
+                
+                if 'role' not in message_data:
+                    message_data['role'] = 'user'
+                
                 # Create Message object from the data
                 message = Message(**message_data)
                 

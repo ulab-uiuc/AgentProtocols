@@ -7,8 +7,8 @@ core:
   base_url: "http://localhost:8000/v1"
   port: 8000
   # For OpenAI models (uncomment the section below if using OpenAI)
-  openai_api_key: "sk-lNAfLdE1AMKr6AV6a3qaNZ86BIPdEUKdyZ26VogskVpeCDjn"
-  openai_base_url: "http://47.254.87.71:3000/v1"
+  openai_api_key: "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"
+  openai_base_url: ""
 
 network:
   topology: "star"  # Network topology type, choose "star" or "mesh"

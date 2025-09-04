@@ -3,7 +3,7 @@ Converter functions between UTE (UnifiedTransportEnvelope) and each protocol.
 All functions are pure; they never perform network I/O.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Union
 
 from .unified_message import UTE
 
@@ -94,7 +94,32 @@ def ute_to_acp(ute: UTE) -> Dict[str, Any]:
 
 
 def acp_to_ute(acp_msg: Dict[str, Any]) -> UTE:
-    """ACP -> UTE."""
+    """ACP -> UTE. Handle both request format and server response format."""
+    # Handle ACP server response format: {"results": [...], "timestamp": ..., "status": "completed"}
+    if "results" in acp_msg and isinstance(acp_msg["results"], list):
+        results = acp_msg["results"]
+        # Extract text from first result
+        content_text = ""
+        if results:
+            first_result = results[0]
+            if isinstance(first_result, dict):
+                # Try different content keys
+                content_text = (first_result.get("content") or 
+                               first_result.get("text") or 
+                               first_result.get("data") or 
+                               str(first_result))
+        
+        return UTE(
+            id=acp_msg.get("id", ""),
+            src="acp_server",
+            dst="",
+            timestamp=acp_msg.get("timestamp", 0.0),
+            content={"text": content_text, "results": results},
+            context={},
+            metadata={"status": acp_msg.get("status", "unknown")},
+        )
+    
+    # Handle standard ACP message format
     return UTE(
         id=acp_msg.get("id", ""),
         src=acp_msg.get("sender", ""),
@@ -172,17 +197,41 @@ def ute_to_agora(ute: UTE) -> Dict[str, Any]:
     }
 
 
-def agora_to_ute(agora_msg: Dict[str, Any]) -> UTE:
-    """Agora -> UTE (simplified)."""
-    return UTE(
-        id=agora_msg.get("id", ""),
-        src="agora_remote",
-        dst="",
-        timestamp=agora_msg.get("timestamp", 0.0),
-        content=agora_msg,
-        context={},
-        metadata={},
-    )
+def agora_to_ute(agora_msg: Union[Dict[str, Any], str, Any]) -> UTE:
+    """Agora -> UTE (handles both dict and string responses)."""
+    if isinstance(agora_msg, str):
+        # Handle string response
+        return UTE(
+            id="",
+            src="agora_remote",
+            dst="",
+            timestamp=0.0,
+            content={"text": agora_msg},
+            context={},
+            metadata={},
+        )
+    elif isinstance(agora_msg, dict):
+        # Handle dict response
+        return UTE(
+            id=agora_msg.get("id", ""),
+            src="agora_remote",
+            dst="",
+            timestamp=agora_msg.get("timestamp", 0.0),
+            content=agora_msg,
+            context={},
+            metadata={},
+        )
+    else:
+        # Handle other types
+        return UTE(
+            id="",
+            src="agora_remote",
+            dst="",
+            timestamp=0.0,
+            content={"text": str(agora_msg)},
+            context={},
+            metadata={},
+        )
 
 
 # ---- registry (helps BaseAgent pick the right pair quickly) ----

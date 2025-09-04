@@ -38,7 +38,13 @@ class QAWorkerBase:
                 from src.utils.core import Core  # type: ignore
 
             cfg = config or self._get_default_config()
-            self._log(f"[QAWorkerBase] Initializing Core with config: {cfg}")
+            
+            # Log config with API key masking for security
+            import copy
+            cfg_safe = copy.deepcopy(cfg)
+            if "model" in cfg_safe and "openai_api_key" in cfg_safe["model"]:
+                cfg_safe["model"]["openai_api_key"] = "***"
+            self._log(f"[QAWorkerBase] Initializing Core with config: {cfg_safe}")
             
             # 确保配置格式正确
             if not cfg or "model" not in cfg:

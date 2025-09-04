@@ -6,14 +6,12 @@ Uses ACP SDK 1.0.3 native executor with async generator wrapper.
 """
 
 import asyncio
-import sys
 import uuid
 import logging
-from pathlib import Path
 from typing import Dict, Any, Optional, AsyncGenerator
 
-# Configure logging with DEBUG level to see server startup details
-logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(name)s:%(message)s')
+# Configure logging with consistent format
+logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s:%(message)s')
 
 # Production imports
 from src.core.base_agent import BaseAgent
@@ -41,8 +39,9 @@ class ACPExecutorWrapper:
     async def __call__(self, messages: list[Message], context: Context) -> AsyncGenerator[RunYield, None]:
         """
         ACP server async generator interface - called directly by ACP server adapter
+        RunYield is Union type, so we yield Message/MessagePart/str directly
         """
-        logger.debug(f"ACPExecutorWrapper called with {len(messages)} messages")
+        logger.debug(f"[ACP] ACPExecutorWrapper called with {len(messages)} messages")
         
         try:
             # Process each message (typically just one)
@@ -50,52 +49,37 @@ class ACPExecutorWrapper:
                 # Generate run_id for this execution
                 run_id = str(uuid.uuid4())
                 
-                logger.debug(f"Processing ACP message {i+1}/{len(messages)} with run_id: {run_id}")
+                logger.debug(f"[ACP] Processing message {i+1}/{len(messages)} with run_id: {run_id}")
                 
-                # Yield progress start
-                yield RunYield(
-                    type="progress",
-                    content="Processing message with ACP executor...",
-                    metadata={"run_id": run_id, "step": "start"}
-                )
+                # Extract text from message for LLM call
+                text_content = ""
                 
-                # Process with streaming_queue ACP executor
-                result_message = await self.acp_worker_executor.process_message(message, run_id)
-                
-                # Extract result text from ACP Message
-                result_text = "ACP processing completed"
-                if hasattr(result_message, 'parts') and result_message.parts:
-                    for part in result_message.parts:
+                if hasattr(message, 'parts') and message.parts:
+                    for part in message.parts:
                         if hasattr(part, 'type') and part.type == "text":
-                            result_text = getattr(part, 'text', result_text)
-                            break
-                        elif hasattr(part, 'text'):
-                            result_text = str(getattr(part, 'text', result_text))
-                            break
+                            text_content += getattr(part, 'text', getattr(part, 'content', ""))
+                else:
+                    text_content = str(message)
                 
-                # Yield final result as RunYield for ACP server
-                yield RunYield(
-                    type="text",
-                    content=result_text,
-                    metadata={
-                        "run_id": run_id,
-                        "protocol": "acp",
-                        "sdk_version": "1.0.3",
-                        "message_index": i
-                    }
-                )
+                # Call LLM directly through worker
+                if hasattr(self.acp_worker_executor, '_worker') and hasattr(self.acp_worker_executor._worker, 'answer'):
+                    llm_result = await self.acp_worker_executor._worker.answer(text_content)
+                    yield llm_result  # Yield LLM result as string
+                else:
+                    # Fallback to original process_message
+                    result_message = await self.acp_worker_executor.process_message(message, run_id)
+                    if isinstance(result_message, Message):
+                        yield result_message
+                    else:
+                        yield "ACP processing completed"
                 
-                logger.debug(f"ACP executor yielded result for message {i+1}: {result_text[:100]}...")
+                logger.debug(f"[ACP] Executor yielded result for message {i+1}")
                 
         except Exception as e:
-            # Yield error as RunYield
+            # Yield error as string
             error_msg = f"ACP processing error: {e}"
-            yield RunYield(
-                type="error", 
-                content=error_msg,
-                metadata={"error": True, "exception": str(type(e).__name__)}
-            )
-            logger.error(f"ACP executor error: {e}", exc_info=True)
+            yield error_msg
+            logger.error(f"[ACP] Executor error: {e}", exc_info=True)
 
 
 class ACPMetaAgent:
@@ -114,7 +98,7 @@ class ACPMetaAgent:
         self.acp_executor: Optional[ACPWorkerExecutor] = None
         self.executor_wrapper: Optional[ACPExecutorWrapper] = None
         
-        logger.info(f"Initialized ACP meta protocol agent: {agent_id}")
+        logger.info(f"[ACP-META] Initialized agent: {agent_id}")
     
     def _convert_config_for_qa(self) -> Dict[str, Any]:
         """Convert config for ACPWorkerExecutor"""
@@ -141,60 +125,49 @@ class ACPMetaAgent:
         self.acp_executor = ACPWorkerExecutor(qa_config)
         
         # 2) Wrap in async generator interface for ACP server
-        self.executor_wrapper = ACPExecutorWrapper(self.acp_executor)
+        self.executor_wrapper = ACPExecutorWrapper(self.acp_executor)  # Pass executor back
         
         if not callable(self.executor_wrapper):
             raise RuntimeError("ACPExecutorWrapper must be callable as async generator")
 
-        # 3) Create BaseAgent with ACP server adapter
-        logger.info(f"Creating BaseAgent.create_acp for {self.agent_id} on {host}:{port or 8082}")
+        # 3) Create BaseAgent with ACP server adapter (using factory method)
+        logger.info(f"[{self.agent_id}] Creating BaseAgent.create_acp on {host}:{port or 8082}")
         try:
-            # Try with explicit timeout increase
-            import asyncio
-            
-            # Create BaseAgent instance manually to debug the issue
-            from src.server_adapters.acp_adapter import ACPServerAdapter
-            server_adapter = ACPServerAdapter()
-            
-            self.base_agent = BaseAgent(
+            self.base_agent = await BaseAgent.create_acp(
                 agent_id=self.agent_id,
                 host=host,
                 port=port or 8082,
-                server_adapter=server_adapter
+                executor=self.executor_wrapper  # callable async generator
+                # server_adapter defaults to ACPServerAdapter
             )
-            
-            logger.info(f"BaseAgent instance created, starting server...")
-            
-            # Start server manually with more debugging
-            await self.base_agent._start_server(self.executor_wrapper)
-            
-            # Fetch self card
-            await self.base_agent._fetch_self_card()
-            
-            self.base_agent._initialized = True
-            
-            logger.info(f"BaseAgent ACP server created successfully")
+            logger.info(f"[{self.agent_id}] BaseAgent ACP server created successfully at {self.base_agent.get_listening_address()}")
         except Exception as e:
-            logger.error(f"Failed to create BaseAgent ACP server: {e}", exc_info=True)
+            logger.error(f"[{self.agent_id}] Failed to create BaseAgent ACP server: {e}", exc_info=True)
             raise
 
-        # 4) Optional loopback adapter (for local testing only)
+        # 4) Optional loopback adapter (for local testing only - default False for production)
         if self.install_loopback:
-            from src.agent_adapters.acp_adapter import ACPAdapter
-            listen_url = self.base_agent.get_listening_address()
-            
-            # Fix URL for Windows - replace 0.0.0.0 with 127.0.0.1
-            if "0.0.0.0" in listen_url:
-                listen_url = listen_url.replace("0.0.0.0", "127.0.0.1")
-            
-            adapter = ACPAdapter(
-                httpx_client=self.base_agent._httpx_client,
-                base_url=listen_url,
-                agent_id=self.agent_id
-            )
-            await adapter.initialize()
-            self.base_agent.add_outbound_adapter(self.agent_id, adapter)
-            logger.info(f"Installed loopback ACP adapter for {self.agent_id} at {listen_url}")
+            try:
+                from src.agent_adapters.acp_adapter import ACPAdapter
+                listen_url = self.base_agent.get_listening_address()
+                
+                # Fix URL for Windows - replace 0.0.0.0 with 127.0.0.1
+                if "0.0.0.0" in listen_url:
+                    listen_url = listen_url.replace("0.0.0.0", "127.0.0.1")
+                
+                adapter = ACPAdapter(
+                    httpx_client=self.base_agent._httpx_client,
+                    base_url=listen_url,
+                    agent_id=self.agent_id
+                )
+                await adapter.initialize()
+                self.base_agent.add_outbound_adapter(self.agent_id, adapter)
+                logger.info(f"[{self.agent_id}] Installed loopback ACP adapter at {listen_url}")
+            except ImportError as e:
+                logger.warning(f"[{self.agent_id}] Cannot install loopback adapter: ACP adapter not available ({e})")
+            except Exception as e:
+                logger.error(f"[{self.agent_id}] Failed to install loopback adapter: {e}")
+                # Don't raise - loopback is optional
 
         # 5) Diagnostics
         logger.info(f"Agent URL: {self.base_agent.get_listening_address()}")
@@ -248,7 +221,7 @@ async def create_acp_meta_worker(
     agent = ACPMetaAgent(agent_id, config, install_loopback)
     await agent.create_acp_worker(host=host, port=port)
     
-    logger.info(f"Created ACP meta worker: {agent_id}")
+    logger.info(f"[ACP-META] Created meta worker: {agent_id}")
     return agent
 
 
@@ -272,13 +245,16 @@ async def integrate_acp_into_network(network, agent_id: str, config: Dict[str, A
     agent_url = acp_agent.base_agent.get_listening_address()
     await network.register_agent(agent_id, agent_url)
     
-    logger.info(f"Integrated ACP agent {agent_id} into network at {agent_url}")
+    logger.info(f"[ACP-META] Integrated agent {agent_id} into network at {agent_url}")
     return agent_url
 
 
 # Test function
 async def test_acp_meta_integration():
     """Test ACP meta protocol integration"""
+    # Enable debug logging for testing
+    logging.getLogger().setLevel(logging.DEBUG)
+    
     print("🚀 Testing ACP Meta-Protocol Integration")
     print("=" * 50)
     

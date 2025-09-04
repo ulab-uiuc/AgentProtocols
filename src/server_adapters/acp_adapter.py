@@ -120,8 +120,26 @@ class ACPStarletteApplication:
                 messages.append(message)
             else:
                 # Fallback: create message from request body content
-                content = body.get('content', body.get('text', str(body)))
-                parts = [MessagePart(content=content)]
+                # Try different payload structures
+                content = (body.get('content') or 
+                          body.get('text') or 
+                          body.get('payload', {}).get('text') or 
+                          body.get('payload', {}).get('content'))
+                
+                # If still no content, try to extract from nested payload
+                if not content:
+                    # Handle UTE-style nested payload
+                    payload = body.get('payload', {})
+                    if isinstance(payload, dict):
+                        content = (payload.get('text') or 
+                                 payload.get('question') or
+                                 payload.get('content'))
+                
+                # Final fallback
+                if not content:
+                    content = str(body)
+                
+                parts = [MessagePart(type="text", text=content)]
                 message = Message(role="user", parts=parts)
                 messages.append(message)
 
@@ -156,7 +174,8 @@ class ACPStarletteApplication:
 
                 return JSONResponse({
                     "results": results,
-                    "timestamp": time.time()
+                    "timestamp": time.time(),
+                    "status": "completed"
                 })
 
         except Exception as e:
@@ -180,42 +199,65 @@ class ACPStarletteApplication:
 
     def _yield_to_dict(self, result: RunYield) -> Dict[str, Any]:
         """Convert ACP SDK RunYield to JSON-serializable dictionary."""
+        import datetime
+        
+        def _make_json_safe(obj):
+            """Recursively make object JSON-serializable."""
+            if isinstance(obj, datetime.datetime):
+                return obj.isoformat()
+            elif isinstance(obj, dict):
+                return {k: _make_json_safe(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [_make_json_safe(item) for item in obj]
+            else:
+                return obj
+        
         try:
+            # Handle string results directly (common from our wrapper)
+            if isinstance(result, str):
+                return {"type": "text", "content": result, "timestamp": time.time()}
+            
             # Handle MessagePart objects (our custom yield objects)
             if hasattr(result, 'text') and hasattr(result, 'type'):
                 return {
                     "type": result.type,
-                    "text": result.text
+                    "text": result.text,
+                    "timestamp": time.time()
                 }
             # Try pydantic model_dump() first
             elif hasattr(result, 'model_dump'):
-                return result.model_dump()
+                data = result.model_dump()
+                return _make_json_safe(data)
             # Fallback to pydantic dict() method
             elif hasattr(result, 'dict'):
-                return result.dict()
+                data = result.dict()
+                return _make_json_safe(data)
             # For dict-like objects
             elif isinstance(result, dict):
-                return result
+                return _make_json_safe(result)
             # Handle Message objects
             elif hasattr(result, 'role') and hasattr(result, 'parts'):
                 return {
                     "type": "message",
                     "role": result.role,
                     "content": result.parts[0].content if result.parts else "",
-                    "parts": [{"content": part.content} for part in result.parts] if result.parts else []
+                    "parts": [{"content": part.content} for part in result.parts] if result.parts else [],
+                    "timestamp": time.time()
                 }
             # Last resort: manual conversion
             else:
                 return {
                     "type": result.__class__.__name__,
-                    "data": str(result)
+                    "data": str(result),
+                    "timestamp": time.time()
                 }
         except Exception as e:
             # Fallback for any serialization errors
             return {
-                "type": result.__class__.__name__,
+                "type": "error",
                 "data": str(result),
-                "error": f"Serialization failed: {e}"
+                "error": f"Serialization failed: {e}",
+                "timestamp": time.time()
             }
 
 

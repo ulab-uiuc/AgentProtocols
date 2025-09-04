@@ -59,11 +59,17 @@ class AgoraQAWorker(QAWorkerBase):
         
         # Initialize Agora native components with proper parameters
         try:
-            # Create minimal Agora components for enhancement
-            self.agora_protocol = agora.Protocol()
+            # Create minimal Agora components for enhancement (Protocol needs parameters)
+            # Use basic protocol document for initialization
+            protocol_doc = {"version": "1.0", "name": "agora-qa"}
+            sources = []  # Empty sources for basic setup
+            metadata = {"worker": "qa", "type": "text_processing"}
+            
+            self.agora_protocol = agora.Protocol(protocol_doc, sources, metadata)
             print("[AgoraWorker] Initialized with native Agora SDK Protocol")
         except Exception as e:
             print(f"[AgoraWorker] Agora SDK initialization error: {e}")
+            # Create a basic protocol stub for fallback
             self.agora_protocol = None
     
     async def answer(self, question: str) -> str:

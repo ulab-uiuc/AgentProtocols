@@ -34,7 +34,10 @@ class ACPExecutorWrapper:
     def __init__(self, config: Dict[str, Any]):
         self.acp_executor = ACPWorkerExecutor(config)
         self.protocol_name = "acp"
-        print(f"[ACPWrapper] Created ACP worker wrapper")
+        # Store direct access to QA worker for LLM calls
+        if hasattr(self.acp_executor, '_worker'):
+            self.acp_qa_worker = self.acp_executor._worker
+        pass  # ACP wrapper created
     
     async def execute(self, context, event_queue) -> None:
         """BaseAgent standard interface"""
@@ -84,6 +87,42 @@ class ACPExecutorWrapper:
             }
             await event_queue.enqueue_event(error_event)
             print(f"[ACPWrapper] Error: {e}")
+    
+    async def __call__(self, messages, context):
+        """ACP server adapter calls this method directly"""
+        try:
+            # Extract first message
+            if not messages:
+                yield "No message provided"
+                return
+            
+            message = messages[0]
+            text_content = ""
+            
+            # Extract text from ACP message
+            if hasattr(message, 'parts') and message.parts:
+                for part in message.parts:
+                    if hasattr(part, 'type') and part.type == "text":
+                        text_content += getattr(part, 'text', "")
+            
+            print(f"[ACPWrapper] Processing via __call__: {text_content[:50]}...")
+            
+            # Call LLM directly - only yield the real result
+            if hasattr(self, 'acp_qa_worker') and hasattr(self.acp_qa_worker, 'answer'):
+                result = await self.acp_qa_worker.answer(text_content)
+                print(f"[ACPWrapper] LLM result: {len(result)} chars")
+                yield result  # Only yield the LLM result
+            elif hasattr(self.acp_executor, '_worker') and hasattr(self.acp_executor._worker, 'answer'):
+                result = await self.acp_executor._worker.answer(text_content)
+                print(f"[ACPWrapper] LLM result via _worker: {len(result)} chars")
+                yield result
+            else:
+                print(f"[ACPWrapper] No worker found, using fallback")
+                yield f"ACP fallback: {text_content}"
+                
+        except Exception as e:
+            print(f"[ACPWrapper] __call__ error: {e}")
+            yield f"ACP error: {e}"
 
 
 class ANPExecutorWrapper:
@@ -92,10 +131,12 @@ class ANPExecutorWrapper:
     Adapts ANPWorkerExecutor to BaseAgent interface
     """
     
-    def __init__(self, config: Dict[str, Any]):
-        self.anp_executor = ANPWorkerExecutor(config, output=None)
+    def __init__(self, anp_qa_worker):
+        # Store the QA worker directly for server adapter compatibility
+        self.anp_qa_worker = anp_qa_worker
+        self.anp_executor = anp_qa_worker  # For backward compatibility
         self.protocol_name = "anp"
-        print(f"[ANPWrapper] Created ANP worker wrapper")
+        pass  # ANP wrapper created
     
     async def execute(self, context, event_queue) -> None:
         """BaseAgent standard interface"""
@@ -106,9 +147,9 @@ class ANPExecutorWrapper:
             else:
                 message_text = str(context)
             
-            # Process with ANP worker (uses QAWorkerBase.answer)
-            if hasattr(self.anp_executor, 'worker') and hasattr(self.anp_executor.worker, 'answer'):
-                result = await self.anp_executor.worker.answer(message_text)
+            # Process with ANP worker (direct QA worker call)
+            if hasattr(self.anp_qa_worker, 'answer'):
+                result = await self.anp_qa_worker.answer(message_text)
             else:
                 result = f"ANP processed: {message_text}"
             
@@ -142,10 +183,12 @@ class AgoraExecutorWrapper:
     Adapts AgoraWorkerExecutor.execute() to BaseAgent interface
     """
     
-    def __init__(self, config: Dict[str, Any]):
-        self.agora_executor = AgoraWorkerExecutor(config)
+    def __init__(self, agora_qa_worker):
+        # Store the QA worker directly for LLM calls
+        self.agora_qa_worker = agora_qa_worker
+        self.agora_executor = agora_qa_worker  # For backward compatibility
         self.protocol_name = "agora"
-        print(f"[AgoraWrapper] Created Agora worker wrapper")
+        pass  # Agora wrapper created
     
     async def execute(self, context, event_queue) -> None:
         """BaseAgent standard interface"""
@@ -163,15 +206,11 @@ class AgoraExecutorWrapper:
                 "protocolSources": []
             }
             
-            # Process with Agora executor
-            result = await self.agora_executor.execute(agora_input)
-            
-            # Extract result text
-            result_text = ""
-            if isinstance(result, dict):
-                result_text = result.get("body", str(result))
+            # Process with Agora QA worker - direct LLM call
+            if hasattr(self.agora_qa_worker, 'answer'):
+                result_text = await self.agora_qa_worker.answer(message_text)
             else:
-                result_text = str(result)
+                result_text = f"[Agora Fallback] Processed: {message_text}"
             
             # Create event for BaseAgent
             event = {
@@ -206,14 +245,13 @@ class A2AExecutorWrapper:
     def __init__(self, config: Dict[str, Any]):
         self.a2a_executor = QAAgentExecutor(config)
         self.protocol_name = "a2a"
-        print(f"[A2AWrapper] Created A2A worker wrapper")
+        pass  # A2A wrapper created
     
     async def execute(self, context, event_queue) -> None:
         """BaseAgent standard interface - direct passthrough"""
         try:
             # A2A executor already has the correct interface
             await self.a2a_executor.execute(context, event_queue)
-            print(f"[A2AWrapper] Processed message via A2A SDK")
             
         except Exception as e:
             error_event = {
@@ -222,7 +260,6 @@ class A2AExecutorWrapper:
                 "protocol": "a2a"
             }
             await event_queue.enqueue_event(error_event)
-            print(f"[A2AWrapper] Error: {e}")
 
 
 def create_protocol_worker(protocol: str, config: Dict[str, Any]):
@@ -249,6 +286,6 @@ def validate_executor_interface(executor) -> bool:
             asyncio.iscoroutinefunction(getattr(executor, 'execute')))
 
 
-def get_supported_protocols() -> List[str]:
+def get_supported_protocols() -> list[str]:
     """Get list of supported protocols"""
     return ["acp", "anp", "agora", "a2a"]

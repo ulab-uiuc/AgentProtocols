@@ -5,9 +5,14 @@ BaseProtocolAdapter - 协议适配器基类
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
-# ★ UTE Imports Added
-from ..core.unified_message import UTE
-from ..core.protocol_converter import ENCODE_TABLE, DECODE_TABLE
+# ★ UTE Imports Added - use absolute imports to avoid relative import issues
+try:
+    from ..core.unified_message import UTE
+    from ..core.protocol_converter import ENCODE_TABLE, DECODE_TABLE
+except ImportError:
+    # Fallback for standalone execution
+    from src.core.unified_message import UTE
+    from src.core.protocol_converter import ENCODE_TABLE, DECODE_TABLE
 
 
 class BaseProtocolAdapter(ABC):

@@ -346,10 +346,109 @@ class ANPSimpleNodeWrapper:
                 # Shutdown - gracefully handle cleanup
                 self.should_exit = True
             
+        # DID document endpoint
+        async def did_document(request):
+            """Serve DID document for AgentConnect protocol"""
+            if not self.did_info:
+                return JSONResponse({"error": "DID not initialized"}, status_code=500)
+            
+            did_doc = json.loads(self.did_info["did_document_json"])
+            return JSONResponse(did_doc)
+        
+        # SimpleNode DID API endpoint
+        async def simplenode_did_api(request):
+            """Serve DID document via SimpleNode API format"""
+            logger.info(f"SimpleNode DID API request: {request.url} - Path params: {request.path_params}")
+            
+            if not self.did_info:
+                logger.error("DID not initialized for SimpleNode API")
+                return JSONResponse({"error": "DID not initialized"}, status_code=500)
+            
+            # Extract DID from path parameters
+            did_param = request.path_params.get("did", "")
+            logger.info(f"Requested DID parameter: {did_param}")
+            
+            # Return DID document in SimpleNode expected format
+            did_doc = json.loads(self.did_info["did_document_json"])
+            logger.info(f"Serving DID document for SimpleNode: {did_doc['id']}")
+            return JSONResponse(did_doc)
+        
+        # ANP HTTP message endpoint (fallback)
+        async def anp_message_endpoint(request):
+            """Handle ANP messages via HTTP (fallback when WebSocket/DID fails)"""
+            try:
+                message_data = await request.json()
+                
+                # 获取executor wrapper引用
+                executor_wrapper = self.executor_wrapper
+                
+                # 直接调用executor处理消息
+                if executor_wrapper:
+                    # 提取消息内容
+                    payload = message_data.get("payload", {})
+                    
+                    # 从嵌套的payload中提取真实内容
+                    if isinstance(payload, dict) and "payload" in payload:
+                        inner_payload = payload["payload"]
+                        if isinstance(inner_payload, dict) and "content" in inner_payload:
+                            text_content = inner_payload["content"].get("text", "")
+                        else:
+                            text_content = str(inner_payload)
+                    elif isinstance(payload, dict):
+                        text_content = payload.get("text", str(payload))
+                    else:
+                        text_content = str(payload)
+                    
+                    # 检查是否有底层的QA Worker
+                    qa_worker = None
+                    if hasattr(executor_wrapper, 'anp_qa_worker'):
+                        qa_worker = executor_wrapper.anp_qa_worker
+                    elif hasattr(executor_wrapper, 'executor') and hasattr(executor_wrapper.executor, 'answer'):
+                        qa_worker = executor_wrapper.executor
+                    
+                    # 直接调用QA Worker或使用wrapper
+                    if hasattr(executor_wrapper, 'anp_qa_worker') and hasattr(executor_wrapper.anp_qa_worker, 'answer'):
+                        qa_result = await executor_wrapper.anp_qa_worker.answer(text_content)
+                        response_text = qa_result
+                    elif qa_worker and hasattr(qa_worker, 'answer'):
+                        qa_result = await qa_worker.answer(text_content)
+                        response_text = qa_result
+                    else:
+                        # 返回处理后的响应
+                        response_text = f"Processing message with ANP executor: {text_content}"
+                    
+                    # Build UTE-compatible response body
+                    import time
+                    import uuid
+                    anp_envelope_id = message_data.get("request_id", str(uuid.uuid4()))
+                    
+                    resp = {
+                        "request_id": anp_envelope_id,
+                        "payload": {
+                            "content": { "text": response_text },
+                            "context": {},
+                            "metadata": { "via": "anp_server" }
+                        },
+                        "timestamp": time.time(),
+                        "type": "anp_response"
+                    }
+                    
+                    return JSONResponse(resp, status_code=200)
+                else:
+                    return JSONResponse({"error": "No executor available"}, status_code=500)
+                    
+            except Exception as e:
+                logger.error(f"ANP HTTP message processing failed: {e}")
+                return JSONResponse({"error": str(e)}, status_code=500)
+        
         # Define routes
         routes = [
             Route("/health", health_check, methods=["GET"]),
             Route("/.well-known/agent.json", agent_card, methods=["GET"]),
+            Route("/.well-known/did.json", did_document, methods=["GET"]),
+            Route("/anp/did.json", did_document, methods=["GET"]),  # ANP-specific path
+            Route("/v1/did/{did:path}", simplenode_did_api, methods=["GET"]),  # SimpleNode API
+            Route("/anp/message", anp_message_endpoint, methods=["POST"]),  # HTTP fallback
         ]
         
         app = Starlette(routes=routes, lifespan=lifespan)
@@ -357,29 +456,135 @@ class ANPSimpleNodeWrapper:
         
     async def _setup_did_info(self) -> None:
         """Setup DID information if not provided."""
-        if not self.did_info.get('did'):
-            logger.info("Generating DID for ANP server")
+        if self.did_info.get('did'):
+            return
+
+        logger.info("Generating DID for ANP server")
+
+        ws_port = self.host_port + 1000  # WebSocket 实际监听端口
+        public_host = "127.0.0.1" if self.host_domain in ("0.0.0.0", "::") else self.host_domain
+        ws_endpoint = f"ws://{public_host}:{ws_port}{self.host_ws_path}"
+
+        try:
+            # 如果上层通过 kwargs 传了 did_service_url / did_api_key，就用服务生成 did:wba
+            did_service_url = (self.agent_card.get("_did_service_url") or
+                               os.getenv("ANP_DID_SERVICE_URL"))
+            did_api_key = (self.agent_card.get("_did_api_key") or
+                           os.getenv("ANP_DID_API_KEY"))
+            if did_service_url and did_api_key:
+                from agent_connect.python.authentication import DIDAllClient
+                from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
+
+                client = DIDAllClient(did_service_url, did_api_key)
+                private_key_pem, did, did_document_json = await client.generate_register_did_document(
+                    communication_service_endpoint=ws_endpoint
+                )
+                self.did_info = {
+                    "private_key_pem": private_key_pem,
+                    "did": did,
+                    "did_document_json": did_document_json
+                }
+                logger.info(f"DID registered via service: {did}")
+            else:
+                raise RuntimeError("DID service not configured")
+        except Exception as e:
+            # 回退到标准 did:wba 生成（与AgentConnect协议兼容）
+            import uuid
+            import json
+            from cryptography.hazmat.primitives import hashes
+            from cryptography.hazmat.primitives.asymmetric import ec
+            from cryptography.hazmat.primitives import serialization
             
-            # Generate WebSocket endpoint
-            ws_endpoint = f"ws://{self.host_domain}:{self.host_port}{self.host_ws_path}"
+            # Generate key pair
+            private_key = ec.generate_private_key(ec.SECP256R1())
+            public_key = private_key.public_key()
             
-            # Generate DID locally
-            private_key, _, did, did_document_json = did_generate(ws_endpoint)
-            private_key_pem = get_pem_from_private_key(private_key)
+            # Generate Bitcoin address from public key for DID
+            import hashlib
+            import base58
+            
+            # Get public key bytes (used for both Bitcoin address and hex format)
+            public_key_bytes = public_key.public_bytes(
+                encoding=serialization.Encoding.X962,
+                format=serialization.PublicFormat.UncompressedPoint
+            )
+            
+            # Generate Bitcoin address
+            sha256_pk = hashlib.sha256(public_key_bytes).digest()
+            ripemd160_pk = hashlib.new('ripemd160', sha256_pk).digest()
+            pubkey_hash = b'\x00' + ripemd160_pk
+            checksum = hashlib.sha256(hashlib.sha256(pubkey_hash).digest()).digest()[:4]
+            bitcoin_address = base58.b58encode(pubkey_hash + checksum).decode('utf-8')
+            
+            # Create did:wba format DID with Bitcoin address
+            did = f"did:wba:{bitcoin_address}:anp"
+            
+            # Get public key in hex format  
+            public_key_hex = public_key_bytes.hex()
+            
+            # Create standard DID document with messageService
+            did_document = {
+                "id": did,
+                "verificationMethod": [{
+                    "id": f"{did}#key-1",
+                    "type": "EcdsaSecp256r1VerificationKey2019",
+                    "controller": did,
+                    "publicKeyHex": public_key_hex
+                }],
+                "authentication": [f"{did}#key-1"],
+                "service": [
+                    {
+                        "id": f"{did}#websocket",
+                        "type": "WebSocketEndpoint",
+                        "serviceEndpoint": ws_endpoint
+                    },
+                    {
+                        "id": f"{did}#messageService",
+                        "type": "messageService",
+                        "serviceEndpoint": ws_endpoint
+                    }
+                ]
+            }
+            
+            # Get private key PEM
+            private_key_pem = private_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption()
+            ).decode('utf-8')
             
             self.did_info = {
-                'private_key_pem': private_key_pem,
-                'did': did,
-                'did_document_json': did_document_json
-            }
-            
-            # Update agent card with DID
-            self.agent_card["id"] = did
-            self.agent_card["authentication"] = {
-                "type": "DID",
+                "private_key_pem": private_key_pem,
                 "did": did,
-                "verification_methods": ["Ed25519VerificationKey2018"]
+                "did_document_json": json.dumps(did_document)
             }
+            logger.warning(f"DID service unavailable, fallback to did:wba generation: {did} (DID service not configured)")
+
+        # 写入 agent card 基本信息
+        self.agent_card["id"] = self.did_info["did"]
+        self.agent_card.setdefault("authentication", {})["did"] = self.did_info["did"]
+
+        # 在 agent card 中挂出 DID 文档（JSON 对象）
+        try:
+            did_doc = self.did_info.get("did_document_json")
+            if isinstance(did_doc, str):
+                did_doc = json.loads(did_doc)
+            self.agent_card["did_document"] = did_doc
+        except Exception:
+            pass
+
+        # 统一把 0.0.0.0 映射为 127.0.0.1，防止客户端拿到不可连的地址
+        try:
+            pub_host = "127.0.0.1" if self.host_domain in ("0.0.0.0", "::") else self.host_domain
+            if "endpoints" in self.agent_card:
+                e = self.agent_card["endpoints"]
+                for k in ("websocket", "http", "health"):
+                    if k in e and isinstance(e[k], str) and "0.0.0.0" in e[k]:
+                        e[k] = e[k].replace("0.0.0.0", pub_host, 1)
+            if "url" in self.agent_card and "0.0.0.0" in self.agent_card["url"]:
+                self.agent_card["url"] = self.agent_card["url"].replace("0.0.0.0", pub_host, 1)
+        except Exception:
+            pass
     
     async def _on_new_session(self, session: SimpleNodeSession) -> None:
         """Handle new WebSocket session."""
@@ -460,15 +665,22 @@ class ANPSimpleNodeWrapper:
             logger.info(f"SimpleNode WebSocket port: {ws_port}")
             
             try:
+                # Use alias format for SimpleNode to match client destinationDid
+                full_did = self.did_info.get('did')
+                bitcoin_address = full_did.split(':')[2] if full_did else "unknown"
+                alias_did = f"{bitcoin_address.split('@')[0]}@127.0.0.1:{self.host_port}"
+                
                 self.simple_node = SimpleNode(
                     host_domain=self.host_domain,
                     new_session_callback=self._on_new_session,
                     host_port=str(ws_port),
                     host_ws_path=self.host_ws_path,
                     private_key_pem=self.did_info.get('private_key_pem'),
-                    did=self.did_info.get('did'),
+                    did=alias_did,  # Use alias format to match client destinationDid
                     did_document_json=self.did_info.get('did_document_json')
                 )
+                
+                logger.info(f"SimpleNode created with alias DID: {alias_did} (to match client destinationDid)")
                 logger.info("SimpleNode created successfully")
             except Exception as e:
                 logger.error(f"Failed to create SimpleNode: {e}")
@@ -597,8 +809,13 @@ class ANPServerAdapter(BaseServerAdapter):
         # Generate agent card
         agent_card = self._generate_agent_card(agent_id, host, port, host_ws_path, did_info)
         
-        # Create executor wrapper
-        executor_wrapper = ANPExecutorWrapper(executor)
+        # Create executor wrapper (check if already wrapped)
+        if hasattr(executor, 'anp_qa_worker'):
+            # Already our custom wrapper, use it directly
+            executor_wrapper = executor
+        else:
+            # Create new wrapper for raw executor
+            executor_wrapper = ANPExecutorWrapper(executor)
         
         # Create ANP server wrapper
         server_wrapper = ANPSimpleNodeWrapper(
@@ -625,13 +842,14 @@ class ANPServerAdapter(BaseServerAdapter):
         
         # WebSocket runs on offset port
         ws_port = port + 1000
+        pub_host = "127.0.0.1" if host in ("0.0.0.0", "::") else host
         
         return {
             "id": did_info.get('did', agent_id),
             "name": f"ANP Agent - {agent_id}",
             "description": f"Agent Network Protocol (ANP) server for {agent_id}",
             "version": "1.0.0",
-            "url": f"http://{host}:{port}/",  # HTTP endpoint
+            "url": f"http://{pub_host}:{port}/",  # HTTP endpoint
             "protocol": "ANP",
             "protocolVersion": "1.0.0",
             "capabilities": {
@@ -643,10 +861,10 @@ class ANPServerAdapter(BaseServerAdapter):
                 "real_time_communication": True
             },
             "endpoints": {
-                "websocket": f"ws://{host}:{ws_port}{ws_path}",  # WebSocket on offset port
-                "http": f"http://{host}:{port}/",  # HTTP for compatibility
+                "websocket": f"ws://{pub_host}:{ws_port}{ws_path}",  # WebSocket on offset port
+                "http": f"http://{pub_host}:{port}/",  # HTTP for compatibility
                 "did_document": did_info.get('did', ''),
-                "health": f"http://{host}:{port}/health"  # Health check via HTTP
+                "health": f"http://{pub_host}:{port}/health"  # Health check via HTTP
             },
             "supportedMessageTypes": [
                 "text", "json", "binary"

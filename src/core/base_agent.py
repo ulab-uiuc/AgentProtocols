@@ -875,20 +875,14 @@ class BaseAgent:
     async def health_check(self) -> bool:
         """
         Check if the agent's server is healthy and responsive.
-
-        Returns
-        -------
-        bool
-            True if agent server is healthy, False otherwise
         """
         if not self._initialized or not self._server_task:
             return False
-
         try:
-            # Check our own server health
-            url = f"http://{self._host}:{self._port}/health"
-            response = await self._httpx_client.get(url, timeout=5.0)
-            return response.status_code == 200
+            host = "127.0.0.1" if self._host in ("0.0.0.0", "::") else self._host
+            url = f"http://{host}:{self._port}/health"
+            resp = await self._httpx_client.get(url, timeout=5.0)
+            return resp.status_code == 200
         except Exception:
             return False
 

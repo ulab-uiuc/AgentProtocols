@@ -204,6 +204,44 @@ class AgoraServerAdapter(BaseServerAdapter):
                 message: Message content
                 context: Additional context as JSON string
             """
+            # Check if executor has agora_qa_worker for direct LLM call
+            if hasattr(executor, 'agora_qa_worker') and hasattr(executor.agora_qa_worker, 'answer'):
+                try:
+                    # Create async task for LLM call
+                    async def call_agora_llm():
+                        return await executor.agora_qa_worker.answer(message)
+                    
+                    # Run in thread to avoid blocking
+                    import concurrent.futures
+                    import threading
+                    
+                    result_container = [None]
+                    error_container = [None]
+                    
+                    def run_async():
+                        try:
+                            loop = asyncio.new_event_loop()
+                            asyncio.set_event_loop(loop)
+                            result = loop.run_until_complete(call_agora_llm())
+                            result_container[0] = result
+                        except Exception as e:
+                            error_container[0] = e
+                        finally:
+                            loop.close()
+                    
+                    thread = threading.Thread(target=run_async)
+                    thread.start()
+                    thread.join(timeout=30)
+                    
+                    if error_container[0]:
+                        pass  # Error handled below
+                    elif result_container[0]:
+                        return result_container[0]
+                    
+                except Exception as e:
+                    pass  # Fall back to original logic
+            
+            # Fallback to original bridge logic
             import json
             try:
                 context_dict = json.loads(context) if context else {}
@@ -233,6 +271,34 @@ class AgoraServerAdapter(BaseServerAdapter):
     
     def _bridge_to_a2a_executor(self, executor: Any, payload: Dict[str, Any]) -> Any:
         """Bridge Agora tool call to A2A executor."""
+        
+        # Check if this is our custom wrapper with direct LLM access
+        if hasattr(executor, 'agora_qa_worker') and hasattr(executor.agora_qa_worker, 'answer'):
+            message_text = payload.get("text", str(payload))
+            print(f"[Agora Server] Using wrapper LLM call for: {message_text[:50]}...")
+            
+            # Create async wrapper for sync bridge call
+            async def call_llm():
+                return await executor.agora_qa_worker.answer(message_text)
+            
+            # Run async call in current event loop
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # We're in async context, create a task
+                    import concurrent.futures
+                    with concurrent.futures.ThreadPoolExecutor() as pool:
+                        future = pool.submit(asyncio.run, call_llm())
+                        result = future.result(timeout=30)
+                else:
+                    result = loop.run_until_complete(call_llm())
+                
+                print(f"[Agora Server] LLM result: {len(result)} chars")
+                return result
+                
+            except Exception as e:
+                print(f"[Agora Server] LLM call failed: {e}")
+                # Fall back to original logic
         
         try:
             # Import A2A components
@@ -395,6 +461,58 @@ class AgoraServerWrapper:
                     "agora_endpoint": f"http://{self.host}:{self.port}/",
                 }
             }), 200
+        
+        # Add message endpoint for direct LLM processing
+        @original_server.app.route('/message', methods=['POST'])
+        def handle_message():
+            """Handle incoming messages for LLM processing."""
+            try:
+                from flask import request, jsonify
+                
+                data = request.get_json()
+                message_text = data.get('text', str(data))
+                
+                # Check if executor has agora_qa_worker for direct LLM call
+                if hasattr(self.executor, 'agora_qa_worker') and hasattr(self.executor.agora_qa_worker, 'answer'):
+                    
+                    # Create async function for LLM call
+                    async def call_llm():
+                        return await self.executor.agora_qa_worker.answer(message_text)
+                    
+                    # Run async call in new thread with event loop
+                    import threading
+                    import asyncio
+                    
+                    result_container = [None]
+                    error_container = [None]
+                    
+                    def run_async():
+                        try:
+                            loop = asyncio.new_event_loop()
+                            asyncio.set_event_loop(loop)
+                            result = loop.run_until_complete(call_llm())
+                            result_container[0] = result
+                        except Exception as e:
+                            error_container[0] = e
+                        finally:
+                            loop.close()
+                    
+                    thread = threading.Thread(target=run_async)
+                    thread.start()
+                    thread.join(timeout=30)
+                    
+                    if error_container[0]:
+                        return jsonify({"error": str(error_container[0])}), 500
+                    elif result_container[0]:
+                        result = result_container[0]
+                        return jsonify({"text": result, "status": "success"})
+                    else:
+                        return jsonify({"text": "No result", "status": "timeout"}), 500
+                else:
+                    return jsonify({"text": f"Agora processed: {message_text}", "status": "fallback"})
+                    
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
         
         return original_server
     

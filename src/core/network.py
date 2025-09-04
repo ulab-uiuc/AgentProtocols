@@ -58,26 +58,11 @@ class AgentNetwork:
             self._graph[src_id].add(dst_id)
             self._agents[src_id].outgoing_edges.add(dst_id)
 
-            # Create outbound adapter for the connection
-            src_agent = self._agents[src_id]
-            dst_agent = self._agents[dst_id]
-
-            # Get destination agent's server address
-            dst_address = dst_agent.get_listening_address()
+            # DO NOT import or create protocol adapters here.
+            # Outbound adapters are installed by the runner/coordinator.
+            # This method only manages topology.
             
-            # Create A2A adapter for this connection
-            from agent_adapters.a2a_adapter import A2AAdapter
-            
-            adapter = A2AAdapter(
-                httpx_client=src_agent._httpx_client,
-                base_url=dst_address
-            )
-            await adapter.initialize()
-            
-            # Add the adapter to source agent
-            src_agent.add_outbound_adapter(dst_id, adapter)
-
-            print(f"Connected: {src_id} → {dst_id}")
+            # print(f"Connected: {src_id} → {dst_id}")
 
     async def disconnect_agents(self, src_id: str, dst_id: str) -> None:
         """Remove a directed edge src → dst."""
