@@ -25,14 +25,12 @@ sys.path.insert(0, str(parent_dir))
 shard_qa_path = parent_dir / "shard_qa"
 sys.path.insert(0, str(shard_qa_path))
 
-# Import local components (after path setup)
-sys.path.insert(0, str(parent_dir / "local_deps"))
+# Import core components (after path setup)
 sys.path.insert(0, str(parent_dir / "core"))
 sys.path.insert(0, str(parent_dir))
 
-# Use absolute imports with full path
-import importlib.util
-import sys
+# Import native core components (no src dependencies)
+from core.mesh_network_native import NativeMeshNetwork
 
 # Import SimpleBaseAgent
 spec = importlib.util.spec_from_file_location("simple_base_agent", parent_dir / "core" / "simple_base_agent.py")

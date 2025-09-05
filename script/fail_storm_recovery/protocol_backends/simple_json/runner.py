@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from core.simple_base_agent import SimpleBaseAgent as BaseAgent
 from protocol_backends.base_runner import FailStormRunnerBase
+from .agent import create_simple_json_agent, SimpleJSONAgent
 
 # Import shard_qa components dynamically to avoid circular imports
 shard_qa_path = Path(__file__).parent.parent.parent / "shard_qa"
@@ -49,9 +50,9 @@ class SimpleJsonRunner(FailStormRunnerBase):
     # Protocol-Specific Implementation
     # ========================================
     
-    async def create_agent(self, agent_id: str, host: str, port: int, executor: ShardWorkerExecutor) -> BaseAgent:
+    async def create_agent(self, agent_id: str, host: str, port: int, executor: ShardWorkerExecutor) -> SimpleJSONAgent:
         """Create agent using simple_json protocol."""
-        return await BaseAgent.create_simple_json(
+        return await create_simple_json_agent(
             agent_id=agent_id,
             host=host,
             port=port,

@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from core.simple_base_agent import SimpleBaseAgent as BaseAgent
 from protocol_backends.base_runner import FailStormRunnerBase
+from .agent import create_anp_agent, ANPAgent
 
 # Import shard_qa components dynamically to avoid circular imports
 shard_qa_path = Path(__file__).parent.parent.parent / "shard_qa"
@@ -91,13 +92,13 @@ class ANPRunner(FailStormRunnerBase):
     # Protocol-Specific Implementation
     # ========================================
     
-    async def create_agent(self, agent_id: str, host: str, port: int, executor: ShardWorkerExecutor) -> BaseAgent:
+    async def create_agent(self, agent_id: str, host: str, port: int, executor: ShardWorkerExecutor) -> ANPAgent:
         """Create agent using ANP protocol."""
         try:
             # ANP requires additional setup for DID authentication and encryption
             self.output.progress(f"Setting up ANP agent {agent_id} with DID authentication...")
             
-            agent = await BaseAgent.create_anp(
+            agent = await create_anp_agent(
                 agent_id=agent_id,
                 host=host,
                 port=port,

@@ -32,7 +32,7 @@ scenario:
 # Shard QA Task Configuration
 shard_qa:
   # QA任务的数据目录
-  data_dir: "../shard_qa/data"
+  data_dir: "shard_qa/data"
   
   # QA任务执行配置
   questions_file: "qa_questions.json"

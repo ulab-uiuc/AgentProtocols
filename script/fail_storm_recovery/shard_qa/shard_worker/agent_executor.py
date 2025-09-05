@@ -177,7 +177,7 @@ class ShardWorker:
             src_path = project_root / "src"
             sys.path.insert(0, str(src_path))
             
-            # Try both import methods for maximum compatibility
+            # Import Core from utils (the standard LLM interface)
             try:
                 from utils.core import Core
             except ImportError:
