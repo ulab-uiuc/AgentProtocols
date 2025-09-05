@@ -112,9 +112,47 @@ class A2ARunner(FailStormRunnerBase):
     # ========================================
     # Protocol-Specific Implementation
     # ========================================
-    
+
     async def create_agent(self, agent_id: str, host: str, port: int, executor: ShardWorkerExecutor) -> BaseAgent:
         """Create agent using A2A protocol."""
+        try:
+            # A2A uses subprocess-based agents
+            self.output.progress(f"Setting up A2A agent {agent_id}...")
+            
+            # Create agent using A2A protocol
+            agent = await BaseAgent.create_a2a(
+                agent_id=agent_id,
+                host=host,
+                port=port,
+                executor=executor
+            )
+            
+            self.output.success(f"A2A agent {agent_id} created successfully")
+            return agent
+            
+        except Exception as e:
+            self.output.error(f"Failed to create A2A agent {agent_id}: {e}")
+            raise
+
+    def get_protocol_info(self, agent_id: str, port: int, data_file: str) -> str:
+        """Get A2A protocol display information."""
+        return f"🚀 [A2A] Created {agent_id} - HTTP: {port}, WebSocket: {self.base_ws_port}, Data: {data_file}"
+
+    def get_reconnection_info(self, agent_id: str, port: int) -> List[str]:
+        """Get A2A protocol reconnection information."""
+        return [
+            f"🔗 [A2A] Agent {agent_id} RECONNECTED on port {port}",
+            f"📡 [A2A] WebSocket endpoint: ws://127.0.0.1:{self.base_ws_port}",
+            f"🌐 [A2A] HTTP REST API: http://127.0.0.1:{port}",
+            f"✅ [A2A] A2A protocol active"
+        ]
+
+    # ========================================
+    # A2A-Specific Methods (继承的原有实现)
+    # ========================================
+    
+    async def _old_create_agent(self, agent_id: str, host: str, port: int, executor: ShardWorkerExecutor) -> BaseAgent:
+        """Legacy A2A agent creation method."""
         # For compatibility with base runner, we use BaseAgent.create_a2a
         # The subprocess management is handled separately in create_agent_subprocess
         return await BaseAgent.create_a2a(
@@ -223,46 +261,152 @@ class A2ARunner(FailStormRunnerBase):
             self.output.error(f"❌ [A2A] Broadcast failed: {e}")
             return False
 
-    async def _execute_normal_phase_a2a(self, duration: float) -> None:
-        """
-        Submit shard QA jobs to each agent and wait for 'duration' while tracking baseline metrics.
-        """
+    async def _execute_normal_phase(self) -> None:
+        """Execute normal Shard QA collaborative retrieval task with A2A."""
+        import asyncio
+        import time
+        
+        normal_phase_duration = self.config.get("shard_qa", {}).get("normal_phase_duration", 30.0)
+        
+        self.output.progress(f"🔍 [A2A] Running Shard QA collaborative retrieval for {normal_phase_duration}s...")
+        
+        # Start metrics collection for normal phase
+        if self.metrics_collector:
+            self.metrics_collector.start_normal_phase()
+        
+        start_time = time.time()
+        qa_tasks = []
+        
+        # Start QA task execution on all agents simultaneously
+        for agent_id, worker in self.shard_workers.items():
+            task = asyncio.create_task(self._run_qa_task_for_agent(agent_id, worker, normal_phase_duration))
+            qa_tasks.append(task)
+        
+        # Wait for normal phase duration with A2A status updates
+        elapsed = 0
+        while elapsed < normal_phase_duration:
+            await asyncio.sleep(10)  # Check every 10 seconds
+            elapsed = time.time() - start_time
+            remaining = normal_phase_duration - elapsed
+            if remaining > 0:
+                self.output.progress(f"   Normal phase: {elapsed:.0f}s elapsed, {remaining:.0f}s remaining")
+        
+        # Cancel remaining tasks
+        for task in qa_tasks:
+            if not task.done():
+                task.cancel()
+        
+        # Wait for tasks to complete cancellation
+        await asyncio.gather(*qa_tasks, return_exceptions=True)
+        
+        # End metrics collection for normal phase
+        if self.metrics_collector:
+            self.metrics_collector.end_normal_phase()
+        
+        # Collect final task counts for normal phase
+        for agent_id, worker in self.shard_workers.items():
+            task_count = getattr(worker, 'completed_tasks', 0)
+            self.output.progress(f"   {agent_id}: Normal phase completed with {task_count} QA tasks")
+        
+        elapsed = time.time() - start_time
+        self.output.success(f"[A2A] Normal phase completed in {elapsed:.2f}s")
+
+    async def _run_qa_task_for_agent(self, agent_id: str, worker, duration: float):
+        """Run QA task for a specific A2A agent."""
+        import asyncio
+        import time
+        
+        start_time = time.time()
+        task_count = 0
+        
         try:
-            self.output.info(f"🔍 [A2A] Running QA baseline for {duration:.1f}s")
-            # push 1 shard-job per agent (or more as needed)
-            jobs = [self._http_post_json(a.port, self.qa_path, {"mode": "baseline", "window_s": duration})
-                    for a in self.agent_processes.values()]
-            await asyncio.gather(*jobs, return_exceptions=True)
-
-            # let them run for duration
-            await asyncio.sleep(duration)
-            self.output.success(f"🔍 [A2A] Baseline QA finished ({duration:.1f}s)")
+            while time.time() - start_time < duration and not self.shutdown_event.is_set():
+                try:
+                    # Execute QA task for group 0 (standard test case)
+                    task_start_time = time.time()
+                    result = await worker.worker.start_task(0)
+                    task_end_time = time.time()
+                    task_count += 1
+                    
+                    # Record task execution in metrics
+                    if self.metrics_collector:
+                        answer_found = result and "answer found" in result.lower()
+                        answer_source = "local" if "LOCAL" in str(result) else "neighbor" if "NEIGHBOR" in str(result) else "unknown"
+                        self.metrics_collector.record_task_execution(
+                            task_id=f"{agent_id}_normal_{task_count}",
+                            agent_id=agent_id,
+                            task_type="qa_normal",
+                            start_time=task_start_time,
+                            end_time=task_end_time,
+                            success=True,  # Task completed successfully
+                            answer_found=answer_found,
+                            answer_source=answer_source,
+                            group_id=0
+                        )
+                    
+                    if result and "answer found" in result.lower():
+                        # Show minimal search result from agent
+                        if "DOCUMENT SEARCH SUCCESS" in result:
+                            self.output.progress(f"🔍 [{agent_id}] Found answer")
+                        else:
+                            self.output.progress(f"{agent_id}: Found answer (task #{task_count})")
+                    
+                    # Track task completion
+                    worker.completed_tasks = getattr(worker, 'completed_tasks', 0) + 1
+                    
+                    # Brief pause between tasks
+                    await asyncio.sleep(2.0)
+                    
+                except Exception as e:
+                    self.output.warning(f"{agent_id}: QA task failed: {e}")
+                    await asyncio.sleep(1.0)  # Brief pause on error
+                    
+        except asyncio.CancelledError:
+            self.output.progress(f"{agent_id}: QA task cancelled (completed {task_count} tasks)")
+            raise
         except Exception as e:
-            self.output.error(f"❌ [A2A] Normal phase failed: {e}")
+            self.output.error(f"{agent_id}: QA task error: {e}")
+        
+        self.output.progress(f"{agent_id}: Normal phase completed with {task_count} QA tasks")
 
-    async def _inject_faults_a2a(self, kill_count: int) -> Set[str]:
-        """
-        Kill 'kill_count' agents via SIGKILL, record timestamps for metrics.
-        """
-        victims = self._pick_victims(kill_count)
-        self.killed_agents = set(victims)
+    async def _execute_fault_injection(self) -> None:
+        """Execute fault injection by stopping agents."""
+        kill_count = max(1, int(len(self.agents) * self.config["scenario"]["kill_fraction"]))
+        if kill_count >= len(self.agents):
+            kill_count = len(self.agents) - 1  # Keep at least one agent alive
+            
+        # Pick victims from active agents
+        agent_ids = list(self.agents.keys())
+        import random
+        random.shuffle(agent_ids)
+        victims = agent_ids[:kill_count]
+        
+        self.output.warning(f"💥 Killing {len(victims)} agents: {', '.join(victims)}")
+        
+        # Mark fault injection start time
+        if self.metrics_collector:
+            self.metrics_collector.set_fault_injection_time()
+        
+        # Stop the victim agents
+        for agent_id in victims:
+            agent = self.agents.get(agent_id)
+            if agent:
+                try:
+                    self.output.warning(f"   ✗ Killed agent: {agent_id} (will attempt reconnection later)")
+                    await agent.stop()
+                    self.killed_agents.add(agent_id)
+                    
+                    # Update metrics
+                    if self.metrics_collector:
+                        self.metrics_collector.update_agent_state(agent_id, "killed")
+                        
+                except Exception as e:
+                    self.output.error(f"Failed to stop agent {agent_id}: {e}")
+        
+        fault_elapsed = time.time() - self.scenario_start_time if hasattr(self, 'scenario_start_time') else 0
+        self.output.warning(f"⚠️  Fault injection completed at t={fault_elapsed:.1f}s")
 
-        for vid in victims:
-            ap = self.agent_processes.get(vid)
-            if not ap or not ap.process:
-                continue
-            self.output.warning(f"💥 [A2A] SIGKILL -> {vid} (pid={ap.process.pid})")
-            try:
-                # hard kill
-                ap.process.send_signal(signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            ap.alive = False
-            if self.metrics_collector:
-                self.metrics_collector.mark_event("fault_injected", {"agent": vid, "ts": time.time()})
-        return self.killed_agents
-
-    async def _monitor_recovery_a2a(self) -> None:
+    async def _monitor_recovery(self) -> None:
         """
         After fault injection, monitor surviving nodes' view of the mesh,
         attempt reconnections, and detect when system returns to steady-state.
@@ -290,13 +434,13 @@ class A2ARunner(FailStormRunnerBase):
                 self.recovery_first_ok_ts = time.time()
                 first_ok_captured = True
                 if self.metrics_collector:
-                    self.metrics_collector.mark_event("first_reconnect_ok", {"ts": self.recovery_first_ok_ts})
+                    self.metrics_collector.set_first_recovery_time(self.recovery_first_ok_ts)
 
             if mesh_ok and alive_ratio >= 1.0:
                 # Optional: define "steady" as some consecutive healthy checks
                 self.steady_state_ts = time.time()
                 if self.metrics_collector:
-                    self.metrics_collector.mark_event("steady_state", {"ts": self.steady_state_ts})
+                    self.metrics_collector.set_steady_state_time(self.steady_state_ts)
                 break
 
             self.output.info(
@@ -313,22 +457,77 @@ class A2ARunner(FailStormRunnerBase):
         """
         Add A2A-specific metrics and return final dictionary that FailStorm base will persist.
         """
-        final: Dict[str, Any] = await super()._finalize_scenario()
-
+        end_time = time.time()
+        total_runtime = end_time - self.scenario_start_time if hasattr(self, 'scenario_start_time') else 0
+        
         # Compute derived metrics
         fault_ts = None
         if self.metrics_collector:
-            fault_ts = self.metrics_collector.get_last_ts("fault_injected")
+            fault_ts = self.metrics_collector.fault_injection_time
         rec_ts = self.recovery_first_ok_ts
         steady_ts = self.steady_state_ts
 
-        final["protocol"] = "a2a"
-        final["a2a"] = {
-            "recovery_time": (rec_ts - fault_ts) if (rec_ts and fault_ts) else None,
-            "steady_state_time": (steady_ts - fault_ts) if (steady_ts and fault_ts) else None,
-            "mesh_built": self.mesh_built,
-            "killed_agents": sorted(list(self.killed_agents)),
+        final: Dict[str, Any] = {
+            "metadata": {
+                "scenario": "fail_storm_recovery", 
+                "protocol": "a2a",
+                "start_time": getattr(self, 'scenario_start_time', end_time - total_runtime),
+                "end_time": end_time,
+                "total_runtime": total_runtime,
+                "config": self.config
+            },
+            "agent_summary": {
+                "initial_count": len(self.agents),
+                "temporarily_killed_count": len(self.killed_agents),
+                "currently_killed_count": len(self.killed_agents),
+                "permanently_failed_count": 0,
+                "surviving_count": len(self.agents) - len(self.killed_agents),
+                "reconnected_count": 0,
+                "temporarily_killed_agents": list(self.killed_agents),
+                "killed_agents": list(self.killed_agents),
+                "permanently_failed_agents": []
+            },
+            "a2a_specific": {
+                "mesh_built": self.mesh_built,
+                "killed_agents": sorted(list(self.killed_agents)),
+                "recovery_time": (rec_ts - fault_ts) if (rec_ts and fault_ts) else None,
+                "steady_state_time": (steady_ts - fault_ts) if (steady_ts and fault_ts) else None,
+                "http_endpoints": len(self.agents),
+                "websocket_endpoints": 1 if self.base_ws_port else 0,
+                "a2a_protocol_active": True
+            },
+            "timing": {
+                "total_runtime": total_runtime,
+                "fault_time": fault_ts,
+                "recovery_end_time": end_time,
+                "setup_time": getattr(self, 'setup_time', 0),
+                "normal_phase_duration": self.config.get("shard_qa", {}).get("normal_phase_duration", 30),
+                "recovery_phase_duration": self.config.get("scenario", {}).get("recovery_duration", 60)
+            }
         }
+        
+        # Add comprehensive metrics if available (like ANP does)
+        if self.metrics_collector:
+            try:
+                # Get performance metrics
+                metrics_summary = self.metrics_collector.calculate_recovery_metrics()
+                final["failstorm_metrics"] = metrics_summary
+                
+                # Get QA metrics
+                qa_metrics = self.metrics_collector.get_qa_metrics()
+                final["qa_metrics"] = qa_metrics
+                
+                # Add LLM outputs info
+                final["llm_outputs"] = {
+                    "saved": False,  # A2A doesn't save LLM outputs by default
+                    "directory": None
+                }
+                
+            except Exception as e:
+                self.output.error(f"Failed to collect comprehensive metrics: {e}")
+                # Don't use fallback - let the error be visible
+                raise
+        
         return final
 
     # ========================================
