@@ -179,6 +179,7 @@ def create_core_instance():
     from pathlib import Path
     
     # Add src to path to import Core
+    # From fail_storm_recovery/utils/config_loader.py to project root
     project_root = Path(__file__).parent.parent.parent.parent
     sys.path.insert(0, str(project_root / "src"))
     

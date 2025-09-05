@@ -30,6 +30,23 @@ import importlib.util
 spec = importlib.util.spec_from_file_location("agent_executor", shard_qa_path / "shard_worker" / "agent_executor.py")
 agent_executor_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(agent_executor_module)
+
+# Inject A2A-specific implementations
+try:
+    from a2a.server.agent_execution import AgentExecutor as A2AAgentExecutor, RequestContext as A2ARequestContext
+    from a2a.server.events import EventQueue as A2AEventQueue
+    from a2a.utils import new_agent_text_message as a2a_new_agent_text_message
+    
+    # Inject A2A implementations into the agent_executor module
+    agent_executor_module.AgentExecutor = A2AAgentExecutor
+    agent_executor_module.RequestContext = A2ARequestContext
+    agent_executor_module.EventQueue = A2AEventQueue
+    agent_executor_module.new_agent_text_message = a2a_new_agent_text_message
+    
+except ImportError:
+    print("Warning: A2A SDK not available, using base implementations")
+    # Keep the base implementations from agent_executor
+
 ShardWorkerExecutor = agent_executor_module.ShardWorkerExecutor
 
 

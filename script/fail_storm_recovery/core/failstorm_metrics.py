@@ -168,10 +168,10 @@ class FailStormMetricsCollector:
         completion_time = end_time - start_time
         self.task_completion_times.append(completion_time)
         
-        # Categorize by phase
-        if self.fault_injection_time is None or start_time < self.fault_injection_time:
+        # Categorize by phase - use task_type for more accurate classification
+        if task_type == "qa_normal" or (self.fault_injection_time is None or start_time < self.fault_injection_time):
             self.pre_fault_window.append(completion_time)
-        else:
+        elif task_type == "qa_post_fault" or start_time >= self.fault_injection_time:
             self.post_fault_window.append(completion_time)
 
     def record_duplicate_task(self, original_task_id: str, duplicate_agent_id: str) -> None:

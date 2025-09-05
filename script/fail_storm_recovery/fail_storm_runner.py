@@ -40,6 +40,7 @@ from core.failstorm_metrics import FailStormMetricsCollector
 from protocol_backends.simple_json.runner import SimpleJsonRunner
 from protocol_backends.anp.runner import ANPRunner
 from protocol_backends.a2a.runner import A2ARunner
+from protocol_backends.acp.runner import ACPRunner
 
 # Import user's shard_qa agent_executor directly with dynamic import
 shard_qa_path = Path(__file__).parent.parent / "shard_qa"
@@ -89,7 +90,7 @@ class ProtocolRunnerFactory:
         "simple_json": SimpleJsonRunner,
         "anp": ANPRunner,
         "a2a": A2ARunner,
-        # "acp": ACPRunner,  # 未来再加
+        "acp": ACPRunner,
     }
     
     @classmethod

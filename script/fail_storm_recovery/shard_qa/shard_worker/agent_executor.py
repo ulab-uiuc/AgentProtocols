@@ -6,36 +6,34 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 import sys
 
-# Add A2A SDK imports
-try:
-    from a2a.server.agent_execution import AgentExecutor, RequestContext
-    from a2a.server.events import EventQueue
-    # Import new_agent_text_message but ensure it uses string role
-    from a2a.utils import new_agent_text_message as _original_new_agent_text_message
+# Protocol-agnostic interfaces
+class BaseRequestContext:
+    """Base interface for request context across all protocols"""
+    def get_user_input(self):
+        raise NotImplementedError("Subclasses must implement get_user_input")
+
+class BaseEventQueue:
+    """Base interface for event queue across all protocols"""
+    async def enqueue_event(self, event):
+        raise NotImplementedError("Subclasses must implement enqueue_event")
+
+class BaseAgentExecutor:
+    """Base interface for agent executors across all protocols"""
+    async def execute(self, context: BaseRequestContext, event_queue: BaseEventQueue) -> None:
+        raise NotImplementedError("Subclasses must implement execute")
     
-    def new_agent_text_message(text, role="user"):
-        """Wrapper for new_agent_text_message that ensures compatibility"""
-        # A2A SDK's new_agent_text_message only takes text parameter
-        return _original_new_agent_text_message(text)
-    
-    A2A_AVAILABLE = True
-except ImportError:
-    print("Warning: a2a-sdk not available, using mock classes")
-    A2A_AVAILABLE = False
-    
-    class AgentExecutor:
-        pass
-    
-    class RequestContext:
-        def get_user_input(self):
-            return "Mock input"
-    
-    class EventQueue:
-        async def enqueue_event(self, event):
-            pass
-    
-    def new_agent_text_message(text, role="user"):
-        return {"type": "text", "content": text, "role": str(role)}
+    async def cancel(self, context: BaseRequestContext, event_queue: BaseEventQueue) -> None:
+        raise NotImplementedError("Subclasses must implement cancel")
+
+def create_text_message(text, role="user"):
+    """Create a protocol-agnostic text message"""
+    return {"type": "text", "content": text, "role": str(role)}
+
+# Protocol-specific implementations will be injected at runtime
+RequestContext = BaseRequestContext
+EventQueue = BaseEventQueue
+AgentExecutor = BaseAgentExecutor
+new_agent_text_message = create_text_message
 
 async def safe_enqueue_event(event_queue, event):
     """Safely enqueue event, handling both sync and async event queues."""
@@ -174,6 +172,7 @@ class ShardWorker:
         """Initialize Core LLM"""
         try:
             # Use absolute import path for better reliability
+            # From fail_storm_recovery/shard_qa/shard_worker/agent_executor.py to project root
             project_root = Path(__file__).parent.parent.parent.parent.parent
             src_path = project_root / "src"
             sys.path.insert(0, str(src_path))
@@ -1249,8 +1248,8 @@ class ShardWorkerExecutor(AgentExecutor):
 
     async def execute(
         self,
-        context: RequestContext,
-        event_queue: EventQueue,
+        context: BaseRequestContext,
+        event_queue: BaseEventQueue,
     ) -> None:
         # Get user input from context
         user_input = context.get_user_input()
@@ -1360,6 +1359,6 @@ class ShardWorkerExecutor(AgentExecutor):
             await safe_enqueue_event(event_queue, new_agent_text_message(error_msg))
 
     async def cancel(
-        self, context: RequestContext, event_queue: EventQueue
+        self, context: BaseRequestContext, event_queue: BaseEventQueue
     ) -> None:
         raise Exception('cancel not supported') 
