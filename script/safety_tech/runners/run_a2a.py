@@ -20,7 +20,7 @@ HERE = Path(__file__).resolve().parent
 SAFETY_TECH = HERE.parent
 sys.path.insert(0, str(SAFETY_TECH))
 
-from .runner_base import RunnerBase
+from runners.runner_base import RunnerBase
 
 # Import A2A components
 try:

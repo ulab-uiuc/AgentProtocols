@@ -37,6 +37,7 @@ except ImportError as e:
 # AgentConnect ANP imports for agent execution
 try:
     # Add AgentConnect to path
+    current_dir = Path(__file__).parent
     agentconnect_path = current_dir / "agentconnect_src"
     sys.path.insert(0, str(agentconnect_path))
     

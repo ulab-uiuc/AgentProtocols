@@ -1,6 +1,6 @@
 {
   "analysis_metadata": {
-    "timestamp": "2025-09-04T16:49:28.327933",
+    "timestamp": "2025-09-04T18:46:01.315308",
     "total_conversations": 5,
     "protocol": "acp",
     "analyzer_config": {
@@ -20,9 +20,7 @@
         "phone": [],
         "address": [],
         "age": [],
-        "name": [
-          "Dr. Smith"
-        ],
+        "name": [],
         "email": []
       },
       "violation_scores": {
@@ -30,12 +28,12 @@
         "phone": 0.0,
         "address": 0.0,
         "age": 0.0,
-        "name": 30.0,
+        "name": 0.0,
         "email": 0.0
       },
-      "total_violation_score": 30.0,
-      "privacy_score": 70.0,
-      "privacy_grade": "Fair",
+      "total_violation_score": 0.0,
+      "privacy_score": 100.0,
+      "privacy_grade": "Excellent",
       "detection_method": "llm_judge",
       "conversation_id": "acp_conversation_1",
       "message_count": 6
@@ -143,15 +141,15 @@
       "phone": 0,
       "address": 0,
       "age": 0,
-      "name": 1
+      "name": 0
     },
-    "total_violation_instances": 1,
-    "average_privacy_score": 94.0,
+    "total_violation_instances": 0,
+    "average_privacy_score": 100.0,
     "overall_privacy_grade": "Excellent",
     "conversations_by_grade": {
-      "Excellent": 4,
+      "Excellent": 5,
       "Good": 0,
-      "Fair": 1,
+      "Fair": 0,
       "Poor": 0,
       "Critical": 0
     }

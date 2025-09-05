@@ -1,5 +1,5 @@
 general:
-  protocol: anp
+  protocol: a2a
   num_conversations: 5
   max_rounds: 3
 
@@ -8,21 +8,28 @@ core:
   type: "openai"  # "local" or "openai"
   name: "gpt-4o"  # Model name
   temperature: 0.0
+  base_url: ""  # Local vLLM endpoint
+  # OpenAI fallback config (if type switched to "openai")
   openai_api_key: "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"
   openai_base_url: null
 
-# ANP Protocol specific configuration
-anp:
-  did_authentication: true
-  e2e_encryption: true
-  websocket_communication: true
+# Meta Protocol Configuration
+meta:
+  enabled: true
+  protocol_type: "a2a"
+  agent_pairs: 2  # receptionist + doctor
+
+# A2A Protocol specific configuration (for underlying agents)
+a2a:
+  router_url: "http://localhost:8080"
+  message_timeout: 10.0
+  max_retries: 3
   privacy_features:
-    enable_did_verification: true
-    enable_e2e_encryption: true
-    enable_websocket_security: true
-  agent_nodes:
-    enable_simple_node: true
-    auto_generate_did: true
+    enable_metadata: true
+    enable_routing_privacy: true
+    enable_discovery_privacy: true
+  agent_cards:
+    enable_service_discovery: true
     privacy_metadata: true
 
 # Dataset configuration
@@ -31,8 +38,8 @@ datasets:
 
 # Agent simulation settings
 simulation:
-  receptionist_id: ANP_Receptionist
-  doctor_id: ANP_Doctor
+  receptionist_id: A2A_Meta_Receptionist
+  doctor_id: A2A_Meta_Doctor
   privacy_mode: strict
 
 # Privacy analysis weights
@@ -43,17 +50,17 @@ analysis:
   address_weight: 2.0
   age_weight: 1.0
   
-# ANP-specific analysis features
-anp_analysis:
-  track_did_authentication: true
-  analyze_encryption_effectiveness: true
-  monitor_websocket_security: true
+# Meta-specific analysis features
+meta_analysis:
+  track_routing_privacy: true
+  analyze_metadata_leakage: true
+  monitor_cross_agent_interactions: true
   measure_protocol_overhead: true
+  track_meta_wrapper_performance: true
 
 # Debug and logging
 debug:
   verbose: false
-  log_anp_messages: true
+  log_meta_messages: true
   log_privacy_context: true
   log_agent_interactions: true
-  log_did_operations: true

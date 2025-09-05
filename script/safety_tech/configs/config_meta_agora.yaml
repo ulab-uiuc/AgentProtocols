@@ -11,7 +11,13 @@ core:
   openai_api_key: "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"
   openai_base_url: null
 
-# Agora Protocol specific configuration
+# Meta Protocol Configuration
+meta:
+  enabled: true
+  protocol_type: "agora"
+  agent_pairs: 2  # receptionist + doctor
+
+# Agora Protocol specific configuration (for underlying agents)
 agora:
   toolformer:
     model: "gpt-4o-mini"
@@ -31,8 +37,8 @@ datasets:
 
 # Agent simulation settings
 simulation:
-  receptionist_id: Agora_Receptionist
-  doctor_id: Agora_Doctor
+  receptionist_id: Agora_Meta_Receptionist
+  doctor_id: Agora_Meta_Doctor
   privacy_mode: strict
 
 # Privacy analysis weights
@@ -43,18 +49,18 @@ analysis:
   address_weight: 2.0
   age_weight: 1.0
   
-# Agora-specific analysis features
-agora_analysis:
+# Meta-specific analysis features
+meta_analysis:
   track_tool_usage: true
   analyze_protocol_compliance: true
   monitor_langchain_interactions: true
   measure_protocol_overhead: true
+  track_meta_wrapper_performance: true
 
-  
 # Debug and logging
 debug:
   verbose: false
-  log_anp_messages: true
+  log_meta_messages: true
   log_privacy_context: true
   log_agent_interactions: true
   log_did_operations: true

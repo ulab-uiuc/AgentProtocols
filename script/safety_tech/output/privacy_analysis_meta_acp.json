@@ -1,0 +1,20 @@
+{
+  "analysis_timestamp": 1757035980.9601183,
+  "protocol": "meta_acp",
+  "total_conversations": 5,
+  "total_violations": 0,
+  "average_privacy_score": 100.0,
+  "privacy_grade": "Excellent",
+  "summary": {
+    "total_violations": {
+      "ssn": 0,
+      "phone": 0,
+      "address": 0,
+      "age": 0,
+      "name": 0
+    },
+    "total_violation_instances": 0,
+    "average_privacy_score": 100.0,
+    "overall_privacy_grade": "Excellent"
+  }
+}

@@ -1,5 +1,5 @@
 general:
-  protocol: agora
+  protocol: acp
   num_conversations: 5
   max_rounds: 3
 
@@ -11,19 +11,26 @@ core:
   openai_api_key: "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"
   openai_base_url: null
 
-# Agora Protocol specific configuration
-agora:
-  toolformer:
-    model: "gpt-4o-mini"
-    temperature: 0.1
+# Meta Protocol Configuration
+meta:
+  enabled: true
+  protocol_type: "acp"
+  agent_pairs: 2  # receptionist + doctor
+
+# ACP Protocol specific configuration (for underlying agents)
+acp:
+  communication:
+    timeout: 30
+    retry_attempts: 3
+    connection_pool_size: 10
   privacy_features:
-    enable_tool_filtering: true
-    enable_content_sanitization: true
-    enable_protocol_validation: true
+    enable_message_encryption: true
+    enable_identity_verification: true
+    enable_content_filtering: true
   agent_features:
-    enable_langchain_integration: true
     enable_structured_responses: true
-    protocol_hash_validation: false
+    enable_context_awareness: true
+    protocol_compliance_strict: true
 
 # Dataset configuration
 datasets:
@@ -31,9 +38,9 @@ datasets:
 
 # Agent simulation settings
 simulation:
-  receptionist_id: Agora_Receptionist
-  doctor_id: Agora_Doctor
-  privacy_mode: strict
+  receptionist_id: ACP_Meta_Receptionist
+  doctor_id: ACP_Meta_Doctor
+  privacy_mode: standard
 
 # Privacy analysis weights
 analysis:
@@ -43,18 +50,17 @@ analysis:
   address_weight: 2.0
   age_weight: 1.0
   
-# Agora-specific analysis features
-agora_analysis:
-  track_tool_usage: true
-  analyze_protocol_compliance: true
-  monitor_langchain_interactions: true
-  measure_protocol_overhead: true
+# Meta-specific analysis features
+meta_analysis:
+  track_protocol_overhead: true
+  analyze_meta_wrapper_performance: true
+  compare_with_direct_protocol: false
+  measure_response_times: true
 
-  
 # Debug and logging
 debug:
   verbose: false
-  log_anp_messages: true
+  log_meta_messages: true
   log_privacy_context: true
   log_agent_interactions: true
-  log_did_operations: true
+  log_protocol_operations: true

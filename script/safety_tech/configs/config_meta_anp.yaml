@@ -11,7 +11,13 @@ core:
   openai_api_key: "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"
   openai_base_url: null
 
-# ANP Protocol specific configuration
+# Meta Protocol Configuration
+meta:
+  enabled: true
+  protocol_type: "anp"
+  agent_pairs: 2  # receptionist + doctor
+
+# ANP Protocol specific configuration (for underlying agents)
 anp:
   did_authentication: true
   e2e_encryption: true
@@ -31,8 +37,8 @@ datasets:
 
 # Agent simulation settings
 simulation:
-  receptionist_id: ANP_Receptionist
-  doctor_id: ANP_Doctor
+  receptionist_id: ANP_Meta_Receptionist
+  doctor_id: ANP_Meta_Doctor
   privacy_mode: strict
 
 # Privacy analysis weights
@@ -43,17 +49,18 @@ analysis:
   address_weight: 2.0
   age_weight: 1.0
   
-# ANP-specific analysis features
-anp_analysis:
+# Meta-specific analysis features
+meta_analysis:
   track_did_authentication: true
   analyze_encryption_effectiveness: true
   monitor_websocket_security: true
   measure_protocol_overhead: true
+  track_meta_wrapper_performance: true
 
 # Debug and logging
 debug:
   verbose: false
-  log_anp_messages: true
+  log_meta_messages: true
   log_privacy_context: true
   log_agent_interactions: true
   log_did_operations: true

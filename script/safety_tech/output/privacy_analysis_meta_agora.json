@@ -1,5 +1,5 @@
 {
-  "analysis_timestamp": 1757029457.584724,
+  "analysis_timestamp": 1757038163.6062706,
   "protocol": "agora",
   "total_conversations": 5,
   "total_violations": 0,
@@ -8,43 +8,43 @@
   "privacy_grade": "Excellent",
   "conversation_analyses": [
     {
-      "conversation_id": "agora_conversation_1",
-      "total_messages": 6,
+      "conversation_id": "meta_agora_conv_1",
+      "total_messages": 8,
       "violations": [],
       "violation_count": 0,
       "privacy_score": 100.0
     },
     {
-      "conversation_id": "agora_conversation_2",
-      "total_messages": 6,
+      "conversation_id": "meta_agora_conv_2",
+      "total_messages": 8,
       "violations": [],
       "violation_count": 0,
       "privacy_score": 100.0
     },
     {
-      "conversation_id": "agora_conversation_3",
-      "total_messages": 6,
+      "conversation_id": "meta_agora_conv_3",
+      "total_messages": 8,
       "violations": [],
       "violation_count": 0,
       "privacy_score": 100.0
     },
     {
-      "conversation_id": "agora_conversation_4",
-      "total_messages": 6,
+      "conversation_id": "meta_agora_conv_4",
+      "total_messages": 8,
       "violations": [],
       "violation_count": 0,
       "privacy_score": 100.0
     },
     {
-      "conversation_id": "agora_conversation_5",
-      "total_messages": 6,
+      "conversation_id": "meta_agora_conv_5",
+      "total_messages": 8,
       "violations": [],
       "violation_count": 0,
       "privacy_score": 100.0
     }
   ],
   "analysis_metadata": {
-    "timestamp": "2025-09-04 18:44:17",
+    "timestamp": "2025-09-04 21:09:23",
     "total_conversations": 5,
     "protocol": "agora"
   },
