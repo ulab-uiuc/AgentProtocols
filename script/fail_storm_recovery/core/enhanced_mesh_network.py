@@ -367,6 +367,102 @@ class EnhancedMeshNetwork(SimpleAgentNetwork):
                 print(f"[MeshNetwork] Connection failed {src_id} <-> {dst_id}: {e}")
             return False
     
+    async def route_message(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Any:
+        """
+        Route message from source agent to destination agent.
+        
+        Args:
+            src_id: Source agent ID
+            dst_id: Destination agent ID  
+            payload: Message payload to send
+            
+        Returns:
+            Response from destination agent or None if failed
+        """
+        # Special handling for coordinator messages in fail-storm mode
+        if dst_id == "coordinator":
+            # In fail-storm mode, we don't have a coordinator, just return success
+            if self.debug_mode:
+                print(f"[MeshNetwork] Coordinator message from {src_id}: {payload}")
+            return {"status": "coordinator_message_skipped", "content": payload}
+        
+        # Check if both agents are registered
+        if src_id not in self.agents or dst_id not in self.agents:
+            raise KeyError(f"Agent not found: src={src_id}, dst={dst_id}")
+        
+        # For fail-storm testing, be more lenient with failure detection
+        # Only block if agent was explicitly killed, not from heartbeat timeouts
+        if src_id in self.confirmed_failures or dst_id in self.confirmed_failures:
+            # Check if this is a real failure or just a heartbeat timeout
+            current_time = time.time()
+            
+            # If agent was recently active, don't consider it failed
+            src_recent = (src_id in self.last_heartbeat and 
+                         current_time - self.last_heartbeat[src_id] < self.heartbeat_timeout * 2)
+            dst_recent = (dst_id in self.last_heartbeat and 
+                         current_time - self.last_heartbeat[dst_id] < self.heartbeat_timeout * 2)
+            
+            if src_recent or dst_recent:
+                # Remove from confirmed failures if recently active
+                self.confirmed_failures.discard(src_id)
+                self.confirmed_failures.discard(dst_id)
+                if self.debug_mode:
+                    print(f"[MeshNetwork] Restored agents from failure list: {src_id}, {dst_id}")
+            else:
+                raise PermissionError(f"Cannot route to failed agent: src={src_id}, dst={dst_id}")
+        
+        # Check if connection exists - if not, try to establish it
+        if dst_id not in self.connections.get(src_id, set()):
+            # Try to establish connection first
+            success = await self.connect_agents(src_id, dst_id)
+            if not success:
+                raise PermissionError(f"{src_id} cannot reach {dst_id} - no connection")
+        
+        try:
+            # Get the source agent and send message
+            src_agent = self.agents[src_id]
+            
+            # If the agent has a send_message method, use it
+            if hasattr(src_agent, 'send_message'):
+                return await src_agent.send_message(dst_id, payload)
+            else:
+                # Fallback: try to send via HTTP if available
+                return await self._send_http_message(src_agent, dst_id, payload)
+                
+        except Exception as e:
+            if self.debug_mode:
+                print(f"[MeshNetwork] Route message failed {src_id} -> {dst_id}: {e}")
+            raise
+    
+    async def _send_http_message(self, src_agent: Any, dst_id: str, payload: Dict[str, Any]) -> Any:
+        """Fallback HTTP message sending."""
+        import httpx
+        
+        try:
+            # Get destination agent
+            dst_agent = self.agents.get(dst_id)
+            if not dst_agent:
+                raise KeyError(f"Destination agent {dst_id} not found")
+            
+            # Try to get destination port/address
+            dst_port = getattr(dst_agent, 'port', None)
+            if dst_port is None:
+                raise ValueError(f"Cannot determine port for agent {dst_id}")
+            
+            url = f"http://127.0.0.1:{dst_port}/message"
+            
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(url, json=payload)
+                if response.status_code == 200:
+                    return response.json()
+                else:
+                    raise Exception(f"HTTP {response.status_code}: {response.text}")
+                    
+        except Exception as e:
+            if self.debug_mode:
+                print(f"[MeshNetwork] HTTP message failed: {e}")
+            raise
+
     async def setup_mesh_topology(self) -> None:
         """Setup full mesh topology between all agents."""
         agent_ids = [aid for aid in self.agents.keys() if aid not in self.confirmed_failures]

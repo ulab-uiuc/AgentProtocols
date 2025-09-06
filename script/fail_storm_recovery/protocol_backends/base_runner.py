@@ -13,6 +13,7 @@ import signal
 import sys
 import os
 import socket
+import importlib.util
 from typing import Dict, List, Any, Optional, Set
 from pathlib import Path
 from abc import ABC, abstractmethod
@@ -147,7 +148,10 @@ class FailStormRunnerBase(ABC):
 
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         """Load configuration file with environment variable support."""
-        from utils.config_loader import load_config_with_env_vars, check_env_vars, create_core_instance
+        # Add utils path
+        utils_path = Path(__file__).parent.parent / "utils"
+        sys.path.insert(0, str(utils_path))
+        from config_loader import load_config_with_env_vars, check_env_vars, create_core_instance
         
         # Check required environment variables
         if not check_env_vars():
@@ -523,6 +527,9 @@ class FailStormRunnerBase(ABC):
             
             # Add metrics collector reference
             executor.worker.metrics_collector = self.metrics_collector
+            
+            # Set network reference for the worker
+            executor.worker.set_network(self.mesh_network)
             
             # Store the executor
             self.shard_workers[agent_id] = executor

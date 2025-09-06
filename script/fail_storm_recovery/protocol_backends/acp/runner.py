@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from core.simple_base_agent import SimpleBaseAgent as BaseAgent
 from protocol_backends.base_runner import FailStormRunnerBase
+from .agent import create_acp_agent
 
 # Import shard_qa components dynamically to avoid circular imports
 shard_qa_path = Path(__file__).parent.parent.parent / "shard_qa"
@@ -112,9 +113,8 @@ class ACPRunner(FailStormRunnerBase):
         self.acp_sessions: Dict[str, Any] = {}
         self.killed_agents: set = set()
         
-        # Validate ACP SDK availability
-        if not ACP_AVAILABLE:
-            raise ImportError("ACP SDK is required but not available. Please install acp-sdk.")
+        # ACP SDK is optional, we have fallback implementations
+        self.output.info("Initialized ACP protocol runner")
 
     async def create_agent(self, agent_id: str, host: str, port: int, executor: ShardWorkerExecutor) -> BaseAgent:
         """
@@ -127,11 +127,11 @@ class ACPRunner(FailStormRunnerBase):
             executor: Shard worker executor instance
             
         Returns:
-            BaseAgent instance configured for ACP protocol
+            ACPAgent instance configured for ACP protocol
         """
         try:
-            # Create ACP agent using the proper factory method
-            agent = await BaseAgent.create_acp(
+            # Create ACP agent using the factory method
+            agent = await create_acp_agent(
                 agent_id=agent_id,
                 host=host,
                 port=port,

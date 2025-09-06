@@ -15,12 +15,12 @@ import sys
 
 # Add AgentConnect to path
 current_dir = Path(__file__).parent.parent.parent
-agentconnect_path = current_dir.parent.parent.parent / "agentconnect_src"
+agentconnect_path = current_dir.parent.parent / "agentconnect_src"
 sys.path.insert(0, str(agentconnect_path))
 
 from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
 from agent_connect.python.authentication import (
-    DidWbaAuthHeader, did_wba_verify
+    DIDWbaAuthHeader, verify_auth_header_signature
 )
 from agent_connect.python.utils.did_generate import did_generate
 from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
@@ -115,9 +115,15 @@ class ANPAgent:
         """Setup DID document and authentication keys."""
         try:
             # Generate DID and private keys
-            self.did_doc, self.private_keys = await asyncio.to_thread(did_generate)
+            communication_endpoint = f"http://{self.host}:{self.port}"
+            private_key, public_key, did, did_doc = await asyncio.to_thread(
+                did_generate, communication_endpoint
+            )
             
-            self.logger.info(f"Generated DID authentication for {self.agent_id}")
+            self.private_keys = private_key
+            self.did_doc = did_doc
+            
+            self.logger.info(f"Generated DID authentication for {self.agent_id}: {did}")
             
         except Exception as e:
             self.logger.error(f"Failed to setup DID authentication: {e}")

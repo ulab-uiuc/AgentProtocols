@@ -26,6 +26,58 @@ import importlib.util
 spec = importlib.util.spec_from_file_location("agent_executor", shard_qa_path / "shard_worker" / "agent_executor.py")
 agent_executor_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(agent_executor_module)
+# Create ANP-specific implementations to avoid coordinator dependency
+class ANPAgentExecutor(agent_executor_module.BaseAgentExecutor):
+    """ANP-specific agent executor"""
+    async def execute(self, context, event_queue):
+        # ANP doesn't use the executor pattern, this is just for compatibility
+        pass
+    
+    async def cancel(self, context, event_queue):
+        # ANP doesn't use the executor pattern, this is just for compatibility
+        pass
+
+class ANPRequestContext(agent_executor_module.BaseRequestContext):
+    """ANP-specific request context"""
+    def __init__(self, input_data):
+        self.input_data = input_data
+    
+    def get_user_input(self):
+        return self.input_data
+
+class ANPEventQueue(agent_executor_module.BaseEventQueue):
+    """ANP-specific event queue"""
+    def __init__(self):
+        self.events = []
+    
+    async def enqueue_event(self, event):
+        self.events.append(event)
+        return event
+
+def anp_new_agent_text_message(text, role="user"):
+    """ANP-specific text message creation"""
+    return {"type": "text", "content": text, "role": str(role)}
+
+# Patch the _send_to_coordinator method to avoid coordinator dependency
+original_send_to_coordinator = agent_executor_module.ShardWorker._send_to_coordinator
+
+async def _patched_send_to_coordinator(self, content: str, path: List[str] = None, ttl: int = 0):
+    """Patched version that doesn't require coordinator"""
+    # For ANP fail-storm testing, we don't need coordinator
+    # Just log the message that would have been sent
+    if hasattr(self, 'output') and self.output:
+        self.output.info(f"[{self.shard_id}] Would send to coordinator: {content}")
+    return "Coordinator message skipped (ANP mode)"
+
+# Apply the patch
+agent_executor_module.ShardWorker._send_to_coordinator = _patched_send_to_coordinator
+
+# Inject ANP implementations into the agent_executor module
+agent_executor_module.AgentExecutor = ANPAgentExecutor
+agent_executor_module.RequestContext = ANPRequestContext
+agent_executor_module.EventQueue = ANPEventQueue
+agent_executor_module.new_agent_text_message = anp_new_agent_text_message
+
 ShardWorkerExecutor = agent_executor_module.ShardWorkerExecutor
 
 

@@ -3,11 +3,14 @@
 # Basic scenario configuration
 scenario:
   name: "fail_storm_recovery_anp"
-  timeout: 120
-  agents: 3
-  fault_rate: 0.33  # Kill 33% of agents (1 out of 3)
-  fault_time: 60    # Inject fault at 60 seconds
-  recovery_timeout: 60
+  protocol: "anp"
+  agent_count: 3
+  total_runtime: 60.0
+  fault_injection_time: 30.0
+  kill_fraction: 0.33  # Kill 33% of agents (1 out of 3)
+  recovery_duration: 60
+  heartbeat_interval: 5.0
+  heartbeat_timeout: 15.0
 
 # Network configuration
 network:
@@ -15,10 +18,13 @@ network:
   heartbeat_timeout: 3.0
   steady_state_threshold: 5.0
   
-# Agent ports (ANP uses HTTP + WebSocket)
-ports:
-  start: 9000
-  count: 3
+# Agent network configuration
+agents:
+  base_port: 9000
+  host: "127.0.0.1"
+  workspace_dir: "workspaces"
+  message_timeout: 10.0
+  health_check_interval: 15.0
 
 # Shard QA configuration  
 shard_qa:
@@ -29,17 +35,16 @@ shard_qa:
 
 # LLM configuration
 llm:
-  type: "nvidia"
-  model: "nvdev/nvidia/llama-3.1-nemotron-70b-instruct"
-  nvidia_api_key: "${NVIDIA_API_KEY}"
-  nvidia_base_url: "https://integrate.api.nvidia.com/v1"
+  type: "openai"
+  model: "gpt-4o"
+  openai_api_key: "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"
+  openai_base_url: "https://api.openai.com/v1"
   temperature: 0.2
   top_p: 0.7
   max_tokens: 8192
   
   # Legacy compatibility fields (will be auto-mapped)
-  name: "nvdev/nvidia/llama-3.1-nemotron-70b-instruct"
-  nvidia_api_key: "${NVIDIA_API_KEY}"
+  name: "gpt-4o"
 
 # ANP specific configuration
 anp:

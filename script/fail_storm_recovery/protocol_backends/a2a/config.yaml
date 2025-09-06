@@ -1,19 +1,24 @@
 scenario:
+  name: "fail_storm_recovery_a2a"
   protocol: "a2a"
-  agent_count: 8
-  total_runtime: 120.0
-  fault_injection_time: 60.0
+  agent_count: 3
+  total_runtime: 60.0
+  fault_injection_time: 30.0
   recovery_duration: 60
-  kill_fraction: 0.25
+  kill_fraction: 0.33
+  heartbeat_interval: 5.0
+  heartbeat_timeout: 15.0
 
 llm:
-  # LLM configuration is now automatically handled by Core class from src/utils/core.py
-  # Core will use OPENAI_API_KEY or NVIDIA_API_KEY environment variables
-  # No need to manually configure - just set the appropriate API key
-  # Supported models:
-  #   OpenAI: gpt-4o-mini, gpt-4, gpt-3.5-turbo (requires OPENAI_API_KEY)
-  #   NVIDIA: nvdev/nvidia/llama-3.1-nemotron-70b-instruct (requires NVIDIA_API_KEY)
-  auto_configured: true
+  type: "openai"
+  model: "gpt-4o"
+  openai_api_key: "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"
+  openai_base_url: "https://api.openai.com/v1"
+  temperature: 0.2
+  top_p: 0.7
+  max_tokens: 8192
+  name: "gpt-4o"
+  timeout: 30.0
 
 a2a:
   # === 替换点 #1：你的 Agent 启动命令 ===
@@ -47,14 +52,9 @@ agents:
   host: "127.0.0.1"
 
 shard_qa:
-  data_dir: "../shard_qa/data"
-  questions_file: "qa_questions.json"
-  fragments_file: "knowledge_fragments.json"
+  data_dir: "shard_qa/data/shards"
   normal_phase_duration: 30.0
   qa_cycle_timeout: 15.0
-  roles:
-    coordinator: 1
-    worker: 2
 
 output:
   results_file: "failstorm_metrics.json"

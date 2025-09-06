@@ -67,16 +67,16 @@ agents:
 # LLM configuration for agent reasoning
 llm:
   # LLM provider type (openai, local, anthropic, nvidia)
-  type: "nvidia"
+  type: "openai"
   
-  # Model name for NVIDIA API
-  model: "nvdev/nvidia/llama-3.1-nemotron-70b-instruct"
+  # Model name for OpenAI API
+  model: "gpt-4o"
   
-  # NVIDIA API key (从环境变量读取)
-  nvidia_api_key: "${NVIDIA_API_KEY}"
+  # OpenAI API key
+  openai_api_key: "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"
   
-  # Base URL for NVIDIA API
-  nvidia_base_url: "https://integrate.api.nvidia.com/v1"
+  # Base URL for OpenAI API
+  openai_base_url: "https://api.openai.com/v1"
   
   # Model parameters
   temperature: 0.2
@@ -84,7 +84,7 @@ llm:
   max_tokens: 8192
   
   # Legacy compatibility fields (will be auto-mapped)
-  name: "nvdev/nvidia/llama-3.1-nemotron-70b-instruct"
+  name: "gpt-4o"
   
   # Request timeout
   timeout: 30.0
