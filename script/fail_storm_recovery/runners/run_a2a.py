@@ -15,8 +15,8 @@ import sys
 from pathlib import Path
 
 # Add paths for imports
-sys.path.insert(0, str(Path(__file__).parent))
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))  # fail_storm_recovery directory
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from protocol_backends.a2a.runner import A2ARunner
 

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-ACP Protocol Fail-Storm Recovery Test Runner
+ANP Protocol Fail-Storm Recovery Test Runner
 
-This script runs the fail-storm recovery test using ACP protocol.
-All configuration is loaded from protocol_backends/acp/config.yaml.
+This script runs the fail-storm recovery test using ANP protocol.
+All configuration is loaded from protocol_backends/anp/config.yaml.
 No command line arguments needed.
 
 Usage:
-    python run_acp.py
+    python run_anp.py
 """
 
 import asyncio
@@ -15,23 +15,23 @@ import sys
 from pathlib import Path
 
 # Add paths for imports
-sys.path.insert(0, str(Path(__file__).parent))
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))  # fail_storm_recovery directory
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from protocol_backends.acp.runner import ACPRunner
+from protocol_backends.anp.runner import ANPRunner
 
 
 async def main():
-    """Main entry point for ACP fail-storm testing."""
+    """Main entry point for ANP fail-storm testing."""
     try:
-        print("🚀 Starting ACP Protocol Fail-Storm Recovery Test")
+        print("🚀 Starting ANP Protocol Fail-Storm Recovery Test")
         print("=" * 60)
         
-        # Create ACP runner with protocol-specific config
-        runner = ACPRunner("protocol_backends/acp/config.yaml")
+        # Create ANP runner with protocol-specific config
+        runner = ANPRunner("protocol_backends/anp/config.yaml")
         
-        print(f"📋 Configuration loaded from: protocol_backends/acp/config.yaml")
-        print(f"🔗 Protocol: ACP")
+        print(f"📋 Configuration loaded from: protocol_backends/anp/config.yaml")
+        print(f"🔗 Protocol: ANP")
         print(f"👥 Agents: {runner.config['scenario']['agent_count']}")
         print(f"⏱️  Runtime: {runner.config['scenario']['total_runtime']}s")
         print(f"💥 Fault time: {runner.config['scenario']['fault_injection_time']}s")
@@ -40,7 +40,7 @@ async def main():
         # Run the scenario
         results = await runner.run_scenario()
         
-        print("\n🎉 ACP Fail-Storm test completed successfully!")
+        print("\n🎉 ANP Fail-Storm test completed successfully!")
         print("📊 Results saved to: results/failstorm_metrics.json")
         print("📈 Detailed metrics: results/detailed_failstorm_metrics.json")
         
@@ -50,13 +50,12 @@ async def main():
         print("\n⚠️ Test interrupted by user")
         return None
     except Exception as e:
-        print(f"\n❌ ACP test failed: {e}")
+        print(f"\n❌ ANP test failed: {e}")
         import traceback
         traceback.print_exc()
         return None
 
 
 if __name__ == "__main__":
-    # Run the ACP fail-storm test
+    # Run the ANP fail-storm test
     asyncio.run(main())
-
