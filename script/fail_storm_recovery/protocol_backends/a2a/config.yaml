@@ -1,0 +1,67 @@
+scenario:
+  name: "fail_storm_recovery_a2a"
+  protocol: "a2a"
+  agent_count: 3
+  total_runtime: 60.0
+  fault_injection_time: 30.0
+  recovery_duration: 60
+  kill_fraction: 0.33
+  heartbeat_interval: 5.0
+  heartbeat_timeout: 15.0
+
+llm:
+  type: "openai"
+  model: "gpt-4o"
+  openai_api_key: "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"
+  openai_base_url: "https://api.openai.com/v1"
+  temperature: 0.2
+  top_p: 0.7
+  max_tokens: 8192
+  name: "gpt-4o"
+  timeout: 30.0
+
+a2a:
+  # === 替换点 #1：你的 Agent 启动命令 ===
+  agent_start_cmd:
+    - "python"
+    - "local_deps/a2a_agent.py"
+    - "--port"
+    - "{port}"
+    - "--ws-port"
+    - "{ws_port}"
+    - "--id"
+    - "{agent_id}"
+    - "--workspace"
+    - "{ws}"
+  # === 替换点 #2：探活端点 ===
+  health_path: "/healthz"
+  # === 替换点 #3：建链/广播/QA 端点 ===
+  peer_add_path: "/mesh/add_peer"
+  broadcast_path: "/mesh/broadcast"
+  qa_path: "/qa/submit"
+
+network:
+  base_port: 9000           # HTTP base
+  base_ws_port: 29000       # WS base (if your A2A needs)
+  heartbeat_interval: 5.0
+  heartbeat_timeout: 12.0
+  connection_timeout: 10.0
+
+agents:
+  base_port: 9000
+  host: "127.0.0.1"
+
+shard_qa:
+  data_dir: "shard_qa/data/shards"
+  normal_phase_duration: 30.0
+  qa_cycle_timeout: 15.0
+
+output:
+  results_file: "failstorm_metrics.json"
+  logs_dir: "logs"
+  artifacts_dir: "artifacts"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+

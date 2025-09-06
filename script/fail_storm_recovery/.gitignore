@@ -1,0 +1,30 @@
+# Fail-Storm Recovery - Generated Data
+# 忽略生成的数据文件和测试结果
+
+# 数据目录
+data/
+*.jsonl
+
+# 结果文件
+failstorm_metrics.json
+simple_test_results.json
+config_shard.yaml
+
+# 日志文件
+logs/
+*.log
+
+# 工作空间
+workspaces/
+
+# 临时文件
+*.tmp
+*.temp
+
+# 进程ID文件
+*.pid
+agent_pids.txt
+
+# 测试输出
+test_output.txt
+test_error.txt

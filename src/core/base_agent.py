@@ -20,7 +20,7 @@ try:
     from ..agent_adapters.agent_protocol_adapter import AgentProtocolAdapter
     from ..agent_adapters.agora_adapter import AgoraClientAdapter
     from .metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
-    from ..server_adapters import BaseServerAdapter, A2AServerAdapter, AgentProtocolServerAdapter, ANPServerAdapter, ANP_AVAILABLE, ACPServerAdapter
+    from ..server_adapters import BaseServerAdapter, A2AServerAdapter, AgentProtocolServerAdapter, ANPServerAdapter, ANP_AVAILABLE, ACPServerAdapter, SimpleJSONServerAdapter
     from .unified_message import UTE
     from .protocol_converter import ENCODE_TABLE, DECODE_TABLE
 except ImportError:
@@ -30,7 +30,7 @@ except ImportError:
     from agent_adapters.agent_protocol_adapter import AgentProtocolAdapter
     from agent_adapters.agora_adapter import AgoraClientAdapter
     from src.core.metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
-    from server_adapters import BaseServerAdapter, A2AServerAdapter, AgentProtocolServerAdapter, ANPServerAdapter, ANP_AVAILABLE, ACPServerAdapter
+    from server_adapters import BaseServerAdapter, A2AServerAdapter, AgentProtocolServerAdapter, ANPServerAdapter, ANP_AVAILABLE, ACPServerAdapter, SimpleJSONServerAdapter
     from src.core.unified_message import UTE
     from src.core.protocol_converter import ENCODE_TABLE, DECODE_TABLE
 
@@ -118,6 +118,16 @@ class BaseAgent:
         # Compatibility (TODO: remove in v2.0.0)
         self.outgoing_edges: Set[str] = set()  # deprecated but kept for compatibility
         self._initialized = False
+
+    @property
+    def host(self) -> str:
+        """Get the server host address."""
+        return self._host
+
+    @property 
+    def port(self) -> int:
+        """Get the server port number."""
+        return self._port
 
     @staticmethod
     def _find_free_port() -> int:
@@ -478,6 +488,57 @@ class BaseAgent:
         )
 
         # Start server with executor
+        await agent._start_server(executor)
+
+        # Fetch self agent card
+        await agent._fetch_self_card()
+
+        agent._initialized = True
+        return agent
+
+    @classmethod
+    async def create_simple_json(
+        cls,
+        agent_id: str,
+        host: str = "0.0.0.0",
+        port: Optional[int] = None,
+        executor: Optional[Any] = None,
+        httpx_client: Optional[httpx.AsyncClient] = None,
+        server_adapter: Optional[BaseServerAdapter] = None
+    ) -> "BaseAgent":
+        """
+        Create BaseAgent with Simple JSON server capability.
+
+        Parameters
+        ----------
+        agent_id : str
+            Unique agent identifier
+        host : str
+            Server listening host
+        port : Optional[int]
+            Server listening port (auto-assigned if None)
+        executor : Optional[Any]
+            Executor implementing simple interface for basic message processing
+        httpx_client : Optional[httpx.AsyncClient]
+            Shared HTTP client for connection pooling
+        server_adapter : Optional[BaseServerAdapter]
+            Server adapter (defaults to SimpleJSONServerAdapter)
+
+        Returns
+        -------
+        BaseAgent
+            Initialized BaseAgent with running Simple JSON server
+        """
+        # Create BaseAgent instance with Simple JSON server adapter
+        agent = cls(
+            agent_id=agent_id,
+            host=host,
+            port=port,
+            httpx_client=httpx_client,
+            server_adapter=server_adapter or SimpleJSONServerAdapter()
+        )
+
+        # Start server with executor (can be None for simple JSON)
         await agent._start_server(executor)
 
         # Fetch self agent card
@@ -942,10 +1003,21 @@ class BaseAgent:
         """
         # 1. Gracefully shutdown server
         if self._server_instance and self._server_task:
-            # Signal server to stop
-            self._server_instance.should_exit = True
+            # Check if this is an ANP server (ANPSimpleNodeWrapper)
+            server_type = type(self._server_instance).__name__
+            
+            if hasattr(self._server_instance, 'stop') and server_type == 'ANPSimpleNodeWrapper':
+                # ANP server has its own stop method
+                try:
+                    await self._server_instance.stop()
+                except Exception as e:
+                    # Log but continue cleanup
+                    print(f"Warning: ANP server stop error: {e}")
+            else:
+                # Standard uvicorn server
+                self._server_instance.should_exit = True
 
-            # Wait for server to shutdown gracefully
+            # Wait for server task to shutdown gracefully
             try:
                 await asyncio.wait_for(self._server_task, timeout=DEFAULT_SERVER_SHUTDOWN_TIMEOUT)
             except asyncio.TimeoutError:

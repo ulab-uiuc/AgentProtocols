@@ -432,8 +432,7 @@ class ANPAdapter(BaseProtocolAdapter):
                 host_ws_path=self.host_ws_path,
                 private_key_pem=self.local_did_info.get('private_key_pem'),
                 did=self.local_did_info.get('did'),
-                did_document_json=self.local_did_info.get('did_document_json'),
-                new_session_callback=self._on_new_session
+                did_document_json=self.local_did_info.get('did_document_json')
             )
             
             

@@ -7,8 +7,12 @@ import time
 from collections import defaultdict
 from typing import Any, Dict, Set, List, Optional
 
-from src.core.base_agent import BaseAgent
-from src.core.metrics import RECOVERY_TIME
+try:
+    from src.core.base_agent import BaseAgent
+    from src.core.metrics import RECOVERY_TIME
+except ImportError:
+    from .base_agent import BaseAgent
+    from .metrics import RECOVERY_TIME
 
 
 class AgentNetwork:

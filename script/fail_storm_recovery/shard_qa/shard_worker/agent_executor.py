@@ -6,36 +6,34 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 import sys
 
-# Add A2A SDK imports
-try:
-    from a2a.server.agent_execution import AgentExecutor, RequestContext
-    from a2a.server.events import EventQueue
-    # Import new_agent_text_message but ensure it uses string role
-    from a2a.utils import new_agent_text_message as _original_new_agent_text_message
+# Protocol-agnostic interfaces
+class BaseRequestContext:
+    """Base interface for request context across all protocols"""
+    def get_user_input(self):
+        raise NotImplementedError("Subclasses must implement get_user_input")
+
+class BaseEventQueue:
+    """Base interface for event queue across all protocols"""
+    async def enqueue_event(self, event):
+        raise NotImplementedError("Subclasses must implement enqueue_event")
+
+class BaseAgentExecutor:
+    """Base interface for agent executors across all protocols"""
+    async def execute(self, context: BaseRequestContext, event_queue: BaseEventQueue) -> None:
+        raise NotImplementedError("Subclasses must implement execute")
     
-    def new_agent_text_message(text, role="user"):
-        """Wrapper for new_agent_text_message that ensures compatibility"""
-        # A2A SDK's new_agent_text_message only takes text parameter
-        return _original_new_agent_text_message(text)
-    
-    A2A_AVAILABLE = True
-except ImportError:
-    print("Warning: a2a-sdk not available, using mock classes")
-    A2A_AVAILABLE = False
-    
-    class AgentExecutor:
-        pass
-    
-    class RequestContext:
-        def get_user_input(self):
-            return "Mock input"
-    
-    class EventQueue:
-        async def enqueue_event(self, event):
-            pass
-    
-    def new_agent_text_message(text, role="user"):
-        return {"type": "text", "content": text, "role": str(role)}
+    async def cancel(self, context: BaseRequestContext, event_queue: BaseEventQueue) -> None:
+        raise NotImplementedError("Subclasses must implement cancel")
+
+def create_text_message(text, role="user"):
+    """Create a protocol-agnostic text message"""
+    return {"type": "text", "content": text, "role": str(role)}
+
+# Protocol-specific implementations will be injected at runtime
+RequestContext = BaseRequestContext
+EventQueue = BaseEventQueue
+AgentExecutor = BaseAgentExecutor
+new_agent_text_message = create_text_message
 
 async def safe_enqueue_event(event_queue, event):
     """Safely enqueue event, handling both sync and async event queues."""
@@ -130,8 +128,16 @@ class ShardWorker:
         self.agent_network = None
         self.force_llm = force_llm  # 控制是否强制使用LLM模式
         
-        # Agent index from shard_id (e.g., "shard3" -> 3)
-        self.agent_idx = int(shard_id.replace("shard", ""))
+        # Agent index from agent_id (e.g., "agent3" -> 3 or "shard3" -> 3)
+        if shard_id.startswith("agent"):
+            self.agent_idx = int(shard_id.replace("agent", ""))
+        elif shard_id.startswith("shard"):
+            self.agent_idx = int(shard_id.replace("shard", ""))
+        else:
+            # Fallback: try to extract number from the end
+            import re
+            match = re.search(r'(\d+)$', shard_id)
+            self.agent_idx = int(match.group(1)) if match else 0
         
         # Current task data
         self.current_question = ""
@@ -166,11 +172,12 @@ class ShardWorker:
         """Initialize Core LLM"""
         try:
             # Use absolute import path for better reliability
-            project_root = Path(__file__).parent.parent.parent.parent
+            # From fail_storm_recovery/shard_qa/shard_worker/agent_executor.py to project root
+            project_root = Path(__file__).parent.parent.parent.parent.parent
             src_path = project_root / "src"
             sys.path.insert(0, str(src_path))
             
-            # Try both import methods for maximum compatibility
+            # Import Core from utils (the standard LLM interface)
             try:
                 from utils.core import Core
             except ImportError:
@@ -256,7 +263,10 @@ class ShardWorker:
             self.current_snippet = data.get('snippet', '')
             
             if self.output:
-                self.output.success(f"[{self.shard_id}] Loaded group {group_id}: Q='{self.current_question[:50]}...'")
+                is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
+                if not is_recovery:
+                    self.output.success(f"[OK] [{self.shard_id}] Loaded group {group_id}: Q='{self.current_question[:50]}...'")
+                # Silent during recovery phase
             
             return True
             
@@ -268,7 +278,7 @@ class ShardWorker:
     def _get_system_prompt(self) -> str:
         """Get system prompt for the shard worker - v2"""
         max_ttl = self.global_config.get('tool_schema', {}).get('max_ttl', 15)
-        return f"""You are {self.shard_id} in an 8-node ring topology network (shard0-shard7).
+        return f"""You are agent {self.shard_id} in a distributed multi-agent system. You process document shard {self.agent_idx}.
 
 Your neighbors are:
 - Previous: {self.neighbors['prev_id']}
@@ -405,7 +415,10 @@ Example:
         self.current_path = path + [self.shard_id] if path else [sender, self.shard_id]
         
         if self.output:
-            self.output.progress(f"[TTL_TRACE] {self.shard_id} processing message: received_ttl={ttl} -> current_ttl={self.current_ttl}, path={self.current_path}")
+            is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
+            if not is_recovery:
+                self.output.progress(f"   [TTL_TRACE] {self.shard_id} processing message: received_ttl={ttl} -> current_ttl={self.current_ttl}, path={self.current_path}")
+            # Silent during recovery phase
         
         # Check if this is a direct reply to pending message
         if reply_to and reply_to in self.pending:
@@ -474,9 +487,11 @@ Example:
             if not self.load_group_data(group_id):
                 return f"Failed to load data for group {group_id}"
             
-            if self.output:
+            is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
+            if self.output and not is_recovery:
                 self.output.info(f"[{self.shard_id}] Starting ring task for group {group_id}")
-                self.output.progress(f"[{self.shard_id}] My question: {self.current_question[:80]}...")
+                self.output.progress(f"   [{self.shard_id}] My question: {self.current_question[:80]}...")
+            # Silent during recovery phase
             
             # Initialize history for this group
             if group_id not in self.history:
@@ -489,7 +504,10 @@ Example:
             self.current_path = [self.shard_id]
             
             if self.output:
-                self.output.progress(f"[TTL_TRACE] {self.shard_id} starting task: initial_ttl={self.current_ttl}, path={self.current_path}")
+                is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
+                if not is_recovery:
+                    self.output.progress(f"   [TTL_TRACE] {self.shard_id} starting task: initial_ttl={self.current_ttl}, path={self.current_path}")
+                # Silent during recovery phase
             
             # Create initial prompt for ring search with communication
             initial_prompt = f"You have your own question to answer: '{self.current_question}'. Start by searching your local fragment with lookup_fragment. If you don't find the answer, you can ask neighbors for help using send_message."
@@ -509,7 +527,10 @@ Example:
             if self.core and hasattr(self.core, 'config') and self.core.config.get('model', {}).get('type') == 'nvidia':
                 use_mock_for_nvidia = True
                 if self.output:
-                    self.output.progress(f"🔍 [{self.shard_id}] Using mock mode for NVIDIA model (no tool calling support)")
+                    is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
+                    if not is_recovery:
+                        self.output.progress(f"   🔍 [{self.shard_id}] Using mock mode for NVIDIA model (no tool calling support)")
+                    # Silent during recovery phase
             
             if self.use_mock or self.core is None or use_mock_for_nvidia:
                 if force_llm and not use_mock_for_nvidia:
@@ -524,8 +545,10 @@ Example:
                 question_lower = self.current_question.lower()
                 snippet_lower = self.current_snippet.lower()
                 answer_lower = self.current_answer.lower()
-                if self.output:
-                    self.output.progress(f"🔍 [{self.shard_id}] Searching local document...")
+                is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
+                if self.output and not is_recovery:
+                    self.output.progress(f"   🔍 [{self.shard_id}] Searching local document...")
+                # Silent during recovery phase
                 
                 # Advanced keyword matching with relevance scoring
                 question_keywords = set(question_lower.replace('?', '').split())
@@ -539,10 +562,15 @@ Example:
                 
                 if confidence > 0.1 or answer_presence >= 2:  # Found locally with good confidence
                     if self.output:
-                        self.output.success(f"✅ [{self.shard_id}] LOCAL SEARCH SUCCESS")
-                        self.output.progress(f"   Q: {self.current_question[:40]}...")
-                        self.output.progress(f"   A: {self.current_answer[:50]}...")
-                        self.output.progress(f"   📍 Source: LOCAL DOCUMENT")
+                        # Check if we're in recovery phase to reduce output
+                        is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
+                        if not is_recovery:
+                            # Full output during normal phase only
+                            self.output.success(f"✅ [{self.shard_id}] LOCAL SEARCH SUCCESS")
+                            self.output.progress(f"   Q: {self.current_question[:40]}...")
+                            self.output.progress(f"   A: {self.current_answer[:50]}...")
+                            self.output.progress(f"   📍 Source: LOCAL DOCUMENT")
+                        # Silent during recovery phase
                     
                     # 记录本地搜索成功的任务执行
                     if hasattr(self, 'metrics_collector') and self.metrics_collector:
@@ -565,15 +593,15 @@ Example:
                     return f"✅ DOCUMENT SEARCH SUCCESS: Found '{self.current_answer}' - answer found locally"
                 else:
                     # Document not found locally, need to search network
-                    if self.output:
-                        self.output.warning(f"🔍 [{self.shard_id}] Local search failed, asking neighbors for help...")
-                    
-                    # 记录本地搜索失败的任务执行 - 不记录，因为会尝试邻居求助
-                    self.output.progress(f"📤 [{self.shard_id}] Forwarding question to neighbors: {self.neighbors['prev_id']} and {self.neighbors['next_id']}")
+                    is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
+                    if self.output and not is_recovery:
+                        self.output.warning(f"⚠️  🔍 [{self.shard_id}] Local search failed, asking neighbors for help...")
+                        # 记录本地搜索失败的任务执行 - 不记录，因为会尝试邻居求助
+                        self.output.progress(f"   📤 [{self.shard_id}] Forwarding question to neighbors: {self.neighbors['prev_id']} and {self.neighbors['next_id']}")
+                        self.output.warning(f"⚠️  🔍 [{self.shard_id}] Local search failed, asking neighbors...")
+                    # Silent during recovery phase - no forwarding messages
                     
                     # Simulate distributed document search across network
-                    if self.output:
-                        self.output.warning(f"🔍 [{self.shard_id}] Local search failed, asking neighbors...")
                     
                     # 模拟邻居求助逻辑 - 基于概率模型
                     await asyncio.sleep(1.0)  # 模拟网络延迟，增加到1秒
@@ -593,8 +621,13 @@ Example:
                         # 随机选择邻居
                         neighbor_name = self.neighbors['prev_id'] if shard_hash % 2 == 0 else self.neighbors['next_id']
                         if self.output:
-                            self.output.success(f"✅ [{self.shard_id}] NEIGHBOR SEARCH SUCCESS")
-                            self.output.progress(f"   📍 Source: NEIGHBOR {neighbor_name}")
+                            # Check if we're in recovery phase to reduce output
+                            is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
+                            if not is_recovery:
+                                # Full output during normal phase only
+                                self.output.success(f"✅ [{self.shard_id}] NEIGHBOR SEARCH SUCCESS")
+                                self.output.progress(f"   📍 Source: NEIGHBOR {neighbor_name}")
+                            # Silent during recovery phase
                         
                         # 记录邻居搜索成功的任务执行
                         if hasattr(self, 'metrics_collector') and self.metrics_collector:
@@ -616,10 +649,12 @@ Example:
                         )
                         return f"✅ DOCUMENT SEARCH SUCCESS: Found '{neighbor_answer}' via neighbor search"
                     else:
-                        if self.output:
-                            self.output.warning(f"❌ [{self.shard_id}] NEIGHBOR SEARCH FAILED")
-                            self.output.progress(f"   Q: {self.current_question[:40]}...")
-                            self.output.progress(f"   📍 Source: NO NEIGHBOR FOUND")
+                        is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
+                        if self.output and not is_recovery:
+                            self.output.warning(f"⚠️  ❌ [{self.shard_id}] NEIGHBOR SEARCH FAILED")
+                            self.output.progress(f"      Q: {self.current_question[:40]}...")
+                            self.output.progress(f"      📍 Source: NO NEIGHBOR FOUND")
+                        # Silent during recovery phase
                         
                         # 记录邻居搜索失败的任务执行
                         if hasattr(self, 'metrics_collector') and self.metrics_collector:
@@ -642,8 +677,10 @@ Example:
                         return "No answer found from neighbors"
             else:
                 # 调用真正的LLM进行文档搜索
-                if self.output:
-                    self.output.progress(f"🔍 [{self.shard_id}] Searching local document...")
+                is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
+                if self.output and not is_recovery:
+                    self.output.progress(f"   🔍 [{self.shard_id}] Searching local document...")
+                # Silent during recovery phase
                 
                 # Call Core with function calling
                 raw_resp = await asyncio.get_event_loop().run_in_executor(
@@ -830,9 +867,12 @@ Example:
             path = [self.shard_id]
         
         if self.output:
-            self.output.progress(f"[{self.shard_id}] Looking up fragment for: {question[:30]}... (ttl={ttl}, found={found})")
-            # TTL跟踪日志 - 用于调试TTL递减情况
-            self.output.progress(f"[TTL_TRACE] {self.shard_id} ttl={ttl} path={path} found={found} [MACHINE_CONTROLLED]")
+            is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
+            if not is_recovery:
+                self.output.progress(f"   [{self.shard_id}] Looking up fragment for: {question[:30]}... (ttl={ttl}, found={found})")
+                # TTL跟踪日志 - 用于调试TTL递减情况
+                self.output.progress(f"   [TTL_TRACE] {self.shard_id} ttl={ttl} path={path} found={found} [MACHINE_CONTROLLED]")
+            # Silent during recovery phase
         
         # 处理 LLM 判断结果 - v2 with fallback
         if found is None:
@@ -925,9 +965,11 @@ Example:
             self._add_to_history(self.current_group_id, "TTL exhausted")
             return "TTL exhausted"
         
-        if self.output:
-            self.output.warning(f"🔍 [{self.shard_id}] Local search failed, asking neighbors for help...")
-            self.output.progress(f"📤 [{self.shard_id}] Forwarding question to neighbors: {self.neighbors['prev_id']} and {self.neighbors['next_id']}")
+        is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
+        if self.output and not is_recovery:
+            self.output.warning(f"⚠️  🔍 [{self.shard_id}] Local search failed, asking neighbors for help...")
+            self.output.progress(f"   📤 [{self.shard_id}] Forwarding question to neighbors: {self.neighbors['prev_id']} and {self.neighbors['next_id']}")
+        # Silent during recovery phase
         
         # Ask both neighbors concurrently with machine-controlled TTL - v3
         next_ttl = ttl - 1
@@ -936,7 +978,10 @@ Example:
         
         if self.output:
             # TTL递减跟踪日志
-            self.output.progress(f"[TTL_TRACE] {self.shard_id} forwarding to neighbors: {ttl} -> {next_ttl} [MACHINE_CONTROLLED]")
+            is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
+            if not is_recovery:
+                self.output.progress(f"   [TTL_TRACE] {self.shard_id} forwarding to neighbors: {ttl} -> {next_ttl} [MACHINE_CONTROLLED]")
+            # Silent during recovery phase
         
         # 创建任务列表，用于智能错误处理
         tasks = []
@@ -1203,8 +1248,8 @@ class ShardWorkerExecutor(AgentExecutor):
 
     async def execute(
         self,
-        context: RequestContext,
-        event_queue: EventQueue,
+        context: BaseRequestContext,
+        event_queue: BaseEventQueue,
     ) -> None:
         # Get user input from context
         user_input = context.get_user_input()
@@ -1314,6 +1359,6 @@ class ShardWorkerExecutor(AgentExecutor):
             await safe_enqueue_event(event_queue, new_agent_text_message(error_msg))
 
     async def cancel(
-        self, context: RequestContext, event_queue: EventQueue
+        self, context: BaseRequestContext, event_queue: BaseEventQueue
     ) -> None:
         raise Exception('cancel not supported') 
