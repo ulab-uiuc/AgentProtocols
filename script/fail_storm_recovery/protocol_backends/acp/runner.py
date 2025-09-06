@@ -113,7 +113,6 @@ class ACPRunner(FailStormRunnerBase):
         self.acp_sessions: Dict[str, Any] = {}
         self.killed_agents: set = set()
         
-        # ACP SDK is optional, we have fallback implementations
         self.output.info("Initialized ACP protocol runner")
 
     async def create_agent(self, agent_id: str, host: str, port: int, executor: ShardWorkerExecutor) -> BaseAgent:

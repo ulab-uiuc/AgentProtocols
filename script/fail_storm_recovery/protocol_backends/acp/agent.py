@@ -3,71 +3,33 @@
 ACP Agent implementation for Fail-Storm Recovery scenario.
 
 This module provides ACP agent implementation using real ACP SDK,
-strictly following SDK requirements.
+following the correct implementation pattern from main branch.
 """
 
 import asyncio
 import json
 import logging
+import uuid
 from typing import Any, Dict, Optional, List, AsyncGenerator
 from pathlib import Path
 import sys
 
-# Add src path for BaseAgent
-project_root = Path(__file__).parent.parent.parent.parent.parent
-sys.path.insert(0, str(project_root / "src"))
+# Add fail_storm_recovery core path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-# Import real BaseAgent and server adapters
-try:
-    from core.base_agent import BaseAgent
-    from server_adapters.acp_adapter import ACPServerAdapter
-    REAL_BASEAGENT_AVAILABLE = True
-except ImportError:
-    # Fallback to simple base agent
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent / "core"))
-    from simple_base_agent import SimpleBaseAgent as BaseAgent
-    REAL_BASEAGENT_AVAILABLE = False
-    
-    # Create a mock ACPServerAdapter
-    class ACPServerAdapter:
-        def __init__(self):
-            pass
+# Import SimpleBaseAgent from fail-storm core
+from core.simple_base_agent import SimpleBaseAgent as BaseAgent
 
-# Import ACP SDK
-try:
-    from acp_sdk.models import Message, MessagePart
-    from acp_sdk.server import Context, RunYield
-    ACP_AVAILABLE = True
-except ImportError as e:
-    print(f"Warning: ACP SDK not available: {e}")
-    print("Using fallback implementation")
-    ACP_AVAILABLE = False
-    
-    # Create mock classes for fallback
-    class Message:
-        def __init__(self, **kwargs):
-            self.parts = kwargs.get('parts', [])
-            self.content = kwargs.get('content', '')
-    
-    class MessagePart:
-        def __init__(self, type: str, text: str):
-            self.type = type
-            self.text = text
-    
-    class Context:
-        def __init__(self, **kwargs):
-            pass
-    
-    class RunYield:
-        def __init__(self, type: str, content: str):
-            self.type = type
-            self.content = content
+# Import ACP SDK (required)
+from acp_sdk.models import Message, MessagePart
+from acp_sdk.server import Context, RunYield
 
 
 class ACPExecutorWrapper:
     """
     Wrapper to convert ShardWorkerExecutor to ACP SDK native executor interface.
     
+    Based on the correct implementation from main branch.
     ACP SDK expects: async def executor(messages: List[Message], context: Context) -> AsyncGenerator[RunYield, None]
     """
     
@@ -79,6 +41,7 @@ class ACPExecutorWrapper:
             shard_worker_executor: ShardWorkerExecutor instance
         """
         self.shard_worker_executor = shard_worker_executor
+        self.capabilities = ["text_processing", "async_generation", "acp_sdk_1.0.3"]
         self.logger = logging.getLogger("ACPExecutorWrapper")
     
     async def __call__(self, messages: List[Message], context: Context) -> AsyncGenerator[RunYield, None]:
@@ -92,48 +55,56 @@ class ACPExecutorWrapper:
         Yields:
             RunYield objects as required by ACP SDK
         """
+        self.logger.debug(f"[ACP] ACPExecutorWrapper called with {len(messages)} messages")
+        
         try:
-            if not ACP_AVAILABLE:
-                yield RunYield(type="text", content="ACP SDK not available")
-                return
-            
-            # Extract text content from messages
-            text_content = ""
-            for message in messages:
-                if hasattr(message, 'parts'):
+            # Process each message (typically just one)
+            for i, message in enumerate(messages):
+                # Generate run_id for this execution
+                run_id = str(uuid.uuid4())
+                
+                self.logger.debug(f"[ACP] Processing message {i+1}/{len(messages)} with run_id: {run_id}")
+                
+                # Extract text content from message
+                text_content = ""
+                if hasattr(message, 'parts') and message.parts:
                     for part in message.parts:
-                        if hasattr(part, 'text'):
-                            text_content += part.text + " "
-                elif hasattr(message, 'content'):
-                    text_content += str(message.content) + " "
+                        if hasattr(part, 'type') and part.type == "text":
+                            text_content += getattr(part, 'text', getattr(part, 'content', ""))
                 else:
-                    text_content += str(message) + " "
-            
-            text_content = text_content.strip()
-            
-            # Use shard worker to process the content
-            if self.shard_worker_executor and hasattr(self.shard_worker_executor, 'worker'):
-                try:
-                    # Start QA task using group 0
-                    result = await self.shard_worker_executor.worker.start_task(0)
+                    text_content = str(message)
+                
+                # Use shard worker to process the content
+                if self.shard_worker_executor and hasattr(self.shard_worker_executor, 'worker'):
+                    try:
+                        # Call LLM directly through worker.answer() if available
+                        if hasattr(self.shard_worker_executor.worker, 'answer'):
+                            result = await self.shard_worker_executor.worker.answer(text_content)
+                            yield result  # Yield LLM result as string
+                            self.logger.debug(f"[ACP] LLM result: {len(str(result))} chars")
+                        else:
+                            # Fallback to start_task
+                            result = await self.shard_worker_executor.worker.start_task(0)
+                            yield str(result) if result else "No result"
+                            
+                    except Exception as e:
+                        self.logger.error(f"Error in shard worker execution: {e}")
+                        yield f"Execution error: {e}"
+                else:
+                    yield "Shard worker executor not available"
                     
-                    # Yield the result
-                    yield RunYield(type="text", content=str(result) if result else "No result")
-                    
-                except Exception as e:
-                    self.logger.error(f"Error in shard worker execution: {e}")
-                    yield RunYield(type="error", content=f"Execution error: {e}")
-            else:
-                yield RunYield(type="text", content="Shard worker executor not available")
+                self.logger.debug(f"[ACP] Executor yielded result for message {i+1}")
                 
         except Exception as e:
-            self.logger.error(f"Error in ACP executor: {e}")
-            yield RunYield(type="error", content=f"ACP executor error: {e}")
+            # Yield error as string
+            error_msg = f"ACP processing error: {e}"
+            yield error_msg
+            self.logger.error(f"[ACP] Executor error: {e}", exc_info=True)
 
 
 async def create_acp_agent(agent_id: str, host: str, port: int, executor: Any) -> BaseAgent:
     """
-    Factory function to create ACP agent using real BaseAgent and ACP SDK.
+    Factory function to create ACP agent using SimpleBaseAgent.
     
     Args:
         agent_id: Unique identifier for the agent
@@ -142,28 +113,14 @@ async def create_acp_agent(agent_id: str, host: str, port: int, executor: Any) -
         executor: ShardWorkerExecutor instance
         
     Returns:
-        BaseAgent instance configured with ACP SDK
+        SimpleBaseAgent instance configured for ACP protocol
     """
-    if REAL_BASEAGENT_AVAILABLE and ACP_AVAILABLE:
-        # Use real BaseAgent with ACP SDK
-        acp_executor = ACPExecutorWrapper(executor)
-        
-        agent = await BaseAgent.create_acp(
-            agent_id=agent_id,
-            host=host,
-            port=port,
-            executor=acp_executor,
-            server_adapter=ACPServerAdapter()
-        )
-        
-        return agent
-    else:
-        # Use simple BaseAgent fallback
-        agent = await BaseAgent.create_acp(
-            agent_id=agent_id,
-            host=host,
-            port=port,
-            executor=executor
-        )
-        
-        return agent
+    # In fail-storm environment, use SimpleBaseAgent.create_acp()
+    agent = await BaseAgent.create_acp(
+        agent_id=agent_id,
+        host=host,
+        port=port,
+        executor=executor
+    )
+    
+    return agent
