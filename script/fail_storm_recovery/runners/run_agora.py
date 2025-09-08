@@ -28,7 +28,7 @@ async def main():
         print("=" * 60)
         
         # Create Agora runner with protocol-specific config
-        runner = AgoraRunner("protocol_backends/agora/config.yaml")
+        runner = AgoraRunner()
         
         print(f"📋 Configuration loaded from: protocol_backends/agora/config.yaml")
         print(f"🔗 Protocol: Agora")

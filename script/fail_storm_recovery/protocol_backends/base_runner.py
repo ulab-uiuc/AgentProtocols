@@ -149,10 +149,13 @@ class FailStormRunnerBase(ABC):
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         """Load configuration file with environment variable support."""
         # Add utils path
-        # utils_path = Path(__file__).parent.parent / "utils"
-        # sys.path.insert(0, str(utils_path))
-        from ..utils.config_loader import load_config_with_env_vars, check_env_vars, create_core_instance
-        
+        utils_path = Path(__file__).parent.parent / "utils"
+        sys.path.insert(0, str(utils_path))
+        try:
+            from config_loader import load_config_with_env_vars, check_env_vars, create_core_instance
+        except:
+            raise ImportError("Failed to import config_loader. Ensure utils/config_loader.py exists.")
+        # from ..utils.config_loader import load_config_with_env_vars, check_env_vars, create_core_instance
         # Check required environment variables
         if not check_env_vars():
             raise EnvironmentError("At least one LLM API key must be set")

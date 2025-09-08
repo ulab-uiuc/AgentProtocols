@@ -1,20 +1,20 @@
 {
   "metadata": {
     "scenario": "fail_storm_recovery",
-    "protocol": "anp",
-    "start_time": 1757116345.7931805,
-    "end_time": 1757116456.4175563,
-    "total_runtime": 110.62437582015991,
+    "protocol": "agora",
+    "start_time": 1757350532.866962,
+    "end_time": 1757350638.303954,
+    "total_runtime": 105.43699193000793,
     "config": {
       "scenario": {
-        "protocol": "anp",
+        "protocol": "agora",
         "agent_count": 3,
         "kill_fraction": 0.33,
         "fault_injection_time": 30.0,
         "total_runtime": 60.0,
         "heartbeat_interval": 5.0,
         "heartbeat_timeout": 15.0,
-        "name": "fail_storm_recovery_anp",
+        "name": "fail_storm_recovery_agora",
         "recovery_duration": 60
       },
       "shard_qa": {
@@ -30,7 +30,7 @@
         "normal_duration": 30.0,
         "groups": 2,
         "questions_per_group": 3,
-        "data_file": "docs/gaia_document.txt"
+        "data_file": "shard_qa/data/shards"
       },
       "agents": {
         "base_port": 9000,
@@ -55,7 +55,7 @@
         "results_file": "failstorm_metrics.json",
         "logs_dir": "logs",
         "artifacts_dir": "artifacts",
-        "results_dir": "results/",
+        "results_dir": "results_agora/",
         "save_llm_outputs": false,
         "metrics_file": "failstorm_metrics.json",
         "detailed_metrics_file": "detailed_failstorm_metrics.json"
@@ -65,23 +65,29 @@
         "heartbeat_timeout": 3.0,
         "steady_state_threshold": 5.0
       },
-      "anp": {
-        "authentication": {
-          "enabled": true,
-          "did_method": "wba"
-        },
-        "encryption": {
-          "enabled": true,
-          "key_rotation": 3600
-        },
-        "negotiation": {
-          "enabled": true,
-          "timeout": 30
-        },
+      "agora": {
         "communication": {
-          "http_port_offset": 0,
-          "websocket_port_offset": 1000,
-          "max_connections": 10
+          "text_enabled": true,
+          "voice_enabled": true,
+          "video_enabled": false,
+          "real_time_collaboration": true
+        },
+        "audio": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "bitrate": 64000,
+          "voice_activation": true
+        },
+        "real_time": {
+          "low_latency_mode": true,
+          "adaptive_bitrate": true,
+          "connection_timeout": 15.0,
+          "reconnect_attempts": 3
+        },
+        "networking": {
+          "rtc_port_range": "40000-40010",
+          "signaling_port": 8080,
+          "media_server_enabled": true
         }
       },
       "metrics": {
@@ -102,45 +108,49 @@
     "surviving_count": 3,
     "reconnected_count": 1,
     "temporarily_killed_agents": [
-      "agent2"
+      "agent1"
     ],
     "killed_agents": [],
     "permanently_failed_agents": []
   },
-  "anp_specific": {
-    "did_re_authentications": 1,
-    "hybrid_communication_active": true,
-    "websocket_endpoints": 0,
+  "agora_specific": {
+    "sdk_re_initializations": 1,
+    "toolformer_active": true,
     "http_endpoints": 3,
-    "e2e_encryption_sessions": 3
+    "langchain_integration": true,
+    "multi_modal_stats": {
+      "text_messages": 26,
+      "tool_calls": 6
+    },
+    "rtc_endpoints": 3
   },
   "timing": {
-    "total_runtime": 110.62437582015991,
+    "total_runtime": 105.43699193000793,
     "fault_time": null,
-    "recovery_end_time": 1757116456.4175563,
+    "recovery_end_time": 1757350638.303954,
     "setup_time": 0,
     "normal_phase_duration": 30,
     "recovery_phase_duration": 60
   },
   "failstorm_metrics": {
-    "recovery_ms": 17051.60140991211,
-    "steady_state_ms": 72211.51971817017,
+    "recovery_ms": 15041.05806350708,
+    "steady_state_ms": 70082.94343948364,
     "success_rate_drop": 0.0,
     "duplicate_work_ratio": 0.0,
     "bytes_reconnect": 0
   },
   "qa_metrics": {
-    "total_qa_tasks": 32,
-    "successful_tasks": 32,
-    "tasks_with_answers": 24,
+    "total_qa_tasks": 26,
+    "successful_tasks": 26,
+    "tasks_with_answers": 17,
     "success_rate": 1.0,
-    "answer_found_rate": 0.75,
+    "answer_found_rate": 0.6538461538461539,
     "answer_sources": {
-      "neighbor": 24
+      "neighbor": 17
     },
     "pre_fault_answer_rate": 0.0,
-    "post_fault_answer_rate": 0.8275862068965517,
-    "average_task_duration": 5.031372204422951
+    "post_fault_answer_rate": 0.7391304347826086,
+    "average_task_duration": 6.659197669762832
   },
   "llm_outputs": {
     "saved": false,

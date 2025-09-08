@@ -10,14 +10,26 @@ import asyncio
 import json
 import logging
 import threading
+import time
 from typing import Any, Dict, Optional
 from pathlib import Path
 import sys
 
-# Add AgentConnect to path for compatibility if needed
-current_dir = Path(__file__).parent.parent.parent
-agentconnect_path = current_dir.parent.parent / "agentconnect_src"
-sys.path.insert(0, str(agentconnect_path))
+# LangChain imports
+from langchain_openai import ChatOpenAI
+
+try:
+    from agora.receiver import Receiver, ReceiverServer
+    from agora.common.toolformers import LangChainToolformer
+    AGORA_AVAILABLE = True
+except ImportError:
+    AGORA_AVAILABLE = False
+
+# HTTP client
+import httpx
+
+# Flask for additional endpoints
+from flask import jsonify
 
 
 class AgoraServerWrapper:
@@ -29,14 +41,44 @@ class AgoraServerWrapper:
         self.port = port
         self.agent_id = agent_id
         self.server_thread = None
+        self.agora_server = None
         self.logger = logging.getLogger(f"AgoraServer.{agent_id}")
+    
+    def _create_enhanced_agora_server(self, receiver):
+        """Create Agora ReceiverServer with additional health and agent card endpoints."""
+        
+        # Use real Agora SDK ReceiverServer
+        original_server = ReceiverServer(receiver)
+        
+        @original_server.app.route('/health', methods=['GET'])
+        def health_check():
+            """Health check endpoint for AgentNetwork compatibility."""
+            return jsonify({
+                "status": "healthy",
+                "agent_id": self.agent_id,
+                "timestamp": time.time()
+            }), 200
+        
+        @original_server.app.route('/.well-known/agent.json', methods=['GET'])
+        def agent_card():
+            """Agent card endpoint for AgentNetwork compatibility."""
+            return jsonify({
+                "name": f"Agora Agent {self.agent_id}",
+                "url": f"http://{self.host}:{self.port}/",
+                "protocol": "Agora (Official)",
+                "agent_id": self.agent_id,
+            }), 200
+        
+        return original_server
     
     def serve(self):
         """Start server in background thread."""
         def run_server():
             try:
+                # Create enhanced Agora server with additional endpoints
+                self.agora_server = self._create_enhanced_agora_server(self.receiver)
                 # Use Agora SDK to serve on specified host:port
-                self.receiver.serve(host=self.host, port=self.port)
+                self.agora_server.serve(host=self.host, port=self.port)
             except Exception as e:
                 self.logger.error(f"Server error: {e}")
         
@@ -48,7 +90,8 @@ class AgoraServerWrapper:
         """Shutdown server."""
         # Agora SDK receiver doesn't have explicit shutdown, 
         # but daemon thread will terminate with main process
-        pass
+        if self.agora_server and hasattr(self.agora_server, 'shutdown'):
+            self.agora_server.shutdown()
 
 
 class AgoraAgent:
@@ -122,14 +165,12 @@ class AgoraAgent:
         """Start Agora SDK server."""
         try:
             # 1. Create Toolformer
-            try:
-                from langchain_openai import ChatOpenAI
-                from agora.common.toolformers import LangChainToolformer
+            if not AGORA_AVAILABLE:
+                raise RuntimeError("Agora dependencies not found. Please install agora-sdk.")
                 
+            try:
                 model = ChatOpenAI(model="gpt-4o-mini") 
                 toolformer = LangChainToolformer(model)
-            except ImportError:
-                raise RuntimeError("LangChain/OpenAI dependencies not found. Please install langchain-openai.")
             except Exception as e:
                 self.logger.error(f"Failed to create Toolformer. Ensure OPENAI_API_KEY is set. Error: {e}")
                 raise RuntimeError(f"Failed to create Toolformer. Ensure OPENAI_API_KEY is set. Error: {e}")
@@ -172,7 +213,6 @@ class AgoraAgent:
             tools = [general_service]
 
             # 3. Create Receiver using real Agora SDK
-            from agora.receiver import Receiver
             self.receiver = Receiver.make_default(toolformer, tools=tools)
 
             # 4. Create and Run Server using the wrapper
@@ -195,7 +235,6 @@ class AgoraAgent:
         self._endpoints[agent_id] = base_url
         
         # Create HTTP client for this endpoint
-        import httpx
         self._clients[agent_id] = httpx.AsyncClient(base_url=base_url, timeout=10.0)
         
         self.logger.info(f"Registered endpoint for {agent_id}: {base_url}")
