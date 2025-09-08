@@ -149,9 +149,9 @@ class FailStormRunnerBase(ABC):
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         """Load configuration file with environment variable support."""
         # Add utils path
-        utils_path = Path(__file__).parent.parent / "utils"
-        sys.path.insert(0, str(utils_path))
-        from config_loader import load_config_with_env_vars, check_env_vars, create_core_instance
+        # utils_path = Path(__file__).parent.parent / "utils"
+        # sys.path.insert(0, str(utils_path))
+        from ..utils.config_loader import load_config_with_env_vars, check_env_vars, create_core_instance
         
         # Check required environment variables
         if not check_env_vars():

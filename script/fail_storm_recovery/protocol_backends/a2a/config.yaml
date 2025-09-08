@@ -58,8 +58,8 @@ shard_qa:
 
 output:
   results_file: "failstorm_metrics.json"
-  logs_dir: "logs"
-  artifacts_dir: "artifacts"
+  logs_dir: ""
+  artifacts_dirlogs: "artifacts"
 
 logging:
   level: "INFO"
