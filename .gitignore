@@ -67,7 +67,7 @@ workspaces/
 Thumbs.db
 .idea/
 .vscode/
-
+script\safety_tech\output
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
