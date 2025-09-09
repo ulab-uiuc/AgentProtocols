@@ -25,11 +25,15 @@ ANP_AVAILABLE = True
 # Import ACP server adapter
 from .acp_adapter import ACPServerAdapter
 
+# Import SimpleJSON server adapter
+from .simple_json_adapter import SimpleJSONServerAdapter
+
 # Always export all symbols, even if some are None
 __all__ = [
     "BaseServerAdapter",
     "A2AServerAdapter",
     "ACPServerAdapter",
+    "SimpleJSONServerAdapter",
     "A2AStarletteApplication",
     "AgentProtocolServerAdapter",
     "AgentProtocolStarletteApplication",

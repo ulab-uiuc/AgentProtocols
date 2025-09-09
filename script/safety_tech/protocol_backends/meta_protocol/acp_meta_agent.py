@@ -31,7 +31,7 @@ from .base_meta_agent import BaseSafetyMetaAgent
 try:
     STREAMING_QUEUE_PATH = PROJECT_ROOT / "script" / "streaming_queue"
     sys.path.insert(0, str(STREAMING_QUEUE_PATH))
-    from protocol_backend.acp.worker import ACPWorkerExecutor
+    from script.streaming_queue.protocol_backend.acp.worker import ACPWorkerExecutor
     ACP_WORKER_AVAILABLE = True
 except ImportError:
     ACP_WORKER_AVAILABLE = False

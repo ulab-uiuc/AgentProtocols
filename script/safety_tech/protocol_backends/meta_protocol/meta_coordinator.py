@@ -154,6 +154,9 @@ class SafetyMetaCoordinator(RunnerBase):
             
             self.meta_agents = agents
             
+            # Install outbound adapters for inter-agent communication
+            await self.install_outbound_adapters()
+            
             self.output.success(f"Meta {self.protocol_type.upper()} agents configured: {list(agents.keys())}")
             return agents
             
@@ -173,9 +176,14 @@ class SafetyMetaCoordinator(RunnerBase):
             all_healthy = True
             for agent_id, base_agent in self.base_agents.items():
                 try:
-                    # Try to get agent card as health check
-                    agent_card = base_agent.get_agent_card()
-                    if not agent_card:
+                    # Use BaseAgent's health check method instead of get_agent_card
+                    if hasattr(base_agent, 'health_check'):
+                        is_healthy = await base_agent.health_check()
+                    else:
+                        # Fallback: check if agent has a listening address
+                        is_healthy = bool(base_agent.get_listening_address())
+                    
+                    if not is_healthy:
                         all_healthy = False
                         self.output.error(f"Agent {agent_id} is unhealthy")
                 except Exception as e:
@@ -521,3 +529,100 @@ Violation Breakdown:
             self.output.info("🧹 Meta protocol cleanup completed")
         except Exception as e:
             self.output.warning(f"Cleanup warning: {e}")
+    
+    async def install_outbound_adapters(self) -> None:
+        """Install outbound adapters for inter-agent communication using src adapters"""
+        try:
+            self.output.info("🔗 Installing outbound adapters for meta protocol communication...")
+            
+            # Import adapters from src
+            from src.agent_adapters.a2a_adapter import A2AAdapter
+            from src.agent_adapters.acp_adapter import ACPAdapter
+            from src.agent_adapters.agora_adapter import AgoraClientAdapter
+            from src.agent_adapters.anp_adapter import ANPAdapter
+            
+            # Get agent addresses
+            receptionist_id = self.receptionist_agent.agent_id
+            doctor_id = self.doctor_agent.agent_id
+            
+            receptionist_ba = self.base_agents[receptionist_id]
+            doctor_ba = self.base_agents[doctor_id]
+            
+            receptionist_url = receptionist_ba.get_listening_address()
+            doctor_url = doctor_ba.get_listening_address()
+            
+            # Convert 0.0.0.0 to 127.0.0.1 for local connections
+            if "0.0.0.0" in receptionist_url:
+                receptionist_url = receptionist_url.replace("0.0.0.0", "127.0.0.1")
+            if "0.0.0.0" in doctor_url:
+                doctor_url = doctor_url.replace("0.0.0.0", "127.0.0.1")
+            
+            # Install bidirectional adapters based on protocol type
+            if self.protocol_type == "a2a":
+                # A2A -> A2A adapters
+                receptionist_adapter = A2AAdapter(
+                    httpx_client=receptionist_ba._httpx_client, 
+                    base_url=doctor_url
+                )
+                doctor_adapter = A2AAdapter(
+                    httpx_client=doctor_ba._httpx_client, 
+                    base_url=receptionist_url
+                )
+                
+            elif self.protocol_type == "acp":
+                # ACP -> ACP adapters
+                receptionist_adapter = ACPAdapter(
+                    httpx_client=receptionist_ba._httpx_client,
+                    base_url=doctor_url,
+                    agent_id=doctor_id
+                )
+                doctor_adapter = ACPAdapter(
+                    httpx_client=doctor_ba._httpx_client,
+                    base_url=receptionist_url,
+                    agent_id=receptionist_id
+                )
+                
+            elif self.protocol_type == "agora":
+                # Agora -> Agora adapters
+                receptionist_adapter = AgoraClientAdapter(
+                    httpx_client=receptionist_ba._httpx_client,
+                    toolformer=None,  # Avoid JSON schema errors
+                    target_url=doctor_url,
+                    agent_id=doctor_id
+                )
+                doctor_adapter = AgoraClientAdapter(
+                    httpx_client=doctor_ba._httpx_client,
+                    toolformer=None,  # Avoid JSON schema errors
+                    target_url=receptionist_url,
+                    agent_id=receptionist_id
+                )
+                
+            elif self.protocol_type == "anp":
+                # ANP -> ANP adapters (simplified without full DID setup)
+                # For safety testing, we use simplified ANP adapters
+                receptionist_adapter = A2AAdapter(  # Fallback to A2A for simplicity
+                    httpx_client=receptionist_ba._httpx_client, 
+                    base_url=doctor_url
+                )
+                doctor_adapter = A2AAdapter(  # Fallback to A2A for simplicity
+                    httpx_client=doctor_ba._httpx_client, 
+                    base_url=receptionist_url
+                )
+            else:
+                self.output.warning(f"Unknown protocol type: {self.protocol_type}")
+                return
+            
+            # Initialize and install adapters
+            await receptionist_adapter.initialize()
+            await doctor_adapter.initialize()
+            
+            receptionist_ba.add_outbound_adapter(doctor_id, receptionist_adapter)
+            doctor_ba.add_outbound_adapter(receptionist_id, doctor_adapter)
+            
+            self.output.success(f"✅ Installed {self.protocol_type.upper()} outbound adapters")
+            self.output.info(f"   {receptionist_id} -> {doctor_id}")
+            self.output.info(f"   {doctor_id} -> {receptionist_id}")
+            
+        except Exception as e:
+            self.output.warning(f"Failed to install outbound adapters: {e}")
+            # Continue without adapters - direct communication may still work

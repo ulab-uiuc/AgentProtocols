@@ -199,17 +199,17 @@ class A2ARunner(FailStormRunnerBase):
             self.output.progress(f"🔗 [A2A] Running Shard QA collaborative retrieval for {normal_duration}s...")
             
             # Start QA tasks for all agents
-            qa_tasks = []
+        qa_tasks = []
             for agent_id, executor in self.shard_workers.items():
                 task = asyncio.create_task(
                     self._run_qa_task_for_agent(agent_id, executor, normal_duration),
                     name=f"qa_task_{agent_id}"
                 )
-                qa_tasks.append(task)
-            
+            qa_tasks.append(task)
+        
             # Wait for normal phase to complete
-            await asyncio.gather(*qa_tasks, return_exceptions=True)
-            
+        await asyncio.gather(*qa_tasks, return_exceptions=True)
+        
             # Report completion
             for agent_id, executor in self.shard_workers.items():
                 task_count = getattr(executor.worker, 'task_count', 0)
@@ -398,7 +398,7 @@ class A2ARunner(FailStormRunnerBase):
                 if self.metrics_collector:
                     self.metrics_collector.set_first_recovery_time()
                 
-        except Exception as e:
+            except Exception as e:
             self.output.error(f"🔄 [A2A] Failed to reconnect {agent_id}: {e}")
 
     async def _reestablish_agent_connections(self, agent_id: str) -> None:

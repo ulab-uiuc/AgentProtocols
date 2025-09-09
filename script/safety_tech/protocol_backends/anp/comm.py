@@ -194,8 +194,7 @@ class ANPCommBackend(BaseCommBackend):
                     host_ws_path="/ws",
                     private_key_pem=private_key_pem,
                     did=did,
-                    did_document_json=did_document_json,
-                    new_session_callback=self._create_session_callback(agent_id)
+                    did_document_json=did_document_json
                 )
                 
                 # Start the SimpleNode

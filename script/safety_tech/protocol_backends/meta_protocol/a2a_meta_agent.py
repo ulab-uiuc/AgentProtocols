@@ -28,7 +28,7 @@ from .base_meta_agent import BaseSafetyMetaAgent
 try:
     STREAMING_QUEUE_PATH = PROJECT_ROOT / "script" / "streaming_queue"
     sys.path.insert(0, str(STREAMING_QUEUE_PATH))
-    from protocol_backend.a2a.worker import QAAgentExecutor
+    from script.streaming_queue.protocol_backend.a2a.worker import QAAgentExecutor
     A2A_WORKER_AVAILABLE = True
 except ImportError:
     A2A_WORKER_AVAILABLE = False

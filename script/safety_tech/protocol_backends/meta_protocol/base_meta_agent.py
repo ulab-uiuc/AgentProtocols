@@ -126,9 +126,12 @@ class BaseSafetyMetaAgent(ABC):
             if not self.is_initialized or not self.base_agent:
                 return False
             
-            # Try to get agent card as health check
-            agent_card = self.base_agent.get_agent_card()
-            return bool(agent_card)
+            # Use BaseAgent's health check method instead of get_agent_card
+            if hasattr(self.base_agent, 'health_check'):
+                return await self.base_agent.health_check()
+            else:
+                # Fallback: check if agent is initialized and has a listening address
+                return bool(self.base_agent.get_listening_address())
             
         except Exception as e:
             self._log(f"Health check failed: {e}")
