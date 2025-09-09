@@ -102,7 +102,15 @@ class FailStormRunnerBase(ABC):
     """
     
     def __init__(self, config_path: str = "config.yaml"):
-        """Initialize the base runner with common components."""
+        """Initialize the base runner with common components.
+
+        config_path rules:
+        1) If an absolute path is provided, use it directly.
+        2) If filename only (e.g. config_a2a.yaml), search fail_storm_recovery/configs/ first.
+        3) Fallback to legacy protocol_backends/<protocol>/config.yaml for backward compatibility.
+        4) If none found, use defaults.
+        """
+        self._requested_config_path = config_path
         self.config = self._load_config(config_path)
         self.output = ColoredOutput()
         
@@ -128,9 +136,34 @@ class FailStormRunnerBase(ABC):
         # Scenario state
         self.scenario_start_time: float = 0.0
         self.document: Dict[str, Any] = {}
-        self.workspace_dir: Path = Path("workspaces")
-        self.results_dir: Path = Path("results")
-        self.llm_outputs_dir: Path = Path("llm_outputs")
+        
+        # Set up absolute paths for directories, defaulting to fail_storm_recovery folder
+        fail_storm_base = Path(__file__).parent.parent  # /root/Multiagent-Protocol/script/fail_storm_recovery
+        
+        # Allow config override for directories, but ensure they're absolute paths
+        output_config = self.config.get("output", {})
+        
+        # Workspace directory
+        workspace_path = output_config.get("workspace_dir", "workspaces")
+        if Path(workspace_path).is_absolute():
+            self.workspace_dir = Path(workspace_path)
+        else:
+            self.workspace_dir = fail_storm_base / workspace_path
+            
+        # Results directory  
+        print(f">>> output config: {output_config}")  # Debug print
+        results_path = output_config.get("results_dir", "results")
+        if Path(results_path).is_absolute():
+            self.results_dir = Path(results_path)
+        else:
+            self.results_dir = fail_storm_base / results_path
+            
+        # LLM outputs directory
+        llm_outputs_path = output_config.get("llm_outputs_dir", "llm_outputs")
+        if Path(llm_outputs_path).is_absolute():
+            self.llm_outputs_dir = Path(llm_outputs_path)
+        else:
+            self.llm_outputs_dir = fail_storm_base / llm_outputs_path
         
         # Fault injection state
         self.killed_agents: Set[str] = set()
@@ -147,30 +180,58 @@ class FailStormRunnerBase(ABC):
         signal.signal(signal.SIGTERM, self._signal_handler)
 
     def _load_config(self, config_path: str) -> Dict[str, Any]:
-        """Load configuration file with environment variable support."""
-        # Add utils path
-        utils_path = Path(__file__).parent.parent / "utils"
-        sys.path.insert(0, str(utils_path))
+        """Load configuration file with environment variable support and unified path resolution.
+
+        Resolution order (first hit wins):
+          1. Absolute path provided by user
+          2. fail_storm_recovery/configs/<filename>
+          3. fail_storm_recovery/<relative path>
+          4. Legacy protocol_backends/<proto>/config.yaml (when filename starts with config_<proto>.yaml)
+        """
+        # Import utilities
+        utils_root = Path(__file__).parent.parent
+        sys.path.insert(0, str(utils_root))
         try:
-            from config_loader import load_config_with_env_vars, check_env_vars, create_core_instance
-        except:
-            raise ImportError("Failed to import config_loader. Ensure utils/config_loader.py exists.")
-        # from ..utils.config_loader import load_config_with_env_vars, check_env_vars, create_core_instance
-        # Check required environment variables
+            from utils.config_loader import load_config_with_env_vars, check_env_vars  # type: ignore
+        except Exception as e:
+            raise ImportError(f"Failed to import utils.config_loader: {e}")
+
         if not check_env_vars():
             raise EnvironmentError("At least one LLM API key must be set")
-        
-        # Initialize Core instance for LLM
-        try:
-            self.core = create_core_instance()
-            print(f"🔧 Initialized Core with {self.core.config['model']['type'].upper()} LLM")
-        except Exception as e:
-            print(f"⚠️  Failed to initialize Core LLM: {e}")
-            self.core = None
-        
-        config_file = Path(__file__).parent.parent / config_path
-        
-        # Default configuration
+
+        # No core initialization here (deferred / optional)
+        self.core = None
+
+        base_dir = utils_root  # fail_storm_recovery
+        configs_dir = base_dir / "configs"
+
+        given_path = Path(config_path)
+        resolved: Optional[Path] = None
+
+        if given_path.is_absolute():
+            if given_path.exists():
+                resolved = given_path
+        else:
+            # Plain filename -> configs dir
+            if len(given_path.parts) == 1:
+                candidate = configs_dir / given_path.name
+                if candidate.exists():
+                    resolved = candidate
+            # Relative path from base_dir
+            if resolved is None:
+                candidate = base_dir / given_path
+                if candidate.exists():
+                    resolved = candidate
+            # Legacy protocol directory
+            if resolved is None and given_path.name.startswith("config_") and given_path.suffix in (".yaml", ".yml"):
+                proto = given_path.stem.replace("config_", "")
+                legacy = base_dir / "protocol_backends" / proto / "config.yaml"
+                if legacy.exists():
+                    resolved = legacy
+
+        self._resolved_config_path = resolved  # store for external introspection
+
+        # Defaults
         default_config = {
             "scenario": {
                 "protocol": "simple_json",
@@ -178,6 +239,7 @@ class FailStormRunnerBase(ABC):
                 "kill_fraction": 0.3,
                 "fault_injection_time": 60.0,
                 "total_runtime": 120.0,
+                "recovery_duration": 60.0,
                 "heartbeat_interval": 3.0,
                 "heartbeat_timeout": 30.0
             },
@@ -214,28 +276,28 @@ class FailStormRunnerBase(ABC):
             }
         }
         
-        if config_file.exists():
+        if resolved and resolved.exists():
             try:
-                loaded_config = load_config_with_env_vars(str(config_file))
-                
-                # Merge with defaults
-                def merge_configs(default, loaded):
-                    for key, value in loaded.items():
-                        if key in default and isinstance(default[key], dict) and isinstance(value, dict):
-                            merge_configs(default[key], value)
+                loaded = load_config_with_env_vars(str(resolved))
+                def merge_configs(dst: Dict[str, Any], src: Dict[str, Any]) -> Dict[str, Any]:
+                    for k, v in src.items():
+                        if k in dst and isinstance(dst[k], dict) and isinstance(v, dict):
+                            merge_configs(dst[k], v)
                         else:
-                            default[key] = value
-                    return default
-                
-                config = merge_configs(default_config, loaded_config)
-                return config
-                
+                            dst[k] = v
+                    return dst
+                return merge_configs(default_config, loaded)
             except Exception as e:
                 print(f"Warning: Failed to load config {config_path}: {e}")
                 return default_config
-        else:
-            print(f"Warning: Config file {config_path} not found, using defaults")
-            return default_config
+        print(f"Warning: Config file {config_path} not found in unified search paths, using defaults")
+        return default_config
+
+    def get_config_path(self) -> str:
+        """Return resolved configuration file path or '<defaults>'."""
+        if hasattr(self, '_resolved_config_path') and self._resolved_config_path:
+            return str(self._resolved_config_path)
+        return "<defaults>"
     
     def execute_llm(self, messages):
         """
@@ -559,6 +621,69 @@ class FailStormRunnerBase(ABC):
     # These would include: _setup_mesh_topology, _broadcast_document, 
     # _execute_normal_phase, _execute_fault_injection, _monitor_recovery, 
     # _finalize_scenario, etc.
+    
+    async def _finalize_scenario(self) -> Dict[str, Any]:
+        """Finalize scenario and collect/save metrics."""
+        self.output.info("📊 Finalizing scenario and saving results...")
+        
+        # Collect metrics
+        if self.metrics_collector:
+            results = self.metrics_collector.get_final_results()
+        else:
+            results = {
+                "metadata": {
+                    "scenario": "fail_storm_recovery",
+                    "protocol": self.config.get("scenario", {}).get("protocol", "unknown"),
+                    "status": "completed",
+                    "end_time": time.time()
+                }
+            }
+        
+        # Save results to files
+        await self._save_results(results)
+        
+        return results
+    
+    async def _save_results(self, results: Dict[str, Any]) -> None:
+        """Save results to configured output files."""
+        try:
+            # Get output file paths from config
+            output_config = self.config.get("output", {})
+            results_file = output_config.get("results_file", "failstorm_metrics.json")
+            detailed_results_file = output_config.get("detailed_results_file", "detailed_failstorm_metrics.json")
+            
+            # Ensure results directory exists
+            self.results_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Full paths
+            results_path = self.results_dir / results_file
+            detailed_results_path = self.results_dir / detailed_results_file
+            
+            # Save main results
+            with open(results_path, 'w') as f:
+                json.dump(results, f, indent=2)
+            
+            # Save detailed results (same for now, can be extended)
+            with open(detailed_results_path, 'w') as f:
+                json.dump(results, f, indent=2)
+            
+            self.output.success(f"📊 Results saved to: {results_path}")
+            self.output.success(f"📈 Detailed metrics: {detailed_results_path}")
+            
+            # Store paths for runner access
+            self.saved_results_path = results_path
+            self.saved_detailed_results_path = detailed_results_path
+            
+        except Exception as e:
+            self.output.error(f"Failed to save results: {e}")
+            raise
+    
+    def get_results_paths(self) -> Dict[str, str]:
+        """Get the actual paths where results were saved."""
+        return {
+            "results_file": str(getattr(self, 'saved_results_path', self.results_dir / self.config.get("output", {}).get("results_file", "failstorm_metrics.json"))),
+            "detailed_results_file": str(getattr(self, 'saved_detailed_results_path', self.results_dir / self.config.get("output", {}).get("detailed_results_file", "detailed_failstorm_metrics.json")))
+        }
     
     async def _cleanup_resources(self) -> None:
         """Clean up all resources."""

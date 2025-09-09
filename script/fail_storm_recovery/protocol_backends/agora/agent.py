@@ -2,332 +2,163 @@
 """
 Agora Agent implementation for Fail-Storm Recovery scenario.
 
-This module provides a self-contained Agora agent implementation that uses
-the official Agora SDK for server-side and HTTP client for communication.
+本模块参照 ACP 版本 (`acp/agent.py`) 的结构，实现 Agora 协议下的 Agent 封装，
+使用 `SimpleBaseAgent` 作为底层服务能力，并提供一个 `AgoraExecutorWrapper` 来
+适配 shard worker 的执行接口到（未来可扩展的）Agora 协议风格执行流程。
+
+与 ACP 版本的差异：
+1. 类/日志前缀/Docstring 全部替换为 Agora 语义。
+2. 新增 `_extract_text_from_agora_response` 方法，用于按用户指定的多种可能字段
+   提取文本：body / text / result(body) / data 等；失败回退为字符串化。
+3. 产出的内容保持最小必要实现，便于后续真正接入官方 Agora SDK 时扩展。
+
+使用场景：Fail-Storm Recovery 运行器会调用 `create_agora_agent` 生成一个基础的
+`SimpleBaseAgent`（同 ACP 的 `create_acp_agent` 逻辑），其 executor 由上层传入。
 """
 
 import asyncio
 import json
 import logging
-import threading
-import time
-from typing import Any, Dict, Optional
+import uuid
+from typing import Any, Dict, Optional, List, AsyncGenerator
 from pathlib import Path
 import sys
 
-# LangChain imports
-from langchain_openai import ChatOpenAI
+# 将 fail_storm_recovery core 路径加入 sys.path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-try:
-    from agora.receiver import Receiver, ReceiverServer
-    from agora.common.toolformers import LangChainToolformer
-    AGORA_AVAILABLE = True
-except ImportError:
-    AGORA_AVAILABLE = False
+# 引入 SimpleBaseAgent
+from core.simple_base_agent import SimpleBaseAgent as BaseAgent
 
-# HTTP client
-import httpx
-
-# Flask for additional endpoints
-from flask import jsonify
+# （如果未来有官方 Agora SDK，可在此处尝试导入并做可选处理）
 
 
-class AgoraServerWrapper:
-    """Wrapper for Agora receiver server running in background thread."""
-    
-    def __init__(self, receiver, host: str, port: int, agent_id: str):
-        self.receiver = receiver
-        self.host = host
-        self.port = port
-        self.agent_id = agent_id
-        self.server_thread = None
-        self.agora_server = None
-        self.logger = logging.getLogger(f"AgoraServer.{agent_id}")
-    
-    def _create_enhanced_agora_server(self, receiver):
-        """Create Agora ReceiverServer with additional health and agent card endpoints."""
-        
-        # Use real Agora SDK ReceiverServer
-        original_server = ReceiverServer(receiver)
-        
-        @original_server.app.route('/health', methods=['GET'])
-        def health_check():
-            """Health check endpoint for AgentNetwork compatibility."""
-            return jsonify({
-                "status": "healthy",
-                "agent_id": self.agent_id,
-                "timestamp": time.time()
-            }), 200
-        
-        @original_server.app.route('/.well-known/agent.json', methods=['GET'])
-        def agent_card():
-            """Agent card endpoint for AgentNetwork compatibility."""
-            return jsonify({
-                "name": f"Agora Agent {self.agent_id}",
-                "url": f"http://{self.host}:{self.port}/",
-                "protocol": "Agora (Official)",
-                "agent_id": self.agent_id,
-            }), 200
-        
-        return original_server
-    
-    def serve(self):
-        """Start server in background thread."""
-        def run_server():
-            try:
-                # Create enhanced Agora server with additional endpoints
-                self.agora_server = self._create_enhanced_agora_server(self.receiver)
-                # Use Agora SDK to serve on specified host:port
-                self.agora_server.serve(host=self.host, port=self.port)
-            except Exception as e:
-                self.logger.error(f"Server error: {e}")
-        
-        self.server_thread = threading.Thread(target=run_server, daemon=True)
-        self.server_thread.start()
-        self.logger.info(f"Agora server started on {self.host}:{self.port}")
-    
-    def shutdown(self):
-        """Shutdown server."""
-        # Agora SDK receiver doesn't have explicit shutdown, 
-        # but daemon thread will terminate with main process
-        if self.agora_server and hasattr(self.agora_server, 'shutdown'):
-            self.agora_server.shutdown()
+class AgoraExecutorWrapper:
+	"""将 ShardWorkerExecutor 适配为 Agora 协议执行器接口的包装器。
+
+	参考 ACPExecutorWrapper 结构；当前先简单处理文本消息并调用 worker.answer()。
+	预期未来官方 Agora SDK 若需要特定的消息 / 流式 RunYield，可在此扩展。
+	"""
+
+	def __init__(self, shard_worker_executor: Any):
+		self.shard_worker_executor = shard_worker_executor
+		self.capabilities = ["text_processing", "async_generation", "agora_proto_simplified"]
+		self.logger = logging.getLogger("AgoraExecutorWrapper")
+
+	def _extract_text_from_agora_response(self, response: Dict[str, Any]) -> str:
+		"""Extract text content from Agora response.
+
+		规则（按优先级）：
+		1. 若 response 本身是 str，直接返回。
+		2. 若为 dict，依次尝试字段：body / text / result(body) / data。
+		3. 若都不命中，转成字符串返回；异常时返回空串。
+		"""
+		try:
+			if isinstance(response, str):
+				return response
+			elif isinstance(response, dict):
+				if "body" in response:
+					return response["body"]
+				elif "text" in response:
+					return response["text"]
+				elif "result" in response:
+					result = response["result"]
+					if isinstance(result, str):
+						return result
+					elif isinstance(result, dict) and "body" in result:
+						return result["body"]
+				elif "data" in response:
+					return str(response["data"])
+				else:
+					return str(response)
+			return ""
+		except Exception:
+			return ""
+
+	async def __call__(self, messages: List[Any], context: Optional[Any] = None) -> AsyncGenerator[Any, None]:
+		"""简化的 Agora 执行入口。
+
+		Args:
+			messages: 传入的消息列表（当前假定为包含文本的最小结构）。
+			context: 预留上下文（未使用）。
+
+		Yields:
+			单次字符串结果（模拟 RunYield）。
+		"""
+		self.logger.debug(f"[Agora] AgoraExecutorWrapper called with {len(messages)} messages")
+
+		try:
+			for i, message in enumerate(messages):
+				run_id = str(uuid.uuid4())
+				self.logger.debug(f"[Agora] Processing message {i+1}/{len(messages)} run_id={run_id}")
+
+				# 提取文本内容（支持多种结构：dict / str / {parts:[{type:'text',text:'...'}]}）
+				text_content = ""
+				try:
+					if isinstance(message, dict):
+						# 常见结构：{"parts": [...]}
+						if "parts" in message and isinstance(message["parts"], list):
+							for part in message["parts"]:
+								if isinstance(part, dict) and part.get("type") == "text":
+									text_content += part.get("text") or part.get("content", "")
+						elif "body" in message:
+							text_content = message["body"]
+						elif "text" in message:
+							text_content = message["text"]
+						else:
+							text_content = json.dumps(message, ensure_ascii=False)
+					else:
+						text_content = str(message)
+				except Exception as e:
+					self.logger.warning(f"[Agora] Failed to parse message content: {e}")
+					text_content = str(message)
+
+				# 调用 shard worker 处理
+				if self.shard_worker_executor and hasattr(self.shard_worker_executor, 'worker'):
+					try:
+						worker = self.shard_worker_executor.worker
+						if hasattr(worker, 'answer'):
+							raw_result = await worker.answer(text_content)
+						else:
+							raw_result = await worker.start_task(0)
+
+						# 统一提取文本
+						extracted = self._extract_text_from_agora_response(raw_result if isinstance(raw_result, dict) else raw_result)
+						yield extracted or (str(raw_result) if raw_result is not None else "No result")
+						self.logger.debug(f"[Agora] Result len={len((extracted or str(raw_result or '')))}")
+					except Exception as e:
+						self.logger.error(f"[Agora] Execution error: {e}")
+						yield f"Execution error: {e}"
+				else:
+					yield "Shard worker executor not available"
+
+		except Exception as e:
+			error_msg = f"Agora processing error: {e}"
+			self.logger.error(f"[Agora] Executor error: {e}", exc_info=True)
+			yield error_msg
 
 
-class AgoraAgent:
-    """
-    Self-contained Agora Agent for Fail-Storm recovery scenarios.
-    
-    This agent implements Agora protocol capabilities using official SDK
-    for server-side and HTTP client for communication.
-    """
-    
-    def __init__(self, agent_id: str, host: str, port: int, executor: Any):
-        """
-        Initialize Agora agent.
-        
-        Args:
-            agent_id: Unique identifier for this agent
-            host: Host address to bind to
-            port: HTTP port for this agent
-            executor: Task executor for handling QA operations
-        """
-        self.agent_id = agent_id
-        self.host = host
-        self.port = port
-        self.executor = executor
-        
-        # Agora specific components
-        self.receiver = None
-        self.server_wrapper = None
-        self._clients = {}
-        self._endpoints = {}
-        
-        # Server management
-        self._startup_complete = asyncio.Event()
-        self._shutdown_complete = asyncio.Event()
-        
-        # Compatibility with BaseAgent interface
-        self.process = None  # For compatibility with kill operations
-        
-        self.logger = logging.getLogger(f"AgoraAgent.{agent_id}")
-    
-    async def start(self) -> None:
-        """Start the Agora agent with official SDK server."""
-        try:
-            # Start Agora SDK server
-            await self._start_agora_server()
-            
-            self._startup_complete.set()
-            self.logger.info(f"Agora Agent {self.agent_id} started successfully")
-            
-        except Exception as e:
-            self.logger.error(f"Failed to start Agora agent {self.agent_id}: {e}")
-            raise
-    
-    async def stop(self) -> None:
-        """Stop the Agora agent and cleanup resources."""
-        try:
-            # Close HTTP clients
-            await self.close()
-            
-            # Shutdown server
-            if self.server_wrapper:
-                self.server_wrapper.shutdown()
-            
-            self._shutdown_complete.set()
-            self.logger.info(f"Agora Agent {self.agent_id} stopped successfully")
-            
-        except Exception as e:
-            self.logger.error(f"Error stopping Agora agent {self.agent_id}: {e}")
-    
-    async def _start_agora_server(self) -> None:
-        """Start Agora SDK server."""
-        try:
-            # 1. Create Toolformer
-            if not AGORA_AVAILABLE:
-                raise RuntimeError("Agora dependencies not found. Please install agora-sdk.")
-                
-            try:
-                model = ChatOpenAI(model="gpt-4o-mini") 
-                toolformer = LangChainToolformer(model)
-            except Exception as e:
-                self.logger.error(f"Failed to create Toolformer. Ensure OPENAI_API_KEY is set. Error: {e}")
-                raise RuntimeError(f"Failed to create Toolformer. Ensure OPENAI_API_KEY is set. Error: {e}")
+async def create_agora_agent(agent_id: str, host: str, port: int, executor: Any) -> BaseAgent:
+	"""创建 Agora 协议 Agent（简化版）。
 
-            # 2. Create Tools
-            loop = asyncio.get_running_loop()
-            def general_service(message: str, context: str = ""):
-                """Handle general messages and requests by calling the provided executor."""
-                try:
-                    # Convert message to the format expected by executor
-                    input_data = {
-                        "content": [{"type": "text", "text": message}]
-                    }
-                    
-                    # The agora tool function is synchronous, but the executor is async.
-                    # We need to run the async function in the main thread's event loop.
-                    coro = self.executor.execute(input_data)
-                    future = asyncio.run_coroutine_threadsafe(coro, loop)
-                    result = future.result()  # Wait for the result
-                    
-                    # Adapt the result to a string response for Agora.
-                    if isinstance(result, dict):
-                        if "content" in result and isinstance(result["content"], list):
-                            # Extract text from content array
-                            for item in result["content"]:
-                                if isinstance(item, dict) and item.get("type") == "text":
-                                    return item.get("text", "")
-                        elif "body" in result:
-                            return result["body"]
-                        elif "text" in result:
-                            return result["text"]
-                    elif isinstance(result, str):
-                        return result
-                    else:
-                        return str(result)
-                except Exception as e:
-                    self.logger.error(f"Error executing task in general_service: {e}")
-                    return f"Error executing task: {e}"
+	与 ACP 版本一致：调用 `SimpleBaseAgent.create_agora` 返回一个基础 HTTP 服务，
+	上层 runner 会使用该 agent 的 /message 接口。这里不直接耦合官方 Agora SDK，
+	便于后续平滑替换。
 
-            tools = [general_service]
+	Args:
+		agent_id: 唯一 Agent ID
+		host: 绑定主机
+		port: 端口
+		executor: ShardWorkerExecutor 实例
 
-            # 3. Create Receiver using real Agora SDK
-            self.receiver = Receiver.make_default(toolformer, tools=tools)
+	Returns:
+		配置完成的 `SimpleBaseAgent` 实例
+	"""
+	agent = await BaseAgent.create_agora(
+		agent_id=agent_id,
+		host=host,
+		port=port,
+		executor=executor
+	)
+	return agent
 
-            # 4. Create and Run Server using the wrapper
-            self.server_wrapper = AgoraServerWrapper(
-                receiver=self.receiver,
-                host=self.host,
-                port=self.port,
-                agent_id=self.agent_id
-            )
-            
-            self.server_wrapper.serve()  # Starts the server in a background thread
-            await asyncio.sleep(1)  # Give the server a moment to start
-            
-        except Exception as e:
-            self.logger.error(f"Failed to start Agora server: {e}")
-            raise
-    
-    async def register_endpoint(self, agent_id: str, base_url: str) -> None:
-        """Register endpoint for another agent."""
-        self._endpoints[agent_id] = base_url
-        
-        # Create HTTP client for this endpoint
-        self._clients[agent_id] = httpx.AsyncClient(base_url=base_url, timeout=10.0)
-        
-        self.logger.info(f"Registered endpoint for {agent_id}: {base_url}")
-    
-    async def send_message(self, target_agent_id: str, message: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """
-        Send message to another Agora agent using HTTP client.
-        
-        Args:
-            target_agent_id: ID of target agent
-            message: Message to send
-            
-        Returns:
-            Response from target agent or None if failed
-        """
-        try:
-            return await self.send(self.agent_id, target_agent_id, message)
-        except Exception as e:
-            self.logger.error(f"Failed to send message to {target_agent_id}: {e}")
-            return None
-    
-    async def send(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Any:
-        """
-        Send message using ONLY official Agora SDK client.
-        No fallback to HTTP - must use official SDK or fail.
-        """
-        endpoint = self._endpoints.get(dst_id)
-        if not endpoint:
-            raise RuntimeError(f"unknown dst_id={dst_id}")
-
-        # Minimal Agora-shaped payload
-        agora_payload = {
-            "protocolHash": None,
-            "body": payload.get("body", str(payload)),
-            "protocolSources": []
-        }
-
-        # --- Use protocol-native HTTP POST (official Agora protocol format) ---
-        # Note: Server side uses real Agora SDK (ReceiverServer), client side uses protocol-native HTTP
-        # This maintains protocol compliance while avoiding complex SDK client configuration
-        client = self._clients.get(dst_id)
-        try:
-            resp = await client.post("/", json=agora_payload)
-            resp.raise_for_status()
-            raw = resp.json()
-            text = raw.get("raw", {}).get("body", "") or raw.get("body", "")
-            return {"raw": raw, "text": text}
-        except Exception as e:
-            raise RuntimeError(f"Agora protocol send failed: {e}")
-
-    async def health_check(self, agent_id: str) -> bool:
-        """Check health of target agent."""
-        endpoint = self._endpoints.get(agent_id)
-        if not endpoint:
-            return False
-        client = self._clients.get(agent_id)
-        try:
-            resp = await client.get("/health")
-            return resp.status_code == 200
-        except Exception:
-            return False
-    
-    async def close(self) -> None:
-        """Close all HTTP clients."""
-        for client in self._clients.values():
-            await client.aclose()
-        self._clients.clear()
-    
-    def get_status(self) -> Dict[str, Any]:
-        """Get current agent status."""
-        return {
-            "agent_id": self.agent_id,
-            "host": self.host,
-            "port": self.port,
-            "agora_ready": self.receiver is not None,
-            "startup_complete": self._startup_complete.is_set(),
-            "endpoints": list(self._endpoints.keys()),
-        }
-
-
-async def create_agora_agent(agent_id: str, host: str, port: int, executor: Any) -> AgoraAgent:
-    """
-    Factory function to create and start an Agora agent.
-    
-    Args:
-        agent_id: Unique identifier for the agent
-        host: Host address to bind to  
-        port: Port number for HTTP server
-        executor: Task executor for QA operations
-        
-    Returns:
-        Started Agora agent instance
-    """
-    agent = AgoraAgent(agent_id, host, port, executor)
-    await agent.start()
-    return agent

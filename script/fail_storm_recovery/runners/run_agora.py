@@ -26,26 +26,32 @@ async def main():
     try:
         print("🎵 Starting Agora Protocol Fail-Storm Recovery Test")
         print("=" * 60)
-        
-        # Create Agora runner with protocol-specific config
-        runner = AgoraRunner()
-        
-        print(f"📋 Configuration loaded from: protocol_backends/agora/config.yaml")
+
+        # 说明：base_runner 的解析逻辑会优先在 fail_storm_recovery/configs/ 下寻找纯文件名
+        # 传入多级相对路径会被再次拼接，导致找不到。改为只传文件名即可。
+        config_path = 'config_agora.yaml'
+        runner = AgoraRunner(config_path)
+
+        print(f"📋 Configuration requested: {config_path}")
+        print(f"📄 Resolved config path: {runner.get_config_path()}")
         print(f"🔗 Protocol: Agora")
         print(f"👥 Agents: {runner.config['scenario']['agent_count']}")
         print(f"⏱️  Runtime: {runner.config['scenario']['total_runtime']}s")
         print(f"💥 Fault time: {runner.config['scenario']['fault_injection_time']}s")
         print("=" * 60)
-        
+
         # Run the scenario
         results = await runner.run_scenario()
-        
-        print("\n� Agora Fail-Storm test completed successfully!")
-        print("� Results saved to: results/failstorm_metrics.json")
-        print("📈 Detailed metrics: results/detailed_failstorm_metrics.json")
-        
+
+        print("\n🎵 Agora Fail-Storm test completed successfully!")
+
+        # Get actual result paths from runner
+        result_paths = runner.get_results_paths()
+        print(f"📊 Results saved to: {result_paths['results_file']}")
+        print(f"📈 Detailed metrics: {result_paths['detailed_results_file']}")
+
         return results
-        
+
     except KeyboardInterrupt:
         print("\n⚠️ Test interrupted by user")
         return None

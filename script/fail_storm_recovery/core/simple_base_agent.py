@@ -103,6 +103,21 @@ class SimpleBaseAgent:
         return agent
     
     @classmethod
+    async def create_agora(
+        cls,
+        agent_id: str,
+        host: str = "127.0.0.1",
+        port: Optional[int] = None,
+        executor: Optional[Any] = None,
+        **kwargs
+    ) -> "SimpleBaseAgent":
+        """Create Agora agent instance."""
+        agent = cls(agent_id=agent_id, host=host, port=port, executor=executor)
+        await agent._start_server()
+        agent._initialized = True
+        return agent
+    
+    @classmethod
     async def create_simple_json(
         cls,
         agent_id: str,

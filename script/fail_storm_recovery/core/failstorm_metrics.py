@@ -501,6 +501,41 @@ class FailStormMetricsCollector:
             ]) if qa_tasks else 0
         }
 
+    # ========================== Final Aggregation ==========================
+    def get_final_results(self) -> Dict[str, Any]:
+        """Assemble a final results dictionary (without writing to disk)."""
+        recovery_metrics = self.calculate_recovery_metrics()
+        performance = self.get_performance_summary()
+        qa = self.get_qa_metrics()
+        current_time = time.time()
+
+        return {
+            "metadata": {
+                "scenario": "fail_storm_recovery",
+                "protocol": self.protocol_name,
+                "start_time": self.scenario_start_time,
+                "end_time": current_time,
+                "fault_injection_time": self.fault_injection_time,
+                "first_recovery_time": self.first_recovery_time,
+                "steady_state_time": self.steady_state_time,
+                "duration_sec": current_time - self.scenario_start_time,
+                "phase_final": self._get_current_phase()
+            },
+            "failstorm_metrics": recovery_metrics,
+            "performance_analysis": performance,
+            "qa_metrics": qa,
+            "agents": {
+                "states": self.agent_states,
+                "topology_snapshots_last": self.topology_snapshots[-3:],
+            },
+            "counts": {
+                "task_executions": len(self.task_executions),
+                "network_events": len(self.network_events),
+                "reconnection_attempts": len(self.reconnection_attempts),
+                "topology_snapshots": len(self.topology_snapshots)
+            }
+        }
+
     def __repr__(self) -> str:
         """String representation of the metrics collector."""
         return (

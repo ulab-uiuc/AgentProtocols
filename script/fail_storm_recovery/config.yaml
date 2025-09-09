@@ -94,11 +94,17 @@ output:
   # Main results file name
   results_file: "failstorm_metrics.json"
   
+  # Directory for results files (will be created under fail_storm_recovery if relative)
+  results_dir: "results_agora"
+  
   # Directory for log files
   logs_dir: "logs"
   
   # Directory for scenario artifacts
   artifacts_dir: "artifacts"
+  
+  # Directory for LLM outputs
+  llm_outputs_dir: "llm_outputs"
   
   # Log level (debug, info, warning, error)
   log_level: "info"

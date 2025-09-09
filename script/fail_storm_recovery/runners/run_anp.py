@@ -41,8 +41,11 @@ async def main():
         results = await runner.run_scenario()
         
         print("\n🎉 ANP Fail-Storm test completed successfully!")
-        print("📊 Results saved to: results/failstorm_metrics.json")
-        print("📈 Detailed metrics: results/detailed_failstorm_metrics.json")
+        
+        # Get actual result paths from runner
+        result_paths = runner.get_results_paths()
+        print(f"📊 Results saved to: {result_paths['results_file']}")
+        print(f"📈 Detailed metrics: {result_paths['detailed_results_file']}")
         
         return results
         

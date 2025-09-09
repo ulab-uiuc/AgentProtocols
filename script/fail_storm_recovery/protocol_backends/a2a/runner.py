@@ -417,7 +417,8 @@ class A2ARunner(FailStormRunnerBase):
 
     async def _monitor_recovery(self) -> None:
         """Monitor A2A agent recovery after fault injection."""
-        recovery_duration = self.config["scenario"]["recovery_duration"]
+        recovery_duration = self.config.get("scenario", {}).get("recovery_duration", 
+                                 max(30, int(self.config.get("scenario", {}).get("total_runtime", 120) * 0.5)))
         
         self.output.info(f"🔄 [A2A] Monitoring recovery for {recovery_duration}s...")
         
@@ -444,9 +445,30 @@ class A2ARunner(FailStormRunnerBase):
         
         self.output.success(f"🔄 [A2A] Recovery monitoring finished")
 
-    async def _finalize_scenario(self) -> None:
-        """Finalize scenario and collect metrics."""
+    async def _finalize_scenario(self) -> Dict[str, Any]:
+        """Finalize scenario, collect metrics and persist results (override)."""
         self.output.info("📊 Phase 4: Evaluation and results...")
-        
-        # Collect final metrics (no finalize_metrics method needed)
+
+        # Use metrics collector if available
+        if self.metrics_collector:
+            results = self.metrics_collector.get_final_results()
+            # Add protocol-specific summary
+            results.setdefault("protocol_summary", {})["a2a"] = {
+                "killed_agents_initial": len(getattr(self, '_originally_killed_agents', [])),
+                "final_alive": len(self.agents),
+                "total_agents": len(self.a2a_sessions)
+            }
+        else:
+            results = {
+                "metadata": {
+                    "scenario": "fail_storm_recovery",
+                    "protocol": "a2a",
+                    "status": "completed",
+                    "end_time": time.time()
+                }
+            }
+
+        # Persist via base helper
+        await self._save_results(results)
         self.output.success("✅ Fail-Storm scenario completed successfully!")
+        return results
