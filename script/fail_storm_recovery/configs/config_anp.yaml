@@ -80,7 +80,7 @@ logging:
 
 # Output configuration
 output:
-  results_dir: "results/"
+  results_dir: "results_anp/"
   save_llm_outputs: false
   metrics_file: "failstorm_metrics.json"
   detailed_metrics_file: "detailed_failstorm_metrics.json"

@@ -57,11 +57,10 @@ shard_qa:
   qa_cycle_timeout: 15.0
 
 output:
-  results_file: "failstorm_metrics.json"
-  logs_dir: "logs"
-  artifacts_dir: "artifacts"
+  results_dir: "/root/Multiagent-Protocol/script/fail_storm_recovery/results_dir"
+  logs_dir: "/root/Multiagent-Protocol/script/fail_storm_recovery/logs"
+  artifacts_dir: "/root/Multiagent-Protocol/script/fail_storm_recovery/artifacts"
 
 logging:
   level: "INFO"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-

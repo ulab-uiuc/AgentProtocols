@@ -29,27 +29,27 @@ spec = importlib.util.spec_from_file_location("agent_executor", shard_qa_path / 
 agent_executor_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(agent_executor_module)
 
-# Create ACP-specific implementations to avoid coordinator dependency
-class ACPAgentExecutor(agent_executor_module.BaseAgentExecutor):
-    """ACP-specific agent executor"""
+# Create A2A-specific implementations to avoid coordinator dependency
+class A2AAgentExecutor(agent_executor_module.BaseAgentExecutor):
+    """A2A-specific agent executor"""
     async def execute(self, context, event_queue):
-        # ACP doesn't use the executor pattern, this is just for compatibility
+        # A2A doesn't use the executor pattern, this is just for compatibility
         pass
     
     async def cancel(self, context, event_queue):
-        # ACP doesn't use the executor pattern, this is just for compatibility
+        # A2A doesn't use the executor pattern, this is just for compatibility
         pass
 
-class ACPRequestContext(agent_executor_module.BaseRequestContext):
-    """ACP-specific request context"""
+class A2ARequestContext(agent_executor_module.BaseRequestContext):
+    """A2A-specific request context"""
     def __init__(self, input_data):
         self.input_data = input_data
     
     def get_user_input(self):
         return self.input_data
 
-class ACPEventQueue(agent_executor_module.BaseEventQueue):
-    """ACP-specific event queue"""
+class A2AEventQueue(agent_executor_module.BaseEventQueue):
+    """A2A-specific event queue"""
     def __init__(self):
         self.events = []
     
@@ -57,15 +57,15 @@ class ACPEventQueue(agent_executor_module.BaseEventQueue):
         self.events.append(event)
         return event
 
-def acp_new_agent_text_message(text, role="user"):
-    """ACP-specific text message creation"""
+def a2a_new_agent_text_message(text, role="user"):
+    """A2A-specific text message creation"""
     return {"type": "text", "content": text, "role": str(role)}
     
-    # Inject ACP implementations into the agent_executor module
-    agent_executor_module.AgentExecutor = ACPAgentExecutor
-    agent_executor_module.RequestContext = ACPRequestContext
-    agent_executor_module.EventQueue = ACPEventQueue
-    agent_executor_module.new_agent_text_message = acp_new_agent_text_message
+    # Inject A2A implementations into the agent_executor module
+    agent_executor_module.AgentExecutor = A2AAgentExecutor
+    agent_executor_module.RequestContext = A2ARequestContext
+    agent_executor_module.EventQueue = A2AEventQueue
+    agent_executor_module.new_agent_text_message = a2a_new_agent_text_message
 
 ShardWorkerExecutor = agent_executor_module.ShardWorkerExecutor
 
@@ -99,9 +99,9 @@ class ACPRunner(FailStormRunnerBase):
         
         self.output.info("Initialized ACP protocol runner")
 
-    async def create_agent(self, agent_id: str, host: str, port: int, executor: ShardWorkerExecutor) -> ACPAgent:
+    async def create_agent(self, agent_id: str, host: str, port: int, executor: ShardWorkerExecutor) -> A2AAgent:
         """
-        Create an ACP agent using native acp-sdk.
+        Create an A2A agent using native a2a-sdk.
         
         Args:
             agent_id: Unique identifier for the agent
@@ -110,50 +110,50 @@ class ACPRunner(FailStormRunnerBase):
             executor: Shard worker executor instance
             
         Returns:
-            ACPAgent instance configured for ACP protocol
+            BaseAgent instance configured for A2A protocol
         """
         try:
-            # Create ACP agent using the factory method
-            agent = await create_acp_agent(
+            # Create A2A agent using the factory method
+            agent = await create_a2a_agent(
                 agent_id=agent_id,
                 host=host,
                 port=port,
                 executor=executor
             )
             
-            # Store ACP session information
-            self.acp_sessions[agent_id] = {
+            # Store A2A-specific info
+            self.a2a_sessions[agent_id] = {
                 "base_url": f"http://{host}:{port}",
                 "session_id": f"session_{agent_id}_{int(time.time())}",
                 "executor": executor
             }
             
-            self.output.success(f"ACP agent {agent_id} created successfully")
+            self.output.success(f"A2A agent {agent_id} created successfully")
             return agent
             
         except Exception as e:
-            self.output.error(f"Failed to create ACP agent {agent_id}: {e}")
+            self.output.error(f"Failed to create A2A agent {agent_id}: {e}")
             raise
 
     def get_protocol_info(self, agent_id: str, port: int, data_file: str) -> str:
-        """Get ACP protocol display information."""
-        return f"🔗 [ACP] Created {agent_id} - HTTP: {port}, Data: {data_file}"
+        """Get A2A protocol display information."""
+        return f"🔗 [A2A] Created {agent_id} - HTTP: {port}, Data: {data_file}"
 
     def get_reconnection_info(self, agent_id: str, port: int) -> List[str]:
-        """Get ACP protocol reconnection information."""
+        """Get A2A protocol reconnection information."""
         return [
-            f"🔗 [ACP] Agent {agent_id} RECONNECTED on port {port}",
-            f"📡 [ACP] ACP protocol active",
-            f"🌐 [ACP] HTTP REST API: http://127.0.0.1:{port}"
+            f"🔗 [A2A] Agent {agent_id} RECONNECTED on port {port}",
+            f"📡 [A2A] A2A protocol active",
+            f"🌐 [A2A] HTTP REST API: http://127.0.0.1:{port}"
         ]
 
     async def _setup_mesh_topology(self) -> None:
-        """Setup mesh topology between ACP agents."""
-        self.output.progress("🔗 [ACP] Setting up mesh topology...")
+        """Setup mesh topology between A2A agents."""
+        self.output.progress("🔗 [A2A] Setting up mesh topology...")
         
         await self.mesh_network.setup_mesh_topology()
         
-        # ACP agents may need time for connection establishment
+        # A2A agents may need time for connection establishment
         import asyncio
         await asyncio.sleep(1.0)  # Brief stabilization for A2A
         
@@ -162,24 +162,24 @@ class ACPRunner(FailStormRunnerBase):
         expected_connections = len(self.agents) * (len(self.agents) - 1)
         actual_connections = sum(len(edges) for edges in topology.values())
         
-        self.output.success(f"🔗 [ACP] Mesh topology established: {actual_connections}/{expected_connections} connections")
+        self.output.success(f"🔗 [A2A] Mesh topology established: {actual_connections}/{expected_connections} connections")
 
     async def _broadcast_document(self) -> None:
-        """Broadcast the document to all ACP agents."""
+        """Broadcast the document to all A2A agents."""
         if not self.agents:
-            raise RuntimeError("No ACP agents available for broadcast")
+            raise RuntimeError("No A2A agents available for broadcast")
             
         try:
             doc = await self._load_gaia_document()
             
-            # For ACP protocol, we'll store the document in each agent's session
+            # For A2A protocol, we'll store the document in each agent's session
             # In a real implementation, this would use proper A2A messaging
             success_count = len(self.agents)
             
-            self.output.success(f"📡 [ACP] Document broadcasted to {success_count}/{len(self.agents)} agents")
+            self.output.success(f"📡 [A2A] Document broadcasted to {success_count}/{len(self.agents)} agents")
 
         except Exception as e:
-            self.output.error(f"❌ [ACP] Document broadcast failed: {e}")
+            self.output.error(f"❌ [A2A] Document broadcast failed: {e}")
             raise
 
     async def _load_gaia_document(self) -> Dict[str, Any]:
@@ -188,7 +188,7 @@ class ACPRunner(FailStormRunnerBase):
             "title": "Gaia Init",
             "version": "v1",
             "ts": time.time(),
-            "notes": "Replace this with your real Gaia content for ACP protocol"
+            "notes": "Replace this with your real Gaia content for A2A protocol"
         }
 
     async def _execute_normal_phase(self) -> None:
@@ -196,7 +196,7 @@ class ACPRunner(FailStormRunnerBase):
         try:
             normal_duration = self.config.get("shard_qa", {}).get("normal_phase_duration", 30.0)
             
-            self.output.progress(f"🔗 [ACP] Running Shard QA collaborative retrieval for {normal_duration}s...")
+            self.output.progress(f"🔗 [A2A] Running Shard QA collaborative retrieval for {normal_duration}s...")
             
             # Start QA tasks for all agents
             qa_tasks = []
@@ -215,14 +215,14 @@ class ACPRunner(FailStormRunnerBase):
                 task_count = getattr(executor.worker, 'task_count', 0)
                 self.output.info(f"    {agent_id}: Normal phase completed with {task_count} QA tasks")
             
-            self.output.success(f"🔍 [ACP] Normal phase completed in {normal_duration:.2f}s")
+            self.output.success(f"🔍 [A2A] Normal phase completed in {normal_duration:.2f}s")
             
         except Exception as e:
-            self.output.error(f"❌ [ACP] Normal phase failed: {e}")
+            self.output.error(f"❌ [A2A] Normal phase failed: {e}")
             raise
 
     async def _run_qa_task_for_agent(self, agent_id: str, worker, duration: float):
-        """Run QA task for a specific ACP agent during normal phase."""
+        """Run QA task for a specific A2A agent during normal phase."""
         start_time = time.time()
         task_count = 0
         
@@ -274,7 +274,7 @@ class ACPRunner(FailStormRunnerBase):
                 except asyncio.CancelledError:
                     break
                 except Exception as e:
-                    self.output.error(f"[ACP] Error in QA task for {agent_id}: {e}")
+                    self.output.error(f"[A2A] Error in QA task for {agent_id}: {e}")
                     # Continue with next task
                     await asyncio.sleep(1.0)
                     
@@ -286,7 +286,7 @@ class ACPRunner(FailStormRunnerBase):
                 worker.worker.task_count = task_count
 
     async def _execute_fault_injection(self) -> None:
-        """Execute fault injection by stopping ACP agents."""
+        """Execute fault injection by stopping A2A agents."""
         kill_count = max(1, int(len(self.agents) * self.config["scenario"]["kill_fraction"]))
         if kill_count >= len(self.agents):
             kill_count = len(self.agents) - 1  # Keep at least one agent alive
@@ -297,7 +297,7 @@ class ACPRunner(FailStormRunnerBase):
         random.shuffle(agent_ids)
         victims = agent_ids[:kill_count]
         
-        self.output.warning(f"💥 Killing {len(victims)} ACP agents: {', '.join(victims)}")
+        self.output.warning(f"💥 Killing {len(victims)} A2A agents: {', '.join(victims)}")
         
         # Record originally killed agents for final statistics
         self._originally_killed_agents = set(victims)
@@ -318,7 +318,7 @@ class ACPRunner(FailStormRunnerBase):
                         'executor': self.shard_workers.get(agent_id)
                     }
                     
-                    self.output.warning(f"   ✗ Killed ACP agent: {agent_id} (will attempt reconnection later)")
+                    self.output.warning(f"   ✗ Killed A2A agent: {agent_id} (will attempt reconnection later)")
                     
                     # Stop the agent
                     await agent.stop()
@@ -335,24 +335,24 @@ class ACPRunner(FailStormRunnerBase):
                         self.metrics_collector.update_agent_state(agent_id, "killed")
                         
                 except Exception as e:
-                    self.output.error(f"Failed to stop ACP agent {agent_id}: {e}")
+                    self.output.error(f"Failed to stop A2A agent {agent_id}: {e}")
         
         # Schedule reconnection attempts with delay
-        reconnect_delay = self.config.get("acp", {}).get("recovery", {}).get("reconnect_delay", 10.0)
-        self.output.success(f"🔄 [ACP] Scheduling reconnection for {len(victims)} agents in {reconnect_delay}s...")
+        reconnect_delay = self.config.get("a2a", {}).get("recovery", {}).get("reconnect_delay", 10.0)
+        self.output.success(f"🔄 [A2A] Scheduling reconnection for {len(victims)} agents in {reconnect_delay}s...")
         
         for victim_id in victims:
-            asyncio.create_task(self._schedule_acp_reconnection(victim_id, reconnect_delay))
+            asyncio.create_task(self._schedule_a2a_reconnection(victim_id, reconnect_delay))
         
         fault_elapsed = time.time() - self.scenario_start_time if hasattr(self, 'scenario_start_time') else 0
         self.output.warning(f"⚠️  A2A fault injection completed at t={fault_elapsed:.1f}s")
 
-    async def _schedule_acp_reconnection(self, agent_id: str, delay: float) -> None:
-        """Schedule ACP agent reconnection with proper port management."""
+    async def _schedule_a2a_reconnection(self, agent_id: str, delay: float) -> None:
+        """Schedule A2A agent reconnection with proper port management."""
         await asyncio.sleep(delay)
         
         try:
-            self.output.warning(f"🔄 [ACP] Attempting to reconnect agent: {agent_id}")
+            self.output.warning(f"🔄 [A2A] Attempting to reconnect agent: {agent_id}")
             
             if agent_id in self.killed_agents and agent_id in self.shard_workers:
                 # Get original configuration
@@ -370,7 +370,7 @@ class ACPRunner(FailStormRunnerBase):
                     # If no ports available, try a higher range
                     port = original_port + 100
                 
-                # Create new ACP agent
+                # Create new A2A agent
                 new_agent = await self.create_agent(agent_id, "127.0.0.1", port, worker)
                 
                 # Update port in killed_agent_configs for next time
@@ -392,17 +392,17 @@ class ACPRunner(FailStormRunnerBase):
                 for info_line in reconnect_info:
                     self.output.success(info_line)
                 
-                self.output.success(f"✅ [ACP] Agent {agent_id} successfully reconnected!")
+                self.output.success(f"✅ [A2A] Agent {agent_id} successfully reconnected!")
                 
                 # Record recovery metrics
                 if self.metrics_collector:
                     self.metrics_collector.set_first_recovery_time()
                 
         except Exception as e:
-            self.output.error(f"🔄 [ACP] Failed to reconnect {agent_id}: {e}")
+            self.output.error(f"🔄 [A2A] Failed to reconnect {agent_id}: {e}")
 
     async def _reestablish_agent_connections(self, agent_id: str) -> None:
-        """Re-establish connections for a reconnected ACP agent."""
+        """Re-establish connections for a reconnected A2A agent."""
         try:
             # Connect to all other active agents
             for other_id in self.agents:
@@ -410,40 +410,40 @@ class ACPRunner(FailStormRunnerBase):
                     await self.mesh_network.connect_agents(agent_id, other_id)
                     await self.mesh_network.connect_agents(other_id, agent_id)
             
-            self.output.info(f"🔗 [ACP] Re-established connections for {agent_id}")
+            self.output.info(f"🔗 [A2A] Re-established connections for {agent_id}")
             
         except Exception as e:
             self.output.error(f"Failed to re-establish connections for {agent_id}: {e}")
 
     async def _monitor_recovery(self) -> None:
-        """Monitor ACP agent recovery after fault injection."""
+        """Monitor A2A agent recovery after fault injection."""
         recovery_duration = self.config.get("scenario", {}).get("recovery_duration", 
                                  max(30, int(self.config.get("scenario", {}).get("total_runtime", 120) * 0.5)))
         
-        self.output.info(f"🔄 [ACP] Monitoring recovery for {recovery_duration}s...")
+        self.output.info(f"🔄 [A2A] Monitoring recovery for {recovery_duration}s...")
         
         start_time = time.time()
         
         while time.time() - start_time < recovery_duration:
             # Check agent status
             active_count = len([aid for aid in self.agents if aid not in self.killed_agents])
-            total_count = len(self.acp_sessions)
+            total_count = len(self.a2a_sessions)
             alive_percentage = (active_count / total_count) * 100 if total_count > 0 else 0
             
             elapsed = int(time.time() - start_time)
             
-            self.output.info(f"🔄 [ACP] Recovery tick: alive={alive_percentage:.2f}%, elapsed={elapsed}s")
+            self.output.info(f"🔄 [A2A] Recovery tick: alive={alive_percentage:.2f}%, elapsed={elapsed}s")
             
             # Check if all agents have recovered
             if len(self.killed_agents) == 0:
-                self.output.success(f"🔄 [ACP] All agents recovered! Steady state achieved at t={elapsed}s")
+                self.output.success(f"🔄 [A2A] All agents recovered! Steady state achieved at t={elapsed}s")
                 if self.metrics_collector:
                     self.metrics_collector.set_steady_state_time()
                 break
             
             await asyncio.sleep(5.0)  # Check every 5 seconds
         
-        self.output.success(f"🔄 [ACP] Recovery monitoring finished")
+        self.output.success(f"🔄 [A2A] Recovery monitoring finished")
 
     async def _finalize_scenario(self) -> Dict[str, Any]:
         """Finalize scenario, collect metrics and persist results (override)."""
@@ -453,16 +453,16 @@ class ACPRunner(FailStormRunnerBase):
         if self.metrics_collector:
             results = self.metrics_collector.get_final_results()
             # Add protocol-specific summary
-            results.setdefault("protocol_summary", {})["acp"] = {
+            results.setdefault("protocol_summary", {})["a2a"] = {
                 "killed_agents_initial": len(getattr(self, '_originally_killed_agents', [])),
                 "final_alive": len(self.agents),
-                "total_agents": len(self.acp_sessions)
+                "total_agents": len(self.a2a_sessions)
             }
         else:
             results = {
                 "metadata": {
                     "scenario": "fail_storm_recovery",
-                    "protocol": "acp",
+                    "protocol": "a2a",
                     "status": "completed",
                     "end_time": time.time()
                 }

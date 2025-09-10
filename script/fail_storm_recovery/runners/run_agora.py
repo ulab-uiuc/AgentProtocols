@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-ANP Protocol Fail-Storm Recovery Test Runner
+Agora Protocol Fail-Storm Recovery Test Runner
 
-This script runs the fail-storm recovery test using ANP protocol.
-All configuration is loaded from protocol_backends/anp/config.yaml.
+This script runs the fail-storm recovery test using Agora protocol.
+All configuration is loaded from protocol_backends/agora/config.yaml.
 No command line arguments needed.
 
 Usage:
-    python run_anp.py
+    python run_agora.py
 """
 
 import asyncio
@@ -18,47 +18,50 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))  # fail_storm_recovery directory
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from protocol_backends.anp.runner import ANPRunner
+from protocol_backends.agora.runner import AgoraRunner
 
 
 async def main():
-    """Main entry point for ANP fail-storm testing."""
+    """Main entry point for Agora fail-storm testing."""
     try:
-        print("🚀 Starting ANP Protocol Fail-Storm Recovery Test")
+        print("🎵 Starting Agora Protocol Fail-Storm Recovery Test")
         print("=" * 60)
-        
-        # Create ANP runner with protocol-specific config
-        runner = ANPRunner("protocol_backends/anp/config.yaml")
-        
-        print(f"📋 Configuration loaded from: protocol_backends/anp/config.yaml")
-        print(f"🔗 Protocol: ANP")
+
+        # 说明：base_runner 的解析逻辑会优先在 fail_storm_recovery/configs/ 下寻找纯文件名
+        # 传入多级相对路径会被再次拼接，导致找不到。改为只传文件名即可。
+        config_path = '/root/Multiagent-Protocol/script/fail_storm_recovery/configs/config_agora.yaml'
+        runner = AgoraRunner(config_path)
+
+        print(f"📋 Configuration requested: {config_path}")
+        print(f"📄 Resolved config path: {runner.get_config_path()}")
+        print(f"🔗 Protocol: Agora")
         print(f"👥 Agents: {runner.config['scenario']['agent_count']}")
         print(f"⏱️  Runtime: {runner.config['scenario']['total_runtime']}s")
         print(f"💥 Fault time: {runner.config['scenario']['fault_injection_time']}s")
         print("=" * 60)
-        
+
         # Run the scenario
         results = await runner.run_scenario()
-        
-        print("\n🎉 ANP Fail-Storm test completed successfully!")
-        
+
+        print("\n🎵 Agora Fail-Storm test completed successfully!")
+
         # Get actual result paths from runner
         result_paths = runner.get_results_paths()
         print(f"📊 Results saved to: {result_paths['results_file']}")
         print(f"📈 Detailed metrics: {result_paths['detailed_results_file']}")
-        
+
         return results
-        
+
     except KeyboardInterrupt:
         print("\n⚠️ Test interrupted by user")
         return None
     except Exception as e:
-        print(f"\n❌ ANP test failed: {e}")
+        print(f"\n❌ Agora test failed: {e}")
         import traceback
         traceback.print_exc()
         return None
 
 
 if __name__ == "__main__":
-    # Run the ANP fail-storm test
+    # Run the Agora fail-storm test
     asyncio.run(main())
