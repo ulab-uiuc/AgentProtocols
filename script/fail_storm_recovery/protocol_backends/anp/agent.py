@@ -30,8 +30,8 @@ class ANPAgent:
     """
     Self-contained ANP Agent for Fail-Storm recovery scenarios.
     
-    This agent implements ANP protocol capabilities without depending
-    on external BaseAgent or src components.
+    This agent implements ANP protocol capabilities using official ANP SDK (AgentConnect)
+    SimpleNode for server-side and communication.
     """
     
     def __init__(self, agent_id: str, host: str, port: int, executor: Any):
@@ -49,16 +49,13 @@ class ANPAgent:
         self.port = port
         self.executor = executor
         
-        # ANP specific components
-        self.http_server = None
-        self.websocket_server = None
-        self.websocket_port = port + 1000  # WebSocket on HTTP port + 1000
+        # ANP specific components (using official SDK)
+        self.simple_node = None  # Official ANP SDK SimpleNode
+        self.node_session = None
         
         # DID and authentication
         self.did_doc = None
         self.private_keys = None
-        self.simple_node = None
-        self.node_session = None
         
         # Server management
         self._startup_complete = asyncio.Event()
@@ -70,22 +67,16 @@ class ANPAgent:
         self.logger = logging.getLogger(f"ANPAgent.{agent_id}")
     
     async def start(self) -> None:
-        """Start the ANP agent with both HTTP and WebSocket servers."""
+        """Start the ANP agent with official ANP SDK SimpleNode server."""
         try:
             # Generate DID and keys for authentication
             await self._setup_did_authentication()
             
-            # Start HTTP server
-            await self._start_http_server()
-            
-            # Start WebSocket server  
-            await self._start_websocket_server()
-            
-            # Initialize ANP communication
-            await self._setup_anp_node()
+            # Start ANP SDK SimpleNode server
+            await self._start_anp_server()
             
             self._startup_complete.set()
-            self.logger.info(f"ANP Agent {self.agent_id} started successfully")
+            self.logger.info(f"ANP Agent {self.agent_id} started successfully with official SDK")
             
         except Exception as e:
             self.logger.error(f"Failed to start ANP agent {self.agent_id}: {e}")
@@ -94,13 +85,10 @@ class ANPAgent:
     async def stop(self) -> None:
         """Stop the ANP agent and cleanup resources."""
         try:
-            if self.http_server:
-                self.http_server.should_exit = True
-                await self.http_server.shutdown()
-            
-            if self.websocket_server:
-                self.websocket_server.close()
-                await self.websocket_server.wait_closed()
+            # Stop ANP SDK SimpleNode server
+            if self.simple_node and hasattr(self.simple_node, 'server_task'):
+                if self.simple_node.server_task:
+                    self.simple_node.server_task.cancel()
             
             if self.node_session:
                 await self.node_session.close()
@@ -129,96 +117,51 @@ class ANPAgent:
             self.logger.error(f"Failed to setup DID authentication: {e}")
             raise
     
-    async def _start_http_server(self) -> None:
-        """Start HTTP server for REST API."""
-        import uvicorn
-        from starlette.applications import Starlette
-        from starlette.responses import JSONResponse
-        from starlette.routing import Route
-        
-        async def health_check(request):
-            return JSONResponse({"status": "healthy", "agent_id": self.agent_id})
-        
-        async def get_did(request):
-            return JSONResponse({"did": self.did_doc})
-        
-        async def handle_message(request):
-            """Handle incoming ANP messages."""
-            try:
-                body = await request.json()
-                # Process message through executor if needed
-                result = {"status": "received", "agent_id": self.agent_id}
-                return JSONResponse(result)
-            except Exception as e:
-                return JSONResponse({"error": str(e)}, status_code=400)
-        
-        routes = [
-            Route("/health", health_check, methods=["GET"]),
-            Route("/did", get_did, methods=["GET"]),
-            Route("/message", handle_message, methods=["POST"]),
-        ]
-        
-        app = Starlette(routes=routes)
-        
-        config = uvicorn.Config(
-            app=app,
-            host=self.host,
-            port=self.port,
-            log_level="error"  # Reduce noise
-        )
-        
-        self.http_server = uvicorn.Server(config)
-        
-        # Start server in background task
-        asyncio.create_task(self.http_server.serve())
-        
-        # Wait a bit for server to start
-        await asyncio.sleep(0.5)
-    
-    async def _start_websocket_server(self) -> None:
-        """Start WebSocket server for real-time communication."""
-        import websockets
-        
-        async def handle_websocket(websocket, path):
-            """Handle WebSocket connections."""
-            try:
-                async for message in websocket:
-                    # Echo message back for now
-                    response = {
-                        "agent_id": self.agent_id,
-                        "received": message,
-                        "timestamp": asyncio.get_event_loop().time()
-                    }
-                    await websocket.send(json.dumps(response))
-            except Exception as e:
-                self.logger.error(f"WebSocket error: {e}")
-        
-        self.websocket_server = await websockets.serve(
-            handle_websocket,
-            "0.0.0.0",  # Listen on all interfaces
-            self.websocket_port
-        )
-        
-        self.logger.info(f"WebSocket server started on port {self.websocket_port}")
-    
-    async def _setup_anp_node(self) -> None:
-        """Setup ANP SimpleNode for protocol communication."""
+    async def _start_anp_server(self) -> None:
+        """Start ANP SDK SimpleNode server."""
         try:
-            # Create SimpleNode with our DID
+            # Create communication endpoint URL
+            communication_endpoint = f"http://{self.host}:{self.port}"
+            
+            # Create SimpleNode with official ANP SDK
             self.simple_node = SimpleNode(
-                did_document=self.did_doc,
-                private_key_set=self.private_keys
+                host_domain=self.host,
+                host_port=str(self.port),
+                host_ws_path="/ws",
+                private_key_pem=get_pem_from_private_key(self.private_keys),
+                did_document_json=json.dumps(self.did_doc)
             )
             
-            # Start a session
-            self.node_session = SimpleNodeSession(self.simple_node)
+            # Add health check endpoint to the FastAPI app
+            @self.simple_node.app.get("/health")
+            async def health_check():
+                return {"status": "healthy", "agent_id": self.agent_id, "protocol": "ANP"}
             
-            self.logger.info(f"ANP node session established for {self.agent_id}")
+            @self.simple_node.app.get("/.well-known/agent.json")
+            async def agent_card():
+                return {
+                    "name": f"ANP Agent {self.agent_id}",
+                    "url": communication_endpoint,
+                    "protocol": "ANP (Official SDK)",
+                    "agent_id": self.agent_id,
+                    "did": self.did_doc.get("id") if self.did_doc else None
+                }
+            
+            # Start the SimpleNode server using official SDK
+            self.simple_node.run()  # This starts the server in background
+            
+            # Create a session for communication (will be created when needed for specific connections)
+            # SimpleNodeSession requires specific connection parameters
+            self.node_session = None
+            
+            # Wait a bit for server to start
+            await asyncio.sleep(1)
+            
+            self.logger.info(f"ANP SDK SimpleNode server started on {self.host}:{self.port}")
             
         except Exception as e:
-            self.logger.error(f"Failed to setup ANP node: {e}")
-            # Continue without ANP node if it fails
-            pass
+            self.logger.error(f"Failed to start ANP server: {e}")
+            raise
     
     async def send_message(self, target_agent_id: str, message: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
@@ -269,10 +212,10 @@ class ANPAgent:
         return {
             "agent_id": self.agent_id,
             "host": self.host,
-            "http_port": self.port,
-            "websocket_port": self.websocket_port,
+            "port": self.port,
             "did": self.did_doc.get("id") if self.did_doc else None,
-            "anp_ready": self.node_session is not None,
+            "anp_sdk_ready": self.simple_node is not None,
+            "session_ready": self.node_session is not None,
             "startup_complete": self._startup_complete.is_set(),
         }
 

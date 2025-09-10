@@ -235,7 +235,7 @@ class FailStormRunnerBase(ABC):
         default_config = {
             "scenario": {
                 "protocol": "simple_json",
-                "agent_count": 3,
+                "agent_count": 8,
                 "kill_fraction": 0.3,
                 "fault_injection_time": 60.0,
                 "total_runtime": 120.0,

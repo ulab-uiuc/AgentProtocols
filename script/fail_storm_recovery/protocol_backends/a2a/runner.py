@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from core.simple_base_agent import SimpleBaseAgent as BaseAgent
 from protocol_backends.base_runner import FailStormRunnerBase
-from .agent import create_a2a_agent
+from .agent import create_a2a_agent, A2AAgent
 
 # Import shard_qa components dynamically to avoid circular imports
 shard_qa_path = Path(__file__).parent.parent.parent / "shard_qa"
@@ -99,7 +99,7 @@ class A2ARunner(FailStormRunnerBase):
         
         self.output.info("Initialized A2A protocol runner")
 
-    async def create_agent(self, agent_id: str, host: str, port: int, executor: ShardWorkerExecutor) -> BaseAgent:
+    async def create_agent(self, agent_id: str, host: str, port: int, executor: ShardWorkerExecutor) -> A2AAgent:
         """
         Create an A2A agent using native a2a-sdk.
         
@@ -338,7 +338,7 @@ class A2ARunner(FailStormRunnerBase):
                     self.output.error(f"Failed to stop A2A agent {agent_id}: {e}")
         
         # Schedule reconnection attempts with delay
-        reconnect_delay = self.config.get("a2a", {}).get("recovery", {}).get("reconnect_delay", 2.0)
+        reconnect_delay = self.config.get("a2a", {}).get("recovery", {}).get("reconnect_delay", 10.0)
         self.output.success(f"🔄 [A2A] Scheduling reconnection for {len(victims)} agents in {reconnect_delay}s...")
         
         for victim_id in victims:

@@ -41,6 +41,7 @@ from protocol_backends.simple_json.runner import SimpleJsonRunner
 from protocol_backends.anp.runner import ANPRunner
 from protocol_backends.a2a.runner import A2ARunner
 from protocol_backends.acp.runner import ACPRunner
+from protocol_backends.agora.runner import AgoraRunner
 
 # Import user's shard_qa agent_executor directly with dynamic import
 shard_qa_path = Path(__file__).parent.parent / "shard_qa"
@@ -91,6 +92,7 @@ class ProtocolRunnerFactory:
         "anp": ANPRunner,
         "a2a": A2ARunner,
         "acp": ACPRunner,
+        "agora": AgoraRunner,
     }
     
     @classmethod
@@ -1160,7 +1162,7 @@ async def main():
     
     parser = argparse.ArgumentParser(description="Fail-Storm Recovery Scenario Runner")
     parser.add_argument("--config", "-c", default="config.yaml", help="Configuration file path")
-    parser.add_argument("--protocol", "-p", choices=["a2a", "anp", "acp", "simple_json"], help="Protocol to test")
+    parser.add_argument("--protocol", "-p", choices=["a2a", "anp", "acp", "simple_json", "agora"], help="Protocol to test")
     parser.add_argument("--agents", "-n", type=int, help="Number of agents")
     parser.add_argument("--kill-fraction", "-k", type=float, help="Fraction of agents to kill")
     parser.add_argument("--fault-time", "-f", type=float, help="Fault injection time in seconds")
