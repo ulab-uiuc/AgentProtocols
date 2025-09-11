@@ -21,7 +21,15 @@ sys.path.insert(0, str(src_path))
 from src.core.base_agent import BaseAgent
 
 # Import fail_storm ANP agent components
-from ..anp.agent import ANPAgent
+import sys
+from pathlib import Path
+# Import from absolute path to avoid conflicts
+anp_agent_path = Path(__file__).parent.parent / "anp" / "agent.py"
+import importlib.util
+spec = importlib.util.spec_from_file_location("anp_agent", anp_agent_path)
+anp_agent_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(anp_agent_module)
+ANPAgent = anp_agent_module.ANPAgent
 
 logger = logging.getLogger(__name__)
 
@@ -122,11 +130,21 @@ class ANPMetaAgent:
         """
         try:
             # Import ShardWorkerExecutor for fail-storm tasks
-            from ...shard_qa.shard_worker.agent_executor import ShardWorkerExecutor
+            shard_qa_path = Path(__file__).parent.parent.parent / "shard_qa" / "shard_worker"
+            sys.path.insert(0, str(shard_qa_path))
+            from agent_executor import ShardWorkerExecutor
             
             # Create ShardWorkerExecutor with converted config
             shard_config = self._convert_config_for_shard_worker()
-            shard_executor = ShardWorkerExecutor(shard_config)
+            shard_executor = ShardWorkerExecutor(
+                config=shard_config,
+                global_config=self.config,
+                shard_id=self.agent_id,
+                data_file="data/shards/shard0.jsonl",
+                neighbors={"prev_id": "prev", "next_id": "next"},
+                output=None,
+                force_llm=True
+            )
             
             # Create ANP executor wrapper
             self.executor_wrapper = ANPExecutorWrapper(shard_executor)
@@ -136,8 +154,7 @@ class ANPMetaAgent:
                 agent_id=self.agent_id,
                 executor=self.executor_wrapper,
                 host=host,
-                port=port,
-                install_loopback=self.install_loopback
+                port=port
             )
             
             logger.info(f"[ANP-META] Created BaseAgent for {self.agent_id} @ {self.base_agent.get_listening_address()}")

@@ -199,16 +199,16 @@ class A2ARunner(FailStormRunnerBase):
             self.output.progress(f"🔗 [A2A] Running Shard QA collaborative retrieval for {normal_duration}s...")
             
             # Start QA tasks for all agents
-        qa_tasks = []
+            qa_tasks = []
             for agent_id, executor in self.shard_workers.items():
                 task = asyncio.create_task(
                     self._run_qa_task_for_agent(agent_id, executor, normal_duration),
                     name=f"qa_task_{agent_id}"
                 )
-            qa_tasks.append(task)
+                qa_tasks.append(task)
         
             # Wait for normal phase to complete
-        await asyncio.gather(*qa_tasks, return_exceptions=True)
+            await asyncio.gather(*qa_tasks, return_exceptions=True)
         
             # Report completion
             for agent_id, executor in self.shard_workers.items():
@@ -226,18 +226,28 @@ class A2ARunner(FailStormRunnerBase):
         start_time = time.time()
         task_count = 0
         
+        # Test first 20 groups like Meta protocol
+        max_groups = 20
+        group_id = 0
+        
         try:
-            while time.time() - start_time < duration and not self.shutdown_event.is_set():
+            while time.time() - start_time < duration and group_id < max_groups and not self.shutdown_event.is_set():
                 try:
-                    # Execute QA task for group 0 (standard test case)
+                    # Execute QA task for current group
                     task_start_time = time.time()
-                    result = await worker.worker.start_task(0)
+                    result = await worker.worker.start_task(group_id)
                     task_end_time = time.time()
                     task_count += 1
+                    current_group = group_id
+                    group_id = (group_id + 1) % max_groups  # Cycle through groups 0-19
                     
                     # Record task execution in metrics
                     if self.metrics_collector:
-                        answer_found = result and "answer found" in result.lower()
+                        # Fix logic: distinguish between finding answer vs not finding answer
+                        result_str = str(result).lower() if result else ""
+                        answer_found = (result and 
+                                      ("document search success" in result_str or "answer_found:" in result_str) and 
+                                      "no answer" not in result_str)
                         # Determine answer source based on the result content and patterns
                         result_str = str(result).upper()
                         if any(pattern in result_str for pattern in [
@@ -254,14 +264,15 @@ class A2ARunner(FailStormRunnerBase):
                             answer_source = "unknown"
                             
                         self.metrics_collector.record_task_execution(
-                            task_id=f"{task_count}-{agent_id}",
+                            task_id=f"{agent_id}_normal_g{current_group}_{task_count}",
                             agent_id=agent_id,
                             task_type="qa_search",
                             start_time=task_start_time,
                             end_time=task_end_time,
                             success=True,
                             answer_found=answer_found,
-                            answer_source=answer_source
+                            answer_source=answer_source,
+                            group_id=current_group
                         )
                         
                         # Log progress for debugging
@@ -398,7 +409,7 @@ class A2ARunner(FailStormRunnerBase):
                 if self.metrics_collector:
                     self.metrics_collector.set_first_recovery_time()
                 
-            except Exception as e:
+        except Exception as e:
             self.output.error(f"🔄 [A2A] Failed to reconnect {agent_id}: {e}")
 
     async def _reestablish_agent_connections(self, agent_id: str) -> None:

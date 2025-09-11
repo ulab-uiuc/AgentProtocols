@@ -241,31 +241,40 @@ class ShardWorker:
             with open(data_path, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
                 
-            if group_id >= len(lines):
+            # Search for the entry with matching group_id instead of using line index
+            found_data = None
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    data = json.loads(line)
+                    # Check if this entry matches the target group_id
+                    if data.get('id') == group_id or data.get('group_id') == group_id:
+                        found_data = data
+                        break
+                except json.JSONDecodeError:
+                    continue
+            
+            if found_data is None:
                 if self.output:
                     self.output.error(f"[{self.shard_id}] Group {group_id} not found in data file")
                 return False
-            
-            line = lines[group_id].strip()
-            if not line:
-                return False
                 
-            data = json.loads(line)
-            
-            # Verify group_id matches
-            if data.get('group_id') != group_id:
-                if self.output:
-                    self.output.warning(f"[{self.shard_id}] Group ID mismatch: expected {group_id}, got {data.get('group_id')}")
+            data = found_data
             
             self.current_group_id = group_id
             self.current_question = data.get('question', '')
-            self.current_answer = data.get('answer', '')
-            self.current_snippet = data.get('snippet', '')
+            # Fix field mapping: use 'content' as both answer and snippet
+            content = data.get('content', '')
+            self.current_answer = content  # Use content as the answer
+            self.current_snippet = content  # Use content as the snippet for searching
             
             if self.output:
                 is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
                 if not is_recovery:
                     self.output.success(f"[OK] [{self.shard_id}] Loaded group {group_id}: Q='{self.current_question[:50]}...'")
+                    self.output.progress(f"      A='{self.current_answer[:50]}...'")
                 # Silent during recovery phase
             
             return True
@@ -521,6 +530,13 @@ Example:
 
             # 添加force_llm flag来控制是否强制使用LLM
             force_llm = getattr(self, 'force_llm', False)
+            
+            # Debug: Check actual model type configuration
+            actual_model_type = "unknown"
+            if self.core and hasattr(self.core, 'config'):
+                actual_model_type = self.core.config.get('model', {}).get('type', 'unknown')
+                if self.output:
+                    self.output.progress(f"   🔍 [{self.shard_id}] DEBUG: Detected model type: {actual_model_type}")
             
             # 对于NVIDIA模型，自动使用mock模式（因为不支持工具调用）
             use_mock_for_nvidia = False

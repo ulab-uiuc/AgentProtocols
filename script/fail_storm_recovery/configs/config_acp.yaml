@@ -3,20 +3,27 @@ protocol: "acp"
 
 # Scenario configuration
 scenario:
-  name: "fail_storm_recovery"
+  name: "fail_storm_recovery_acp"
   protocol: "acp"
-  agent_count: 3
-  kill_fraction: 0.3
-  recovery_duration: 60  # seconds
-  fault_injection_time: 30.0  # when to inject faults
-  total_runtime: 60.0  # total scenario runtime
+  agent_count: 8
+  total_runtime: 300.0  # 5 minutes for testing
+  fault_injection_time: 120.0  # First fault at 2 minutes
+  kill_fraction: 0.375  # Kill 3 out of 8 agents
+  recovery_duration: 60
   heartbeat_interval: 5.0
   heartbeat_timeout: 15.0
+  # Cyclic fail storm configuration
+  cyclic_faults: true
+  fault_cycle_interval: 120.0  # 2 minutes
+  agents_per_fault: 3
+  normal_phase_duration: 120.0  # 2 minutes normal phase
+  max_groups: 1000  # Test 1000 groups
   
 # Shard QA configuration
 shard_qa:
-  normal_phase_duration: 30  # seconds
-  data_dir: "shard_qa/data/shards"
+  data_dir: "data/shards"
+  normal_phase_duration: 30.0
+  qa_cycle_timeout: 15.0
   
 # Network configuration
 network:

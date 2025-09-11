@@ -237,7 +237,11 @@ class ACPRunner(FailStormRunnerBase):
                     
                     # Record task execution in metrics
                     if self.metrics_collector:
-                        answer_found = result and "answer found" in result.lower()
+                        # Fix logic: distinguish between finding answer vs not finding answer
+                        result_str = str(result).lower() if result else ""
+                        answer_found = (result and 
+                                      ("document search success" in result_str or "answer_found:" in result_str) and 
+                                      "no answer" not in result_str)
                         # Determine answer source based on the result content and patterns
                         result_str = str(result).upper()
                         if any(pattern in result_str for pattern in [

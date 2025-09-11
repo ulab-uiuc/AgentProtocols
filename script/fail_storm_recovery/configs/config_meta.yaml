@@ -69,34 +69,29 @@ qa:
 
 # Shard QA Configuration for Testing
 shard_qa:
-  data_dir: "shard_qa/data"
-  questions_file: "qa_questions.json"
-  fragments_file: "knowledge_fragments.json"
+  data_dir: "data/shards"
   normal_phase_duration: 30.0
   qa_cycle_timeout: 15.0
-  test_questions:
-    - "What is the capital of France and what is its population?"
-    - "Explain the concept of artificial intelligence in simple terms."
-    - "How does photosynthesis work in plants?"
-    - "What are the main benefits of renewable energy sources?"
-    - "Describe the basic principles of quantum computing."
-    - "What is the difference between machine learning and deep learning?"
-    - "How do vaccines work to protect against diseases?"
-    - "Explain the concept of climate change and its causes."
 
 # Scenario Configuration (fail-storm specific)
 scenario:
   name: "fail_storm_meta_protocol"
   protocol: "meta"
   agent_count: 8  # 2 per protocol
-  total_runtime: 120.0
-  fault_injection_time: 60.0
-  kill_fraction: 0.25  # 25% of agents
+  total_runtime: 300.0  # 5 minutes for testing
+  fault_injection_time: 120.0  # First fault at 2 minutes
+  kill_fraction: 0.375  # Kill 3 out of 8 agents
   heartbeat_interval: 10.0
   heartbeat_timeout: 30.0
   enable_reconnection: true
   reconnection_delay: 10.0
   reconnection_timeout: 30.0
+  # Cyclic fail storm configuration
+  cyclic_faults: true
+  fault_cycle_interval: 120.0  # 2 minutes
+  agents_per_fault: 3
+  normal_phase_duration: 120.0  # 2 minutes normal phase
+  max_groups: 1000  # Test 1000 groups
 
 # Output Configuration
 output:

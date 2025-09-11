@@ -619,7 +619,11 @@ class FailStormRunner:
                     result = await worker.worker.start_task(0)
                     task_count += 1
                     
-                    if result and "answer found" in result.lower():
+                    # Fix logic: distinguish between finding answer vs not finding answer  
+                    result_str = str(result).lower() if result else ""
+                    if (result and 
+                        ("document search success" in result_str or "answer_found:" in result_str) and 
+                        "no answer" not in result_str):
                         # Show minimal search result from agent
                         if "DOCUMENT SEARCH SUCCESS" in result:
                             self.output.progress(f"🔍 [{agent_id}] Found answer")
@@ -857,7 +861,11 @@ class FailStormRunner:
                         result = await worker.worker.start_task(group_id)
                         task_count += 1
                         
-                        if result and "answer found" in result.lower():
+                        # Fix logic: distinguish between finding answer vs not finding answer  
+                    result_str = str(result).lower() if result else ""
+                    if (result and 
+                        ("document search success" in result_str or "answer_found:" in result_str) and 
+                        "no answer" not in result_str):
                             # Show minimal search result from agent
                             if "DOCUMENT SEARCH SUCCESS" in result:
                                 self.output.progress(f"🔍 [{agent_id}] Found answer")

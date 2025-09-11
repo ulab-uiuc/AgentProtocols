@@ -544,11 +544,15 @@ class SimpleJsonRunner(FailStormRunnerBase):
         
         # Save detailed metrics if available
         if self.metrics_collector:
-            detailed_metrics_file = self.results_dir / "detailed_failstorm_metrics.json"
+            # Add timestamp and protocol to filename
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            detailed_metrics_file = self.results_dir / f"detailed_failstorm_metrics_{timestamp}_simple_json.json"
             try:
                 self.metrics_collector.export_to_json(str(detailed_metrics_file))
+                self.output.success(f"💾 [SimpleJSON] Detailed metrics saved to: {detailed_metrics_file}")
             except Exception as e:
-                self.output.error(f"Failed to save detailed metrics: {e}")
+                self.output.error(f"❌ [SimpleJSON] Failed to save detailed metrics: {e}")
     
     async def _run_recovery_qa_task(self, agent_id: str, worker: 'ShardWorkerExecutor', duration: float) -> None:
         """Run continuous QA tasks for a single agent during recovery phase."""

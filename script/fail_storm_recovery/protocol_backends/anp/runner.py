@@ -274,20 +274,30 @@ class ANPRunner(FailStormRunnerBase):
         start_time = time.time()
         task_count = 0
         
-        while time.time() - start_time < duration:
+        # Test first 20 groups like Meta protocol
+        max_groups = 20
+        group_id = 0
+        
+        while time.time() - start_time < duration and group_id < max_groups:
             try:
-                # Execute QA task for group 0 (standard test case)
+                # Execute QA task for current group
                 task_start_time = time.time()
-                result = await worker.worker.start_task(0)
+                result = await worker.worker.start_task(group_id)
                 task_end_time = time.time()
                 task_count += 1
+                current_group = group_id
+                group_id = (group_id + 1) % max_groups  # Cycle through groups 0-19
                 
                 # Record task execution in metrics
                 if self.metrics_collector:
-                    answer_found = result and "answer found" in result.lower()
-                    answer_source = "local" if "LOCAL" in str(result) else "neighbor"
+                    # Fix logic: distinguish between finding answer vs not finding answer
+                    result_str = str(result).lower() if result else ""
+                    answer_found = (result and 
+                                  ("document search success" in result_str or "answer_found:" in result_str) and 
+                                  "no answer" not in result_str)
+                    answer_source = "local" if "local" in result_str else "neighbor"
                     self.metrics_collector.record_task_execution(
-                        task_id=f"{agent_id}_normal_{task_count}",
+                        task_id=f"{agent_id}_normal_g{current_group}_{task_count}",
                         agent_id=agent_id,
                         task_type="qa_normal",
                         start_time=task_start_time,
@@ -295,7 +305,7 @@ class ANPRunner(FailStormRunnerBase):
                         success=True,  # Task completed successfully
                         answer_found=answer_found,
                         answer_source=answer_source,
-                        group_id=0
+                        group_id=current_group
                     )
                 
                 if result and "answer found" in result.lower():
@@ -415,20 +425,30 @@ class ANPRunner(FailStormRunnerBase):
         start_time = time.time()
         task_count = 0
         
-        while time.time() - start_time < duration:
+        # Test first 20 groups like Meta protocol
+        max_groups = 20
+        group_id = 0
+        
+        while time.time() - start_time < duration and group_id < max_groups:
             try:
-                # Execute QA task for group 0 (standard test case)
+                # Execute QA task for current group
                 task_start_time = time.time()
-                result = await worker.worker.start_task(0)
+                result = await worker.worker.start_task(group_id)
                 task_end_time = time.time()
                 task_count += 1
+                current_group = group_id
+                group_id = (group_id + 1) % max_groups  # Cycle through groups 0-19
                 
                 # Record task execution in metrics
                 if self.metrics_collector:
-                    answer_found = result and "answer found" in result.lower()
-                    answer_source = "local" if "LOCAL" in str(result) else "neighbor"
+                    # Fix logic: distinguish between finding answer vs not finding answer
+                    result_str = str(result).lower() if result else ""
+                    answer_found = (result and 
+                                  ("document search success" in result_str or "answer_found:" in result_str) and 
+                                  "no answer" not in result_str)
+                    answer_source = "local" if "local" in result_str else "neighbor"
                     self.metrics_collector.record_task_execution(
-                        task_id=f"{agent_id}_recovery_{task_count}",
+                        task_id=f"{agent_id}_recovery_g{current_group}_{task_count}",
                         agent_id=agent_id,
                         task_type="qa_recovery",
                         start_time=task_start_time,
@@ -436,7 +456,7 @@ class ANPRunner(FailStormRunnerBase):
                         success=True,  # Task completed successfully
                         answer_found=answer_found,
                         answer_source=answer_source,
-                        group_id=0
+                        group_id=current_group
                     )
                 
                 if result and "answer found" in result.lower():
@@ -731,7 +751,10 @@ class ANPRunner(FailStormRunnerBase):
         
         # Save detailed metrics if available
         if self.metrics_collector:
-            detailed_metrics_file = self.results_dir / "detailed_failstorm_metrics.json"
+            # Add timestamp and protocol to filename
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            detailed_metrics_file = self.results_dir / f"detailed_failstorm_metrics_{timestamp}_anp.json"
             try:
                 self.metrics_collector.export_to_json(str(detailed_metrics_file))
                 self.output.success(f"💾 [ANP] Detailed metrics saved to: {detailed_metrics_file}")

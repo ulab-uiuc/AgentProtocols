@@ -21,11 +21,22 @@ sys.path.insert(0, str(src_path))
 from src.core.base_agent import BaseAgent
 
 # Import ACP SDK components
-from acp_sdk.models import Message, RunYield
-from acp_sdk.server import Context
+try:
+    from acp_sdk.models import Message, RunYield
+    from acp_sdk.server import Context
+except ImportError:
+    # Fallback for older ACP SDK versions
+    from acp_sdk.models import Message
+    from acp_sdk.server import Context
+    RunYield = None
 
 # Import fail_storm ACP agent components
-from ..acp.agent import ACPAgent
+import importlib.util
+acp_agent_path = Path(__file__).parent.parent / "acp" / "agent.py"
+spec = importlib.util.spec_from_file_location("acp_agent", acp_agent_path)
+acp_agent_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(acp_agent_module)
+ACPAgent = acp_agent_module.ACPAgent
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +52,7 @@ class ACPExecutorWrapper:
         self.shard_worker_executor = shard_worker_executor
         self.logger = logging.getLogger("ACPExecutorWrapper")
     
-    async def __call__(self, messages: List[Message], context: Context) -> AsyncGenerator[RunYield, None]:
+    async def __call__(self, messages: List[Message], context: Context) -> AsyncGenerator[Any, None]:
         """
         ACP SDK executor interface implementation for fail-storm shard workers.
         
@@ -82,25 +93,33 @@ class ACPExecutorWrapper:
             from acp_sdk.models import MessagePart
             
             # Yield ACP SDK RunYield with text response
-            yield RunYield(
-                type="message",
-                content=Message(
-                    parts=[MessagePart(type="text", text=answer)]
+            if RunYield:
+                yield RunYield(
+                    type="message",
+                    content=Message(
+                        parts=[MessagePart(type="text", text=answer)]
+                    )
                 )
-            )
+            else:
+                # Fallback for older ACP SDK versions
+                yield {"type": "message", "content": answer}
             
         except Exception as e:
             self.logger.error(f"[ACP] Executor error: {e}")
             
             # Yield error response in ACP format
             from acp_sdk.models import MessagePart
-            error_msg = RunYield(
-                type="message", 
-                content=Message(
-                    parts=[MessagePart(type="text", text=f"Error: {str(e)}")]
+            if RunYield:
+                error_msg = RunYield(
+                    type="message", 
+                    content=Message(
+                        parts=[MessagePart(type="text", text=f"Error: {str(e)}")]
+                    )
                 )
-            )
-            yield error_msg
+                yield error_msg
+            else:
+                # Fallback for older ACP SDK versions
+                yield {"type": "error", "content": f"Error: {str(e)}"}
 
 
 class ACPMetaAgent:
@@ -148,30 +167,57 @@ class ACPMetaAgent:
             BaseAgent instance with ACP protocol support
         """
         try:
+            print(f"[ACP-META] DEBUG: Starting creation for {self.agent_id}")
+            print(f"[ACP-META] DEBUG: Config: {self.config}")
+            print(f"[ACP-META] DEBUG: Host: {host}, Port: {port}")
+            
             # Import ShardWorkerExecutor for fail-storm tasks
-            from ...shard_qa.shard_worker.agent_executor import ShardWorkerExecutor
+            shard_qa_path = Path(__file__).parent.parent.parent / "shard_qa" / "shard_worker"
+            sys.path.insert(0, str(shard_qa_path))
+            from agent_executor import ShardWorkerExecutor
             
             # Create ShardWorkerExecutor with converted config
             shard_config = self._convert_config_for_shard_worker()
-            shard_executor = ShardWorkerExecutor(shard_config)
+            print(f"[ACP-META] DEBUG: Shard config: {shard_config}")
+            
+            shard_executor = ShardWorkerExecutor(
+                config=shard_config,
+                global_config=self.config,
+                shard_id=self.agent_id,
+                data_file="data/shards/shard0.jsonl",  # Default data file
+                neighbors={"prev_id": "prev", "next_id": "next"},  # Default neighbors
+                output=None,
+                force_llm=True
+            )
+            print(f"[ACP-META] DEBUG: Shard executor created successfully")
             
             # Create ACP executor wrapper
             self.executor_wrapper = ACPExecutorWrapper(shard_executor)
+            print(f"[ACP-META] DEBUG: Executor wrapper created successfully")
             
             # Create BaseAgent with ACP protocol
+            print(f"[ACP-META] DEBUG: Creating BaseAgent with ACP protocol...")
             self.base_agent = await BaseAgent.create_acp(
                 agent_id=self.agent_id,
                 executor=self.executor_wrapper,
                 host=host,
-                port=port,
-                install_loopback=self.install_loopback
+                port=port
             )
+            print(f"[ACP-META] DEBUG: BaseAgent created: {type(self.base_agent)}")
             
-            logger.info(f"[ACP-META] Created BaseAgent for {self.agent_id} @ {self.base_agent.get_listening_address()}")
+            # Debug: check if base_agent is properly created
+            if self.base_agent:
+                listening_addr = self.base_agent.get_listening_address()
+                logger.info(f"[ACP-META] Created BaseAgent for {self.agent_id} @ {listening_addr}")
+            else:
+                logger.error(f"[ACP-META] BaseAgent creation failed for {self.agent_id} - base_agent is None")
             return self.base_agent
             
         except Exception as e:
-            logger.error(f"[ACP-META] Failed to create ACP worker {self.agent_id}: {e}")
+            print(f"[ACP-META] ERROR: Failed to create ACP worker {self.agent_id}: {e}")
+            import traceback
+            print(f"[ACP-META] ERROR: Traceback:")
+            traceback.print_exc()
             raise
     
     async def get_health_status(self) -> Dict[str, Any]:

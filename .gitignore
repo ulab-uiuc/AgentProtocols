@@ -39,7 +39,7 @@ Thumbs.db
 #original data
 
 script/streaming_queue/data/*
-script/shard_qa/data/*
+
 # script/gaia/*
 script/gaia/GAIABench
 
@@ -70,7 +70,7 @@ Thumbs.db
 script\safety_tech\output
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
-
+script\fail_storm_recovery\results
 # Environment variables
 .env
 researchagent_networkscriptfail_storm_recovery

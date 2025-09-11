@@ -236,15 +236,21 @@ class FailStormRunnerBase(ABC):
             "scenario": {
                 "protocol": "simple_json",
                 "agent_count": 8,
-                "kill_fraction": 0.3,
-                "fault_injection_time": 60.0,
-                "total_runtime": 120.0,
+                "kill_fraction": 0.375,  # Kill 3 out of 8 agents
+                "fault_injection_time": 120.0,  # First fault at 2 minutes
+                "total_runtime": 1200.0,  # 20 minutes for 1000 groups
                 "recovery_duration": 60.0,
                 "heartbeat_interval": 3.0,
-                "heartbeat_timeout": 30.0
+                "heartbeat_timeout": 30.0,
+                # Cyclic fail storm configuration
+                "cyclic_faults": True,
+                "fault_cycle_interval": 120.0,  # 2 minutes
+                "agents_per_fault": 3,
+                "normal_phase_duration": 120.0,  # 2 minutes normal phase
+                "max_groups": 1000  # Test 1000 groups
             },
             "shard_qa": {
-                "data_dir": "../shard_qa/data",
+                "data_dir": "data/shards",
                 "questions_file": "qa_questions.json",
                 "fragments_file": "knowledge_fragments.json",
                 "normal_phase_duration": 30.0,
@@ -259,15 +265,15 @@ class FailStormRunnerBase(ABC):
                 "host": "127.0.0.1"
             },
             "llm": {
-                "type": "nvidia",
-                "model": "nvdev/nvidia/llama-3.1-nemotron-70b-instruct",
-                "nvidia_api_key": "${NVIDIA_API_KEY}",
-                "nvidia_base_url": "https://integrate.api.nvidia.com/v1",
+                "type": "openai",
+                "model": "gpt-4o",
+                "openai_api_key": "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",
+                "openai_base_url": "https://api.openai.com/v1",
                 "temperature": 0.2,
                 "top_p": 0.7,
                 "max_tokens": 8192,
-                "name": "nvdev/nvidia/llama-3.1-nemotron-70b-instruct",
-                "openai_api_key": "${NVIDIA_API_KEY}"
+                "name": "gpt-4o",
+                "timeout": 30.0
             },
             "output": {
                 "results_file": "failstorm_metrics.json",
@@ -416,23 +422,30 @@ class FailStormRunnerBase(ABC):
             if self.shutdown_event.is_set():
                 return await self._cleanup_and_exit("Setup interrupted")
             
-            # Phase 1: Normal Operation
-            self.output.info("⚡ Phase 1: Normal Shard QA workflow execution...")
-            await self._execute_normal_phase()
-            
-            if self.shutdown_event.is_set():
-                return await self._cleanup_and_exit("Normal phase interrupted")
-            
-            # Phase 2: Fault Injection
-            self.output.info("💥 Phase 2: Fault injection...")
-            await self._execute_fault_injection()
-            
-            if self.shutdown_event.is_set():
-                return await self._cleanup_and_exit("Fault injection interrupted")
-            
-            # Phase 3: Recovery Monitoring
-            self.output.info("🔄 Phase 3: Recovery monitoring...")
-            await self._monitor_recovery()
+            # Check if cyclic faults are enabled
+            if self.config.get("scenario", {}).get("cyclic_faults", False):
+                # Execute cyclic fail storm scenario
+                self.output.info("🔄 Phase 1-N: Cyclic Fail-Storm execution...")
+                await self._execute_cyclic_fail_storm()
+            else:
+                # Original single-fault execution
+                # Phase 1: Normal Operation
+                self.output.info("⚡ Phase 1: Normal Shard QA workflow execution...")
+                await self._execute_normal_phase()
+                
+                if self.shutdown_event.is_set():
+                    return await self._cleanup_and_exit("Normal phase interrupted")
+                
+                # Phase 2: Fault Injection
+                self.output.info("💥 Phase 2: Fault injection...")
+                await self._execute_fault_injection()
+                
+                if self.shutdown_event.is_set():
+                    return await self._cleanup_and_exit("Fault injection interrupted")
+                
+                # Phase 3: Recovery Monitoring
+                self.output.info("🔄 Phase 3: Recovery monitoring...")
+                await self._monitor_recovery()
             
             # Phase 4: Evaluation and Results
             self.output.info("📊 Phase 4: Evaluation and results...")
@@ -547,11 +560,11 @@ class FailStormRunnerBase(ABC):
             self.output.error(f"Port allocation failed: {e}")
             raise
         
-        # Prepare LLM configuration
+        # Prepare LLM configuration in the format expected by ShardWorker
         llm_config = {"model": self.config["llm"]}
         
-        # Use existing shard data files
-        shard_qa_data_dir = Path(__file__).parent.parent / "shard_qa" / "data" / "shards"
+        # Use shard data files from configuration
+        shard_qa_data_dir = Path(__file__).parent.parent / self.config.get("shard_qa", {}).get("data_dir", "data/shards")
         if not shard_qa_data_dir.exists():
             self.output.error(f"Shard QA data directory not found: {shard_qa_data_dir}")
             raise FileNotFoundError(f"Missing shard QA data: {shard_qa_data_dir}")
@@ -644,13 +657,319 @@ class FailStormRunnerBase(ABC):
         
         return results
     
+    async def _execute_cyclic_fail_storm(self) -> None:
+        """Execute cyclic fail-storm scenario with alternating normal/fault phases."""
+        import asyncio
+        import time
+        import random
+        
+        scenario_config = self.config.get("scenario", {})
+        total_runtime = scenario_config.get("total_runtime", 1200.0)  # 20 minutes
+        fault_cycle_interval = scenario_config.get("fault_cycle_interval", 120.0)  # 2 minutes
+        normal_phase_duration = scenario_config.get("normal_phase_duration", 120.0)  # 2 minutes
+        agents_per_fault = scenario_config.get("agents_per_fault", 3)
+        
+        start_time = time.time()
+        cycle_count = 0
+        current_phase = "normal"  # Start with normal phase
+        
+        self.output.info(f"🔄 Starting Cyclic Fail-Storm:")
+        self.output.info(f"   Total runtime: {total_runtime/60:.1f} minutes")
+        self.output.info(f"   Cycle interval: {fault_cycle_interval/60:.1f} minutes")
+        self.output.info(f"   Agents per fault: {agents_per_fault}")
+        
+        while time.time() - start_time < total_runtime and not self.shutdown_event.is_set():
+            cycle_start = time.time()
+            cycle_count += 1
+            elapsed = time.time() - start_time
+            
+            if current_phase == "normal":
+                self.output.info(f"✅ Cycle {cycle_count}: Normal Phase ({elapsed/60:.1f}m elapsed)")
+                
+                # Run normal QA tasks for specified duration
+                await self._execute_normal_phase_cyclic(normal_phase_duration)
+                
+                # Switch to fault phase
+                current_phase = "fault"
+                
+            else:  # fault phase
+                self.output.info(f"💥 Cycle {cycle_count}: Fault Injection Phase ({elapsed/60:.1f}m elapsed)")
+                
+                # Inject faults (kill some agents)
+                await self._inject_cyclic_faults(agents_per_fault)
+                
+                # Monitor recovery for a period
+                recovery_duration = min(fault_cycle_interval, 60.0)  # Max 1 minute recovery
+                await self._monitor_cyclic_recovery(recovery_duration)
+                
+                # Switch back to normal phase
+                current_phase = "normal"
+            
+            # Wait for next cycle if needed
+            cycle_elapsed = time.time() - cycle_start
+            if cycle_elapsed < fault_cycle_interval:
+                wait_time = fault_cycle_interval - cycle_elapsed
+                self.output.info(f"⏳ Waiting {wait_time:.1f}s for next cycle...")
+                await asyncio.sleep(wait_time)
+        
+        total_elapsed = time.time() - start_time
+        self.output.success(f"🎉 Cyclic Fail-Storm completed: {cycle_count} cycles in {total_elapsed/60:.1f} minutes")
+    
+    async def _execute_normal_phase_cyclic(self, duration: float) -> None:
+        """Execute normal phase for cyclic fail-storm."""
+        # Start QA tasks for all alive agents
+        qa_tasks = []
+        for agent_id, worker in self.shard_workers.items():
+            if agent_id not in self.killed_agents:
+                task = asyncio.create_task(
+                    self._run_qa_task_for_agent_cyclic(agent_id, worker, duration),
+                    name=f"qa_task_{agent_id}"
+                )
+                qa_tasks.append(task)
+        
+        # Wait for all tasks to complete or timeout
+        if qa_tasks:
+            await asyncio.gather(*qa_tasks, return_exceptions=True)
+    
+    async def _run_qa_task_for_agent_cyclic(self, agent_id: str, worker, duration: float):
+        """Run QA tasks for an agent during cyclic normal phase."""
+        start_time = time.time()
+        task_count = 0
+        max_groups = self.config.get("scenario", {}).get("max_groups", 1000)
+        
+        # Continue from where we left off, or start from random group
+        group_id = getattr(self, f"_last_group_{agent_id}", 0)
+        
+        while time.time() - start_time < duration and not self.shutdown_event.is_set():
+            try:
+                # Execute QA task for current group
+                task_start_time = time.time()
+                result = await worker.worker.start_task(group_id % max_groups)
+                task_end_time = time.time()
+                task_count += 1
+                
+                # Record task execution in metrics
+                if self.metrics_collector:
+                    result_str = str(result).lower() if result else ""
+                    answer_found = (result and 
+                                  ("document search success" in result_str or "answer_found:" in result_str) and 
+                                  "no answer" not in result_str)
+                    answer_source = "local" if "local" in result_str else "neighbor"
+                    
+                    self.metrics_collector.record_task_execution(
+                        task_id=f"{agent_id}_cyclic_g{group_id}_{task_count}",
+                        agent_id=agent_id,
+                        task_type="qa_cyclic",
+                        start_time=task_start_time,
+                        end_time=task_end_time,
+                        success=True,
+                        answer_found=answer_found,
+                        answer_source=answer_source,
+                        group_id=group_id % max_groups
+                    )
+                
+                group_id += 1
+                
+                # Brief pause between tasks
+                await asyncio.sleep(0.5)
+                
+            except Exception as e:
+                self.output.error(f"❌ [{agent_id}] QA task failed: {e}")
+                await asyncio.sleep(1.0)
+        
+        # Save last group for next cycle
+        setattr(self, f"_last_group_{agent_id}", group_id)
+        
+        self.output.info(f"   {agent_id}: Completed {task_count} QA tasks (groups {group_id-task_count}-{group_id-1})")
+    
+    async def _inject_cyclic_faults(self, agents_per_fault: int) -> None:
+        """Inject faults by killing specified number of agents."""
+        import random
+        
+        # Get list of alive agents
+        alive_agents = [aid for aid in self.agents.keys() if aid not in self.killed_agents]
+        
+        if len(alive_agents) <= agents_per_fault:
+            self.output.warning(f"⚠️ Only {len(alive_agents)} agents alive, cannot kill {agents_per_fault}")
+            return
+        
+        # Randomly select agents to kill
+        agents_to_kill = random.sample(alive_agents, min(agents_per_fault, len(alive_agents)))
+        
+        self.output.warning(f"💥 Killing {len(agents_to_kill)} agents: {', '.join(agents_to_kill)}")
+        
+        # Record fault injection time
+        if self.metrics_collector and not hasattr(self.metrics_collector, 'fault_injection_time'):
+            self.metrics_collector.set_fault_injection_time()
+        
+        # Kill selected agents
+        for agent_id in agents_to_kill:
+            try:
+                await self._kill_agent(agent_id)
+                self.output.warning(f"   ✗ Killed agent: {agent_id}")
+            except Exception as e:
+                self.output.error(f"❌ Failed to kill {agent_id}: {e}")
+        
+        # Schedule reconnection
+        reconnection_delay = 10.0  # 10 seconds
+        self.output.info(f"🔄 Scheduling reconnection for {len(agents_to_kill)} agents in {reconnection_delay}s...")
+        
+        for agent_id in agents_to_kill:
+            asyncio.create_task(self._schedule_reconnection(agent_id, reconnection_delay))
+    
+    async def _monitor_cyclic_recovery(self, duration: float) -> None:
+        """Monitor recovery during cyclic fail-storm."""
+        start_time = time.time()
+        
+        while time.time() - start_time < duration and not self.shutdown_event.is_set():
+            alive_count = len(self.agents) - len(self.killed_agents)
+            total_count = len(self.agents)
+            alive_percentage = (alive_count / total_count) * 100
+            elapsed = time.time() - start_time
+            
+            self.output.info(f"🔄 Recovery monitoring: {alive_percentage:.0f}% alive, {elapsed:.0f}s elapsed")
+            
+            # Check if all agents recovered
+            if len(self.killed_agents) == 0:
+                self.output.success(f"✅ All agents recovered in {elapsed:.1f}s")
+                if self.metrics_collector:
+                    self.metrics_collector.set_steady_state_time()
+                break
+            
+            await asyncio.sleep(5.0)  # Check every 5 seconds
+    
+    async def _schedule_reconnection(self, agent_id: str, delay: float) -> None:
+        """Schedule reconnection of a killed agent."""
+        await asyncio.sleep(delay)
+        
+        if agent_id in self.killed_agents:
+            try:
+                await self._reconnect_agent(agent_id)
+                self.output.success(f"✅ Agent {agent_id} reconnected successfully")
+                
+                # Record first recovery time if this is the first recovery
+                if self.metrics_collector and not hasattr(self.metrics_collector, 'first_recovery_time'):
+                    self.metrics_collector.set_first_recovery_time()
+                    
+            except Exception as e:
+                self.output.error(f"❌ Failed to reconnect {agent_id}: {e}")
+    
+    async def _kill_agent(self, agent_id: str) -> None:
+        """Kill an agent (to be implemented by subclasses)."""
+        # Default implementation: just mark as killed
+        if agent_id in self.agents:
+            # Store agent config for reconnection
+            if not hasattr(self, 'killed_agent_configs'):
+                self.killed_agent_configs = {}
+            
+            self.killed_agent_configs[agent_id] = {
+                "agent_id": agent_id,
+                "host": "0.0.0.0",
+                "port": getattr(self.agents[agent_id], '_port', 9000),
+                "data_file": getattr(self.shard_workers.get(agent_id, {}).worker if agent_id in self.shard_workers else None, 'data_file', 'shard0.jsonl')
+            }
+            
+            # Add to killed agents set
+            self.killed_agents.add(agent_id)
+            self.temporarily_killed_agents.add(agent_id)
+            
+            # Stop the agent (basic implementation)
+            try:
+                if hasattr(self.agents[agent_id], 'stop'):
+                    await self.agents[agent_id].stop()
+            except Exception:
+                pass  # Ignore stop errors
+    
+    async def _reconnect_agent(self, agent_id: str) -> None:
+        """Reconnect a killed agent (to be implemented by subclasses)."""
+        # Default implementation: just remove from killed set
+        if agent_id in self.killed_agents:
+            self.killed_agents.discard(agent_id)
+            if hasattr(self, 'killed_agent_configs') and agent_id in self.killed_agent_configs:
+                del self.killed_agent_configs[agent_id]
+    
+    def _generate_qa_summary(self) -> Dict[str, Any]:
+        """Generate unified QA summary from metrics collector."""
+        if not self.metrics_collector:
+            return {
+                "total_tasks": 0,
+                "found_answers": 0,
+                "answer_found_rate": 0.0,
+                "groups_tested": 0,
+                "group_range": "N/A",
+                "answer_sources": {},
+                "note": "No metrics collector available"
+            }
+        
+        try:
+            # Get all task executions from metrics collector directly
+            task_executions = self.metrics_collector.task_executions
+            
+            # Count QA tasks and answers
+            total_tasks = 0
+            found_answers = 0
+            groups_tested = set()
+            answer_sources = {"local": 0, "neighbor": 0, "unknown": 0}
+            
+            for task in task_executions:
+                task_type = getattr(task, "task_type", "")
+                if "qa" in task_type.lower():  # Include qa_normal, qa_search, qa_recovery, etc.
+                    total_tasks += 1
+                    group_id = getattr(task, "group_id", None)
+                    if group_id is not None:
+                        groups_tested.add(group_id)
+                    
+                    if getattr(task, "answer_found", False):
+                        found_answers += 1
+                        source = getattr(task, "answer_source", "unknown")
+                        if source in answer_sources:
+                            answer_sources[source] += 1
+                        else:
+                            answer_sources["unknown"] += 1
+            
+            answer_rate = found_answers / total_tasks if total_tasks > 0 else 0.0
+            group_range = f"{min(groups_tested)}-{max(groups_tested)}" if groups_tested else "N/A"
+            
+            return {
+                "total_tasks": total_tasks,
+                "found_answers": found_answers,
+                "answer_found_rate": answer_rate,
+                "groups_tested": len(groups_tested),
+                "group_range": group_range,
+                "answer_sources": answer_sources,
+                "success_rate": 1.0 if total_tasks > 0 else 0.0  # All tasks completed successfully
+            }
+            
+        except Exception as e:
+            return {
+                "total_tasks": 0,
+                "found_answers": 0,
+                "answer_found_rate": 0.0,
+                "groups_tested": 0,
+                "group_range": "Error",
+                "answer_sources": {},
+                "error": str(e)
+            }
+    
     async def _save_results(self, results: Dict[str, Any]) -> None:
         """Save results to configured output files."""
         try:
-            # Get output file paths from config
+            # Get output file paths from config with timestamp and protocol
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            protocol_name = self.config.get("scenario", {}).get("protocol", "unknown")
+            
+            # Add unified QA summary to results
+            qa_summary = self._generate_qa_summary()
+            results["qa_summary"] = qa_summary
+            
             output_config = self.config.get("output", {})
-            results_file = output_config.get("results_file", "failstorm_metrics.json")
-            detailed_results_file = output_config.get("detailed_results_file", "detailed_failstorm_metrics.json")
+            base_results_file = output_config.get("results_file", "failstorm_metrics.json")
+            base_detailed_file = output_config.get("detailed_results_file", "detailed_failstorm_metrics.json")
+            
+            # Add timestamp and protocol to filenames
+            results_file = base_results_file.replace(".json", f"_{timestamp}_{protocol_name}.json")
+            detailed_results_file = base_detailed_file.replace(".json", f"_{timestamp}_{protocol_name}.json")
             
             # Ensure results directory exists
             self.results_dir.mkdir(parents=True, exist_ok=True)
