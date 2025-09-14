@@ -15,8 +15,21 @@ from typing import Dict, Any, Optional
 import logging
 
 # Production imports - require real dependencies
+# Add proper paths
+import sys
+from pathlib import Path
+
+current_file = Path(__file__).resolve()
+streaming_queue_path = current_file.parents[2]
+project_root = streaming_queue_path.parent.parent
+src_path = project_root / "src"
+
+sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(streaming_queue_path))
+sys.path.insert(0, str(src_path))
+
 from src.core.base_agent import BaseAgent
-from script.streaming_queue.protocol_backend.a2a.worker import QAAgentExecutor
+from protocol_backend.a2a.worker import QAAgentExecutor
 
 logger = logging.getLogger(__name__)
 

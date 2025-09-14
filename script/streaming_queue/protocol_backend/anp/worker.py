@@ -19,7 +19,12 @@ if str(streaming_queue_path) not in sys.path:
     sys.path.insert(0, str(streaming_queue_path))
 
 # Import streaming_queue core
-from core.qa_worker_base import QAWorkerBase
+# Add core path
+streaming_queue_path = Path(__file__).resolve().parent.parent.parent
+core_path = streaming_queue_path / "core"
+if str(core_path) not in sys.path:
+    sys.path.insert(0, str(core_path))
+from qa_worker_base import QAWorkerBase
 
 # AgentConnect imports for ANP support
 project_root = streaming_queue_path.parent.parent

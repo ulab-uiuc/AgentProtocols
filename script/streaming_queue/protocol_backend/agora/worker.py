@@ -16,11 +16,19 @@ from functools import wraps
 import agora
 
 # 允许多种导入相对路径（避免运行根目录不同导致的导入失败）
+import sys
+from pathlib import Path
+
 try:
     from ...core.qa_worker_base import QAWorkerBase  # when run as package
 except ImportError:
     try:
-        from core.qa_worker_base import QAWorkerBase
+        # Add core path
+        streaming_queue_path = Path(__file__).resolve().parent.parent.parent
+        core_path = streaming_queue_path / "core"
+        if str(core_path) not in sys.path:
+            sys.path.insert(0, str(core_path))
+        from qa_worker_base import QAWorkerBase
     except ImportError:
         from script.streaming_queue.core.qa_worker_base import QAWorkerBase  # type: ignore
 

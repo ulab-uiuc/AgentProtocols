@@ -56,7 +56,11 @@ if str(streaming_queue_path) not in sys.path:
     sys.path.insert(0, str(streaming_queue_path))
 
 try:
-    from comm.base import BaseCommBackend
+    # Add comm path
+    comm_path = streaming_queue_path / "comm"
+    if str(comm_path) not in sys.path:
+        sys.path.insert(0, str(comm_path))
+    from base import BaseCommBackend
 except ImportError as e:
     raise ImportError(f"Cannot import BaseCommBackend from comm.base: {e}")
 

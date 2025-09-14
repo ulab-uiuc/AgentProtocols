@@ -19,7 +19,12 @@ streaming_queue_path = current_file.parent.parent.parent  # Go up from a2a -> pr
 if str(streaming_queue_path) not in sys.path:
     sys.path.insert(0, str(streaming_queue_path))
 
-from core.qa_worker_base import QAWorkerBase
+# Add core path
+streaming_queue_path = Path(__file__).resolve().parent.parent.parent
+core_path = streaming_queue_path / "core"
+if str(core_path) not in sys.path:
+    sys.path.insert(0, str(core_path))
+from qa_worker_base import QAWorkerBase
 
 # A2A SDK（必需依赖）
 from a2a.server.agent_execution import AgentExecutor, RequestContext

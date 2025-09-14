@@ -10,12 +10,21 @@ This runner uses the official ACP SDK to implement full Agent Communication Prot
 
 from __future__ import annotations
 import asyncio
+import sys
+from pathlib import Path
 from typing import Any, Dict, List, Optional
-from .runner_base import RunnerBase
-from ..core.network_base import NetworkBase
-from ..protocol_backend.acp.comm import ACPCommBackend
-from ..protocol_backend.acp.coordinator import ACPCoordinatorExecutor
-from ..protocol_backend.acp.worker import ACPWorkerExecutor
+
+# Setup paths (following the pattern from other runners)
+HERE = Path(__file__).resolve()
+STREAMING_Q = HERE.parents[1]  # .../streaming_queue
+sys.path.insert(0, str(STREAMING_Q))
+sys.path.insert(0, str(HERE.parent))   # runner/
+
+from runner_base import RunnerBase
+from core.network_base import NetworkBase
+from protocol_backend.acp.comm import ACPCommBackend
+from protocol_backend.acp.coordinator import ACPCoordinatorExecutor
+from protocol_backend.acp.worker import ACPWorkerExecutor
 
 # Import ACP SDK components
 try:

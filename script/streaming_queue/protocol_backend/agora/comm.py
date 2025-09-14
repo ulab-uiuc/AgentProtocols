@@ -16,7 +16,15 @@ import agora
 import inspect
 from flask import jsonify
 
-from ...comm.base import BaseCommBackend
+# Add comm path for BaseCommBackend
+import sys
+from pathlib import Path
+current_file = Path(__file__).resolve()
+streaming_queue_path = current_file.parent.parent.parent
+comm_path = streaming_queue_path / "comm"
+if str(comm_path) not in sys.path:
+    sys.path.insert(0, str(comm_path))
+from base import BaseCommBackend
 
 
 class AgoraServerWrapper:

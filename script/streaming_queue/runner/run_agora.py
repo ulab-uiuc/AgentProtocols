@@ -10,13 +10,22 @@ from __future__ import annotations
 import os
 os.environ["OPENAI_API_KEY"] = "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"
 import asyncio
+import sys
+from pathlib import Path
 import httpx
 from typing import Any, Dict, List, Optional
-from .runner_base import RunnerBase
-from ..core.network_base import NetworkBase
-from ..protocol_backend.agora.comm import AgoraCommBackend
-from ..protocol_backend.agora.coordinator import AgoraCoordinatorExecutor
-from ..protocol_backend.agora.worker import AgoraWorkerExecutor
+
+# Setup paths (following the pattern from other runners)
+HERE = Path(__file__).resolve()
+STREAMING_Q = HERE.parents[1]  # .../streaming_queue
+sys.path.insert(0, str(STREAMING_Q))
+sys.path.insert(0, str(HERE.parent))   # runner/
+
+from runner_base import RunnerBase
+from core.network_base import NetworkBase
+from protocol_backend.agora.comm import AgoraCommBackend
+from protocol_backend.agora.coordinator import AgoraCoordinatorExecutor
+from protocol_backend.agora.worker import AgoraWorkerExecutor
 
 
 class AgoraRunner(RunnerBase):

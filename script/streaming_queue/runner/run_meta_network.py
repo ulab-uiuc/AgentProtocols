@@ -11,26 +11,26 @@ import yaml
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
-# Setup paths
-current_file = Path(__file__).resolve()
-streaming_queue_path = current_file.parents[1]  # script/streaming_queue/runner -> script/streaming_queue
-project_root = streaming_queue_path.parent.parent
-src_path = project_root / "src"
+# Setup paths (following the pattern from other runners)
+HERE = Path(__file__).resolve()
+STREAMING_Q = HERE.parents[1]  # .../streaming_queue
+PROJECT_ROOT = STREAMING_Q.parent.parent  # .../agent_network
+SRC_PATH = PROJECT_ROOT / "src"
 
-# Add paths - src first for priority
-if str(src_path) not in sys.path:
-    sys.path.insert(0, str(src_path))
-if str(streaming_queue_path) not in sys.path:
-    sys.path.insert(0, str(streaming_queue_path))
+# Add paths in correct order
+sys.path.insert(0, str(PROJECT_ROOT))  # Add project root first
+sys.path.insert(0, str(STREAMING_Q))
+sys.path.insert(0, str(HERE.parent))   # runner/
+sys.path.insert(0, str(SRC_PATH))
 
-# Import src components (must be from src/core)
+# Import components with correct paths
+from runner_base import RunnerBase, ColoredOutput  # type: ignore
+
+# Import src components
 from src.core.base_agent import BaseAgent
 from src.core.network import AgentNetwork
 
-# Import executor wrappers (adjust path after moving to runner folder)
-from script.streaming_queue.protocol_backend.meta_protocol.executor_wrappers import create_protocol_worker, validate_executor_interface
-
-from .runner_base import RunnerBase
+# Skip executor wrappers import for now - will create agents directly
 
 
 class MetaProtocolRunner(RunnerBase):
@@ -164,37 +164,125 @@ class MetaProtocolRunner(RunnerBase):
                 "port": core.get("port", 8000),
             }
     
+    def _create_llm_client(self):
+        """Create LLM client for routing decisions."""
+        try:
+            core_config = self.config.get("core", {})
+            api_key = core_config.get("openai_api_key", "")
+            base_url = core_config.get("openai_base_url", "https://api.openai.com/v1")
+            model = core_config.get("name", "gpt-4o")
+            
+            if not api_key:
+                raise ValueError("OpenAI API key not found in config")
+            
+            class SimpleLLMClient:
+                def __init__(self, api_key, base_url, model):
+                    self.api_key = api_key
+                    self.base_url = base_url
+                    self.model = model
+                
+                async def ask_tool(self, messages, tools, tool_choice):
+                    import aiohttp
+                    headers = {
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json"
+                    }
+                    payload = {
+                        "model": self.model,
+                        "messages": messages,
+                        "tools": tools,
+                        "tool_choice": tool_choice,
+                        "temperature": 0.0
+                    }
+                    endpoint = f"{self.base_url}/chat/completions"
+                    
+                    async with aiohttp.ClientSession() as session:
+                        async with session.post(endpoint, headers=headers, json=payload) as response:
+                            if response.status != 200:
+                                error_text = await response.text()
+                                raise Exception(f"API call failed: {response.status} - {error_text}")
+                            result = await response.json()
+                            return result["choices"][0]["message"]
+            
+            return SimpleLLMClient(api_key, base_url, model)
+            
+        except Exception as e:
+            self.output.warning(f"Failed to create LLM client: {e}")
+            return None
+    
     async def create_protocol_workers(self) -> List[str]:
         """
-        Create protocol-specific BaseAgent servers using the stable factory methods
-        and register them into AgentNetwork.
+        Create protocol-specific BaseAgent servers using LLM-based intelligent routing.
+        LLM will analyze the workload and select optimal protocols for 4 agents.
         """
-        self.output.info("Creating BaseAgent instances with protocol-specific executors...")
+        self.output.info("🧠 Creating agents with LLM-based protocol selection...")
 
         cfg = self._convert_config_for_qa()
-        worker_start_port = self.config.get("qa", {}).get("worker", {}).get("start_port", 10001)  # Use original port range
+        worker_start_port = self.config.get("qa", {}).get("worker", {}).get("start_port", 10001)
 
-        # protocol -> (agent_id, port)
-        assignments = [
-            ("acp",   "ACP-Worker-1",   worker_start_port + 0),
-            ("anp",   "ANP-Worker-2",   worker_start_port + 1),
-            ("agora", "Agora-Worker-3", worker_start_port + 2),
-            ("a2a",   "A2A-Worker-4",   worker_start_port + 3),
-        ]
+        # Use LLM to determine optimal protocol assignment
+        try:
+            # Import LLM router
+            from protocol_backend.meta_protocol.llm_router import route_task_with_llm
+            
+            # Initialize LLM client
+            llm_client = self._create_llm_client()
+            
+            # Analyze streaming queue workload for optimal protocol selection
+            pressure_test_task = {
+                "question": "Streaming queue pressure test: process maximum questions in minimum time",
+                "context": "High-throughput QA processing with diverse question types",
+                "metadata": {
+                    "type": "pressure_test",
+                    "volume": self.config.get("qa", {}).get("batch_size", 50),
+                    "priority": "maximum_speed",
+                    "target_qps": 20
+                }
+            }
+            
+            # Get LLM routing decision for 4 agents
+            routing_decision = await route_task_with_llm(pressure_test_task, num_agents=4, llm_client=llm_client)
+            
+            self.output.info("🎯 LLM Routing Decision:")
+            self.output.info(f"   Selected protocols: {routing_decision.selected_protocols}")
+            self.output.info(f"   Strategy: {routing_decision.strategy}")
+            self.output.info(f"   Confidence: {routing_decision.confidence:.1%}")
+            self.output.info(f"   Reasoning: {routing_decision.reasoning[:100]}...")
+            
+            # Create agents based on LLM decision
+            assignments = []
+            port_offset = 0
+            for agent_id, protocol in routing_decision.agent_assignments.items():
+                port = worker_start_port + port_offset
+                assignments.append((protocol, agent_id, port))
+                port_offset += 1
+            
+        except Exception as e:
+            self.output.warning(f"LLM routing failed: {e}")
+            self.output.info("Falling back to default fast protocol assignment...")
+            
+            # Fallback to speed-optimized assignment
+            assignments = [
+                ("a2a",   "FastAgent-1",   worker_start_port + 0),  # Fastest
+                ("a2a",   "FastAgent-2",   worker_start_port + 1),  # Fastest
+                ("acp",   "FastAgent-3",   worker_start_port + 2),  # Second fastest
+                ("acp",   "FastAgent-4",   worker_start_port + 3),  # Second fastest
+            ]
 
+        # Create agents based on assignments (LLM or fallback)
         for proto, agent_id, port in assignments:
             try:
                 if proto == "acp":
-                    from script.streaming_queue.protocol_backend.meta_protocol.acp_agent import create_acp_meta_worker
+                    from protocol_backend.meta_protocol.acp_agent import create_acp_meta_worker
                     meta = await create_acp_meta_worker(agent_id, {"core": cfg["model"]}, host="0.0.0.0", port=port, install_loopback=False)
                 elif proto == "anp":
-                    from script.streaming_queue.protocol_backend.meta_protocol.anp_agent import create_anp_meta_worker
+                    from protocol_backend.meta_protocol.anp_agent import create_anp_meta_worker
                     meta = await create_anp_meta_worker(agent_id, {"core": cfg["model"]}, host="0.0.0.0", port=port, install_loopback=False)
                 elif proto == "agora":
-                    from script.streaming_queue.protocol_backend.meta_protocol.agora_agent import create_agora_meta_worker
+                    from protocol_backend.meta_protocol.agora_agent import create_agora_meta_worker
                     meta = await create_agora_meta_worker(agent_id, {"core": cfg["model"]}, host="0.0.0.0", port=port, install_loopback=False)
                 else:  # a2a
-                    from script.streaming_queue.protocol_backend.meta_protocol.a2a_agent import create_a2a_meta_worker
+                    from protocol_backend.meta_protocol.a2a_agent import create_a2a_meta_worker
                     meta = await create_a2a_meta_worker(agent_id, {"core": cfg["model"]}, host="0.0.0.0", port=port, install_loopback=False)
 
                 # Keep references
@@ -204,14 +292,42 @@ class MetaProtocolRunner(RunnerBase):
                 # Register into AgentNetwork (old AgentNetwork holds BaseAgent instances)
                 await self.agent_network.register_agent(meta.base_agent)
 
-                self.output.success(f"✅ {proto.upper()} worker created: {agent_id} @ {meta.base_agent.get_listening_address()}")
+                # Display protocol selection info
+                speed_indicator = "🚀" if proto in ["a2a", "acp"] else "⚡" if proto == "agora" else "🔒"
+                self.output.success(f"✅ {proto.upper()} worker created: {agent_id} {speed_indicator} @ {meta.base_agent.get_listening_address()}")
 
             except Exception as e:
                 self.output.error(f"❌ Failed to create {proto} worker: {e}")
                 continue
         
+        # Analyze final protocol distribution
+        protocol_count = {}
+        for agent_id in self.base_agents.keys():
+            protocol = self.protocol_map.get(agent_id, "unknown")
+            protocol_count[protocol] = protocol_count.get(protocol, 0) + 1
+        
+        self.output.info("📊 Final Protocol Distribution:")
+        fast_agents = 0
+        for protocol, count in protocol_count.items():
+            if protocol in ["a2a", "acp"]:
+                fast_agents += count
+                speed_info = "🚀 FAST"
+            elif protocol == "agora":
+                speed_info = "⚡ STABLE"
+            elif protocol == "anp":
+                speed_info = "🔒 SECURE"
+            else:
+                speed_info = "❓ UNKNOWN"
+            
+            self.output.info(f"   {protocol.upper()}: {count} agents {speed_info}")
+        
+        speed_ratio = fast_agents / len(self.base_agents) if self.base_agents else 0
+        self.output.info(f"📈 Speed Optimization: {fast_agents}/{len(self.base_agents)} fast agents ({speed_ratio:.1%})")
+        
         # Create meta coordinator for QA dispatch
         await self.create_meta_coordinator()
+        
+        self.output.success(f"🎉 Successfully created {len(self.base_agents)} agents with LLM-optimized protocol selection!")
         
         # Return worker IDs for RunnerBase compatibility
         return list(self.base_agents.keys())
@@ -224,11 +340,16 @@ class MetaProtocolRunner(RunnerBase):
         """Create meta protocol coordinator for QA testing"""
         try:
             # Import meta coordinator
-            from script.streaming_queue.protocol_backend.meta_protocol.meta_coordinator import MetaProtocolCoordinator
+            from protocol_backend.meta_protocol.meta_coordinator import MetaProtocolCoordinator
             
-            # Use A2A as router agent for coordination
-            router_agent_id = "A2A-Worker-4"  # Default router
-            if router_agent_id in self.base_agents:
+            # Use first A2A agent as router for coordination
+            router_agent_id = None
+            for agent_id, protocol in self.protocol_map.items():
+                if protocol == "a2a":
+                    router_agent_id = agent_id
+                    break
+            
+            if router_agent_id and router_agent_id in self.base_agents:
                 router_agent = self.base_agents[router_agent_id]
                 
                 self.meta_coordinator = MetaProtocolCoordinator(
@@ -255,11 +376,10 @@ class MetaProtocolRunner(RunnerBase):
                     self.meta_coordinator.protocol_types[agent_id] = protocol
                 
                 # Set router agent directly (not wrapped)
-                router_agent_id = "A2A-Worker-4"
                 self.meta_coordinator.router_ba = self.base_agents[router_agent_id]
                 
-                # Set network and worker list
-                worker_ids = [aid for aid in self.base_agents.keys() if "worker" in aid.lower()]
+                # Set network and worker list (use all agents)
+                worker_ids = list(self.base_agents.keys())
                 self.meta_coordinator.set_network(self.agent_network, worker_ids)
                 
                 # Initialize worker stats
@@ -281,8 +401,8 @@ class MetaProtocolRunner(RunnerBase):
         """Setup network topology using src/core/network.py"""
         self.output.info("Setting up meta protocol network topology...")
         
-        # Get all worker IDs
-        worker_ids = [aid for aid in self.base_agents.keys() if "worker" in aid.lower()]
+        # Get all worker IDs (include both "worker" and "agent" patterns)
+        worker_ids = [aid for aid in self.base_agents.keys() if "worker" in aid.lower() or "agent" in aid.lower()]
         
         if len(worker_ids) < 2:
             self.output.error("Not enough workers for topology setup")

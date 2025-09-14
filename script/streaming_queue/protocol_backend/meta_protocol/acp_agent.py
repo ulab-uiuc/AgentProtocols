@@ -13,9 +13,22 @@ from typing import Dict, Any, Optional, AsyncGenerator
 # Configure logging with consistent format
 logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s:%(message)s')
 
-# Production imports
+# Production imports - add proper paths
+import sys
+from pathlib import Path
+
+# Add paths
+current_file = Path(__file__).resolve()
+streaming_queue_path = current_file.parents[2]  # Go up to streaming_queue
+project_root = streaming_queue_path.parent.parent  # Go up to agent_network
+src_path = project_root / "src"
+
+sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(streaming_queue_path))
+sys.path.insert(0, str(src_path))
+
 from src.core.base_agent import BaseAgent
-from script.streaming_queue.protocol_backend.acp.worker import ACPWorkerExecutor
+from protocol_backend.acp.worker import ACPWorkerExecutor
 
 # ACP SDK imports
 from acp_sdk.models import Message, MessagePart
@@ -121,8 +134,18 @@ class ACPMetaAgent:
         Uses async generator wrapper to adapt streaming_queue ACPWorkerExecutor.
         """
         # 1) Build native ACP executor
+        # Ensure paths are set before creating ACPWorkerExecutor
+        streaming_queue_path = Path(__file__).resolve().parents[2]
+        core_path = streaming_queue_path / "core"
+        if str(core_path) not in sys.path:
+            sys.path.insert(0, str(core_path))
+        
         qa_config = self._convert_config_for_qa()
-        self.acp_executor = ACPWorkerExecutor(qa_config)
+        try:
+            self.acp_executor = ACPWorkerExecutor(qa_config)
+        except Exception as e:
+            logger.error(f"[ACP-META] Failed to create ACPWorkerExecutor: {e}")
+            raise RuntimeError(f"ACPWorkerExecutor creation failed: {e}")
         
         # 2) Wrap in async generator interface for ACP server
         self.executor_wrapper = ACPExecutorWrapper(self.acp_executor)  # Pass executor back
@@ -219,10 +242,13 @@ async def create_acp_meta_worker(
         Initialized ACPMetaAgent instance ready for network registration
     """
     agent = ACPMetaAgent(agent_id, config, install_loopback)
-    await agent.create_acp_worker(host=host, port=port)
-    
-    logger.info(f"[ACP-META] Created meta worker: {agent_id}")
-    return agent
+    try:
+        await agent.create_acp_worker(host=host, port=port)
+        logger.info(f"[ACP-META] Created meta worker: {agent_id}")
+        return agent
+    except Exception as e:
+        logger.error(f"[ACP-META] Failed to create worker for {agent_id}: {e}")
+        raise
 
 
 async def integrate_acp_into_network(network, agent_id: str, config: Dict[str, Any], port: Optional[int] = None) -> str:

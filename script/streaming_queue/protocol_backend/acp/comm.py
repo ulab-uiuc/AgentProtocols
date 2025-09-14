@@ -20,7 +20,12 @@ streaming_queue_path = current_file.parent.parent.parent
 if str(streaming_queue_path) not in sys.path:
     sys.path.insert(0, str(streaming_queue_path))
 
-from comm.base import BaseCommBackend
+# Add comm path
+streaming_queue_path = Path(__file__).resolve().parent.parent.parent
+comm_path = streaming_queue_path / "comm"
+if str(comm_path) not in sys.path:
+    sys.path.insert(0, str(comm_path))
+from base import BaseCommBackend
 
 # Import ACP SDK components
 try:

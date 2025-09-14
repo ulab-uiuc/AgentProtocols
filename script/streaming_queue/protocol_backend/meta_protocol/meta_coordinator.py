@@ -1,13 +1,14 @@
 """
-Meta-Protocol Coordinator - Production Version
+Meta-Protocol Coordinator with LLM-based Intelligent Routing
 
-Unified coordinator that manages all four meta-protocol agents (ACP, ANP, Agora, A2A).
-Based on QACoordinatorBase from core and integrates with BaseAgent meta-protocol system.
+Unified coordinator that uses LLM to intelligently select protocols based on task requirements.
+Integrates with BaseAgent meta-protocol system and supports dynamic protocol selection.
 """
 
 import asyncio
 import uuid
 import logging
+import yaml
 from typing import Dict, Any, Optional, List
 from pathlib import Path
 
@@ -15,27 +16,46 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s:%(message)s')
 
 # Core imports
-from script.streaming_queue.core.qa_coordinator_base import QACoordinatorBase
+import sys
+from pathlib import Path
+# Add streaming_queue to path
+current_file = Path(__file__).resolve()
+streaming_queue_path = current_file.parents[2]  # Go up to streaming_queue
+if str(streaming_queue_path) not in sys.path:
+    sys.path.insert(0, str(streaming_queue_path))
+
+# Also add current directory for relative imports
+if str(current_file.parent) not in sys.path:
+    sys.path.insert(0, str(current_file.parent))
+
+# Add core directory specifically
+core_path = streaming_queue_path / "core"
+if str(core_path) not in sys.path:
+    sys.path.insert(0, str(core_path))
+
+from qa_coordinator_base import QACoordinatorBase
 
 # Meta-protocol agent imports
-from .acp_agent import create_acp_meta_worker, ACPMetaAgent
-from .anp_agent import create_anp_meta_worker, ANPMetaAgent
-from .agora_agent import create_agora_meta_worker, AgoraMetaAgent
-from .a2a_agent import create_a2a_meta_worker, A2AMetaAgent
+from acp_agent import create_acp_meta_worker, ACPMetaAgent
+from anp_agent import create_anp_meta_worker, ANPMetaAgent
+from agora_agent import create_agora_meta_worker, AgoraMetaAgent
+from a2a_agent import create_a2a_meta_worker, A2AMetaAgent
+
+# LLM router import
+from llm_router import LLMIntelligentRouter, RoutingDecision
 
 logger = logging.getLogger(__name__)
 
 
 class MetaProtocolCoordinator(QACoordinatorBase):
     """
-    Unified coordinator for all meta-protocol agents.
+    Intelligent meta-protocol coordinator with LLM-based routing.
     
-    This coordinator extends QACoordinatorBase to manage ACP, ANP, Agora, and A2A
-    agents through their BaseAgent meta-protocol interfaces. It provides:
-    - Dynamic load balancing across protocols
-    - Unified message routing and response handling
-    - Protocol-agnostic question dispatching
-    - Cross-protocol performance comparison
+    This coordinator uses LLM to analyze tasks and intelligently select protocols:
+    - LLM-based protocol selection for each task batch
+    - Dynamic agent creation based on routing decisions
+    - Optimized for streaming queue pressure testing
+    - Supports all four protocols: A2A, ACP, Agora, ANP
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None, output=None):
@@ -48,7 +68,68 @@ class MetaProtocolCoordinator(QACoordinatorBase):
         # Performance tracking
         self.protocol_stats: Dict[str, Dict[str, Any]] = {}
         
-        logger.info("[META-COORDINATOR] Initialized meta-protocol coordinator")
+        # LLM-based intelligent router
+        self.llm_router = LLMIntelligentRouter()
+        self.llm_client = None
+        self._initialize_llm_client()
+        
+        logger.info("[META-COORDINATOR] Initialized intelligent meta-protocol coordinator with LLM routing")
+    
+    def _initialize_llm_client(self):
+        """Initialize LLM client for routing decisions."""
+        try:
+            # Load config from streaming queue
+            config_path = Path(__file__).parent.parent.parent / "config.yaml"
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+            
+            core_config = config.get("core", {})
+            api_key = core_config.get("openai_api_key", "")
+            base_url = core_config.get("openai_base_url", "https://api.openai.com/v1")
+            model = core_config.get("name", "gpt-4o")
+            
+            if not api_key:
+                logger.warning("[META-COORDINATOR] No OpenAI API key found, LLM routing disabled")
+                return
+            
+            # Create simple LLM client
+            class SimpleLLMClient:
+                def __init__(self, api_key, base_url, model):
+                    self.api_key = api_key
+                    self.base_url = base_url
+                    self.model = model
+                
+                async def ask_tool(self, messages, tools, tool_choice):
+                    import aiohttp
+                    headers = {
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json"
+                    }
+                    payload = {
+                        "model": self.model,
+                        "messages": messages,
+                        "tools": tools,
+                        "tool_choice": tool_choice,
+                        "temperature": 0.0
+                    }
+                    endpoint = f"{self.base_url}/chat/completions"
+                    
+                    async with aiohttp.ClientSession() as session:
+                        async with session.post(endpoint, headers=headers, json=payload) as response:
+                            if response.status != 200:
+                                error_text = await response.text()
+                                raise Exception(f"API call failed: {response.status} - {error_text}")
+                            result = await response.json()
+                            return result["choices"][0]["message"]
+            
+            self.llm_client = SimpleLLMClient(api_key, base_url, model)
+            self.llm_router.set_llm_client(self.llm_client)
+            
+            logger.info(f"[META-COORDINATOR] LLM client initialized: {model}")
+            
+        except Exception as e:
+            logger.error(f"[META-COORDINATOR] Failed to initialize LLM client: {e}")
+            self.llm_client = None
     
     def _initialize_worker_stats(self, worker_ids: List[str]):
         """Initialize protocol stats for all workers"""
@@ -61,6 +142,93 @@ class MetaProtocolCoordinator(QACoordinatorBase):
                     "errors": 0,
                     "protocol": self.protocol_types.get(worker_id, "unknown")
                 }
+    
+    async def create_agents_with_llm_routing(self, sample_tasks: List[Dict[str, Any]] = None) -> List[str]:
+        """
+        Use LLM to analyze tasks and create optimal protocol agents.
+        
+        Args:
+            sample_tasks: Sample tasks to analyze for protocol selection
+            
+        Returns:
+            List of created agent IDs
+        """
+        logger.info("[META-COORDINATOR] Starting LLM-based agent creation")
+        
+        # If no sample tasks provided, use default pressure test task
+        if not sample_tasks:
+            sample_tasks = [{
+                "question": "Streaming queue pressure test with diverse question types",
+                "context": "High-volume QA processing for performance testing", 
+                "metadata": {"type": "pressure_test", "priority": "speed", "volume": "high"}
+            }]
+        
+        # Use first task as representative for routing decision
+        representative_task = sample_tasks[0]
+        
+        try:
+            # Get LLM routing decision for 4 agents
+            routing_decision = await self.llm_router.route_task_with_llm(representative_task, num_agents=4)
+            
+            logger.info(f"[META-COORDINATOR] LLM routing decision:")
+            logger.info(f"  Selected protocols: {routing_decision.selected_protocols}")
+            logger.info(f"  Agent assignments: {routing_decision.agent_assignments}")
+            logger.info(f"  Strategy: {routing_decision.strategy}")
+            logger.info(f"  Confidence: {routing_decision.confidence:.2%}")
+            logger.info(f"  Reasoning: {routing_decision.reasoning[:100]}...")
+            
+            # Create agents based on LLM decision
+            created_agents = []
+            base_port = 10001
+            
+            for agent_id, protocol in routing_decision.agent_assignments.items():
+                try:
+                    port = base_port + len(created_agents)
+                    agent_url = await self.add_protocol_agent(protocol, agent_id, self.config or {}, port)
+                    created_agents.append(agent_id)
+                    
+                    logger.info(f"[META-COORDINATOR] Created {protocol.upper()} agent: {agent_id} @ {agent_url}")
+                    
+                except Exception as e:
+                    logger.error(f"[META-COORDINATOR] Failed to create {protocol} agent {agent_id}: {e}")
+                    continue
+            
+            logger.info(f"[META-COORDINATOR] Successfully created {len(created_agents)} agents based on LLM routing")
+            return created_agents
+            
+        except Exception as e:
+            logger.error(f"[META-COORDINATOR] LLM routing failed, using fallback: {e}")
+            # Fallback to default fast protocols for pressure testing
+            return await self._create_default_fast_agents()
+    
+    async def _create_default_fast_agents(self) -> List[str]:
+        """Create default fast agents for pressure testing when LLM routing fails."""
+        logger.info("[META-COORDINATOR] Creating default fast agents for pressure testing")
+        
+        # Default assignment optimized for speed
+        default_assignments = {
+            "FastAgent-1": "a2a",    # Fastest
+            "FastAgent-2": "a2a",    # Fastest (duplicate for load balancing)
+            "FastAgent-3": "acp",    # Second fastest
+            "FastAgent-4": "acp"     # Second fastest (duplicate for load balancing)
+        }
+        
+        created_agents = []
+        base_port = 10001
+        
+        for agent_id, protocol in default_assignments.items():
+            try:
+                port = base_port + len(created_agents)
+                agent_url = await self.add_protocol_agent(protocol, agent_id, self.config or {}, port)
+                created_agents.append(agent_id)
+                
+                logger.info(f"[META-COORDINATOR] Created default {protocol.upper()} agent: {agent_id}")
+                
+            except Exception as e:
+                logger.error(f"[META-COORDINATOR] Failed to create default {protocol} agent: {e}")
+                continue
+        
+        return created_agents
     
     async def add_protocol_agent(self, protocol: str, agent_id: str, config: Dict[str, Any], 
                                 port: Optional[int] = None) -> str:

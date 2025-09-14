@@ -14,11 +14,20 @@ import uuid
 
 # Add streaming_queue to path for imports
 current_file = Path(__file__).resolve()
-streaming_queue_path = current_file.parent.parent.parent
+streaming_queue_path = current_file.parent.parent.parent  # Go up to streaming_queue
 if str(streaming_queue_path) not in sys.path:
     sys.path.insert(0, str(streaming_queue_path))
 
-from core.qa_worker_base import QAWorkerBase
+# Also add the current directory for relative imports
+if str(current_file.parent) not in sys.path:
+    sys.path.insert(0, str(current_file.parent))
+
+# Add core directory specifically
+core_path = streaming_queue_path / "core"
+if str(core_path) not in sys.path:
+    sys.path.insert(0, str(core_path))
+
+from qa_worker_base import QAWorkerBase
 
 # Import ACP SDK components
 try:
@@ -38,8 +47,8 @@ class ACPWorkerExecutor:
         self.config = config
         self._worker = None
         
-        # Import worker after path setup
-        from core.qa_worker_base import QAWorkerBase
+        # Import worker after path setup - use already imported QAWorkerBase
+        # QAWorkerBase is already imported at module level
         
         class ACPWorker(QAWorkerBase):
             def __init__(self, config):

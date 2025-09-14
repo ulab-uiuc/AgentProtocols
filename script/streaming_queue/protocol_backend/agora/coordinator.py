@@ -7,7 +7,15 @@ Agora Coordinator:
 
 from __future__ import annotations
 from typing import Dict, Any, Optional, List
-from ...core.qa_coordinator_base import QACoordinatorBase
+# Add core path
+import sys
+from pathlib import Path
+current_file = Path(__file__).resolve()
+streaming_queue_path = current_file.parent.parent.parent
+core_path = streaming_queue_path / "core"
+if str(core_path) not in sys.path:
+    sys.path.insert(0, str(core_path))
+from qa_coordinator_base import QACoordinatorBase
 
 # Import Agora native SDK components
 import agora
