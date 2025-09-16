@@ -1,22 +1,51 @@
-# Core dependencies
-httpx>=0.24.0
-prometheus-client>=0.16.0
-colorama>=0.4.6
+# Agent Network Multi-Protocol Requirements
+# Python Version: 3.12.11
 
-# A2A SDK (required for native executor interface)
-a2a-server>=0.2.0
+# ================= Core Protocol SDKs =================
+acp-sdk==1.0.3
+a2a-json-rpc==0.3.0
+a2a-sdk==0.3.3
+a2a-server==0.6.1
+agora-protocol==0.2.0
 
-# Server dependencies (v1.0.0)
-uvicorn>=0.22.0
-starlette>=0.27.0
+# ================= Web Framework =================
+fastapi==0.116.1
+uvicorn==0.35.0
+starlette==0.47.3
+flask==3.1.2
 
-# Optional system monitoring
-psutil>=5.9.0
-pynvml>=11.0.0
+# ================= HTTP & Async =================
+httpx==0.28.1
+aiohttp==3.12.15
+requests==2.32.5
+asyncio==4.0.0
 
-# Development
-pytest>=7.0.0
-pytest-asyncio>=0.21.0 
+# ================= AI/ML =================
+openai==1.102.0
+langchain==0.3.27
+langchain-openai==0.3.32
+anthropic==0.64.0
 
-acp-sdk >= 1.0.0
+# ================= Data & Config =================
+pydantic==2.11.7
+pyyaml==6.0.2
+pandas==2.2.3
+numpy==2.3.2
 
+# ================= Monitoring =================
+prometheus-client==0.22.1
+loguru==0.7.3
+psutil==7.0.0
+
+# ================= Testing =================
+pytest==8.4.1
+pytest-asyncio==1.1.0
+
+# ================= Crypto & Security =================
+cryptography==45.0.7
+base58==2.1.1
+
+# ================= Utilities =================
+colorama==0.4.6
+python-dotenv==1.1.1
+websockets==15.0.1

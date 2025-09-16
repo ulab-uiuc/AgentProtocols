@@ -275,6 +275,18 @@ class ACPServerAdapter(BaseServerAdapter):
         **kwargs
     ) -> Tuple[uvicorn.Server, Dict[str, Any]]:
         """Build ACP server using ACP SDK native executor interface."""
+        
+        # Check if ACP SDK is available (use the variable defined at module level)
+        # ACP_SDK_AVAILABLE is defined at the top of this file
+        try:
+            # Test import to check SDK availability
+            import acp_sdk
+            sdk_available = True
+        except ImportError:
+            sdk_available = False
+            
+        if not sdk_available:
+            raise RuntimeError("ACP SDK is required but not available. Please install acp-sdk==1.0.3")
 
         # Validate executor has ACP SDK native interface
         # The executor should be a function that takes (messages: list[Message], context: Context)
