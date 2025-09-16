@@ -237,7 +237,10 @@ class ANPRunner(RunnerBase):
         
         # ================= Configure Coordinator =================
         # Set network and worker list for coordinator
-        coordinator_executor.coordinator.set_network(self.network, worker_ids)
+        coordinator_executor.coordinator.set_network(self.network, worker_ids, "anp")
+        # Set metrics collector to communication backend
+        if hasattr(self._backend, 'set_metrics_collector') and hasattr(coordinator_executor.coordinator, 'metrics_collector'):
+            self._backend.set_metrics_collector(coordinator_executor.coordinator.metrics_collector)
         
         # Display ANP summary
         self._display_anp_summary()

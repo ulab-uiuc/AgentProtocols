@@ -101,7 +101,7 @@ class ACPRunner(RunnerBase):
 
         # Inform the coordinator about the network and worker set
         if hasattr(coordinator_executor, "coordinator"):
-            coordinator_executor.coordinator.set_network(self.network, worker_ids)
+            coordinator_executor.coordinator.set_network(self.network, worker_ids, "acp")
 
         return worker_ids
 

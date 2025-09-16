@@ -30,23 +30,18 @@ streaming_queue_path = Path(__file__).parent.parent
 if str(streaming_queue_path) not in sys.path:
     sys.path.insert(0, str(streaming_queue_path))
 
-try:
-    from comm.base import BaseCommBackend  # 直接从 streaming_queue 根目录导入
-except ImportError:
-    # 兜底：使用绝对导入路径
-    try:
-        current_file = Path(__file__).resolve()
-        comm_path = current_file.parent.parent / "comm"
-        sys.path.insert(0, str(comm_path.parent))
-        from comm.base import BaseCommBackend
-    except ImportError as e:
-        raise ImportError(f"Cannot import BaseCommBackend: {e}")
+# Import BaseCommBackend with proper path handling
+current_file = Path(__file__).resolve()
+streaming_queue_dir = current_file.parent.parent  # 从 core 回到 streaming_queue
+sys.path.insert(0, str(streaming_queue_dir))
+
+from comm.base import BaseCommBackend
 
 
 class NetworkBase:
     """Holds agents, their topology, and orchestrates traffic (protocol-agnostic)."""
 
-    def __init__(self, comm_backend: BaseCommBackend):
+    def __init__(self, comm_backend: BaseCommBackend, metrics_collector=None):
         if comm_backend is None:
             raise ValueError("NetworkBase requires a concrete comm_backend.")
         # 仅维护 id -> endpoint，不保存 Agent 实例
@@ -55,6 +50,10 @@ class NetworkBase:
         self._metrics: Dict[str, Any] = {}
         self._lock = asyncio.Lock()
         self._comm: BaseCommBackend = comm_backend
+        
+        # Set metrics collector if provided
+        if metrics_collector and hasattr(comm_backend, 'set_metrics_collector'):
+            comm_backend.set_metrics_collector(metrics_collector)
 
     # --------------------------- CRUD ---------------------------
     async def register_agent(self, agent_id: str, address: str) -> None:

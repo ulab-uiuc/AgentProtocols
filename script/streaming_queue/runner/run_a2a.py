@@ -87,7 +87,10 @@ class A2ARunner(RunnerBase):
 
         # 告知协调者网络与 worker 集合（用于它的内部调度）
         if hasattr(coordinator_executor, "coordinator"):
-            coordinator_executor.coordinator.set_network(self.network, worker_ids)
+            coordinator_executor.coordinator.set_network(self.network, worker_ids, "a2a")
+            # Set metrics collector to communication backend
+            if hasattr(self._backend, 'set_metrics_collector') and hasattr(coordinator_executor.coordinator, 'metrics_collector'):
+                self._backend.set_metrics_collector(coordinator_executor.coordinator.metrics_collector)
 
         return worker_ids
 

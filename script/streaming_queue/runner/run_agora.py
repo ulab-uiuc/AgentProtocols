@@ -77,7 +77,10 @@ class AgoraRunner(RunnerBase):
 
         # Inform the coordinator about the network and worker set (for its internal scheduling)
         if hasattr(coordinator_executor, "coordinator"):
-            coordinator_executor.coordinator.set_network(self.network, worker_ids)
+            coordinator_executor.coordinator.set_network(self.network, worker_ids, "agora")
+            # Set metrics collector to communication backend
+            if hasattr(self._backend, 'set_metrics_collector') and hasattr(coordinator_executor.coordinator, 'metrics_collector'):
+                self._backend.set_metrics_collector(coordinator_executor.coordinator.metrics_collector)
 
         return worker_ids
 

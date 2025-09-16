@@ -14,8 +14,21 @@ from typing import Dict, Any, Optional, AsyncGenerator
 logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s:%(message)s')
 
 # Production imports
+import sys
+from pathlib import Path
+
+# Add paths for imports
+current_file = Path(__file__).resolve()
+agent_network_root = current_file.parents[3]  # Go up to agent_network root
+src_path = agent_network_root / "src"
+streaming_queue_path = current_file.parent.parent.parent
+
+sys.path.insert(0, str(agent_network_root))
+sys.path.insert(0, str(src_path))
+sys.path.insert(0, str(streaming_queue_path))
+
 from src.core.base_agent import BaseAgent
-from script.streaming_queue.protocol_backend.anp.worker import ANPQAWorker
+from protocol_backend.anp.worker import ANPQAWorker
 
 # AgentConnect SDK imports
 try:

@@ -28,12 +28,20 @@ if str(streaming_queue_path) not in sys.path:
 if str(current_file.parent) not in sys.path:
     sys.path.insert(0, str(current_file.parent))
 
-# Add core directory specifically
-core_path = streaming_queue_path / "core"
-if str(core_path) not in sys.path:
-    sys.path.insert(0, str(core_path))
+# Import from streaming_queue core with explicit path handling
+try:
+    from core.qa_coordinator_base import QACoordinatorBase
+    CORE_AVAILABLE = True
+except ImportError:
+    # Fallback: direct import from core directory
+    core_path = streaming_queue_path / "core"
+    if str(core_path) not in sys.path:
+        sys.path.insert(0, str(core_path))
+    from qa_coordinator_base import QACoordinatorBase
+    CORE_AVAILABLE = True
 
-from qa_coordinator_base import QACoordinatorBase
+# Import Meta-specific performance metrics
+from meta_performance_metrics import MetaPerformanceMetricsCollector
 
 # Meta-protocol agent imports
 from acp_agent import create_acp_meta_worker, ACPMetaAgent
@@ -61,11 +69,20 @@ class MetaProtocolCoordinator(QACoordinatorBase):
     def __init__(self, config: Optional[Dict[str, Any]] = None, output=None):
         super().__init__(config, output)
         
+        # Replace base metrics collector with Meta-specific one
+        self.meta_metrics_collector = MetaPerformanceMetricsCollector()
+        qa_cfg = self.config.get("qa", {}) or {}
+        network_cfg = qa_cfg.get("network", {}) or {}
+        self.meta_metrics_collector.response_timeout = float(network_cfg.get("response_timeout", 60))
+        
+        # Override base metrics collector
+        self.metrics_collector = self.meta_metrics_collector
+        
         # Meta-protocol agent instances
         self.meta_agents: Dict[str, Any] = {}  # agent_id -> MetaAgent instance
         self.protocol_types: Dict[str, str] = {}  # agent_id -> protocol type
         
-        # Performance tracking
+        # Performance tracking (legacy)
         self.protocol_stats: Dict[str, Dict[str, Any]] = {}
         
         # LLM-based intelligent router
@@ -135,13 +152,18 @@ class MetaProtocolCoordinator(QACoordinatorBase):
         """Initialize protocol stats for all workers"""
         for worker_id in worker_ids:
             if worker_id not in self.protocol_stats:
+                protocol_type = self.protocol_types.get(worker_id, "unknown")
                 self.protocol_stats[worker_id] = {
                     "questions_processed": 0,
                     "total_response_time": 0.0,
                     "avg_response_time": 0.0,
                     "errors": 0,
-                    "protocol": self.protocol_types.get(worker_id, "unknown")
+                    "protocol": protocol_type
                 }
+                
+                # Register worker with correct protocol in metrics collector
+                if hasattr(self, 'meta_metrics_collector') and self.meta_metrics_collector:
+                    self.meta_metrics_collector.register_worker(worker_id, protocol_type)
     
     async def create_agents_with_llm_routing(self, sample_tasks: List[Dict[str, Any]] = None) -> List[str]:
         """
@@ -169,6 +191,15 @@ class MetaProtocolCoordinator(QACoordinatorBase):
         try:
             # Get LLM routing decision for 4 agents
             routing_decision = await self.llm_router.route_task_with_llm(representative_task, num_agents=4)
+            
+            # Record LLM routing decision in Meta metrics
+            self.meta_metrics_collector.record_llm_routing_decision({
+                "selected_protocols": routing_decision.selected_protocols,
+                "agent_assignments": routing_decision.agent_assignments,
+                "reasoning": routing_decision.reasoning,
+                "confidence": routing_decision.confidence,
+                "strategy": routing_decision.strategy
+            })
             
             logger.info(f"[META-COORDINATOR] LLM routing decision:")
             logger.info(f"  Selected protocols: {routing_decision.selected_protocols}")
@@ -488,6 +519,7 @@ class MetaProtocolCoordinator(QACoordinatorBase):
         except Exception as e:
             dt = time.time() - start_time
             self.protocol_stats[worker_id]["errors"] += 1
+            
             logger.error(f"[META-COORDINATOR] Network send {router_id} -> {worker_id} failed: {e}")
             import traceback
             logger.error(f"[META-COORDINATOR] Traceback: {traceback.format_exc()}")
@@ -540,6 +572,51 @@ class MetaProtocolCoordinator(QACoordinatorBase):
                 }
         
         return health_results
+    
+    async def save_results(self, results: List[Dict[str, Any]]) -> None:
+        """Save results with Meta-specific performance metrics"""
+        try:
+            from pathlib import Path
+            import json
+            import time
+            
+            # 如果是相对路径，相对于 streaming_queue 目录
+            if not Path(self.result_file).is_absolute():
+                current_file = Path(__file__).resolve()
+                streaming_queue_dir = current_file.parent.parent.parent  # 从 meta_protocol 回到 streaming_queue
+                p = streaming_queue_dir / self.result_file
+            else:
+                p = Path(self.result_file)
+            p.parent.mkdir(parents=True, exist_ok=True)
+
+            # Basic statistics
+            times = [r["response_time"] for r in results if r.get("response_time")]
+            avg_rt = (sum(times) / len(times)) if times else 0.0
+            
+            # Get comprehensive Meta performance metrics
+            performance_report = self.meta_metrics_collector.get_comprehensive_report()
+            
+            payload = {
+                "metadata": {
+                    "total_questions": len(results),
+                    "successful_questions": sum(1 for r in results if r["status"] == "success"),
+                    "failed_questions": sum(1 for r in results if r["status"] == "failed"),
+                    "average_response_time": avg_rt,
+                    "timestamp": time.time(),
+                    "network_type": self.__class__.__name__,
+                },
+                "detailed_performance_metrics": performance_report,
+                "meta_protocol_stats": self.protocol_stats,  # Include legacy stats
+                "results": results,
+            }
+            p.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+            self._o("success", f"Meta results saved to: {p}")
+            
+            # Print Meta-specific performance summary
+            self.meta_metrics_collector.print_meta_performance_summary(self.output)
+            
+        except Exception as e:
+            self._o("error", f"Failed to save Meta results: {e}")
     
     async def close_all(self):
         """Close all meta-protocol agents."""

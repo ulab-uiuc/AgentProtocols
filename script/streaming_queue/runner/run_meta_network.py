@@ -380,7 +380,7 @@ class MetaProtocolRunner(RunnerBase):
                 
                 # Set network and worker list (use all agents)
                 worker_ids = list(self.base_agents.keys())
-                self.meta_coordinator.set_network(self.agent_network, worker_ids)
+                self.meta_coordinator.set_network(self.agent_network, worker_ids, "meta")
                 
                 # Initialize worker stats
                 self.meta_coordinator._initialize_worker_stats(worker_ids)

@@ -17,7 +17,16 @@ class BaseCommBackend(abc.ABC):
       - send: 从 src 向 dst 发送一条消息，返回协议原生响应
       - health_check: 探活
       - close: 关闭资源
+      - record_retry/record_error: 记录连接重试和网络错误（可选实现）
     """
+    
+    def __init__(self):
+        # Optional metrics collector reference
+        self.metrics_collector = None
+    
+    def set_metrics_collector(self, collector):
+        """Set metrics collector for recording performance data"""
+        self.metrics_collector = collector
 
     @abc.abstractmethod
     async def register_endpoint(self, agent_id: str, address: str) -> None:
@@ -38,3 +47,13 @@ class BaseCommBackend(abc.ABC):
     async def close(self) -> None:
         """关闭底层资源（HTTP 客户端、socket 等）。默认 no-op。"""
         return None
+    
+    def record_retry(self, agent_id: str) -> None:
+        """Record a connection retry attempt"""
+        if self.metrics_collector:
+            self.metrics_collector.record_connection_retry(agent_id)
+    
+    def record_network_error(self, agent_id: str, error_type: str) -> None:
+        """Record a network error"""
+        if self.metrics_collector:
+            self.metrics_collector.record_network_error(agent_id, error_type)
