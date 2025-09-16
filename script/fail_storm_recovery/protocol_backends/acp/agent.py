@@ -16,7 +16,15 @@ from typing import Any, Dict, Optional, List, AsyncGenerator
 from pathlib import Path
 import sys
 
-# Import ACP SDK (required)
+# Import ACP SDK from agent_network environment
+import sys
+from pathlib import Path
+
+# Add agent_network src path
+agent_network_src = Path(__file__).parent.parent.parent.parent.parent / "src"
+sys.path.insert(0, str(agent_network_src))
+
+# Import ACP SDK (required) - use agent_network environment
 from acp_sdk.models import Message, MessagePart, RunCreateRequest
 from acp_sdk.server import Context, RunYield
 # Import ACP SDK server components (correct imports)

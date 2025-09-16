@@ -1,0 +1,91 @@
+# ANP Protocol Configuration for Fail-Storm Recovery
+
+# Basic scenario configuration
+scenario:
+  name: "fail_storm_recovery_anp"
+  protocol: "anp"
+  agent_count: 8
+  total_runtime: 300.0  # 5 minutes for testing
+  fault_injection_time: 120.0  # First fault at 2 minutes
+  kill_fraction: 0.375  # Kill 3 out of 8 agents
+  recovery_duration: 60
+  heartbeat_interval: 5.0
+  heartbeat_timeout: 15.0
+  # Cyclic fail storm configuration
+  cyclic_faults: true
+  fault_cycle_interval: 120.0  # 2 minutes
+  agents_per_fault: 3
+  normal_phase_duration: 120.0  # 2 minutes normal phase
+  max_groups: 1000  # Test 1000 groups
+
+# Network configuration
+network:
+  heartbeat_interval: 1.0
+  heartbeat_timeout: 3.0
+  steady_state_threshold: 5.0
+  
+# Agent network configuration
+agents:
+  base_port: 9000
+  host: "127.0.0.1"
+  workspace_dir: "workspaces"
+  message_timeout: 10.0
+  health_check_interval: 15.0
+
+# Shard QA configuration  
+shard_qa:
+  data_dir: "data/shards"
+  normal_phase_duration: 30.0
+  qa_cycle_timeout: 15.0
+
+# LLM configuration
+llm:
+  type: "openai"
+  model: "gpt-4o"
+  openai_api_key: "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"
+  openai_base_url: "https://api.openai.com/v1"
+  temperature: 0.2
+  top_p: 0.7
+  max_tokens: 8192
+  
+  # Legacy compatibility fields (will be auto-mapped)
+  name: "gpt-4o"
+
+# ANP specific configuration
+anp:
+  # DID-based authentication
+  authentication:
+    enabled: true
+    did_method: "wba"
+    
+  # E2E encryption
+  encryption:
+    enabled: true
+    key_rotation: 3600  # 1 hour
+    
+  # Protocol negotiation
+  negotiation:
+    enabled: true
+    timeout: 30
+    
+  # Communication settings
+  communication:
+    http_port_offset: 0      # HTTP on base port
+    websocket_port_offset: 1000  # WebSocket on base_port + 1000
+    max_connections: 10
+    
+# Metrics and logging
+metrics:
+  enabled: true
+  prometheus_port: 8001
+  
+logging:
+  level: "INFO"
+  output_dir: "logs/"
+
+# Output configuration
+output:
+  results_dir: "results_anp/"
+  save_llm_outputs: false
+  metrics_file: "failstorm_metrics.json"
+  detailed_metrics_file: "detailed_failstorm_metrics.json"

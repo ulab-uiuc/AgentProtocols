@@ -27,10 +27,10 @@ async def main():
         print("🚀 Starting ANP Protocol Fail-Storm Recovery Test")
         print("=" * 60)
         
-        # Create ANP runner with protocol-specific config
-        runner = ANPRunner("protocol_backends/anp/config.yaml")
+        # Create ANP runner with default config (will use configs/config_anp.yaml)
+        runner = ANPRunner()
         
-        print(f"📋 Configuration loaded from: protocol_backends/anp/config.yaml")
+        print(f"📋 Configuration loaded from: configs/config_anp.yaml")
         print(f"🔗 Protocol: ANP")
         print(f"👥 Agents: {runner.config['scenario']['agent_count']}")
         print(f"⏱️  Runtime: {runner.config['scenario']['total_runtime']}s")

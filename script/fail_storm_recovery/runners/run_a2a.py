@@ -27,10 +27,10 @@ async def main():
         print("🚀 Starting A2A Protocol Fail-Storm Recovery Test")
         print("=" * 60)
         
-        # Create A2A runner with protocol-specific config
-        runner = A2ARunner("script/fail_storm_recovery/protocol_backends/a2a/config.yaml")
+        # Create A2A runner with default config (will use configs/config_a2a.yaml)
+        runner = A2ARunner()
         
-        print(f"📋 Configuration loaded from: protocol_backends/a2a/config.yaml")
+        print(f"📋 Configuration loaded from: configs/config_a2a.yaml")
         print(f"🔗 Protocol: A2A")
         print(f"👥 Agents: {runner.config['scenario']['agent_count']}")
         print(f"⏱️  Runtime: {runner.config['scenario']['total_runtime']}s")

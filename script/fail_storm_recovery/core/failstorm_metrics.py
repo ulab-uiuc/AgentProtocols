@@ -62,7 +62,7 @@ class FailStormMetricsCollector:
     fault injection to provide detailed insights into system resilience.
     """
     
-    def __init__(self, protocol_name: str = "unknown"):
+    def __init__(self, protocol_name: str = "unknown", config: Dict[str, Any] = None):
         """
         Initialize the metrics collector.
         
@@ -70,9 +70,18 @@ class FailStormMetricsCollector:
         ----------
         protocol_name : str
             Name of the communication protocol being tested (A2A, ANP, ACP, etc.)
+        config : Dict[str, Any]
+            Configuration dictionary containing scenario parameters
         """
         self.protocol_name = protocol_name
+        self.config = config or {}
         self.scenario_start_time = time.time()
+        
+        # Calculate expected fault injection time from config
+        scenario_config = self.config.get("scenario", {})
+        self.expected_fault_injection_time = (
+            self.scenario_start_time + scenario_config.get("fault_injection_time", 120.0)
+        )
         
         # Key timing markers
         self.fault_injection_time: Optional[float] = None
@@ -168,11 +177,16 @@ class FailStormMetricsCollector:
         completion_time = end_time - start_time
         self.task_completion_times.append(completion_time)
         
-        # Categorize by phase - use task_type for more accurate classification
-        if task_type == "qa_normal" or (self.fault_injection_time is None or start_time < self.fault_injection_time):
+        # Categorize by phase - use expected fault time even if injection didn't occur
+        # This ensures proper phase separation regardless of whether fault injection happened
+        fault_time_to_use = self.fault_injection_time or self.expected_fault_injection_time
+        
+        if task_type == "qa_normal" or start_time < fault_time_to_use:
             self.pre_fault_window.append(completion_time)
-        elif task_type == "qa_post_fault" or start_time >= self.fault_injection_time:
+        elif task_type == "qa_post_fault" or start_time >= fault_time_to_use:
             self.post_fault_window.append(completion_time)
+        elif task_type == "qa_recovery":
+            self.recovery_window.append(completion_time)
 
     def record_duplicate_task(self, original_task_id: str, duplicate_agent_id: str) -> None:
         """Record when a task is executed multiple times (duplicate work)."""

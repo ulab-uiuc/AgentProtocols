@@ -324,12 +324,58 @@ class ShardCoordinator:
             # Update metrics
             task_info['responses_received'] += 1
             
-            # Check for answer (both collaborative and independent)
-            if "ANSWER_FOUND:" in content or "INDEPENDENT_ANSWER_FOUND:" in content:
+            # Check for enhanced answer formats
+            if ("LOCAL_ANSWER:" in content or "COLLABORATIVE_ANSWER:" in content or 
+                "ANSWER_FOUND:" in content or "INDEPENDENT_ANSWER_FOUND:" in content):
+                
                 if not task_info['first_answer_time']:
                     task_info['first_answer_time'] = time.time()
                     if self.output:
-                        self.output.success(f"First answer received for group {group_id} from {sender}")
+                        self.output.success(f"🎯 First answer received for group {group_id} from {sender}")
+                
+                # Handle enhanced answer formats
+                answer_data = None
+                if "LOCAL_ANSWER:" in content:
+                    try:
+                        import json
+                        json_str = content.split("LOCAL_ANSWER:")[1].strip()
+                        answer_data = json.loads(json_str)
+                        answer_data['answer_type'] = 'local'
+                        
+                        if self.output:
+                            self.output.success(f"📍 [LOCAL] {answer_data['source_agent']} found answer locally")
+                            self.output.progress(f"   📝 Answer: {answer_data['answer'][:60]}...")
+                            
+                    except Exception as e:
+                        if self.output:
+                            self.output.warning(f"Failed to parse LOCAL_ANSWER: {e}")
+                
+                elif "COLLABORATIVE_ANSWER:" in content:
+                    try:
+                        import json
+                        json_str = content.split("COLLABORATIVE_ANSWER:")[1].strip()
+                        answer_data = json.loads(json_str)
+                        answer_data['answer_type'] = 'collaborative'
+                        
+                        if self.output:
+                            self.output.success(f"🤝 [COLLABORATIVE] {answer_data['requesting_agent']} ← {answer_data['source_agent']}")
+                            self.output.progress(f"   📝 Answer: {answer_data['answer'][:60]}...")
+                            self.output.progress(f"   🔗 Path: {' → '.join(answer_data['collaboration_path'])}")
+                            
+                    except Exception as e:
+                        if self.output:
+                            self.output.warning(f"Failed to parse COLLABORATIVE_ANSWER: {e}")
+                
+                # Fallback for legacy format
+                elif "ANSWER_FOUND:" in content:
+                    answer = content.split("ANSWER_FOUND:")[1].strip()
+                    answer_data = {
+                        'answer_type': 'legacy',
+                        'answer': answer,
+                        'source_agent': sender,
+                        'original_question': task_info.get('question', ''),
+                        'timestamp': time.time()
+                    }
                 
                 # For independent mode, record individual worker result
                 if "INDEPENDENT_ANSWER_FOUND:" in content:
@@ -342,10 +388,16 @@ class ShardCoordinator:
                     if self.output:
                         self.output.success(f"[INDEPENDENT] {sender} found answer: {answer}")
                 
+                # Store enhanced answer data
+                if answer_data:
+                    if 'enhanced_answers' not in task_info:
+                        task_info['enhanced_answers'] = []
+                    task_info['enhanced_answers'].append(answer_data)
+                
                 # Mark task as completed
                 task_info['completed'] = True
                 
-                return f"Answer received for group {group_id}"
+                return f"Enhanced answer received for group {group_id} (type: {answer_data.get('answer_type', 'unknown') if answer_data else 'unknown'})"
             
             # Check for TTL exhausted
             elif "TTL_EXHAUSTED" in content:

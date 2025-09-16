@@ -91,11 +91,18 @@ class AgoraRunner(FailStormRunnerBase):
     """
 
     def __init__(self, config_path: str = "config.yaml"):
-        # If using default config, try protocol-specific config first
+        # If using default config, use configs/config_agora.yaml
         if config_path == "config.yaml":
-            protocol_config = Path(__file__).parent / "config.yaml"
+            configs_dir = Path(__file__).parent.parent.parent / "configs"
+            protocol_config = configs_dir / "config_agora.yaml"
             if protocol_config.exists():
                 config_path = str(protocol_config)
+                print(f"📋 Using Agora config from: {config_path}")
+            else:
+                # Fallback to protocol-specific config
+                protocol_config = Path(__file__).parent / "config.yaml"
+                if protocol_config.exists():
+                    config_path = str(protocol_config)
         
         super().__init__(config_path)
         

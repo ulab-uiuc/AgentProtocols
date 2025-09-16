@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-ACP Protocol Fail-Storm Recovery Test Runner
+Simple JSON Protocol Fail-Storm Recovery Test Runner
 
-This script runs the fail-storm recovery test using ACP protocol.
-All configuration is loaded from protocol_backends/acp/config.yaml.
+This script runs the fail-storm recovery test using Simple JSON protocol.
+All configuration is loaded from configs/config_simple_json.yaml.
 No command line arguments needed.
 
 Usage:
-    python run_acp.py
+    python run_simple_json.py
 """
 
 import asyncio
@@ -18,20 +18,20 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))  # fail_storm_recovery directory
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from protocol_backends.acp.runner import ACPRunner
+from protocol_backends.simple_json.runner import SimpleJsonRunner
 
 
 async def main():
-    """Main entry point for ACP fail-storm testing."""
+    """Main entry point for Simple JSON fail-storm testing."""
     try:
-        print("🚀 Starting ACP Protocol Fail-Storm Recovery Test")
+        print("🚀 Starting Simple JSON Protocol Fail-Storm Recovery Test")
         print("=" * 60)
         
-        # Create ACP runner with protocol-specific config
-        runner = ACPRunner()
+        # Create Simple JSON runner with default config (will use configs/config_simple_json.yaml)
+        runner = SimpleJsonRunner()
         
-        print(f"📋 Configuration loaded from: configs/config_acp.yaml")
-        print(f"🔗 Protocol: ACP")
+        print(f"📋 Configuration loaded from: configs/config_simple_json.yaml")
+        print(f"🔗 Protocol: Simple JSON")
         print(f"👥 Agents: {runner.config['scenario']['agent_count']}")
         print(f"⏱️  Runtime: {runner.config['scenario']['total_runtime']}s")
         print(f"💥 Fault time: {runner.config['scenario']['fault_injection_time']}s")
@@ -40,7 +40,7 @@ async def main():
         # Run the scenario
         results = await runner.run_scenario()
         
-        print("\n🎉 ACP Fail-Storm test completed successfully!")
+        print("\n🎉 Simple JSON Fail-Storm test completed successfully!")
         
         # Get actual result paths from runner
         result_paths = runner.get_results_paths()
@@ -53,13 +53,12 @@ async def main():
         print("\n⚠️ Test interrupted by user")
         return None
     except Exception as e:
-        print(f"\n❌ ACP test failed: {e}")
+        print(f"\n❌ Simple JSON test failed: {e}")
         import traceback
         traceback.print_exc()
         return None
 
 
 if __name__ == "__main__":
-    # Run the ACP fail-storm test
+    # Run the Simple JSON fail-storm test
     asyncio.run(main())
-

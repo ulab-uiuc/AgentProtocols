@@ -471,7 +471,7 @@ class FailStormRunnerBase(ABC):
         
         self.output.progress("Initializing metrics collector...")
         protocol_name = self.config["scenario"]["protocol"]
-        self.metrics_collector = FailStormMetricsCollector(protocol_name)
+        self.metrics_collector = FailStormMetricsCollector(protocol_name, self.config)
         
         self.output.progress("Creating mesh network...")
         heartbeat_interval = self.config["scenario"]["heartbeat_interval"]

@@ -335,8 +335,11 @@ class FailStormMetaCoordinator:
 
             # Extract answers from response
             answers = []
+            source_context = ""
+            
             if isinstance(content, dict):
                 answers = content.get("answers", [])
+                source_context = content.get("source_context", "")
                 if not answers and "response" in content:
                     # Handle single response
                     answers = [content["response"]]
@@ -347,12 +350,29 @@ class FailStormMetaCoordinator:
             elif isinstance(content, str):
                 answers = [content]
 
+            # 使用LLM judge评判答案质量
+            judge_result = None
+            if answers and len(answers) > 0:
+                primary_answer = answers[0]
+                question = shard_data.get("question", "")
+                
+                if question and primary_answer:
+                    judge_result = await self._judge_answer_quality(
+                        question=question,
+                        answer=primary_answer,
+                        source_context=source_context,
+                        worker_id=worker_id,
+                        protocol=dst_protocol
+                    )
+
             return {
                 "answers": answers,
                 "raw": {"response": content, "protocol": dst_protocol}, 
                 "protocol": dst_protocol, 
                 "response_time": dt, 
-                "success": True
+                "success": True,
+                "llm_judge": judge_result,
+                "source_context": source_context
             }
 
         except Exception as e:
@@ -368,6 +388,108 @@ class FailStormMetaCoordinator:
                 "response_time": dt, 
                 "success": False
             }
+    
+    async def _judge_answer_quality(self, question: str, answer: str, 
+                                  source_context: str, worker_id: str, 
+                                  protocol: str) -> Dict[str, Any]:
+        """使用LLM judge评判答案质量"""
+        try:
+            # 尝试获取LLM client
+            llm_client = await self._get_llm_client()
+            if not llm_client:
+                return {
+                    "is_correct": None,
+                    "confidence": 0.0,
+                    "reasoning": "LLM judge not available",
+                    "quality": "unknown",
+                    "judge_method": "none"
+                }
+            
+            # 创建judge prompt
+            judge_prompt = f"""You are an expert judge evaluating answers in a collaborative retrieval system.
+
+QUESTION: {question}
+
+PROPOSED ANSWER: {answer}
+
+SOURCE CONTEXT: {source_context}
+
+WORKER INFO: {worker_id} using {protocol} protocol
+
+Evaluate this answer and respond with JSON:
+{{
+    "is_correct": true/false,
+    "confidence": 0.0-1.0,
+    "reasoning": "Detailed explanation",
+    "quality": "excellent/good/fair/poor",
+    "completeness": 0.0-1.0,
+    "relevance": 0.0-1.0
+}}
+
+Consider:
+1. Does the answer correctly address the question?
+2. Is the answer complete and informative?
+3. Is the answer relevant to the context?
+4. Rate the overall quality of the response.
+"""
+
+            messages = [{"role": "user", "content": judge_prompt}]
+            
+            # 调用LLM judge
+            response = await llm_client.ask(messages=messages, temperature=0.0)
+            
+            # 解析响应
+            import json
+            json_start = response.find('{')
+            json_end = response.rfind('}') + 1
+            
+            if json_start >= 0 and json_end > json_start:
+                judge_data = json.loads(response[json_start:json_end])
+                judge_data["judge_method"] = "llm"
+                return judge_data
+            else:
+                # 解析失败，使用fallback
+                return {
+                    "is_correct": None,
+                    "confidence": 0.5,
+                    "reasoning": "Failed to parse LLM judge response",
+                    "quality": "unknown",
+                    "judge_method": "fallback"
+                }
+                
+        except Exception as e:
+            return {
+                "is_correct": None,
+                "confidence": 0.0,
+                "reasoning": f"LLM judge error: {str(e)}",
+                "quality": "error",
+                "judge_method": "error"
+            }
+    
+    async def _get_llm_client(self):
+        """获取LLM client用于judge"""
+        try:
+            # 从config中创建LLM client
+            if hasattr(self, 'llm_client') and self.llm_client:
+                return self.llm_client
+            
+            # 创建简单的LLM client
+            import sys
+            from pathlib import Path
+            
+            # 添加gaia路径来使用LLM
+            project_root = Path(__file__).parent.parent.parent.parent
+            gaia_path = project_root / "script" / "gaia"
+            if str(gaia_path) not in sys.path:
+                sys.path.insert(0, str(gaia_path))
+            
+            from core.llm import call_llm
+            self.llm_client = call_llm()
+            return self.llm_client
+            
+        except Exception as e:
+            print(f"⚠️ Failed to create LLM client for judge: {e}")
+            return None
     
     def _record_failure(self, worker_id: str, failure_type: str, error_msg: str):
         """Record failure statistics for fail-storm analysis"""

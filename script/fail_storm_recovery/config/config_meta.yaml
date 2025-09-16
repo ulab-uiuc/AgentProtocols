@@ -1,7 +1,3 @@
-# Fail-Storm Meta-Protocol Network Configuration
-# This configuration creates 2 agents per protocol for fail-storm recovery testing
-
-# Core LLM configuration (shared by all protocols)
 core:
   protocol: "meta"  # Meta-protocol network
   type: "openai"

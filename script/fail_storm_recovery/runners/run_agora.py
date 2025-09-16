@@ -29,11 +29,10 @@ async def main():
 
         # 说明：base_runner 的解析逻辑会优先在 fail_storm_recovery/configs/ 下寻找纯文件名
         # 传入多级相对路径会被再次拼接，导致找不到。改为只传文件名即可。
-        config_path = '/root/Multiagent-Protocol/script/fail_storm_recovery/configs/config_agora.yaml'
-        runner = AgoraRunner(config_path)
+        # Create Agora runner with default config (will use configs/config_agora.yaml)
+        runner = AgoraRunner()
 
-        print(f"📋 Configuration requested: {config_path}")
-        print(f"📄 Resolved config path: {runner.get_config_path()}")
+        print(f"📋 Configuration loaded from: configs/config_agora.yaml")
         print(f"🔗 Protocol: Agora")
         print(f"👥 Agents: {runner.config['scenario']['agent_count']}")
         print(f"⏱️  Runtime: {runner.config['scenario']['total_runtime']}s")
