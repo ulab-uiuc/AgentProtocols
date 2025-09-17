@@ -39,7 +39,7 @@ from protocol_backend.a2a.worker import QAAgentExecutor            # type: ignor
 
 
 class A2ARunner(RunnerBase):
-    def __init__(self, config_path: str = "config.yaml"):
+    def __init__(self, config_path: str = "config/a2a.yaml"):
         super().__init__(config_path)
         # 复用一个全局 httpx client（也交给 backend 使用，避免重复连接池）
         self.httpx_client = httpx.AsyncClient(timeout=30.0)

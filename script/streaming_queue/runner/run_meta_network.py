@@ -43,7 +43,7 @@ class MetaProtocolRunner(RunnerBase):
     - Network topology managed by src/core/network.py
     """
     
-    def __init__(self, config_path_or_dict = "config.yaml"):
+    def __init__(self, config_path_or_dict = "config/meta.yaml"):
         # Initialize RunnerBase first
         if isinstance(config_path_or_dict, str):
             super().__init__(config_path_or_dict)

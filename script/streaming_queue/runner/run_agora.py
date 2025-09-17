@@ -29,7 +29,7 @@ from protocol_backend.agora.worker import AgoraWorkerExecutor
 
 
 class AgoraRunner(RunnerBase):
-    def __init__(self, config_path: str = "config.yaml"):
+    def __init__(self, config_path: str = "config/agora.yaml"):
         super().__init__(config_path)
         self._backend: Optional[AgoraCommBackend] = None
         self._handles: List[Any] = []  # Handles for Agora Hosts started by this process

@@ -1,1 +1,0 @@
-"""Protocol adapters for multi-agent communication."""

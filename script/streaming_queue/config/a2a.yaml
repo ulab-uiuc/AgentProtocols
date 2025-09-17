@@ -1,0 +1,33 @@
+core:
+  type: "local"  # "local" or "openai"
+  name: "Qwen2.5-VL-72B-Instruct"
+  temperature: 0.0
+  base_url: "http://localhost:8000/v1"
+  port: 8000
+
+network:
+  topology: "star"
+  health_check_interval: 5
+  message_timeout: 30
+
+qa:
+  coordinator:
+    count: 1
+    start_port: 9998
+    data_file: "data/top1000_simplified.jsonl"
+    result_file: "data/qa_results_a2a.json"
+    batch_size: 50
+    first_50: false
+  worker:
+    count: 4
+    start_port: 10001
+  network:
+    topology: "star"
+  health_check_interval: 5
+  max_retries: 3
+  batch_size: 5
+  response_timeout: 60
+  metrics:
+    - latency
+    - accuracy
+    - throughput

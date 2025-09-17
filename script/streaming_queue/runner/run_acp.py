@@ -37,7 +37,7 @@ except ImportError as e:
 
 
 class ACPRunner(RunnerBase):
-    def __init__(self, config_path: str = "config.yaml"):
+    def __init__(self, config_path: str = "config/acp.yaml"):
         if not ACP_AVAILABLE:
             raise RuntimeError("ACP SDK is required for ACP runner. Please install acp-sdk.")
         
