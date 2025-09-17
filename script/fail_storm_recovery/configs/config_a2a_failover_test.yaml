@@ -1,13 +1,13 @@
 scenario:
-  name: "fail_storm_recovery_agora_test"
-  protocol: "agora"
+  name: "fail_storm_recovery_a2a_failover_test"
+  protocol: "a2a"
   agent_count: 8
   total_runtime: 180.0  # 3 minutes total for testing
-  fault_injection_time: 120.0  # First fault at 2 minutes
+  fault_injection_time: 60.0   # First fault at 1 minute
   recovery_duration: 60  # 1 minute recovery time
   kill_fraction: 0.375  # Kill 3 out of 8 agents each cycle
-  heartbeat_interval: 10.0
-  heartbeat_timeout: 30.0
+  heartbeat_interval: 10.0  # Reduce heartbeat frequency for long test
+  heartbeat_timeout: 30.0  # Longer timeout for stability
   cyclic_faults: true  # Enable cyclic fault injection
   fault_cycle_interval: 120.0  # Every 2 minutes (120 seconds)
   agents_per_fault: 3  # Kill 3 agents per cycle
@@ -23,12 +23,22 @@ llm:
   max_tokens: 8192
   timeout: 30.0
 
-agora:
-  app_id: "test_app_id"
-  app_certificate: "test_certificate"
+a2a:
+  agent_start_cmd:
+    - "python"
+    - "local_deps/a2a_agent.py"
+    - "--port"
+    - "{port}"
+    - "--id"
+    - "{agent_id}"
+    - "--workspace"
+    - "{ws}"
+  health_path: "/healthz"
+  peer_add_path: "/mesh/add_peer"
+  broadcast_path: "/mesh/broadcast"
+  qa_path: "/qa/submit"
   recovery:
-    reconnect_delay: 10.0
-    max_retries: 3
+    reconnect_delay: 5.0  # Wait 5 seconds before attempting reconnection
 
 network:
   base_port: 9000
@@ -46,7 +56,7 @@ shard_qa:
   qa_cycle_timeout: 10.0
 
 output:
-  results_file: "failstorm_metrics.json"
+  results_file: "failstorm_metrics_failover.json"
   logs_dir: "logs"
   artifacts_dir: "artifacts"
 

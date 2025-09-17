@@ -658,62 +658,117 @@ class FailStormRunnerBase(ABC):
         return results
     
     async def _execute_cyclic_fail_storm(self) -> None:
-        """Execute cyclic fail-storm scenario with alternating normal/fault phases."""
+        """Execute continuous cyclic fail-storm with proper recovery phases."""
         import asyncio
         import time
-        import random
         
         scenario_config = self.config.get("scenario", {})
-        total_runtime = scenario_config.get("total_runtime", 1200.0)  # 20 minutes
-        fault_cycle_interval = scenario_config.get("fault_cycle_interval", 120.0)  # 2 minutes
-        normal_phase_duration = scenario_config.get("normal_phase_duration", 120.0)  # 2 minutes
+        total_runtime = scenario_config.get("total_runtime", 180.0)
+        fault_cycle_interval = scenario_config.get("fault_cycle_interval", 120.0)
         agents_per_fault = scenario_config.get("agents_per_fault", 3)
+        recovery_timeout = scenario_config.get("recovery_duration", 60.0)
         
         start_time = time.time()
+        next_fault_time = start_time + fault_cycle_interval
         cycle_count = 0
-        current_phase = "normal"  # Start with normal phase
+        current_phase = "pre_fault"  # Start with pre-fault phase
         
-        self.output.info(f"🔄 Starting Cyclic Fail-Storm:")
+        self.output.info(f"🔄 Starting Continuous Cyclic Fail-Storm:")
         self.output.info(f"   Total runtime: {total_runtime/60:.1f} minutes")
-        self.output.info(f"   Cycle interval: {fault_cycle_interval/60:.1f} minutes")
+        self.output.info(f"   Fault interval: {fault_cycle_interval/60:.1f} minutes")
         self.output.info(f"   Agents per fault: {agents_per_fault}")
+        self.output.info(f"   Recovery timeout: {recovery_timeout}s")
         
+        # Start continuous QA tasks for all agents
+        qa_tasks = []
+        for agent_id, worker in self.shard_workers.items():
+            task = asyncio.create_task(
+                self._run_continuous_qa_task_with_phases(agent_id, worker, total_runtime),
+                name=f"continuous_qa_{agent_id}"
+            )
+            qa_tasks.append(task)
+        
+        # Track killed agents for recovery
+        killed_in_current_cycle = set()
+        recovery_start_time = None
+        
+        # Monitor and manage phases
         while time.time() - start_time < total_runtime and not self.shutdown_event.is_set():
-            cycle_start = time.time()
-            cycle_count += 1
-            elapsed = time.time() - start_time
+            current_time = time.time()
+            elapsed = current_time - start_time
             
-            if current_phase == "normal":
-                self.output.info(f"✅ Cycle {cycle_count}: Normal Phase ({elapsed/60:.1f}m elapsed)")
+            # Check if it's time for fault injection
+            if current_phase == "pre_fault" and current_time >= next_fault_time:
+                cycle_count += 1
+                self.output.warning(f"💥 Cycle {cycle_count}: Fault Injection at {elapsed/60:.1f}m")
                 
-                # Run normal QA tasks for specified duration
-                await self._execute_normal_phase_cyclic(normal_phase_duration)
+                # Inject faults and track killed agents
+                killed_agents = await self._inject_cyclic_faults_with_tracking(agents_per_fault)
+                killed_in_current_cycle = set(killed_agents)
+                recovery_start_time = current_time
+                current_phase = "recovery"
                 
-                # Switch to fault phase
-                current_phase = "fault"
+                # Update metrics phase
+                if self.metrics_collector:
+                    self.metrics_collector.set_fault_injection_time(current_time)
                 
-            else:  # fault phase
-                self.output.info(f"💥 Cycle {cycle_count}: Fault Injection Phase ({elapsed/60:.1f}m elapsed)")
+                # Schedule reconnection for killed agents
+                reconnection_delay = 5.0  # 5 seconds delay
+                for agent_id in killed_agents:
+                    asyncio.create_task(self._schedule_reconnection(agent_id, reconnection_delay))
                 
-                # Inject faults (kill some agents)
-                await self._inject_cyclic_faults(agents_per_fault)
-                
-                # Monitor recovery for a period
-                recovery_duration = min(fault_cycle_interval, 60.0)  # Max 1 minute recovery
-                await self._monitor_cyclic_recovery(recovery_duration)
-                
-                # Switch back to normal phase
-                current_phase = "normal"
+                self.output.info(f"🔄 Recovery phase started - waiting for {len(killed_in_current_cycle)} agents to recover")
+                self.output.info(f"🔄 Scheduled reconnection for {len(killed_agents)} agents in {reconnection_delay}s")
             
-            # Wait for next cycle if needed
-            cycle_elapsed = time.time() - cycle_start
-            if cycle_elapsed < fault_cycle_interval:
-                wait_time = fault_cycle_interval - cycle_elapsed
-                self.output.info(f"⏳ Waiting {wait_time:.1f}s for next cycle...")
-                await asyncio.sleep(wait_time)
+            # Check for recovery completion
+            elif current_phase == "recovery":
+                # Check if all killed agents have recovered
+                still_killed = killed_in_current_cycle & self.killed_agents
+                
+                if not still_killed:
+                    # All agents recovered!
+                    recovery_end_time = current_time
+                    recovery_duration = recovery_end_time - recovery_start_time
+                    current_phase = "post_fault"
+                    
+                    if self.metrics_collector:
+                        self.metrics_collector.set_steady_state_time(recovery_end_time)
+                    
+                    self.output.success(f"✅ Recovery completed in {recovery_duration:.1f}s - all {len(killed_in_current_cycle)} agents recovered")
+                    
+                elif current_time - recovery_start_time > recovery_timeout:
+                    # Recovery timeout
+                    still_killed_count = len(still_killed)
+                    current_phase = "post_fault"  # Move to post-fault even if not fully recovered
+                    
+                    self.output.warning(f"⚠️ Recovery timeout after {recovery_timeout}s - {still_killed_count} agents still failed")
+                    
+                    if self.metrics_collector:
+                        self.metrics_collector.set_steady_state_time(current_time)
+            
+            # Check if it's time for next cycle
+            elif current_phase == "post_fault" and current_time >= next_fault_time + fault_cycle_interval:
+                # Schedule next fault
+                next_fault_time = current_time
+                current_phase = "pre_fault"
+                killed_in_current_cycle = set()
+                recovery_start_time = None
+                
+                self.output.info(f"🔄 Starting new cycle - Pre-fault phase")
+            
+            # Brief sleep to avoid busy waiting
+            await asyncio.sleep(2.0)
+        
+        # Stop all QA tasks
+        for task in qa_tasks:
+            if not task.done():
+                task.cancel()
+        
+        # Wait for tasks to finish
+        await asyncio.gather(*qa_tasks, return_exceptions=True)
         
         total_elapsed = time.time() - start_time
-        self.output.success(f"🎉 Cyclic Fail-Storm completed: {cycle_count} cycles in {total_elapsed/60:.1f} minutes")
+        self.output.success(f"🎉 Continuous Cyclic Fail-Storm completed: {cycle_count} cycles in {total_elapsed/60:.1f} minutes")
     
     async def _execute_normal_phase_cyclic(self, duration: float) -> None:
         """Execute normal phase for cyclic fail-storm."""
@@ -781,6 +836,118 @@ class FailStormRunnerBase(ABC):
         setattr(self, f"_last_group_{agent_id}", group_id)
         
         self.output.info(f"   {agent_id}: Completed {task_count} QA tasks (groups {group_id-task_count}-{group_id-1})")
+    
+    async def _run_continuous_qa_task_with_phases(self, agent_id: str, worker, duration: float):
+        """Run continuous QA tasks with proper phase tracking and failover."""
+        start_time = time.time()
+        task_count = 0
+        max_groups = self.config.get("scenario", {}).get("max_groups", 5000)
+        group_id = 0
+        
+        while time.time() - start_time < duration and not self.shutdown_event.is_set():
+            try:
+                # Check if agent is still alive
+                if agent_id in self.killed_agents:
+                    # Agent is killed, wait for recovery
+                    await asyncio.sleep(5.0)
+                    continue
+                
+                # Execute task
+                task_start_time = time.time()
+                result = await worker.worker.start_task(group_id)
+                task_end_time = time.time()
+                task_count += 1
+                
+                # Record task execution with proper phase
+                if self.metrics_collector:
+                    # Determine current phase for metrics
+                    current_phase = self._get_current_metrics_phase()
+                    task_type = f"qa_{current_phase}"
+                    
+                    result_str = str(result).lower() if result else ""
+                    answer_found = (result and 
+                                  ("document search success" in result_str or "answer_found:" in result_str) and 
+                                  "no answer" not in result_str)
+                    answer_source = "local" if "local" in result_str else "neighbor"
+                    
+                    self.metrics_collector.record_task_execution(
+                        task_id=f"{agent_id}_{current_phase}_g{group_id}_{task_count}",
+                        agent_id=agent_id,
+                        task_type=task_type,
+                        start_time=task_start_time,
+                        end_time=task_end_time,
+                        success=True,
+                        answer_found=answer_found,
+                        answer_source=answer_source,
+                        group_id=group_id
+                    )
+                
+                # Next group
+                group_id = (group_id + 1) % max_groups
+                
+                # Brief delay
+                await asyncio.sleep(0.1)
+                
+            except Exception as e:
+                # Task failed
+                self.output.warning(f"⚠️ Task failed on {agent_id}: {e}")
+                await asyncio.sleep(1.0)
+        
+        # Update worker task count
+        if hasattr(worker.worker, 'task_count'):
+            worker.worker.task_count = getattr(worker.worker, 'task_count', 0) + task_count
+        else:
+            worker.worker.task_count = task_count
+        
+        elapsed = time.time() - start_time
+        self.output.success(f"✅ {agent_id} continuous tasks completed: {task_count} tasks in {elapsed/60:.1f}m")
+    
+    def _get_current_metrics_phase(self) -> str:
+        """Get current phase for metrics recording."""
+        if not hasattr(self.metrics_collector, 'fault_injection_time') or self.metrics_collector.fault_injection_time is None:
+            return "normal"
+        elif not hasattr(self.metrics_collector, 'steady_state_time') or self.metrics_collector.steady_state_time is None:
+            return "recovery"
+        else:
+            return "post_fault"
+    
+    async def _inject_cyclic_faults_with_tracking(self, agents_per_fault: int) -> List[str]:
+        """Inject faults and return list of killed agent IDs."""
+        import random
+        
+        # Get list of alive agents
+        alive_agents = [aid for aid in self.agents.keys() if aid not in self.killed_agents]
+        
+        if len(alive_agents) <= agents_per_fault:
+            self.output.warning(f"⚠️ Not enough alive agents ({len(alive_agents)}) to kill {agents_per_fault}")
+            return []
+        
+        # Randomly select agents to kill
+        victims = random.sample(alive_agents, agents_per_fault)
+        
+        self.output.warning(f"💥 Killing {len(victims)} agents: {', '.join(victims)}")
+        
+        # Kill selected agents (protocol-specific implementation)
+        killed_agents = []
+        for agent_id in victims:
+            try:
+                await self._kill_agent(agent_id)
+                self.killed_agents.add(agent_id)
+                killed_agents.append(agent_id)
+                self.output.info(f"   💀 Killed agent: {agent_id}")
+            except Exception as e:
+                self.output.error(f"   ❌ Error killing {agent_id}: {e}")
+        
+        return killed_agents
+    
+    async def _kill_agent(self, agent_id: str) -> None:
+        """Kill a specific agent (to be overridden by protocol-specific runners)."""
+        # Default implementation - subclasses should override
+        if agent_id in self.agents:
+            agent = self.agents[agent_id]
+            if hasattr(agent, 'close'):
+                await agent.close()
+            del self.agents[agent_id]
     
     async def _inject_cyclic_faults(self, agents_per_fault: int) -> None:
         """Inject faults by killing specified number of agents."""

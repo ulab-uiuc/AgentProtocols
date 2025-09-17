@@ -147,6 +147,50 @@ class ANPAgent:
                     "did": self.did_doc.get("id") if self.did_doc else None
                 }
             
+            # Add missing /message endpoint for inter-agent communication
+            @self.simple_node.app.post("/message")
+            async def handle_message(request):
+                """Handle incoming messages from other agents."""
+                try:
+                    from fastapi import Request
+                    if isinstance(request, Request):
+                        body = await request.json()
+                    else:
+                        body = request
+                    
+                    # Handle A2A message format: {messageId, role, parts, meta}
+                    if isinstance(body, dict):
+                        # Extract content from A2A format
+                        if 'parts' in body and isinstance(body['parts'], list) and len(body['parts']) > 0:
+                            # A2A format: parts[0]['text']
+                            content = body['parts'][0].get('text', '')
+                        else:
+                            # Simple format: direct content
+                            content = body.get('content', str(body))
+                        
+                        # Extract sender and meta
+                        meta = body.get('meta', {})
+                        sender = meta.get('sender', body.get('sender', 'unknown'))
+                        
+                        # Process message through executor
+                        if self.executor and hasattr(self.executor, 'worker'):
+                            result = await self.executor.worker.process_message(sender, content, meta)
+                            return {"status": "success", "response": result}
+                        else:
+                            return {"status": "error", "message": "No executor available"}
+                    else:
+                        # Handle string content directly
+                        content = str(body)
+                        if self.executor and hasattr(self.executor, 'worker'):
+                            result = await self.executor.worker.process_message("unknown", content, {})
+                            return {"status": "success", "response": result}
+                        else:
+                            return {"status": "error", "message": "No executor available"}
+                        
+                except Exception as e:
+                    self.logger.error(f"Error handling message: {e}")
+                    return {"status": "error", "message": str(e)}
+            
             # Start the SimpleNode server using official SDK
             self.simple_node.run()  # This starts the server in background
             

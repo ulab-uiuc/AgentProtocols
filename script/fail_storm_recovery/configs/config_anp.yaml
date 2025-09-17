@@ -12,7 +12,7 @@ scenario:
   fault_cycle_interval: 120.0  # Every 2 minutes (120 seconds)
   agents_per_fault: 3  # Kill 3 agents per cycle
   normal_phase_duration: 120.0  # 2 minutes normal phase before first fault
-  max_groups: 1000
+  max_groups: 5000  # Increase max groups for longer test
 
 llm:
   type: "openai"

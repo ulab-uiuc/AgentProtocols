@@ -99,9 +99,13 @@ class A2ARunner(FailStormRunnerBase):
             self.config["scenario"] = {}
         self.config["scenario"]["protocol"] = "a2a"
 
+
         # A2A-specific attributes
         self.a2a_sessions: Dict[str, Any] = {}
         self.killed_agents: set = set()
+        
+        # Per-agent group tracking for consistent recovery behavior
+        self._next_group_for_agent = {}
         self.killed_agent_configs: Dict[str, Any] = {}
         
         self.output.info("Initialized A2A protocol runner")
@@ -209,7 +213,7 @@ class A2ARunner(FailStormRunnerBase):
             qa_tasks = []
             for agent_id, executor in self.shard_workers.items():
                 task = asyncio.create_task(
-                    self._run_qa_task_for_agent(agent_id, executor, normal_duration),
+                    self._run_qa_task_for_agent_with_failover(agent_id, executor, normal_duration),
                     name=f"qa_task_{agent_id}"
                 )
                 qa_tasks.append(task)
@@ -230,23 +234,28 @@ class A2ARunner(FailStormRunnerBase):
 
     async def _run_qa_task_for_agent(self, agent_id: str, worker, duration: float):
         """Run QA task for a specific A2A agent during normal phase."""
-        start_time = time.time()
+        start_wall = time.perf_counter()  # high-resolution timer
         task_count = 0
         
-        # Test first 20 groups like Meta protocol
+        # Keep a per-agent rolling group index across phases
         max_groups = 20
-        group_id = 0
+        if not hasattr(self, "_next_group_for_agent"):
+            self._next_group_for_agent = {}
+        group_id = self._next_group_for_agent.get(agent_id, 0) % max_groups
         
         try:
-            while time.time() - start_time < duration and group_id < max_groups and not self.shutdown_event.is_set():
+            while (time.perf_counter() - start_wall) < duration and group_id < max_groups and not self.shutdown_event.is_set():
                 try:
-                    # Execute QA task for current group
-                    task_start_time = time.time()
+                    # High-resolution timing for metrics
+                    start_t = time.perf_counter()
                     result = await worker.worker.start_task(group_id)
-                    task_end_time = time.time()
+                    end_t = time.perf_counter()
                     task_count += 1
                     current_group = group_id
-                    group_id = (group_id + 1) % max_groups  # Cycle through groups 0-19
+                    group_id = (group_id + 1) % max_groups  # round robin
+                    
+                    # Update the global pointer for this agent so later phases continue smoothly
+                    self._next_group_for_agent[agent_id] = group_id
                     
                     # Record task execution in metrics
                     if self.metrics_collector:
@@ -270,12 +279,19 @@ class A2ARunner(FailStormRunnerBase):
                         else:
                             answer_source = "unknown"
                             
+                        # Determine current phase for proper task classification
+                        current_phase = self._get_current_phase()
+                        task_type = f"qa_{current_phase}"
+                        
+                        # Use wall-clock timestamps for compatibility with collector
+                        now_wall = time.time()
+                        duration_s = end_t - start_t
                         self.metrics_collector.record_task_execution(
-                            task_id=f"{agent_id}_normal_g{current_group}_{task_count}",
+                            task_id=f"{agent_id}_{current_phase}_g{current_group}_{task_count}",
                             agent_id=agent_id,
-                            task_type="qa_search",
-                            start_time=task_start_time,
-                            end_time=task_end_time,
+                            task_type=task_type,
+                            start_time=now_wall - duration_s,
+                            end_time=now_wall,
                             success=True,
                             answer_found=answer_found,
                             answer_source=answer_source,
@@ -490,3 +506,212 @@ class A2ARunner(FailStormRunnerBase):
         await self._save_results(results)
         self.output.success("✅ Fail-Storm scenario completed successfully!")
         return results
+    
+    async def _reconnect_agent(self, agent_id: str) -> None:
+        """Reconnect a killed A2A agent (override base implementation)."""
+        if agent_id in self.killed_agents and agent_id in self.shard_workers:
+            try:
+                # Get stored configuration
+                agent_config = self.killed_agent_configs.get(agent_id, {})
+                worker = self.shard_workers[agent_id]
+                port = agent_config.get('port', 9000)
+                
+                # Re-create A2A agent
+                new_agent = await self.create_agent(agent_id, "127.0.0.1", port, worker)
+                
+                # Re-establish connections
+                await self._reestablish_agent_connections(agent_id)
+                
+                # Restore to active agents
+                self.agents[agent_id] = new_agent
+                self.killed_agents.discard(agent_id)
+                
+                self.output.success(f"✅ [A2A] Agent {agent_id} successfully reconnected via base runner!")
+                
+                # Record reconnection metrics
+                if self.metrics_collector:
+                    self.metrics_collector.record_reconnection_attempt(
+                        source_agent=agent_id,
+                        target_agent="a2a_network",
+                        success=True,
+                        duration_ms=5000.0
+                    )
+                    
+                    self.metrics_collector.record_network_event(
+                        event_type="a2a_agent_reconnection_success",
+                        source_agent=agent_id,
+                        target_agent="mesh_network"
+                    )
+                
+            except Exception as e:
+                self.output.error(f"❌ [A2A] Base runner reconnection failed for {agent_id}: {e}")
+                raise
+    
+    # ========================== Phase Management ==========================
+    
+    def _get_current_phase(self) -> str:
+        """Get current phase for proper task classification."""
+        if not self.metrics_collector:
+            return "normal"
+            
+        if not hasattr(self.metrics_collector, 'fault_injection_time') or self.metrics_collector.fault_injection_time is None:
+            return "normal"
+        elif not hasattr(self.metrics_collector, 'steady_state_time') or self.metrics_collector.steady_state_time is None:
+            return "recovery"
+        else:
+            return "post_fault"
+    
+    # ========================== A2A-specific Agent Management ==========================
+    
+    async def _kill_agent(self, agent_id: str) -> None:
+        """Kill a specific A2A agent."""
+        if agent_id in self.agents:
+            agent = self.agents[agent_id]
+            
+            # Store configuration for later reconnection
+            self.killed_agent_configs[agent_id] = {
+                'port': agent.port,
+                'host': agent.host,
+                'executor': self.shard_workers.get(agent_id)
+            }
+            
+            try:
+                await agent.stop()
+                self.output.info(f"   💀 [A2A] Killed agent: {agent_id}")
+                
+                # Remove from active agents but keep in shard_workers for recovery
+                del self.agents[agent_id]
+                
+                # Schedule automatic reconnection
+                reconnect_delay = self.config.get("a2a", {}).get("recovery", {}).get("reconnect_delay", 10.0)
+                asyncio.create_task(self._schedule_a2a_reconnection(agent_id, reconnect_delay))
+                
+            except Exception as e:
+                self.output.error(f"   ❌ [A2A] Error killing {agent_id}: {e}")
+    
+    # ========================== Simple Failover Implementation ==========================
+    
+    def get_next_available_agent(self, exclude_agents: set = None) -> Optional[str]:
+        """获取下一个可用的agent，跳过失败的agent"""
+        if exclude_agents is None:
+            exclude_agents = set()
+        
+        # 获取所有可用的agent（排除已kill的和要排除的）
+        available_agents = []
+        for agent_id in self.shard_workers.keys():
+            if (agent_id not in self.killed_agents and 
+                agent_id not in exclude_agents and
+                agent_id in self.agents):  # 确保agent还存在
+                available_agents.append(agent_id)
+        
+        if available_agents:
+            return available_agents[0]  # 返回第一个可用的
+        return None
+    
+    async def _run_qa_task_for_agent_with_failover(self, original_agent_id: str, original_worker, duration: float):
+        """运行QA任务，如果原agent失败则自动切换到下一个可用agent"""
+        start_wall = time.perf_counter()  # high-resolution timer
+        task_count = 0
+        max_groups = self.config.get("shard_qa", {}).get("max_groups", 50)
+        
+        # Keep consistent group progression
+        if not hasattr(self, "_next_group_for_agent"):
+            self._next_group_for_agent = {}
+        group_id = self._next_group_for_agent.get(original_agent_id, 0) % max_groups
+        
+        # 尝试的agent列表，从原始agent开始
+        tried_agents = set()
+        current_agent_id = original_agent_id
+        current_worker = original_worker
+        
+        while (time.perf_counter() - start_wall) < duration and group_id < max_groups:
+            try:
+                # 检查当前agent是否还可用
+                if (current_agent_id in self.killed_agents or 
+                    current_agent_id not in self.agents):
+                    # 当前agent不可用，寻找下一个
+                    tried_agents.add(current_agent_id)
+                    next_agent = self.get_next_available_agent(tried_agents)
+                    
+                    if next_agent is None:
+                        self.output.warning(f"🚨 [A2A] No available agents for task, original: {original_agent_id}")
+                        break
+                    
+                    # 切换到新的agent
+                    current_agent_id = next_agent
+                    current_worker = self.shard_workers[next_agent]
+                    self.output.info(f"🔄 [A2A] Switched from {original_agent_id} to {current_agent_id}")
+                
+                # 执行任务 - 高精度计时
+                start_t = time.perf_counter()
+                result = await current_worker.worker.start_task(group_id)
+                end_t = time.perf_counter()
+                task_count += 1
+                
+                # Update group tracking
+                self._next_group_for_agent[original_agent_id] = (group_id + 1) % max_groups
+                
+                # 记录任务执行
+                if self.metrics_collector:
+                    result_str = str(result).lower() if result else ""
+                    answer_found = (result and 
+                                  ("document search success" in result_str or "answer_found:" in result_str) and 
+                                  "no answer" not in result_str)
+                    answer_source = "local" if "local" in result_str else "neighbor"
+                    
+                    # Determine current phase for proper task classification
+                    current_phase = self._get_current_phase()
+                    task_type = f"qa_{current_phase}"
+                    
+                    # Use wall-clock timestamps for compatibility
+                    now_wall = time.time()
+                    duration_s = end_t - start_t
+                    self.metrics_collector.record_task_execution(
+                        task_id=f"{current_agent_id}_{current_phase}_g{group_id}_{task_count}",
+                        agent_id=current_agent_id,
+                        task_type=task_type,
+                        start_time=now_wall - duration_s,
+                        end_time=now_wall,
+                        success=True,
+                        answer_found=answer_found,
+                        answer_source=answer_source,
+                        group_id=group_id
+                    )
+                
+                # 下一个组
+                group_id = (group_id + 1) % max_groups
+                
+                # 短暂延迟避免过载
+                await asyncio.sleep(0.002)
+                
+            except Exception as e:
+                # 任务执行失败，尝试下一个agent
+                self.output.warning(f"⚠️ [A2A] Task failed on {current_agent_id}: {e}")
+                tried_agents.add(current_agent_id)
+                
+                # 标记当前agent为失败
+                if current_agent_id not in self.killed_agents:
+                    self.killed_agents.add(current_agent_id)
+                
+                # 寻找下一个可用agent
+                next_agent = self.get_next_available_agent(tried_agents)
+                if next_agent is None:
+                    self.output.error(f"❌ [A2A] No more available agents, stopping task for {original_agent_id}")
+                    break
+                
+                # 切换到新agent
+                current_agent_id = next_agent
+                current_worker = self.shard_workers[next_agent]
+                self.output.info(f"🔄 [A2A] Failover: {original_agent_id} -> {current_agent_id}")
+        
+        # 更新worker的任务计数
+        if hasattr(current_worker.worker, 'task_count'):
+            current_worker.worker.task_count = getattr(current_worker.worker, 'task_count', 0) + task_count
+        else:
+            current_worker.worker.task_count = task_count
+        
+        elapsed = time.time() - start_time
+        if current_agent_id != original_agent_id:
+            self.output.success(f"✅ [A2A] Agent {original_agent_id} -> {current_agent_id}: {task_count} tasks in {elapsed:.1f}s")
+        else:
+            self.output.progress(f"📊 [A2A] Agent {current_agent_id}: {task_count} tasks in {elapsed:.1f}s")

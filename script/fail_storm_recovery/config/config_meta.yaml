@@ -74,7 +74,7 @@ scenario:
   name: "fail_storm_meta_protocol"
   protocol: "meta"
   agent_count: 8  # 2 per protocol
-  total_runtime: 300.0  # 5 minutes for testing
+  total_runtime: 180.0  # 3 minutes for testing
   fault_injection_time: 120.0  # First fault at 2 minutes
   kill_fraction: 0.375  # Kill 3 out of 8 agents
   heartbeat_interval: 10.0

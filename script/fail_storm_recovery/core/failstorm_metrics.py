@@ -157,7 +157,24 @@ class FailStormMetricsCollector:
                             answer_found: bool = False, answer_source: Optional[str] = None,
                             result_size_bytes: int = 0, error: Optional[str] = None,
                             group_id: Optional[int] = None) -> None:
-        """Record a complete task execution with start and end times."""
+        """
+        Record a complete task execution and bin it into the correct phase window.
+
+        FIXED CLASSIFICATION RULES:
+        1) If task_type is an explicit QA label, trust it:
+           - 'qa_normal'   -> pre_fault_window
+           - 'qa_recovery' -> recovery_window
+           - 'qa_post_fault' (or synonyms) -> post_fault_window
+
+        2) Only if task_type is not an explicit QA label, fall back to time-based:
+           - start_time < fault_injection_time (or expected_fault_injection_time if None) -> pre_fault
+           - fault_injection_time <= start_time < steady_state_time -> recovery
+           - start_time >= steady_state_time -> post_fault
+
+        Notes:
+        - This prevents 'qa_recovery' from being incorrectly binned into post-fault.
+        - This also honors steady_state_time when available.
+        """
         execution = TaskExecution(
             task_id=task_id,
             agent_id=agent_id,
@@ -172,21 +189,46 @@ class FailStormMetricsCollector:
             answer_source=answer_source
         )
         self.task_executions.append(execution)
-        
-        # Record completion time
-        completion_time = end_time - start_time
+
+        # Compute completion time using provided timestamps
+        completion_time = (end_time - start_time) if end_time is not None else 0.0
         self.task_completion_times.append(completion_time)
-        
-        # Categorize by phase - use expected fault time even if injection didn't occur
-        # This ensures proper phase separation regardless of whether fault injection happened
-        fault_time_to_use = self.fault_injection_time or self.expected_fault_injection_time
-        
-        if task_type == "qa_normal" or start_time < fault_time_to_use:
+
+        # --- Explicit classification first ---
+        normalized = (task_type or "").strip().lower()
+        if normalized in ("qa_normal", "qa_pre_fault"):
             self.pre_fault_window.append(completion_time)
-        elif task_type == "qa_post_fault" or start_time >= fault_time_to_use:
-            self.post_fault_window.append(completion_time)
-        elif task_type == "qa_recovery":
+            return
+        if normalized in ("qa_recovery",):
             self.recovery_window.append(completion_time)
+            return
+        if normalized in ("qa_post_fault", "qa_post_recovery", "qa_post"):
+            self.post_fault_window.append(completion_time)
+            return
+
+        # --- Fallback: time-based classification ---
+        fault_time = self.fault_injection_time or self.expected_fault_injection_time
+        steady_time = self.steady_state_time
+
+        # If we don't even have a fault time, treat as pre-fault
+        if fault_time is None:
+            self.pre_fault_window.append(completion_time)
+            return
+
+        # If we have steady_state_time, use three-way split
+        if steady_time is not None:
+            if start_time < fault_time:
+                self.pre_fault_window.append(completion_time)
+            elif start_time < steady_time:
+                self.recovery_window.append(completion_time)
+            else:
+                self.post_fault_window.append(completion_time)
+        else:
+            # No steady state yet -> two-way split
+            if start_time < fault_time:
+                self.pre_fault_window.append(completion_time)
+            else:
+                self.recovery_window.append(completion_time)
 
     def record_duplicate_task(self, original_task_id: str, duplicate_agent_id: str) -> None:
         """Record when a task is executed multiple times (duplicate work)."""
@@ -327,6 +369,9 @@ class FailStormMetricsCollector:
         # Reconnection bytes
         metrics["bytes_reconnect"] = self._calculate_reconnection_bytes()
         
+        # Accuracy analysis
+        metrics["accuracy_analysis"] = self._calculate_accuracy_analysis()
+        
         return metrics
 
     def _calculate_success_rate(self, completion_times: List[float]) -> float:
@@ -361,6 +406,66 @@ class FailStormMetricsCollector:
             reconnect_bytes += 100  # Estimated overhead per attempt
         
         return reconnect_bytes
+    
+    def _calculate_accuracy_analysis(self) -> Dict[str, Any]:
+        """Calculate detailed accuracy analysis across all phases."""
+        def analyze_phase_accuracy(executions: List[TaskExecution], phase_name: str) -> Dict[str, Any]:
+            if not executions:
+                return {
+                    "total_tasks": 0,
+                    "successful_tasks": 0,
+                    "success_rate": 0.0,
+                    "tasks_with_answers": 0,
+                    "answer_rate": 0.0,
+                    "answer_sources": {"local": 0, "neighbor": 0, "unknown": 0}
+                }
+            
+            successful = len([e for e in executions if e.success])
+            with_answers = len([e for e in executions if e.answer_found])
+            
+            # Count answer sources
+            sources = {"local": 0, "neighbor": 0, "unknown": 0}
+            for e in executions:
+                if e.answer_found and e.answer_source:
+                    source = e.answer_source.lower()
+                    if source in sources:
+                        sources[source] += 1
+                    else:
+                        sources["unknown"] += 1
+            
+            return {
+                "total_tasks": len(executions),
+                "successful_tasks": successful,
+                "success_rate": successful / len(executions) if executions else 0.0,
+                "tasks_with_answers": with_answers,
+                "answer_rate": with_answers / len(executions) if executions else 0.0,
+                "answer_sources": sources
+            }
+        
+        # Get executions by phase
+        pre_fault_executions = [e for e in self.task_executions if e.task_type in ("qa_normal", "qa_pre_fault")]
+        recovery_executions = [e for e in self.task_executions if e.task_type == "qa_recovery"]
+        post_fault_executions = [e for e in self.task_executions if e.task_type in ("qa_post_fault", "qa_post_recovery", "qa_post")]
+        
+        # Fallback: use timing if task_type classification failed
+        if not pre_fault_executions and not recovery_executions and not post_fault_executions:
+            fault_time = self.fault_injection_time or self.expected_fault_injection_time
+            steady_time = self.steady_state_time
+            
+            for e in self.task_executions:
+                if fault_time is None or e.start_time < fault_time:
+                    pre_fault_executions.append(e)
+                elif steady_time is None or e.start_time < steady_time:
+                    recovery_executions.append(e)
+                else:
+                    post_fault_executions.append(e)
+        
+        return {
+            "pre_fault": analyze_phase_accuracy(pre_fault_executions, "pre_fault"),
+            "recovery": analyze_phase_accuracy(recovery_executions, "recovery"),
+            "post_fault": analyze_phase_accuracy(post_fault_executions, "post_fault"),
+            "overall": analyze_phase_accuracy(self.task_executions, "overall")
+        }
 
     # ========================== Performance Analysis ==========================
 

@@ -1,0 +1,130 @@
+scenario:
+  name: "fail_storm_recovery_meta_protocol_test"
+  protocol: "meta"
+  agent_count: 8
+  total_runtime: 300.0  # 5 minutes total for testing
+  fault_injection_time: 120.0  # First fault at 2 minutes
+  recovery_duration: 60  # 1 minute recovery time
+  kill_fraction: 0.375  # Kill 3 out of 8 agents each cycle
+  heartbeat_interval: 10.0
+  heartbeat_timeout: 30.0
+  cyclic_faults: true  # Enable cyclic fault injection
+  fault_cycle_interval: 120.0  # Every 2 minutes (120 seconds)
+  agents_per_fault: 3  # Kill 3 agents per cycle
+  normal_phase_duration: 120.0  # 2 minutes normal phase before first fault
+  max_groups: 5000  # Increase max groups for longer test
+
+# LLM configuration for intelligent routing
+llm:
+  type: "openai"
+  model: "gpt-4o"
+  openai_api_key: "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"
+  openai_base_url: "https://api.openai.com/v1"
+  temperature: 0.1  # Low temperature for consistent routing decisions
+  max_tokens: 8192
+  timeout: 30.0
+
+# Core configuration (used by meta coordinator)
+core:
+  type: "openai"
+  name: "gpt-4o"
+  openai_api_key: "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"
+  openai_base_url: "https://api.openai.com/v1"
+  temperature: 0.2
+  max_tokens: 8192
+  timeout: 30.0
+
+# Network configuration
+network:
+  base_port: 9000
+  heartbeat_interval: 5.0
+  heartbeat_timeout: 12.0
+  connection_timeout: 10.0
+
+agents:
+  base_port: 9000
+  host: "127.0.0.1"
+
+# Shard QA configuration
+shard_qa:
+  data_dir: "data/shards"
+  normal_phase_duration: 30.0
+  qa_cycle_timeout: 10.0
+  roles:
+    coordinator: 1
+    worker: 2
+
+# Meta protocol specific configuration
+meta_protocol:
+  llm_routing: true
+  intelligent_selection: true
+  protocol_fallback: true
+  load_balancing: true
+  fault_scenario: "cyclic"
+  
+  # Protocol preferences for different scenarios
+  protocol_weights:
+    anp: 0.4    # Highest success rate (61.0%) and fault tolerance (95%)
+    agora: 0.3  # Best balance (60.0% success, 6.1s recovery, 90% fault tolerance)
+    a2a: 0.2    # Fastest recovery (6.0s) but lower fault tolerance (85%)
+    acp: 0.1    # Slowest but stable (59.0% success, 8.0s recovery)
+  
+  # Routing strategies
+  routing_strategies:
+    - "performance_optimized"  # Prioritize ANP and Agora
+    - "recovery_optimized"     # Prioritize A2A and Agora
+    - "balanced"               # Mix all protocols
+    - "fault_tolerant"         # Prioritize ANP
+
+# Protocol-specific configurations
+protocols:
+  # A2A Protocol
+  a2a:
+    recovery:
+      reconnect_delay: 5.0
+      max_retries: 3
+    
+  # ACP Protocol  
+  acp:
+    sdk_version: "1.0.3"
+    recovery:
+      reconnect_delay: 8.0
+      max_retries: 3
+  
+  # Agora Protocol
+  agora:
+    app_id: "test_app_id"
+    app_certificate: "test_certificate" 
+    recovery:
+      reconnect_delay: 6.0
+      max_retries: 3
+  
+  # ANP Protocol (requires DID service)
+  anp:
+    did_service_url: "${ANP_DID_SERVICE_URL}"
+    did_api_key: "${ANP_DID_API_KEY}"
+    enable_protocol_negotiation: true
+    enable_e2e_encryption: true
+    recovery:
+      reconnect_delay: 10.0
+      max_retries: 3
+
+# Output configuration
+output:
+  results_file: "failstorm_metrics_meta.json"
+  detailed_results_file: "detailed_failstorm_metrics_meta.json"
+  logs_dir: "logs"
+  artifacts_dir: "artifacts"
+  workspace_dir: "workspaces"
+  results_dir: "results"
+  llm_outputs_dir: "llm_outputs"
+
+# QA configuration for meta coordinator
+qa:
+  coordinator:
+    batch_size: 10
+    first_50: true
+    data_file: "data/top1000_simplified.jsonl"
+    result_file: "data/qa_results_meta.json"
+  network:
+    response_timeout: 60

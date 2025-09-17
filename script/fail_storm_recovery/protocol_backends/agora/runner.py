@@ -7,7 +7,7 @@ while inheriting all core logic from the base runner.
 """
 
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 import sys
 import time
 import asyncio
@@ -111,9 +111,13 @@ class AgoraRunner(FailStormRunnerBase):
             self.config["scenario"] = {}
         self.config["scenario"]["protocol"] = "agora"
         
+        
         # Agora-specific port allocation tracking
         self._used_ports = set()  # Track ports currently in use
         self._port_lock = asyncio.Lock()  # Protect port allocation
+        
+        # Per-agent group tracking for consistent recovery behavior
+        self._next_group_for_agent = {}
         
         self.output.info("Initialized Agora protocol runner")
 
@@ -249,9 +253,9 @@ class AgoraRunner(FailStormRunnerBase):
         start_time = time.time()
         qa_tasks = []
         
-        # Start QA task execution on all agents simultaneously
+        # Start QA task execution on all agents simultaneously with failover
         for agent_id, worker in self.shard_workers.items():
-            task = asyncio.create_task(self._run_qa_task_for_agent(agent_id, worker, normal_phase_duration))
+            task = asyncio.create_task(self._run_qa_task_for_agent_with_failover(agent_id, worker, normal_phase_duration))
             qa_tasks.append(task)
         
         # Wait for normal phase duration with Agora status updates
@@ -285,14 +289,16 @@ class AgoraRunner(FailStormRunnerBase):
         import asyncio
         import time
         
-        start_time = time.time()
+        start_wall = time.perf_counter()  # high-resolution timer
         task_count = 0
         
-        # Test first 20 groups like Meta protocol
+        # Keep a per-agent rolling group index across phases
         max_groups = 20
-        group_id = 0
+        if not hasattr(self, "_next_group_for_agent"):
+            self._next_group_for_agent = {}
+        group_id = self._next_group_for_agent.get(agent_id, 0) % max_groups
         
-        while time.time() - start_time < duration and group_id < max_groups:
+        while (time.perf_counter() - start_wall) < duration and group_id < max_groups:
             try:
                 # Execute QA task for current group
                 task_start_time = time.time()
@@ -432,18 +438,20 @@ class AgoraRunner(FailStormRunnerBase):
         self.output.success(f"🔄 [Agora] Recovery phase completed in {elapsed:.2f}s")
 
     async def _run_recovery_qa_task(self, agent_id: str, worker, duration: float):
-        """Run QA task for a specific Agora agent during recovery."""
+        """Run QA task for a specific Agora agent during recovery without resetting group_id."""
         import asyncio
         import time
         
-        start_time = time.time()
+        start_wall = time.perf_counter()  # high-resolution timer
         task_count = 0
         
-        # Test first 20 groups like Meta protocol
+        # Keep a per-agent rolling group index across phases
         max_groups = 20
-        group_id = 0
+        if not hasattr(self, "_next_group_for_agent"):
+            self._next_group_for_agent = {}
+        group_id = self._next_group_for_agent.get(agent_id, 0) % max_groups
         
-        while time.time() - start_time < duration and group_id < max_groups:
+        while (time.perf_counter() - start_wall) < duration and group_id < max_groups:
             try:
                 # Execute QA task for current group
                 task_start_time = time.time()
@@ -790,3 +798,247 @@ class AgoraRunner(FailStormRunnerBase):
                 self.output.success(f"💾 [Agora] Detailed metrics saved to: {detailed_metrics_file}")
             except Exception as e:
                 self.output.error(f"❌ [Agora] Failed to save detailed metrics: {e}")
+    
+    # ========================== Phase Management ==========================
+    
+    def _get_current_phase(self) -> str:
+        """Get current phase for proper task classification."""
+        if not self.metrics_collector:
+            return "normal"
+            
+        if not hasattr(self.metrics_collector, 'fault_injection_time') or self.metrics_collector.fault_injection_time is None:
+            return "normal"
+        elif not hasattr(self.metrics_collector, 'steady_state_time') or self.metrics_collector.steady_state_time is None:
+            return "recovery"
+        else:
+            return "post_fault"
+    
+    # ========================== Agora-specific Agent Management ==========================
+    
+    async def _kill_agent(self, agent_id: str) -> None:
+        """Kill a specific Agora agent."""
+        if agent_id in self.agents:
+            agent = self.agents[agent_id]
+            
+            # Store configuration for later reconnection
+            self.killed_agent_configs[agent_id] = {
+                'port': agent.port,
+                'host': agent.host,
+                'executor': self.shard_workers.get(agent_id)
+            }
+            
+            try:
+                # Close Agora agent with SDK cleanup
+                await agent.close()
+                self.output.info(f"   💀 [Agora] Killed agent: {agent_id}")
+                
+                # Remove from active agents but keep in shard_workers for recovery
+                del self.agents[agent_id]
+                
+                # Schedule automatic reconnection
+                reconnect_delay = 5.0  # 5 seconds delay
+                asyncio.create_task(self._schedule_agora_reconnection(agent_id, reconnect_delay))
+                
+            except Exception as e:
+                self.output.error(f"   ❌ [Agora] Error killing {agent_id}: {e}")
+    
+    async def _schedule_agora_reconnection(self, agent_id: str, delay: float) -> None:
+        """Schedule Agora agent reconnection with SDK re-initialization."""
+        await asyncio.sleep(delay)
+        
+        try:
+            self.output.warning(f"🔄 [Agora] Attempting to re-initialize agent: {agent_id}")
+            
+            if agent_id in self.killed_agents and agent_id in self.shard_workers:
+                # Get original configuration
+                agent_config = self.killed_agent_configs.get(agent_id, {})
+                worker = self.shard_workers[agent_id]
+                port = agent_config.get('port', 9000)
+                
+                # Re-create Agora agent with SDK
+                new_agent = await self.create_agent(agent_id, "127.0.0.1", port, worker)
+                
+                # Re-establish connections
+                await self._reestablish_agora_connections(agent_id)
+                
+                # Restore to active agents
+                self.agents[agent_id] = new_agent
+                self.killed_agents.discard(agent_id)
+                
+                self.output.success(f"✅ [Agora] Agent {agent_id} successfully re-initialized and reconnected!")
+                
+                # Record recovery metrics
+                if self.metrics_collector:
+                    self.metrics_collector.set_first_recovery_time()
+                
+        except Exception as e:
+            self.output.error(f"🔄 [Agora] Failed to reconnect {agent_id}: {e}")
+    
+    async def _reestablish_agora_connections(self, agent_id: str) -> None:
+        """Re-establish connections for a reconnected Agora agent."""
+        try:
+            # Connect to all other active agents
+            for other_id in self.agents:
+                if other_id != agent_id and other_id not in self.killed_agents:
+                    await self.mesh_network.connect_agents(agent_id, other_id)
+                    await self.mesh_network.connect_agents(other_id, agent_id)
+            
+        except Exception as e:
+            self.output.error(f"Failed to re-establish Agora connections for {agent_id}: {e}")
+    
+    # ========================== Simple Failover Implementation ==========================
+    
+    def get_next_available_agent(self, exclude_agents: set = None) -> Optional[str]:
+        """获取下一个可用的agent，跳过失败的agent"""
+        if exclude_agents is None:
+            exclude_agents = set()
+        
+        # 获取所有可用的agent（排除已kill的和要排除的）
+        available_agents = []
+        for agent_id in self.shard_workers.keys():
+            if (agent_id not in self.killed_agents and 
+                agent_id not in exclude_agents and
+                agent_id in self.agents):  # 确保agent还存在
+                available_agents.append(agent_id)
+        
+        if available_agents:
+            return available_agents[0]  # 返回第一个可用的
+        return None
+    
+    async def _run_qa_task_for_agent_with_failover(self, original_agent_id: str, original_worker, duration: float):
+        """运行QA任务，如果原agent失败则自动切换到下一个可用agent"""
+        start_wall = time.perf_counter()  # high-resolution timer
+        task_count = 0
+        max_groups = 20  # Agora uses 20 groups
+        
+        # Keep consistent group progression
+        if not hasattr(self, "_next_group_for_agent"):
+            self._next_group_for_agent = {}
+        group_id = self._next_group_for_agent.get(original_agent_id, 0) % max_groups
+        
+        # 尝试的agent列表，从原始agent开始
+        tried_agents = set()
+        current_agent_id = original_agent_id
+        current_worker = original_worker
+        
+        while time.time() - start_time < duration and group_id < max_groups:
+            try:
+                # 检查当前agent是否还可用
+                if (current_agent_id in self.killed_agents or 
+                    current_agent_id not in self.agents):
+                    # 当前agent不可用，寻找下一个
+                    tried_agents.add(current_agent_id)
+                    next_agent = self.get_next_available_agent(tried_agents)
+                    
+                    if next_agent is None:
+                        self.output.warning(f"🚨 [Agora] No available agents for task, original: {original_agent_id}")
+                        break
+                    
+                    # 切换到新的agent
+                    current_agent_id = next_agent
+                    current_worker = self.shard_workers[next_agent]
+                    self.output.info(f"🔄 [Agora] Switched from {original_agent_id} to {current_agent_id}")
+                
+                # 执行任务
+                task_start_time = time.time()
+                result = await current_worker.worker.start_task(group_id)
+                task_end_time = time.time()
+                task_count += 1
+                current_group = group_id
+                group_id = (group_id + 1) % max_groups
+                
+                # 记录任务执行
+                if self.metrics_collector:
+                    current_phase = self._get_current_phase()
+                    task_type = f"qa_{current_phase}"
+                    
+                    result_str = str(result).lower() if result else ""
+                    answer_found = (result and 
+                                  ("document search success" in result_str or "answer_found:" in result_str) and 
+                                  "no answer" not in result_str)
+                    answer_source = "local" if "local" in result_str else "neighbor"
+                    
+                    self.metrics_collector.record_task_execution(
+                        task_id=f"{current_agent_id}_{current_phase}_g{current_group}_{task_count}",
+                        agent_id=current_agent_id,
+                        task_type=task_type,
+                        start_time=task_start_time,
+                        end_time=task_end_time,
+                        success=True,
+                        answer_found=answer_found,
+                        answer_source=answer_source,
+                        group_id=current_group
+                    )
+                
+                # 短暂延迟避免过载
+                await asyncio.sleep(0.1)
+                
+            except Exception as e:
+                # 任务执行失败，尝试下一个agent
+                self.output.warning(f"⚠️ [Agora] Task failed on {current_agent_id}: {e}")
+                tried_agents.add(current_agent_id)
+                
+                # 标记当前agent为失败
+                if current_agent_id not in self.killed_agents:
+                    self.killed_agents.add(current_agent_id)
+                
+                # 寻找下一个可用agent
+                next_agent = self.get_next_available_agent(tried_agents)
+                if next_agent is None:
+                    self.output.error(f"❌ [Agora] No more available agents, stopping task for {original_agent_id}")
+                    break
+                
+                # 切换到新agent
+                current_agent_id = next_agent
+                current_worker = self.shard_workers[next_agent]
+                self.output.info(f"🔄 [Agora] Failover: {original_agent_id} -> {current_agent_id}")
+        
+        # 更新worker的任务计数
+        if hasattr(current_worker, 'completed_tasks'):
+            current_worker.completed_tasks = getattr(current_worker, 'completed_tasks', 0) + task_count
+        
+        elapsed = time.time() - start_time
+        if current_agent_id != original_agent_id:
+            self.output.success(f"✅ [Agora] Agent {original_agent_id} -> {current_agent_id}: {task_count} tasks in {elapsed:.1f}s")
+        else:
+            self.output.progress(f"📊 [Agora] Agent {current_agent_id}: {task_count} tasks in {elapsed:.1f}s")
+    
+    async def _reconnect_agent(self, agent_id: str) -> None:
+        """Reconnect a killed Agora agent (override base implementation)."""
+        if agent_id in self.killed_agents and agent_id in self.shard_workers:
+            try:
+                # Get stored configuration
+                agent_config = self.killed_agent_configs.get(agent_id, {})
+                worker = self.shard_workers[agent_id]
+                port = agent_config.get('port', 9000)
+                
+                # Re-create Agora agent with SDK
+                new_agent = await self.create_agent(agent_id, "127.0.0.1", port, worker)
+                
+                # Re-establish connections
+                await self._reestablish_agora_connections(agent_id)
+                
+                # Restore to active agents
+                self.agents[agent_id] = new_agent
+                self.killed_agents.discard(agent_id)
+                
+                self.output.success(f"✅ [Agora] Agent {agent_id} successfully reconnected via base runner!")
+                
+                # Record reconnection metrics
+                if self.metrics_collector:
+                    self.metrics_collector.record_reconnection_attempt(
+                        source_agent=agent_id,
+                        target_agent="agora_network",
+                        success=True,
+                        duration_ms=5000.0
+                    )
+                    
+                    self.metrics_collector.record_network_event(
+                        event_type="agora_agent_reconnection_success",
+                        source_agent=agent_id,
+                        target_agent="mesh_network"
+                    )
+                
+            except Exception as e:
+                self.output.error(f"❌ [Agora] Base runner reconnection failed for {agent_id}: {e}")
+                raise

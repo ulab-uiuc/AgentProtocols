@@ -24,7 +24,7 @@ from protocol_backends.acp.runner import ACPRunner
 async def main():
     """Main entry point for ACP fail-storm testing."""
     try:
-        print("🚀 Starting ACP Protocol Fail-Storm Recovery Test")
+        print("Starting ACP Protocol Fail-Storm Recovery Test")
         print("=" * 60)
         
         # Create ACP runner with protocol-specific config
@@ -40,20 +40,20 @@ async def main():
         # Run the scenario
         results = await runner.run_scenario()
         
-        print("\n🎉 ACP Fail-Storm test completed successfully!")
+        print("\nACP Fail-Storm test completed successfully!")
         
         # Get actual result paths from runner
         result_paths = runner.get_results_paths()
-        print(f"📊 Results saved to: {result_paths['results_file']}")
-        print(f"📈 Detailed metrics: {result_paths['detailed_results_file']}")
+        print(f"Results saved to: {result_paths['results_file']}")
+        print(f"Detailed metrics: {result_paths['detailed_results_file']}")
         
         return results
         
     except KeyboardInterrupt:
-        print("\n⚠️ Test interrupted by user")
+        print("\nTest interrupted by user")
         return None
     except Exception as e:
-        print(f"\n❌ ACP test failed: {e}")
+        print(f"\nACP test failed: {e}")
         import traceback
         traceback.print_exc()
         return None
