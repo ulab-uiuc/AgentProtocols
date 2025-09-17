@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-# 简化版：顺序跑五个协议，底部显示当前状态
+# 简化版：顺序跑五个协议，每个使用独立配置文件
 set -e
 
-# 切换到仓库根目录
+# 切换到仓库根目录  
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_ROOT}"

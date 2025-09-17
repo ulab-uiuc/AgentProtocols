@@ -62,7 +62,7 @@ class ANPRunner(RunnerBase):
     - True ANP protocol implementation (no mocks)
     """
 
-    def __init__(self, config_path: str = "config.yaml"):
+    def __init__(self, config_path: str = "config/anp.yaml"):
         super().__init__(config_path)
         
         # ANP-specific state
