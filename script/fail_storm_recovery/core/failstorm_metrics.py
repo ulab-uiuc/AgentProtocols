@@ -442,23 +442,26 @@ class FailStormMetricsCollector:
                 "answer_sources": sources
             }
         
-        # Get executions by phase
-        pre_fault_executions = [e for e in self.task_executions if e.task_type in ("qa_normal", "qa_pre_fault")]
-        recovery_executions = [e for e in self.task_executions if e.task_type == "qa_recovery"]
-        post_fault_executions = [e for e in self.task_executions if e.task_type in ("qa_post_fault", "qa_post_recovery", "qa_post")]
+        # Get executions by phase - ALWAYS use time-based classification for ALL tasks
+        # This includes both qa_cyclic and qa_phase tasks
+        fault_time = self.fault_injection_time or self.expected_fault_injection_time
+        steady_time = self.steady_state_time
         
-        # Fallback: use timing if task_type classification failed
-        if not pre_fault_executions and not recovery_executions and not post_fault_executions:
-            fault_time = self.fault_injection_time or self.expected_fault_injection_time
-            steady_time = self.steady_state_time
-            
-            for e in self.task_executions:
-                if fault_time is None or e.start_time < fault_time:
-                    pre_fault_executions.append(e)
-                elif steady_time is None or e.start_time < steady_time:
-                    recovery_executions.append(e)
-                else:
-                    post_fault_executions.append(e)
+        pre_fault_executions = []
+        recovery_executions = []
+        post_fault_executions = []
+        
+        for e in self.task_executions:
+            # Time-based classification for ALL tasks (qa_cyclic, qa_normal, qa_recovery, etc.)
+            if fault_time is None or e.start_time < fault_time:
+                # Before fault injection = pre_fault
+                pre_fault_executions.append(e)
+            elif steady_time is None or e.start_time < steady_time:
+                # From fault injection to steady state = recovery
+                recovery_executions.append(e)
+            else:
+                # After steady state = post_fault
+                post_fault_executions.append(e)
         
         return {
             "pre_fault": analyze_phase_accuracy(pre_fault_executions, "pre_fault"),
