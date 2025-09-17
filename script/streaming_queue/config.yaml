@@ -1,14 +1,14 @@
 core:
-  protocol: agora
-  type: "openai"  # "local" or "openai"
-  name: "gpt-4o"  # Model name, e.g., "gpt-4o", "gpt-3.5-turbo", or local model name
+  # protocol: agora
+  type: "local"  # "local" or "openai"
+  name: "Qwen2.5-VL-72B-Instruct"  # Model name, e.g., "gpt-4o", "gpt-3.5-turbo", or local model name
   temperature: 0.0
   # For local models
   base_url: "http://localhost:8000/v1"
   port: 8000
   # For OpenAI models (uncomment the section below if using OpenAI)
-  openai_api_key: "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"
-  openai_base_url: "https://api.openai.com/v1"
+  # openai_api_key: "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"
+  # openai_base_url: "https://api.openai.com/v1"
 
 network:
   topology: "star"  # Network topology type, choose "star" or "mesh"
@@ -22,7 +22,7 @@ qa:
     data_file: "data/top1000_simplified.jsonl"  # Question file path
     result_file: "data/qa_results.json"  # Result storage file path
     batch_size: 50  # Number of questions to dispatch per round
-    first_50: true  # Whether to process only the first 50 questions
+    first_50: false  # Whether to process only the first 50 questions
   worker:
     count: 4          # Define the number of worker agents
     start_port: 10001  # Worker agent starting port
