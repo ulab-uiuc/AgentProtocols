@@ -1,0 +1,57 @@
+{
+  "metadata": {
+    "total_tasks": 1,
+    "successful_tasks": 0,
+    "timeout_tasks": 0,
+    "error_tasks": 1,
+    "success_rate": 0.0,
+    "timeout_per_task": 300,
+    "execution_timestamp": 1758098746.6188426
+  },
+  "results": [
+    {
+      "task_id": "c61d22de-5f6c-4958-a7f6-5e9707bd3466",
+      "question": "A paper about AI regulation that was originally submitted to arXiv.org in June 2022 shows a figure with three axes, where each axis has a label word at both ends. Which of these words is used to describe a type of society in a Physics and Society article submitted to arXiv.org on August 11, 2016?",
+      "ground_truth": "egalitarian",
+      "predicted_answer": "ERROR: \"ANPAgent\" object has no field \"target_did\"",
+      "final_answer_extracted": "ERROR: \"ANPAgent\" object has no field \"target_did\"",
+      "execution_time": 6.294738292694092,
+      "status": "error",
+      "level": 2,
+      "enhanced_llm_judge": {
+        "result": "error",
+        "is_correct": false,
+        "confidence": 0.0,
+        "reasoning": "Task execution failed with error. Predicted answer: ERROR: \"ANPAgent\" object has no field \"target_did\"...",
+        "answer_quality": "poor",
+        "final_answer_present": false,
+        "judge_execution_time": 6.294738292694092,
+        "judge_method": "error",
+        "error_message": "Execution error"
+      }
+    }
+  ],
+  "failed_tasks": [
+    {
+      "task_id": "c61d22de-5f6c-4958-a7f6-5e9707bd3466",
+      "question": "A paper about AI regulation that was originally submitted to arXiv.org in June 2022 shows a figure with three axes, where each axis has a label word at both ends. Which of these words is used to describe a type of society in a Physics and Society article submitted to arXiv.org on August 11, 2016?",
+      "ground_truth": "egalitarian",
+      "predicted_answer": "ERROR: \"ANPAgent\" object has no field \"target_did\"",
+      "final_answer_extracted": "ERROR: \"ANPAgent\" object has no field \"target_did\"",
+      "execution_time": 6.294738292694092,
+      "status": "error",
+      "level": 2,
+      "enhanced_llm_judge": {
+        "result": "error",
+        "is_correct": false,
+        "confidence": 0.0,
+        "reasoning": "Task execution failed with error. Predicted answer: ERROR: \"ANPAgent\" object has no field \"target_did\"...",
+        "answer_quality": "poor",
+        "final_answer_present": false,
+        "judge_execution_time": 6.294738292694092,
+        "judge_method": "error",
+        "error_message": "Execution error"
+      }
+    }
+  ]
+}

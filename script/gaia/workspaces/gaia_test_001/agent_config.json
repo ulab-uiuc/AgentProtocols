@@ -1,0 +1,62 @@
+{
+  "task_id": "gaia_test_001",
+  "generated_at": "2025-08-28T10:05:54Z",
+  "task_analysis": {
+    "task_type": "general_qa",
+    "complexity": "low",
+    "level": 1,
+    "required_tools": [
+      "create_chat_completion"
+    ],
+    "agents": [
+      {
+        "tool": "create_chat_completion",
+        "name": "SimpleQAResponder",
+        "role": "worker",
+        "specialization": "general_processing"
+      }
+    ],
+    "estimated_steps": 1,
+    "domain_areas": [
+      "general_knowledge"
+    ],
+    "document_length": 30
+  },
+  "agents": [
+    {
+      "id": 0,
+      "name": "SimpleQAResponder",
+      "tool": "create_chat_completion",
+      "port": 9000,
+      "priority": 2,
+      "max_tokens": 400,
+      "specialization": "general_processing",
+      "role": "worker"
+    }
+  ],
+  "workflow": {
+    "start_agent": 0,
+    "message_flow": [],
+    "execution_pattern": "single_agent"
+  },
+  "agent_prompts": {
+    "0": {
+      "agent_name": "SimpleQAResponder",
+      "role": "worker",
+      "specialization": "general_processing",
+      "tool": "create_chat_completion",
+      "system_prompt": "TASK CONTEXT:\n- Task Type: general_qa\n- Complexity: low\n- Domain Areas: general_knowledge\n- Total Agents in System: 1\n- Execution Pattern: single_agent\n\nCOMMUNICATION PROTOCOL:\n- Always provide clear, structured responses\n- Include confidence levels in your analysis when applicable\n- Cite sources when using external information\n- Indicate when you need clarification or additional information\n- Format responses appropriately for the next agent in the workflow\n\n\nYou are SimpleQAResponder, a processing specialist. Your tasks include:\n\n1. PROCESS data and information according to specifications\n2. EXECUTE operational tasks efficiently and accurately  \n3. TRANSFORM information into required formats\n4. MAINTAIN quality standards throughout processing\n\nYour expertise ensures reliable and accurate processing of assigned tasks.\n\nTOOL USAGE:\nYou have access to the 'create_chat_completion' tool with the following capabilities:\n{'name': 'create_chat_completion', 'class': 'CreateChatCompletion', 'description': 'Creates a structured completion with specified output formatting.', 'parameters': {'type': 'object', 'properties': {'response': {'type': 'string', 'description': 'The response text that should be delivered to the user.'}}, 'required': ['response']}}\n\nUse this tool strategically to accomplish your tasks. Always:\n- Understand the tool's parameters and expected outputs\n- Provide appropriate inputs based on your analysis\n- Interpret tool results accurately\n- Report any tool errors or limitations encountered\nWORKFLOW POSITION:\nYou are the first agent in the workflow.\n\nQUALITY STANDARDS:\n- Maximum response length: 400 tokens\n- Provide accurate, relevant information\n- Use clear, professional language\n- Include confidence levels when making assessments\n- Acknowledge limitations or uncertainties\n- Follow the established communication protocol\n\nRemember: Your success is measured by how well you contribute to solving the overall task while fulfilling your specific role in the multi-agent system.",
+      "max_tokens": 400
+    }
+  },
+  "communication_rules": {
+    "timeout_seconds": 60,
+    "max_retries": 2,
+    "routing": "sequential"
+  },
+  "performance_targets": {
+    "max_execution_time": 120000,
+    "target_accuracy": 0.8,
+    "max_total_tokens": 3000
+  }
+}
