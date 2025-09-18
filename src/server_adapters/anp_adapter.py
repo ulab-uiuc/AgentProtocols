@@ -670,15 +670,27 @@ class ANPSimpleNodeWrapper:
                 bitcoin_address = full_did.split(':')[2] if full_did else "unknown"
                 alias_did = f"{bitcoin_address.split('@')[0]}@127.0.0.1:{self.host_port}"
                 
-                self.simple_node = SimpleNode(
-                    host_domain=self.host_domain,
-                    new_session_callback=self._on_new_session,
-                    host_port=str(ws_port),
-                    host_ws_path=self.host_ws_path,
-                    private_key_pem=self.did_info.get('private_key_pem'),
-                    did=alias_did,  # Use alias format to match client destinationDid
-                    did_document_json=self.did_info.get('did_document_json')
-                )
+                try:
+                    self.simple_node = SimpleNode(
+                        host_domain=self.host_domain,
+                        new_session_callback=self._on_new_session,
+                        host_port=str(ws_port),
+                        host_ws_path=self.host_ws_path,
+                        private_key_pem=self.did_info.get('private_key_pem'),
+                        did=alias_did,  # Use alias format to match client destinationDid
+                        did_document_json=self.did_info.get('did_document_json')
+                    )
+                except TypeError:
+                    # Backward compatibility: SimpleNode without new_session_callback
+                    logger.warning("SimpleNode does not accept new_session_callback, creating without it")
+                    self.simple_node = SimpleNode(
+                        host_domain=self.host_domain,
+                        host_port=str(ws_port),
+                        host_ws_path=self.host_ws_path,
+                        private_key_pem=self.did_info.get('private_key_pem'),
+                        did=alias_did,
+                        did_document_json=self.did_info.get('did_document_json')
+                    )
                 
                 logger.info(f"SimpleNode created with alias DID: {alias_did} (to match client destinationDid)")
                 logger.info("SimpleNode created successfully")
@@ -919,4 +931,4 @@ class EnhancedANPServerAdapter(ANPServerAdapter):
             # This would require additional implementation
         
         # Call parent implementation
-        return super().build(host, port, agent_id, executor, **kwargs) 
+        return super().build(host, port, agent_id, executor, **kwargs)

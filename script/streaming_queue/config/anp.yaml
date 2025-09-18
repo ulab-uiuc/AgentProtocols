@@ -4,6 +4,8 @@ core:
   temperature: 0.0
   base_url: "http://localhost:8000/v1"
   port: 8000
+  openai_api_key: "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"
+  openai_base_url: "https://api.openai.com/v1"
 
 network:
   topology: "star"
@@ -15,7 +17,7 @@ qa:
     count: 1
     start_port: 9901
     data_file: "data/top1000_simplified.jsonl"
-    result_file: "data/qa_results_anp.json"
+    result_file: "/root/Multiagent-Protocol/script/streaming_queue/results/qa_results_anp.json"
     batch_size: 50
     first_50: false
   worker:

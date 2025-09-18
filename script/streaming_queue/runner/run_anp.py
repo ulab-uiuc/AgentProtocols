@@ -92,7 +92,7 @@ class ANPRunner(RunnerBase):
         self.output.info("Creating ANP network with AgentConnect backend...")
         
         # Create ANP communication backend with proper timeout
-        self._backend = ANPCommBackend(request_timeout=60.0)
+        self._backend = ANPCommBackend(request_timeout=300.0)
         
         # Create network base with ANP backend
         network = NetworkBase(comm_backend=self._backend)
@@ -147,7 +147,8 @@ class ANPRunner(RunnerBase):
         self.output.info(f"Generated DID for Coordinator: {coordinator_did.get('id', 'Unknown')}")
         
         # Create coordinator executor
-        coordinator_executor = ANPCoordinatorExecutor(anp_config, self.output)
+        # Use full self.config to preserve coordinator.result_file path
+        coordinator_executor = ANPCoordinatorExecutor(self.config, self.output)
         coordinator_executor.coordinator.set_anp_identity(coordinator_did, coordinator_keys)
         
         # Spawn ANP coordinator
@@ -271,7 +272,7 @@ class ANPRunner(RunnerBase):
         try:
             # Use ANP backend's HTTP client with DID auth headers
             import httpx
-            async with httpx.AsyncClient(timeout=60.0) as client:
+            async with httpx.AsyncClient(timeout=300.0) as client:
                 
                 # Add DID authentication header
                 headers = {"Content-Type": "application/json"}

@@ -141,7 +141,10 @@ class ANPAdapter(BaseProtocolAdapter):
         llm_instance: Optional[Any] = None,        # For protocol negotiation
         protocol_code_path: Optional[str] = None,  # For generated protocols
         auth_headers: Optional[Dict[str, str]] = None,
-        new_session_callback: Optional[Callable] = None  # Callback for new sessions
+        new_session_callback: Optional[Callable] = None,  # Callback for new sessions
+        # --- new params ---
+        target_http_base_url: Optional[str] = None,
+        server_card: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize ANP adapter with full AgentConnect feature set.
@@ -223,6 +226,16 @@ class ANPAdapter(BaseProtocolAdapter):
         
         # Agent card
         self.agent_card: Dict[str, Any] = {}
+        
+        # --- new: target url & cache server card ---
+        self._target_base_url: Optional[str] = None
+        if target_http_base_url:
+            # normalize and replace 0.0.0.0 -> 127.0.0.1
+            url = target_http_base_url.rstrip('/')
+            if "0.0.0.0" in url:
+                url = url.replace("0.0.0.0", "127.0.0.1")
+            self._target_base_url = url
+        self._server_card: Dict[str, Any] = server_card or {}
 
     @property
     def protocol_name(self) -> str:
@@ -1066,9 +1079,38 @@ Capability Assessment:
                 "source_id": "anp_client"
             }
             
-            # 通过HTTP发送到ANP服务器
+            # Determine target HTTP base URL in order of precedence:
+            # 1) explicit _target_base_url passed in
+            # 2) server card url
+            # 3) resolve via GET /.well-known/agent.json using existing known url if any
+            base_url = self._target_base_url
+            if not base_url and getattr(self, "_server_card", None):
+                base_url = (self._server_card.get("url") or "").rstrip('/') or None
+                if base_url and "0.0.0.0" in base_url:
+                    base_url = base_url.replace("0.0.0.0", "127.0.0.1")
+            
+            if not base_url:
+                # last resort: probe default port but cache card for next calls
+                probe_url = "http://127.0.0.1:10002"
+                try:
+                    resp = await self.httpx_client.get(f"{probe_url}/.well-known/agent.json")
+                    if resp.status_code == 200:
+                        agent_info = resp.json()
+                        self._server_card = agent_info
+                        if "url" in agent_info:
+                            base_url = agent_info["url"].rstrip('/')
+                            if "0.0.0.0" in base_url:
+                                base_url = base_url.replace("0.0.0.0", "127.0.0.1")
+                except Exception:
+                    pass
+            
+            # Still not found? fail fast with clear message
+            if not base_url:
+                raise RuntimeError("Target ANP server base URL unknown (no base_url provided nor discovered)")
+            
+            # 通过HTTP发送到ANP服务器正确的端点
             response = await self.httpx_client.post(
-                "http://127.0.0.1:10002/anp/message",
+                f"{base_url}/anp/message",
                 json=anp_payload,
                 timeout=30.0
             )
@@ -1280,4 +1322,4 @@ class ANPMessageBuilder:
             "type": "pong",
             "ping_timestamp": ping_timestamp,
             "pong_timestamp": asyncio.get_event_loop().time()
-        } 
+        }

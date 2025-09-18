@@ -62,6 +62,9 @@ class ANPAgent(MeshAgent):
     The ANPNetwork is responsible for spawning ANP SimpleNode servers which
     handle ANP protocol communication via WebSocket and DID authentication.
     """
+
+    # Allow setting extra attributes on Pydantic model instances
+    model_config = {"arbitrary_types_allowed": True, "extra": "allow"}
     
     def __init__(self, node_id: int, name: str, tool: str, port: int, 
                  config: Dict[str, Any], task_id: Optional[str] = None):
@@ -96,6 +99,15 @@ class ANPAgent(MeshAgent):
         print(f"[ANPAgent] Initialized with ANP-SDK: {ANP_SDK_AVAILABLE}")
 
         self._log("ANPAgent initialized (network-managed ANP protocol)")
+
+    @property
+    def simple_node(self):
+        """Expose SimpleNode for network backend compatibility."""
+        return self._simple_node
+
+    @simple_node.setter
+    def simple_node(self, value):
+        self._simple_node = value
 
     async def connect(self):
         """Start ANP SimpleNode and mark agent as connected."""
@@ -166,9 +178,9 @@ class ANPAgent(MeshAgent):
             self._log(f"🔄 Processing ANP request: {message[:100]}...")
             
             # Simple response generation (can be enhanced with actual tool execution)
-            if self.tool == "create_chat_completion":
+            if self.tool_name == "create_chat_completion":
                 response = await self._process_with_llm(message)
-            elif self.tool == "search":
+            elif self.tool_name == "search":
                 response = await self._process_with_search(message)
             else:
                 response = f"ANP Agent {self.name}: {message}"
@@ -200,7 +212,11 @@ class ANPAgent(MeshAgent):
     async def health_check(self) -> bool:
         """Check if the ANP agent is healthy and ready to process messages."""
         try:
-            return self._connected and (not ANP_SDK_AVAILABLE or self.anp_initialized)
+            # If SDK不可用，仅检查连接标志
+            if not ANP_SDK_AVAILABLE:
+                return bool(self._connected)
+            # SDK可用时，放宽判定，避免启动竞态导致误报
+            return bool(self._connected and (self.anp_initialized or self._simple_node is not None))
         except Exception as e:
             self._log(f"Health check failed: {e}")
             return False

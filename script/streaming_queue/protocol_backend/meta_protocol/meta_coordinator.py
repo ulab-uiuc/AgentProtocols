@@ -360,9 +360,10 @@ class MetaProtocolCoordinator(QACoordinatorBase):
         # 4) install from router -> every destination (including self for loopback)
         for dst_id, (proto, url) in directory.items():
             if proto == "anp":
-                # Install DID-based ANP outbound adapter
+                # Install DID-based ANP outbound adapter with target base URL and server card
                 try:
-                    await self._install_anp_outbound_adapter(router_ba, dst_id)
+                    server_card = self.meta_agents[dst_id].base_agent.get_card()
+                    await self._install_anp_outbound_adapter(router_ba, dst_id, url, server_card)
                     logger.info("[META-COORDINATOR] Installed ANP DID outbound adapter: %s", dst_id)
                 except Exception as e:
                     logger.warning("[META-COORDINATOR] ANP DID adapter failed: %s", e)
@@ -396,7 +397,7 @@ class MetaProtocolCoordinator(QACoordinatorBase):
         self._router_id = router_id  # create an attribute
         logger.info("[META-COORDINATOR] Router is %s", router_id)
 
-    async def _install_anp_outbound_adapter(self, router_ba, dst_id: str) -> None:
+    async def _install_anp_outbound_adapter(self, router_ba, dst_id: str, target_base_url: Optional[str] = None, server_card: Optional[Dict[str, Any]] = None) -> None:
         """
         Install a DID-based ANP outbound adapter on the router BaseAgent.
         """
@@ -410,7 +411,7 @@ class MetaProtocolCoordinator(QACoordinatorBase):
         
         # 1) read server DID from card
         anp_meta = self.meta_agents[dst_id]
-        server_card = anp_meta.base_agent.get_card()
+        server_card = server_card or anp_meta.base_agent.get_card()
         
         # prefer "id", else try authentication.did or endpoints.did_document
         server_did = server_card.get("id") \
@@ -432,9 +433,15 @@ class MetaProtocolCoordinator(QACoordinatorBase):
             "did_document_json": did_document_json
         }
 
-        # 3) build ANPAdapter with target DID + local DID info + DID service support
+        # 3) build ANPAdapter with target DID + local DID info + base URL and server card
         from src.agent_adapters.anp_adapter import ANPAdapter
         import os
+        
+        # normalize target base url host if needed
+        tb = None
+        if target_base_url:
+            tb = target_base_url.replace("0.0.0.0", "127.0.0.1")
+            tb = tb.rstrip('/')
         
         anp_adp = ANPAdapter(
             httpx_client=router_ba._httpx_client,
@@ -446,7 +453,9 @@ class MetaProtocolCoordinator(QACoordinatorBase):
             did_service_url=os.getenv("ANP_DID_SERVICE_URL"),   # for did:wba support
             did_api_key=os.getenv("ANP_DID_API_KEY"),           # for did:wba support
             enable_protocol_negotiation=False,      # can enable later
-            enable_e2e_encryption=True
+            enable_e2e_encryption=True,
+            target_http_base_url=tb,
+            server_card=server_card
         )
         await anp_adp.initialize()
         router_ba.add_outbound_adapter(dst_id, anp_adp)
@@ -720,7 +729,7 @@ async def test_meta_protocol_coordination():
                 "batch_size": 10,
                 "first_50": True,
                 "data_file": "data/top1000_simplified.jsonl",
-                "result_file": "data/qa_results_meta.json"
+                "result_file": "results/qa_results_meta.json"
             }
         }
     }

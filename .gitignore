@@ -53,7 +53,7 @@ llm_outputs/
 venv/
 env/
 .venv/
-results/
+# results/
 # Distribution / packaging
 build/
 dist/

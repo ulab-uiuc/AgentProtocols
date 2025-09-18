@@ -1,7 +1,7 @@
 core:
   # protocol: agora
-  type: "local"  # "local" or "openai"
-  name: "Qwen2.5-VL-72B-Instruct"  # Model name, e.g., "gpt-4o", "gpt-3.5-turbo", or local model name
+  type: "openai"  # "local" or "openai"
+  name: "gpt-4o"  # Model name, e.g., "gpt-4o", "gpt-3.5-turbo", or local model name
   temperature: 0.0
   # For local models
   base_url: "http://localhost:8000/v1"

@@ -15,6 +15,16 @@ from typing import Any, Dict, List, Optional, Tuple
 # Add the parent directory to sys.path for imports  
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
+# Add AgentConnect SDK to sys.path by searching upwards for 'agentconnect_src'
+from pathlib import Path as _Path
+_cur = _Path(__file__).resolve()
+for _p in _cur.parents:
+    _cand = _p / "agentconnect_src"
+    if _cand.exists():
+        if str(_cand) not in sys.path:
+            sys.path.insert(0, str(_cand))
+        break
+
 from core.network import MeshNetwork
 from core.schema import Message, ExecutionStatus
 from protocol_backends.anp.agent import ANPAgent
@@ -27,76 +37,126 @@ logger.setLevel(logging.INFO)
 # Check ANP-SDK availability
 try:
     # Import AgentConnect components to check availability
-    from ....agentconnect_src.agent_connect.python.simple_node.simple_node import SimpleNode
-    from ....agentconnect_src.agent_connect.python.authentication import DIDAllClient
+    from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
+    from agent_connect.python.authentication import DIDAllClient
     ANP_SDK_AVAILABLE = True
     print("✅ ANP-SDK components available")
-except ImportError:
+except Exception as _e:
     ANP_SDK_AVAILABLE = False
-    print("⚠️ ANP-SDK components not available")
+    print(f"⚠️ ANP-SDK components not available: {_e}")
 
 
 class ANPCommBackend:
-    """ANP protocol communication backend for GAIA framework."""
+    """ANP protocol communication backend for GAIA framework (ANP-SDK based)."""
 
     def __init__(self, **kwargs):
-        self._endpoints = {}  # agent_id -> DID mapping
-        self._agent_sessions = {}  # agent_id -> ANPAgent mapping
-        
+        # agent_id -> DID mapping
+        self._endpoints: Dict[str, str] = {}
+        # agent_id -> ANPAgent instance
+        self._agents: Dict[str, 'ANPAgent'] = {}
+        # (src_id, dst_id) -> SimpleNodeSession
+        self._sessions: Dict[tuple, 'SimpleNodeSession'] = {}
+
     async def register_endpoint(self, agent_id: str, agent: 'ANPAgent') -> None:
-        """Register ANP agent and its DID endpoint."""
+        """Register ANP agent and its DID endpoint using info from the agent."""
         did = agent.local_did_info.get('did', f'did:all:agent_{agent_id}')
-        self._endpoints[agent_id] = did
-        self._agent_sessions[agent_id] = agent
+        self._endpoints[str(agent_id)] = did
+        self._agents[str(agent_id)] = agent
         logger.info(f"{Colors.CYAN}Registered ANP agent: {agent_id} @ {did}{Colors.RESET}")
-        
-    async def send(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Any:
-        """Send message via ANP protocol using native ANP-SDK."""
-        dst_agent = self._agent_sessions.get(dst_id)
-        if not dst_agent:
-            raise RuntimeError(f"Unknown destination agent: {dst_id}")
-            
+
+    async def connect(self, src_id: str, dst_id: str) -> None:
+        """Establish ANP SimpleNode session from src to dst using ANP-SDK."""
+        if not ANP_SDK_AVAILABLE:
+            return
+        key = (str(src_id), str(dst_id))
+        if key in self._sessions:
+            return
+        src_agent = self._agents.get(str(src_id))
+        dst_did = self._endpoints.get(str(dst_id))
+        # If src agent is not registered (e.g., network-originated), skip session creation
+        if not src_agent or not dst_did:
+            return
+        if not getattr(src_agent, 'simple_node', None):
+            return
         try:
-            # Send message using ANP agent's native send_msg method
-            src_agent = self._agent_sessions.get(src_id)
-            if src_agent:
-                await src_agent.send_msg(int(dst_id), payload)
-                
-                # Wait for response (simplified for testing)
-                response = await dst_agent.recv_msg(timeout=5.0)
-                
-                if response:
-                    return {
-                        "raw": response,
-                        "text": self._extract_text_from_anp_response(response)
-                    }
-                else:
-                    return {"raw": None, "text": "No response"}
-                    
+            session = await src_agent.simple_node.connect_to_did(dst_did)
+            if session:
+                self._sessions[key] = session
+                logger.info(f"ANP session established {src_id} -> {dst_id} ({dst_did})")
         except Exception as e:
-            print(f"[ANPCommBackend] Send failed {src_id} -> {dst_id}: {e}")
+            logger.warning(f"ANP connect failed {src_id}->{dst_id}: {e}")
+
+    async def send(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Any:
+        """Send message via ANP SimpleNode session (native ANP-SDK)."""
+        # If src is not a registered agent (e.g., 'network'), fallback to local delivery
+        if str(src_id) not in self._agents:
+            dst_agent = self._agents.get(str(dst_id))
+            if dst_agent and hasattr(dst_agent, 'message_queue'):
+                # Map to MeshAgent expected schema
+                await dst_agent.message_queue.put({
+                    "sender_id": 0,
+                    "type": payload.get("type", "task_execution"),
+                    "content": payload.get("body") or payload.get("text") or json.dumps(payload, ensure_ascii=False)
+                })
+                return {"raw": {"status": "queued"}, "text": "ok"}
+        
+        # Ensure session (best-effort)
+        await self.connect(src_id, dst_id)
+        key = (str(src_id), str(dst_id))
+        session = self._sessions.get(key)
+        src_agent = self._agents.get(str(src_id))
+        dst_did = self._endpoints.get(str(dst_id))
+
+        # If no session, fallback to local queue as last resort
+        if not session or not src_agent or not dst_did:
+            dst_agent = self._agents.get(str(dst_id))
+            if dst_agent and hasattr(dst_agent, 'message_queue'):
+                await dst_agent.message_queue.put({
+                    "sender_id": int(dst_id) if str(dst_id).isdigit() else 0,
+                    "type": payload.get("type", "task_execution"),
+                    "content": payload.get("body") or payload.get("text") or json.dumps(payload, ensure_ascii=False)
+                })
+                return {"raw": {"status": "queued"}, "text": "ok"}
+            raise RuntimeError(f"No ANP route for {src_id}->{dst_id}")
+
+        # Build ANP message envelope (protocol-native)
+        anp_message = {
+            "type": payload.get("type", "message"),
+            "request_id": f"{int(time.time()*1000)}_{src_id}",
+            "source_did": src_agent.local_did_info.get('did'),
+            "target_did": dst_did,
+            "timestamp": time.time(),
+            "payload": payload,
+        }
+        try:
+            message_json = json.dumps(anp_message, separators=(',', ':'))
+            ok = await session.send_message(message_json)
+            if not ok:
+                raise RuntimeError("ANP session send_message returned False")
+            return {"raw": {"status": "sent"}, "text": "ok"}
+        except Exception as e:
+            logger.error(f"ANP send failed {src_id}->{dst_id}: {e}")
             return {"raw": None, "text": f"ANP Error: {e}"}
-            
+
     async def health_check(self, agent_id: str) -> bool:
-        """Check ANP agent health."""
-        agent = self._agent_sessions.get(agent_id)
+        """Check ANP agent health (SimpleNode initialized and connected)."""
+        agent = self._agents.get(str(agent_id))
         if not agent:
             return False
-            
         try:
-            return agent._connected and agent.anp_initialized
+            return bool(agent.anp_initialized and agent._connected and agent.simple_node)
         except Exception:
             return False
-            
+
     async def close(self) -> None:
-        """Close ANP communication backend."""
-        for agent in list(self._agent_sessions.values()):
+        """Close all ANP sessions (does not stop agents; network.stop() will stop agents)."""
+        for key, session in list(self._sessions.items()):
             try:
-                await agent.stop()
+                if hasattr(session, 'close') and callable(session.close):
+                    await session.close()
             except Exception:
                 pass
-        self._agent_sessions.clear()
-        self._endpoints.clear()
+        self._sessions.clear()
         
     def _extract_text_from_anp_response(self, response: Dict[str, Any]) -> str:
         """Extract text content from ANP response."""
@@ -265,28 +325,25 @@ class ANPNetwork(MeshNetwork):
             if not ANP_SDK_AVAILABLE:
                 print("⚠️ ANP-SDK not available, using fallback implementation")
             
-            # Start all agents (which will start their ANP nodes)
+            # Register agent endpoints first (DID might be available after node starts; we register placeholder)
             for agent in self.agents:
-                # Register agent endpoint
                 await self.comm_backend.register_endpoint(str(agent.id), agent)
-                
-                # Start the agent (which will start its ANP SimpleNode)
-                print(f"🚀 Starting ANP agent {agent.name} on port {agent.port}...")
-                await agent.start()
-                print(f"✅ ANP agent {agent.name} started")
-                
-            print("🔗 ANP communication backend initialized and nodes started")
-            
-            # Give nodes time to fully start and establish connections
-            print("⏳ Waiting for ANP nodes to fully initialize...")
-            await asyncio.sleep(3)
             
         except Exception as e:
             print(f"❌ Failed to initialize ANP communication backend: {e}")
             raise
 
+        # Use base class to concurrently start agents (non-blocking)
         await super().start()
         logger.info(f"{Colors.MAGENTA}🚀 ANP network started successfully{Colors.RESET}")
+        
+        # Give SimpleNode some time to boot and DID to be generated, then refresh endpoints
+        try:
+            await asyncio.sleep(1.0)
+            for agent in self.agents:
+                await self.comm_backend.register_endpoint(str(agent.id), agent)
+        except Exception:
+            pass
         
         # Optional: report agent health after nodes start (non-fatal)
         try:
@@ -300,21 +357,14 @@ class ANPNetwork(MeshNetwork):
         """Stop ANP network with proper cleanup."""
         print("🛑 Stopping ANP network...")
         
-        # Stop all agents first
-        for agent in self.agents:
-            try:
-                await agent.stop()
-            except Exception as e:
-                print(f"⚠️ Error stopping agent {agent.id}: {e}")
-        
-        # Stop communication backend
+        # Stop communication backend sessions first
         try:
             await self.comm_backend.close()
             print("✅ ANP communication backend closed")
         except Exception as e:
             print(f"⚠️ Error closing ANP communication backend: {e}")
         
-        # Call parent stop method
+        # Call parent stop method to stop agents
         await super().stop()
         
         print("✅ ANP network stopped")
@@ -352,56 +402,8 @@ class ANPNetwork(MeshNetwork):
 
     # Override to use ANP native communication while maintaining step-based memory
     async def _execute_agent_step(self, agent_id: int, context_message: str, step_idx: int) -> str:
-        """Execute one step and record messages into NetworkMemoryPool for later summary."""
-        agent = self.get_agent_by_id(agent_id)
-        if not agent:
-            raise Exception(f"Agent {agent_id} not found")
-
-        # 1) Create step execution record and mark processing
-        self.network_memory.add_step_execution(
-            step=step_idx,
-            agent_id=str(agent_id),
-            agent_name=agent.name,
-            task_id=self.task_id,
-            user_message=context_message,
-        )
-        self.network_memory.update_step_status(step_idx, ExecutionStatus.PROCESSING)
-
-        # 2) Execute directly via agent's execute method (not ANP protocol)
-        try:
-            # Call agent's execute method directly for better integration
-            text = await agent.execute(context_message)
-            
-            # Construct conversation for summary
-            messages = [
-                Message.user_message(context_message),
-                Message.assistant_message(text or "")
-            ]
-
-            # 3) Update step status and messages
-            if not text or not str(text).strip():
-                self.network_memory.update_step_status(
-                    step_idx,
-                    ExecutionStatus.ERROR,
-                    error_message="Empty result from agent",
-                )
-                return "No meaningful result generated by agent"
-            else:
-                self.network_memory.update_step_status(
-                    step_idx,
-                    ExecutionStatus.SUCCESS,
-                    messages=messages,
-                )
-                return text
-
-        except Exception as e:
-            # Record the error in step execution
-            self.network_memory.update_step_status(
-                step_idx,
-                ExecutionStatus.ERROR,
-                error_message=str(e),
-            )
-            return f"Error: {e}"
+        """Delegate to base MeshNetwork implementation to leverage tool-calling workflow."""
+        return await super()._execute_agent_step(agent_id, context_message, step_idx)
 
     # ==================== ANP Protocol Methods ====================
 

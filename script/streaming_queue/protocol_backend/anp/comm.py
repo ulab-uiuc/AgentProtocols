@@ -180,7 +180,6 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
             private_key_pem=private_key_pem,
             did=did_document["id"],
             did_document_json=json.dumps(did_document),  # JSON string format
-            new_session_callback=handle_new_session
         )
         
         # Start SimpleNode (based on SafetyTech pattern)
@@ -325,25 +324,20 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
     await asyncio.sleep(0.5)
     
     # ================= WebSocket Server (ANP原生) =================
-    import websockets
-    
-    async def websocket_handler(websocket, path):
-        """ANP WebSocket handler with DID authentication and encryption"""
-        try:
-            print(f"[ANP] WebSocket connection from {websocket.remote_address}")
-            
-            async for message in websocket:
-                try:
-                    # Parse ANP message
-                    data = json.loads(message)
-                    
-                    # ANP protocol message processing
-                    if handle.node_session:
-                        # Use SimpleNode for message handling
-                        response = await _process_anp_websocket_message(
-                            data, handle.node_session, agent_id, executor
-                        )
-                    else:
+    websocket_server = None
+    if simple_node is None:
+        import websockets
+        
+        async def websocket_handler(websocket, path):
+            """ANP WebSocket handler with DID authentication and encryption (fallback)"""
+            try:
+                print(f"[ANP] WebSocket connection from {websocket.remote_address}")
+                
+                async for message in websocket:
+                    try:
+                        # Parse ANP message
+                        data = json.loads(message)
+                        
                         # Fallback processing
                         response = {
                             "type": "anp_response",
@@ -352,31 +346,34 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
                             "timestamp": time.time(),
                             "encrypted": True
                         }
-                    
-                    await websocket.send(json.dumps(response))
-                    
-                except Exception as e:
-                    error_response = {
-                        "type": "anp_error",
-                        "agent_id": agent_id,
-                        "error": str(e),
-                        "timestamp": time.time()
-                    }
-                    await websocket.send(json.dumps(error_response))
-                    
-        except websockets.exceptions.ConnectionClosed:
-            print(f"[ANP] WebSocket connection closed for {agent_id}")
-        except Exception as e:
-            print(f"[ANP] WebSocket error for {agent_id}: {e}")
-    
-    # Start WebSocket server
-    websocket_server = await websockets.serve(
-        websocket_handler,
-        host,
-        websocket_port
-    )
-    print(f"[ANP] WebSocket server started for {agent_id} on {host}:{websocket_port}")
-    
+                        
+                        await websocket.send(json.dumps(response))
+                        
+                    except Exception as e:
+                        error_response = {
+                            "type": "anp_error",
+                            "agent_id": agent_id,
+                            "error": str(e),
+                            "timestamp": time.time()
+                        }
+                        await websocket.send(json.dumps(error_response))
+                        
+            except websockets.exceptions.ConnectionClosed:
+                print(f"[ANP] WebSocket connection closed for {agent_id}")
+            except Exception as e:
+                print(f"[ANP] WebSocket error for {agent_id}: {e}")
+        
+        # Start fallback WebSocket server only if SimpleNode is not running
+        websocket_server = await websockets.serve(
+            websocket_handler,
+            host,
+            websocket_port
+        )
+        print(f"[ANP] Fallback WebSocket server started for {agent_id} on {host}:{websocket_port}")
+    else:
+        # Rely on SimpleNode's WebSocket (it already binds this port)
+        print(f"[ANP] Using SimpleNode WebSocket for {agent_id} on {host}:{websocket_port}")
+
     # Create agent handle
     handle = ANPAgentHandle(
         agent_id=agent_id,
@@ -578,9 +575,17 @@ class ANPCommBackend(BaseCommBackend):
     - Compatible with streaming_queue interfaces
     """
     
-    def __init__(self, request_timeout: float = 60.0):
+    def __init__(self, request_timeout: Optional[float] = None):
         import httpx
-        self._client = httpx.AsyncClient(timeout=request_timeout)
+        # Build timeout & limits per long-running workload needs
+        # If request_timeout is None or < 300, disable read timeout to avoid premature failures
+        if request_timeout is None or request_timeout < 300:
+            timeout = httpx.Timeout(connect=10.0, read=None, write=60.0, pool=None)
+        else:
+            timeout = httpx.Timeout(connect=10.0, read=request_timeout, write=60.0, pool=None)
+        # Increase pool limits to avoid connection starvation under load
+        limits = httpx.Limits(max_connections=1000, max_keepalive_connections=200)
+        self._client = httpx.AsyncClient(timeout=timeout, limits=limits)
         self._own_client = True
         self._addr: Dict[str, str] = {}  # agent_id -> base_url
         self._handles: Dict[str, ANPAgentHandle] = {}  # Local agent handles
@@ -656,7 +661,8 @@ class ANPCommBackend(BaseCommBackend):
             return False
         
         try:
-            response = await self._client.get(f"{base_url}/health")
+            # Use a short per-call timeout to avoid hanging
+            response = await self._client.get(f"{base_url}/health", timeout=10.0)
             return response.status_code == 200
         except Exception:
             return False

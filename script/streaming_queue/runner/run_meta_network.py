@@ -122,7 +122,7 @@ class MetaProtocolRunner(RunnerBase):
         """Load configuration"""
         config_file = Path(config_path)
         if not config_file.exists():
-            config_file = streaming_queue_path / config_path
+            config_file = STREAMING_Q / config_path
         
         if config_file.exists():
             with open(config_file, 'r', encoding='utf-8') as f:
@@ -353,7 +353,7 @@ class MetaProtocolRunner(RunnerBase):
                 router_agent = self.base_agents[router_agent_id]
                 
                 self.meta_coordinator = MetaProtocolCoordinator(
-                    config=self.qa_config,
+                    config=self.config,
                     output=self.output
                 )
                 
@@ -622,8 +622,8 @@ class MetaProtocolRunner(RunnerBase):
 
 # Main execution
 async def main():
-    # Use the actual config.yaml file from streaming_queue
-    config_path = "config.yaml"  # This will load script/streaming_queue/config.yaml
+    # Use the meta config.yaml specific to meta scenario
+    config_path = "config/meta.yaml"
     
     runner = MetaProtocolRunner(config_path)
     await runner.run()

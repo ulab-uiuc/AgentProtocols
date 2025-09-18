@@ -10,7 +10,8 @@ cd "${REPO_ROOT}"
 export PYTHONPATH="${REPO_ROOT}:${PYTHONPATH-}"
 
 # 要运行的协议列表
-PROTOCOLS=(a2a acp agora anp meta)
+# PROTOCOLS=(a2a acp agora anp meta)
+PROTOCOLS=(anp agora meta)
 if [[ $# -gt 0 ]]; then
     PROTOCOLS=("$@")
 fi
@@ -35,10 +36,10 @@ for i in "${!PROTOCOLS[@]}"; do
     printf "\r\033[K🔄 正在运行 [$num/$total]: %s 协议..." "$protocol" >&2
     
     case "$protocol" in
-        a2a)   python3 -m script.streaming_queue.runner.run_a2a ;;
-        acp)   python3 -m script.streaming_queue.runner.run_acp ;;
-        agora) python3 -m script.streaming_queue.runner.run_agora ;;
-        anp)   python3 -m script.streaming_queue.runner.run_anp ;;
+        # a2a)   python3 -m script.streaming_queue.runner.run_a2a ;;
+        # acp)   python3 -m script.streaming_queue.runner.run_acp ;;
+        agora) python3 -m script.streaming_queue.runner.run_anp ;;
+        anp)   python3 -m script.streaming_queue.runner.run_agora ;;
         meta)  python3 -m script.streaming_queue.runner.run_meta_network ;;
         *)     printf "\r\033[K❌ 错误: 未知协议 %s\n" "$protocol"; exit 1 ;;
     esac

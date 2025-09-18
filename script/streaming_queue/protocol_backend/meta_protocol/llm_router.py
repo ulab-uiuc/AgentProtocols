@@ -67,7 +67,7 @@ class LLMIntelligentRouter:
                 "Time-critical responses"
             ],
             current_load=0,
-            avg_response_time=0.5,  # Fastest
+            avg_response_time=3.42,  # updated from pressure test (seconds)
             success_rate=0.95
         )
         
@@ -88,7 +88,7 @@ class LLMIntelligentRouter:
                 "Efficient workflows"
             ],
             current_load=0,
-            avg_response_time=0.6,  # Second fastest
+            avg_response_time=4.00,  # updated from pressure test (seconds)
             success_rate=0.98
         )
         
@@ -109,7 +109,7 @@ class LLMIntelligentRouter:
                 "Research-oriented queries"
             ],
             current_load=0,
-            avg_response_time=1.0,  # Stable but slower
+            avg_response_time=9.00,  # updated from pressure test (seconds)
             success_rate=0.96
         )
         
@@ -130,7 +130,7 @@ class LLMIntelligentRouter:
                 "Secure communications"
             ],
             current_load=0,
-            avg_response_time=1.5,  # Slowest but most secure
+            avg_response_time=4.78,  # updated from pressure test (seconds)
             success_rate=0.92
         )
     
@@ -206,20 +206,22 @@ class LLMIntelligentRouter:
             protocol_descriptions.append(protocol_desc)
         
         # Create LLM prompt for protocol selection optimized for pressure testing
-        system_prompt = """You are an intelligent protocol router for a streaming queue pressure test system. 
+        system_prompt = """You are an intelligent protocol router for a streaming queue pressure test system.
 Your goal is to select the optimal protocols to complete ALL questions as quickly as possible.
 
-PROTOCOL CHARACTERISTICS (optimized for speed):
-- A2A: FASTEST response time (0.5s avg), high throughput, minimal latency - BEST FOR SPEED
-- ACP: FAST response time (0.6s avg), reliable, stable performance - GOOD FOR SPEED  
-- Agora: STABLE communication (1.0s avg), reliable connections, good for complex tasks
-- ANP: SECURE but SLOWEST (1.5s avg), maximum security, use only when security is critical
+PRIORITY: MINIMIZE end-to-end RESPONSE TIME (latency) while maintaining acceptable reliability.
+
+PROTOCOL CHARACTERISTICS (measured in recent pressure tests):
+- A2A: FASTEST — avg 3.42s, min 0.51s, max 10.72s, std 1.92s
+- ACP: FAST — avg 4.00s, min 0.74s, max 11.57s, std 2.19s
+- ANP: SECURE — avg 4.78s, min 0.57s, max 12.21s, std 2.87s (use only if security/privacy is required)
+- Agora: SLOWEST — avg 9.00s, min 1.40s, max 24.31s, std 5.75s (avoid unless stability is explicitly required)
 
 PRESSURE TEST REQUIREMENTS:
-- Total agents available: 4 (you must assign exactly 4 agents)
-- Goal: Complete maximum questions in minimum time
-- Priority: SPEED over everything else (unless security explicitly required)
-- Load balancing: Distribute across protocols for parallel processing
+- Total agents available: 4 (assign exactly 4 agents)
+- Goal: Maximize throughput under latency constraint
+- Priority: SPEED over everything else (unless security is explicitly required)
+- Load balancing: Distribute across fastest protocols for parallelism
 
 SELECTION STRATEGY:
 - For speed: Prefer A2A and ACP (fastest protocols)

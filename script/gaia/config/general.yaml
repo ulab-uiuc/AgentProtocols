@@ -36,7 +36,7 @@ protocol: "dummy"
 mode: "debug" # debug or normal 
 
 planner:
-  reuse_plan: true  # 是否复用已有计划
+  reuse_plan: false  # 是否复用已有计划
 # Runtime configuration
 runtime:
   task_file: "/root/Multiagent-Protocol/script/gaia/dataset/2023/validation/metadata.jsonl"

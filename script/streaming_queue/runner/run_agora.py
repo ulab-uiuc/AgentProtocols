@@ -97,11 +97,14 @@ class AgoraRunner(RunnerBase):
         }
         try:
             self.output.info(f"Sending '{command}' to {coordinator_url}...")
-            async with httpx.AsyncClient(timeout=300.0) as client:  # Much longer timeout
+            # Use a timeout that allows long-running dispatch (no read timeout)
+            import httpx
+            timeout = httpx.Timeout(connect=60.0, read=None, write=60.0, pool=None)
+            async with httpx.AsyncClient(timeout=timeout) as client:  # allow long server processing
                 response = await client.post(
                     f"{coordinator_url}/",
                     json=agora_payload,
-                    timeout=300.0,
+                    timeout=None,  # no per-request override; keep read=None
                     headers={"Content-Type": "application/json"}
                 )
             self.output.info(f"Received response with status code: {response.status_code}")

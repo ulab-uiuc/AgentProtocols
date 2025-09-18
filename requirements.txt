@@ -44,6 +44,7 @@ pytest-asyncio==1.1.0
 # ================= Crypto & Security =================
 cryptography==45.0.7
 base58==2.1.1
+PyJWT==2.10.1
 
 # ================= Utilities =================
 colorama==0.4.6

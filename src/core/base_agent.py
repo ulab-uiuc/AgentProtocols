@@ -3,6 +3,7 @@ BaseAgent v1.0.0 - Dual-role agent with server and multi-client capabilities
 """
 
 import asyncio
+import contextlib
 import json
 import socket
 import time
@@ -36,7 +37,7 @@ except ImportError:
 
 # Module-level constants for better reusability
 DEFAULT_SERVER_STARTUP_TIMEOUT = 10.0
-DEFAULT_SERVER_SHUTDOWN_TIMEOUT = 5.0
+DEFAULT_SERVER_SHUTDOWN_TIMEOUT = 15.0
 
 
 def is_sdk_native_executor(obj) -> bool:
@@ -1022,14 +1023,19 @@ class BaseAgent:
                 await asyncio.wait_for(self._server_task, timeout=DEFAULT_SERVER_SHUTDOWN_TIMEOUT)
             except asyncio.TimeoutError:
                 # Force cancel if graceful shutdown takes too long
-                self._server_task.cancel()
+                # Try force_exit to nudge uvicorn to stop without cancellation logs
                 try:
-                    await self._server_task
-                except asyncio.CancelledError:
-                    # CancelledError is expected during shutdown
-                    pass
+                    if hasattr(self._server_instance, "force_exit"):
+                        self._server_instance.force_exit = True
+                    await asyncio.wait_for(self._server_task, timeout=3.0)
+                except asyncio.TimeoutError:
+                    # As a last resort, cancel the task, suppress CancelledError trace
+                    self._server_task.cancel()
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await self._server_task
             except asyncio.CancelledError:
                 # Handle direct cancellation
+                # Suppress noisy stack traces on shutdown
                 pass
             
             self._server_task = None
