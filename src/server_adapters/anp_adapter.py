@@ -33,14 +33,28 @@ agentconnect_path = os.path.join(project_root, 'agentconnect_src')
 if agentconnect_path not in sys.path:
     sys.path.insert(0, agentconnect_path)
 
-# Import AgentConnect components
-from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
-from agent_connect.python.authentication import (
-    DIDAllClient, create_did_wba_document
-)
-from agent_connect.python.utils.did_generate import did_generate
-from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
-AGENTCONNECT_AVAILABLE = True
+# Import AgentConnect components (dynamic to avoid static import errors)
+try:
+    import importlib
+    _ac_simple_node = importlib.import_module('agent_connect.python.simple_node')
+    SimpleNode = getattr(_ac_simple_node, 'SimpleNode')
+    SimpleNodeSession = getattr(_ac_simple_node, 'SimpleNodeSession')
+    _ac_auth = importlib.import_module('agent_connect.python.authentication')
+    DIDAllClient = getattr(_ac_auth, 'DIDAllClient', None)
+    create_did_wba_document = getattr(_ac_auth, 'create_did_wba_document', None)
+    _ac_utils_did = importlib.import_module('agent_connect.python.utils.did_generate')
+    did_generate = getattr(_ac_utils_did, 'did_generate', None)
+    _ac_utils_crypto = importlib.import_module('agent_connect.python.utils.crypto_tool')
+    get_pem_from_private_key = getattr(_ac_utils_crypto, 'get_pem_from_private_key', None)
+    AGENTCONNECT_AVAILABLE = True
+except Exception:
+    SimpleNode = None
+    SimpleNodeSession = None
+    DIDAllClient = None
+    create_did_wba_document = None
+    did_generate = None
+    get_pem_from_private_key = None
+    AGENTCONNECT_AVAILABLE = False
 
 
 logger = logging.getLogger(__name__)
@@ -84,7 +98,7 @@ class ANPExecutorWrapper:
         
         return "unknown"
     
-    async def handle_anp_message(self, session: SimpleNodeSession, message: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def handle_anp_message(self, session: Any, message: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Handle ANP message and route to appropriate executor.
         
@@ -321,10 +335,11 @@ class ANPSimpleNodeWrapper:
         self.host_ws_path = host_ws_path
         self.did_info = did_info or {}
         
-        self.simple_node: Optional[SimpleNode] = None
+        self.simple_node: Optional[Any] = None
         self.should_exit = False
         self.starlette_app: Optional[Starlette] = None
-        
+        self._uvicorn_server: Optional[uvicorn.Server] = None
+    
     def _create_http_app(self) -> Starlette:
         """Create Starlette app for HTTP endpoints."""
         
@@ -472,8 +487,8 @@ class ANPSimpleNodeWrapper:
             did_api_key = (self.agent_card.get("_did_api_key") or
                            os.getenv("ANP_DID_API_KEY"))
             if did_service_url and did_api_key:
-                from agent_connect.python.authentication import DIDAllClient
-                from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
+                if DIDAllClient is None:
+                    raise RuntimeError("AgentConnect not available for DID service")
 
                 client = DIDAllClient(did_service_url, did_api_key)
                 private_key_pem, did, did_document_json = await client.generate_register_did_document(
@@ -586,14 +601,14 @@ class ANPSimpleNodeWrapper:
         except Exception:
             pass
     
-    async def _on_new_session(self, session: SimpleNodeSession) -> None:
+    async def _on_new_session(self, session: Any) -> None:
         """Handle new WebSocket session."""
         logger.info(f"New ANP session from DID: {session.remote_did}")
         
         # Start message handling task for this session
         asyncio.create_task(self._handle_session_messages(session))
     
-    async def _handle_session_messages(self, session: SimpleNodeSession) -> None:
+    async def _handle_session_messages(self, session: Any) -> None:
         """Handle messages from a WebSocket session."""
         try:
             while not self.should_exit:
@@ -651,7 +666,7 @@ class ANPSimpleNodeWrapper:
             await self._setup_did_info()
             
             logger.info(f"Starting ANP hybrid server on {self.host_domain}:{self.host_port}")
-            logger.info(f"HTTP endpoints: /health, /.well-known/agent.json")
+            logger.info("HTTP endpoints: /health, /.well-known/agent.json")
             logger.info(f"WebSocket endpoint: {self.host_ws_path} (via SimpleNode on port {self.host_port + 1000})")
             logger.info(f"Server DID: {self.did_info.get('did', 'unknown')}")
             
@@ -708,9 +723,11 @@ class ANPSimpleNodeWrapper:
                 port=self.host_port,
                 log_level="critical",
                 access_log=False,
-                use_colors=False
+                use_colors=False,
+                lifespan="off"  # 禁用 lifespan，避免退出时 CancelledError 噪音
             )
             server = uvicorn.Server(config)
+            self._uvicorn_server = server
             
             # Run both servers concurrently with proper error handling
             try:
@@ -730,13 +747,12 @@ class ANPSimpleNodeWrapper:
                         await simple_node_task
                     except asyncio.CancelledError:
                         pass
-                
         except Exception as e:
             logger.error(f"ANP server error: {e}")
             raise
         finally:
             await self.stop()
-            
+    
     async def _run_simple_node(self) -> None:
         """Run SimpleNode for WebSocket functionality."""
         try:
@@ -759,6 +775,12 @@ class ANPSimpleNodeWrapper:
     async def stop(self) -> None:
         """Stop the ANP server."""
         self.should_exit = True
+        # 通知 uvicorn 优雅退出
+        try:
+            if self._uvicorn_server is not None:
+                self._uvicorn_server.should_exit = True
+        except Exception:
+            pass
         if self.simple_node:
             try:
                 await self.simple_node.stop()

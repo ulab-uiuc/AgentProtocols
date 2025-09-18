@@ -225,7 +225,7 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
             
             # DID Authentication (if available)
             auth_success = False
-            if handle.node_session and "authorization" in request.headers:
+            if "authorization" in request.headers:
                 try:
                     auth_header = request.headers["authorization"]
                     # Verify DID authentication
@@ -293,6 +293,9 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
             
             return JSONResponse(response_data)
             
+        except asyncio.CancelledError:
+            # 优雅退出时的预期异常，避免噪音
+            return JSONResponse({"status": "cancelled"}, status_code=499)
         except Exception as e:
             print(f"[ANP] Message processing error for {agent_id}: {e}")
             return JSONResponse({
@@ -315,6 +318,7 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
         host=host,
         port=http_port,
         log_level="error"  # Reduce noise
+        , lifespan="off"
     )
     
     http_server = uvicorn.Server(config)
@@ -434,91 +438,64 @@ async def _verify_did_auth(auth_header: str, did_document: Dict[str, Any]) -> bo
         if not auth_header.startswith("Bearer "):
             return False
         
-        token = auth_header[7:]  # Remove "Bearer "
+        token = auth_header[7:].strip()  # Remove "Bearer "
+        expected_did = did_document.get("id")
         
-        # Try JWT verification first (for proper DID tokens)
-        try:
-            import jwt
-            from cryptography.hazmat.primitives import serialization
-            
-            # Get public key from DID document
-            public_key_pem = did_document.get("public_key_pem")
-            if not public_key_pem:
-                print("[ANP] No public key found in DID document")
-                return False
-            
-            # Load public key
-            public_key = serialization.load_pem_public_key(public_key_pem.encode())
-            
-            # Convert to PEM format for JWT
-            public_key_pem_bytes = public_key.public_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PublicFormat.SubjectPublicKeyInfo
-            )
-            
-            # Verify JWT signature and claims
-            decoded = jwt.decode(
-                token,
-                public_key_pem_bytes,
-                algorithms=["ES256"],
-                audience="anp://streaming-queue",
-                options={"verify_exp": True}
-            )
-            
-            # Verify DID matches
-            token_did = decoded.get("did")
-            expected_did = did_document.get("id")
-            
-            if token_did != expected_did:
-                print(f"[ANP] DID mismatch: token={token_did}, expected={expected_did}")
-                return False
-            
-            # Verify ANP protocol claims
-            if decoded.get("protocol") != "anp":
-                print("[ANP] Token not for ANP protocol")
-                return False
-            
-            print(f"[ANP] JWT token verified successfully for DID: {token_did}")
-            return True
-            
-        except jwt.InvalidTokenError as e:
-            print(f"[ANP] JWT verification failed: {e}")
-            # Fall back to simple base64 verification
-            
-        except Exception as e:
-            print(f"[ANP] JWT verification error: {e}")
-            # Fall back to simple base64 verification
+        # 1) 支持最简单的 DID 直传：Bearer did:<DID> 或 did:did:<DID>
+        if token.startswith("did:"):
+            # 兼容形如 did:did:<...> 的前缀重复
+            simple = token[4:]
+            token_did = simple if simple.startswith("did:") else token
+            return token_did == expected_did
         
-        # Fallback: simple base64 token verification
+        # 2) 若像 JWT（含有两个点），仅按 JWT 流程处理，不再尝试 base64 回退
+        if token.count(".") == 2:
+            try:
+                import jwt
+                from cryptography.hazmat.primitives import serialization
+                
+                public_key_pem = did_document.get("public_key_pem")
+                if not public_key_pem:
+                    return False
+                public_key = serialization.load_pem_public_key(public_key_pem.encode())
+                public_key_pem_bytes = public_key.public_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PublicFormat.SubjectPublicKeyInfo
+                )
+                decoded = jwt.decode(
+                    token,
+                    public_key_pem_bytes,
+                    algorithms=["ES256"],
+                    audience="anp://streaming-queue",
+                    options={"verify_exp": True}
+                )
+                token_did = decoded.get("did")
+                return token_did == expected_did and decoded.get("protocol") == "anp"
+            except Exception:
+                return False
+        
+        # 3) Base64(JSON) 回退：仅在非 JWT 且非 did: 情况下尝试
+        import base64
         try:
-            import base64
-            decoded_data = json.loads(base64.b64decode(token).decode())
-            
-            # Basic validation for fallback tokens
-            token_did = decoded_data.get("did")
-            expected_did = did_document.get("id")
-            
-            if token_did != expected_did:
-                print(f"[ANP] Fallback DID mismatch: token={token_did}, expected={expected_did}")
+            # 允许 urlsafe base64，并修正 padding
+            padding = '=' * ((4 - len(token) % 4) % 4)
+            raw = base64.urlsafe_b64decode((token + padding).encode())
+            try:
+                decoded_str = raw.decode('utf-8')
+            except UnicodeDecodeError:
                 return False
-            
-            # Check timestamp (basic replay protection)
-            token_time = decoded_data.get("timestamp", 0)
-            current_time = time.time()
-            
-            if current_time - token_time > 3600:  # 1 hour expiry
-                print("[ANP] Fallback token expired")
+            data = json.loads(decoded_str)
+            token_did = data.get("did")
+            ts = float(data.get("timestamp", 0))
+            if not token_did or token_did != expected_did:
                 return False
-            
-            print(f"[ANP] Fallback token verified for DID: {token_did}")
+            if time.time() - ts > 3600:
+                return False
             return True
-            
-        except Exception as fallback_error:
-            print(f"[ANP] Fallback verification failed: {fallback_error}")
+        except Exception:
             return False
         
-    except Exception as e:
-        print(f"[ANP] DID verification error: {e}")
+    except Exception:
         return False
 
 
@@ -611,7 +588,15 @@ class ANPCommBackend(BaseCommBackend):
         """
         dst_url = self._addr.get(dst_id)
         if not dst_url:
-            raise RuntimeError(f"[ANP] Unknown destination: {dst_id}")
+            # 尝试自愈：等待短时并检查是否刚注册
+            await asyncio.sleep(0.1)
+            dst_url = self._addr.get(dst_id)
+            if not dst_url:
+                return {
+                    "raw": {"error": f"[ANP] Unknown destination: {dst_id}"},
+                    "text": f"ANP communication error: [ANP] Unknown destination: {dst_id}",
+                    "anp_metadata": {"error": True}
+                }
         
         # Get source DID for authentication
         src_handle = self._handles.get(src_id)
@@ -648,11 +633,24 @@ class ANPCommBackend(BaseCommBackend):
             
         except Exception as e:
             print(f"[ANP] Send error {src_id} -> {dst_id}: {e}")
-            return {
-                "raw": {"error": str(e)},
-                "text": f"ANP send failed: {e}",
-                "anp_metadata": {"error": True}
-            }
+            # 简单重试一次
+            try:
+                await asyncio.sleep(0.1)
+                response = await self._client.post(
+                    f"{dst_url}/message",
+                    json=anp_message,
+                    headers=headers
+                )
+                response.raise_for_status()
+                data = response.json()
+                text = self._extract_response_text(data)
+                return {"raw": data, "text": text, "anp_metadata": data.get("anp_metadata", {})}
+            except Exception as e2:
+                return {
+                    "raw": {"error": str(e2)},
+                    "text": f"ANP send failed: {e2}",
+                    "anp_metadata": {"error": True}
+                }
     
     async def health_check(self, agent_id: str) -> bool:
         """Check ANP agent health"""

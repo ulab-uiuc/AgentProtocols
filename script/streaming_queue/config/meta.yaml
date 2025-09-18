@@ -15,9 +15,9 @@ qa:
     count: 1
     start_port: 9902
     data_file: "data/top1000_simplified.jsonl"
-    result_file: "/root/Multiagent-Protocol/script/streaming_queue/results/qa_results_meta.json"
+    result_file: "/root/Multiagent-Protocol/script/streaming_queue/results/qa_results_meta_first50.json"
     batch_size: 50
-    first_50: false
+    first_50: true
   worker:
     count: 4
     start_port: 10401

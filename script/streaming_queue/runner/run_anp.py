@@ -272,7 +272,9 @@ class ANPRunner(RunnerBase):
         try:
             # Use ANP backend's HTTP client with DID auth headers
             import httpx
-            async with httpx.AsyncClient(timeout=300.0) as client:
+            # 使用无读超时，避免长时间调度过程中请求超时导致 Runner 提前清理资源
+            timeout = httpx.Timeout(connect=10.0, read=None, write=60.0, pool=None)
+            async with httpx.AsyncClient(timeout=timeout) as client:
                 
                 # Add DID authentication header
                 headers = {"Content-Type": "application/json"}
