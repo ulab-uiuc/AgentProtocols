@@ -39,7 +39,7 @@ planner:
   reuse_plan: false  # 是否复用已有计划
 # Runtime configuration
 runtime:
-  task_file: "/root/Multiagent-Protocol/script/gaia/dataset/2023/validation/metadata.jsonl"
+  task_file: "script/gaia/dataset/2023/validation/metadata.jsonl"
   output_file: "workspaces/gaia_dummy_results.json"
   timeout: 300  # seconds per task
 

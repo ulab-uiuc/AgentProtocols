@@ -161,7 +161,7 @@ class RouterFactory:
     def register_router(cls, router_type: RouterType, router_class: type) -> None:
         """Register a router implementation."""
         cls._registered_routers[router_type] = router_class
-        print(f"🔧 Registered router type: {router_type.value}")
+        print(f"Registered router type: {router_type.value}")
     
     @classmethod
     def create_router(cls, router_type: RouterType, **kwargs) -> RouterInterface:

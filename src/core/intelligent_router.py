@@ -181,6 +181,36 @@ class LLMIntelligentRouter:
                 protocol_info.current_load = max(0, protocol_info.current_load + load_change)
                 break
     
+    async def route_task(self, task: Dict[str, Any], available_agents: List[str]):
+        """
+        GAIA compatibility method expected by IntelligentAgentNetwork.
+        Returns an object exposing:
+          - selected_agents: List[str]
+          - routing_strategy: str
+          - confidence_score: float
+          - reasoning: str
+        """
+        from types import SimpleNamespace
+        
+        if not available_agents:
+            return SimpleNamespace(
+                selected_agents=[],
+                routing_strategy="none",
+                confidence_score=0.0,
+                reasoning="No available agents"
+            )
+
+        # Minimal, safe heuristic: pick the first agent
+        selected = [available_agents[0]]
+        reasoning = "Default GAIA router compatibility wrapper: selected the first available agent"
+        
+        return SimpleNamespace(
+            selected_agents=selected,
+            routing_strategy="single_agent",
+            confidence_score=0.5,
+            reasoning=reasoning
+        )
+
     async def route_task_with_llm(self, task: Dict[str, Any], 
                                 num_agents: int = 1) -> RoutingDecision:
         """
@@ -376,8 +406,15 @@ Respond with JSON in this format:
         except Exception as e:
             print(f"Failed to parse LLM response: {e}")
         
-        # Ultimate fallback
-        return await self._fallback_routing({}, num_agents)
+        # Ultimate fallback - cannot use await in non-async function
+        # Return a simple fallback decision
+        return RoutingDecision(
+            selected_protocols=["a2a"],
+            agent_assignments={f"agent_{i}": "a2a" for i in range(num_agents)},
+            reasoning="Fallback routing due to LLM parsing failure",
+            confidence=0.1,
+            strategy="fallback"
+        )
     
     async def _fallback_routing(self, task: Dict[str, Any], num_agents: int) -> RoutingDecision:
         """Fallback routing when LLM is not available."""

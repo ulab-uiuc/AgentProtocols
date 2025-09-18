@@ -1,0 +1,91 @@
+{
+  "metadata": {
+    "scenario": "fail_storm_recovery",
+    "protocol": "a2a",
+    "start_time": 1757873548.582618,
+    "end_time": 1757873692.7239902,
+    "fault_injection_time": null,
+    "first_recovery_time": null,
+    "steady_state_time": null,
+    "duration_sec": 144.1413722038269,
+    "phase_final": "pre_fault"
+  },
+  "failstorm_metrics": {
+    "recovery_ms": null,
+    "steady_state_ms": null,
+    "success_rate_drop": 1.0,
+    "duplicate_work_ratio": 0.0,
+    "bytes_reconnect": 0
+  },
+  "performance_analysis": {
+    "pre_fault_performance": {
+      "count": 423,
+      "mean": 1.7066602013635297,
+      "median": 0.9053146839141846,
+      "std": 3.594483589365002,
+      "min": 0.0,
+      "max": 18.659411430358887
+    },
+    "recovery_performance": {
+      "count": 0,
+      "mean": 0.0,
+      "median": 0.0,
+      "std": 0.0
+    },
+    "post_fault_performance": {
+      "count": 0,
+      "mean": 0.0,
+      "median": 0.0,
+      "std": 0.0
+    },
+    "total_task_executions": 423,
+    "successful_executions": 423,
+    "network_events_count": 0,
+    "reconnection_attempts": 0,
+    "topology_snapshots": 0
+  },
+  "qa_metrics": {
+    "total_qa_tasks": 423,
+    "successful_tasks": 423,
+    "tasks_with_answers": 106,
+    "success_rate": 1.0,
+    "answer_found_rate": 0.25059101654846333,
+    "answer_sources": {
+      "local": 53,
+      "neighbor": 53
+    },
+    "pre_fault_answer_rate": 0.25059101654846333,
+    "post_fault_answer_rate": 0.25059101654846333,
+    "average_task_duration": 1.7066602013635297
+  },
+  "agents": {
+    "states": {},
+    "topology_snapshots_last": []
+  },
+  "counts": {
+    "task_executions": 423,
+    "network_events": 0,
+    "reconnection_attempts": 0,
+    "topology_snapshots": 0
+  },
+  "protocol_summary": {
+    "a2a": {
+      "killed_agents_initial": 0,
+      "final_alive": 8,
+      "total_agents": 8
+    }
+  },
+  "qa_summary": {
+    "total_tasks": 423,
+    "found_answers": 106,
+    "answer_found_rate": 0.25059101654846333,
+    "groups_tested": 54,
+    "group_range": "0-53",
+    "answer_sources": {
+      "local": 53,
+      "neighbor": 53,
+      "unknown": 0
+    },
+    "success_rate": 1.0
+  }
+}

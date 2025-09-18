@@ -4,7 +4,7 @@ mode: "debug"
 
 # Runtime configuration
 runtime:
-  task_file: "/root/Multiagent-Protocol/script/gaia/dataset/2023/validation/metadata.jsonl"
+  task_file: "script/gaia/dataset/2023/validation/metadata.jsonl"
   output_file: "workspaces/gaia_a2a_results.json"
   timeout: 600  # seconds per task (10 minutes for complex tasks)
   max_tasks: 1  # Test single task first

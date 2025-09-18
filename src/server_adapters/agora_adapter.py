@@ -54,8 +54,14 @@ class AgoraServerAdapter(BaseServerAdapter):
         # Create tools from A2A executor
         tools = self._create_agora_tools(executor, agent_id)
         
+        import sys
+        print(f"[DEBUG] Created {len(tools)} Agora tools: {[tool.__name__ for tool in tools]}", file=sys.stderr, flush=True)
+        print(f"[DEBUG] Executor type: {type(executor)}", file=sys.stderr, flush=True)
+        print(f"[DEBUG] Executor has agora_qa_worker: {hasattr(executor, 'agora_qa_worker')}", file=sys.stderr, flush=True)
+        
         # Create official Agora receiver
         receiver = agora.Receiver.make_default(toolformer, tools=tools)
+        print(f"[DEBUG] Created Agora receiver with {len(tools)} tools", file=sys.stderr, flush=True)
         
         # Create server wrapper
         server_wrapper = AgoraServerWrapper(
@@ -204,9 +210,14 @@ class AgoraServerAdapter(BaseServerAdapter):
                 message: Message content
                 context: Additional context as JSON string
             """
+            import sys
+            print(f"[DEBUG] general_service called with: {message[:50]}...", file=sys.stderr, flush=True)
+            print(f"[DEBUG] executor type: {type(executor)}", file=sys.stderr, flush=True)
+            print(f"[DEBUG] executor has agora_qa_worker: {hasattr(executor, 'agora_qa_worker')}", file=sys.stderr, flush=True)
+            
             # Check if executor has agora_qa_worker for direct LLM call
-            if hasattr(executor, 'agora_qa_worker') and hasattr(executor.agora_qa_worker, 'answer'):
-                try:
+            try:
+                if hasattr(executor, 'agora_qa_worker') and hasattr(executor.agora_qa_worker, 'answer'):
                     # Create async task for LLM call
                     async def call_agora_llm():
                         return await executor.agora_qa_worker.answer(message)
@@ -231,15 +242,18 @@ class AgoraServerAdapter(BaseServerAdapter):
                     
                     thread = threading.Thread(target=run_async)
                     thread.start()
-                    thread.join(timeout=30)
+                    thread.join(timeout=60)  # Increase timeout for browser_use
                     
                     if error_container[0]:
-                        pass  # Error handled below
+                        # Return error message instead of None
+                        return f"Error: {error_container[0]}"
                     elif result_container[0]:
-                        return result_container[0]
-                    
-                except Exception as e:
-                    pass  # Fall back to original logic
+                        return str(result_container[0])
+                    else:
+                        return "No result returned from agora_qa_worker"
+                
+            except Exception as e:
+                return f"Error in agora_qa_worker execution: {e}"
             
             # Fallback to original bridge logic
             import json
@@ -468,9 +482,24 @@ class AgoraServerWrapper:
             """Handle incoming messages for LLM processing."""
             try:
                 from flask import request, jsonify
+                import sys
                 
                 data = request.get_json()
-                message_text = data.get('text', str(data))
+                print(f"[DEBUG] AgoraServerWrapper /message called with data: {data}", file=sys.stderr, flush=True)
+                
+                # Extract message text from nested structure
+                text_data = data.get('text', data)
+                if isinstance(text_data, dict):
+                    # Handle nested structure: {'text': {'message': {'content': '...'}}}
+                    message_obj = text_data.get('message', text_data)
+                    if isinstance(message_obj, dict):
+                        message_text = message_obj.get('content', str(message_obj))
+                    else:
+                        message_text = str(message_obj)
+                else:
+                    message_text = str(text_data)
+                
+                print(f"[DEBUG] Extracted message_text: {message_text[:100]}...", file=sys.stderr, flush=True)
                 
                 # Check if executor has agora_qa_worker for direct LLM call
                 if hasattr(self.executor, 'agora_qa_worker') and hasattr(self.executor.agora_qa_worker, 'answer'):
@@ -499,14 +528,19 @@ class AgoraServerWrapper:
                     
                     thread = threading.Thread(target=run_async)
                     thread.start()
-                    thread.join(timeout=30)
+                    thread.join(timeout=120)  # Increase timeout for complex tasks
                     
                     if error_container[0]:
-                        return jsonify({"error": str(error_container[0])}), 500
+                        error_msg = str(error_container[0])
+                        print(f"[DEBUG] Agora execution error: {error_msg}", file=sys.stderr, flush=True)
+                        return jsonify({"error": error_msg}), 500
                     elif result_container[0]:
-                        result = result_container[0]
-                        return jsonify({"text": result, "status": "success"})
+                        result = str(result_container[0])
+                        print(f"[DEBUG] Agora execution success: {len(result)} chars", file=sys.stderr, flush=True)
+                        # Return result directly as string for agora_to_ute() compatibility
+                        return result
                     else:
+                        print(f"[DEBUG] Agora execution timeout", file=sys.stderr, flush=True)
                         return jsonify({"text": "No result", "status": "timeout"}), 500
                 else:
                     return jsonify({"text": f"Agora processed: {message_text}", "status": "fallback"})

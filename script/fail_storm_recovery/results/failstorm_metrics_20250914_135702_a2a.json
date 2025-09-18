@@ -1,0 +1,94 @@
+{
+  "metadata": {
+    "scenario": "fail_storm_recovery",
+    "protocol": "a2a",
+    "start_time": 1757876138.184479,
+    "end_time": 1757876222.7453213,
+    "fault_injection_time": 1757876204.1313288,
+    "first_recovery_time": 1757876217.7252452,
+    "steady_state_time": 1757876222.7453213,
+    "duration_sec": 84.5608422756195,
+    "phase_final": "post_recovery"
+  },
+  "failstorm_metrics": {
+    "recovery_ms": 13593.916416168213,
+    "steady_state_ms": 18613.99245262146,
+    "success_rate_drop": 1.0,
+    "duplicate_work_ratio": 0.0,
+    "bytes_reconnect": 0
+  },
+  "performance_analysis": {
+    "pre_fault_performance": {
+      "count": 10,
+      "mean": 34.802058053016665,
+      "median": 43.29848265647888,
+      "std": 18.006412596454354,
+      "min": 0.0,
+      "max": 43.80143117904663
+    },
+    "recovery_performance": {
+      "count": 0,
+      "mean": 0.0,
+      "median": 0.0,
+      "std": 0.0
+    },
+    "post_fault_performance": {
+      "count": 0,
+      "mean": 0.0,
+      "median": 0.0,
+      "std": 0.0
+    },
+    "total_task_executions": 10,
+    "successful_executions": 10,
+    "network_events_count": 3,
+    "reconnection_attempts": 0,
+    "topology_snapshots": 0
+  },
+  "qa_metrics": {
+    "total_qa_tasks": 10,
+    "successful_tasks": 10,
+    "tasks_with_answers": 2,
+    "success_rate": 1.0,
+    "answer_found_rate": 0.2,
+    "answer_sources": {
+      "local": 2
+    },
+    "pre_fault_answer_rate": 0.2,
+    "post_fault_answer_rate": 0,
+    "average_task_duration": 34.802058053016665
+  },
+  "agents": {
+    "states": {
+      "agent2": "killed",
+      "agent3": "killed",
+      "agent7": "killed"
+    },
+    "topology_snapshots_last": []
+  },
+  "counts": {
+    "task_executions": 10,
+    "network_events": 3,
+    "reconnection_attempts": 0,
+    "topology_snapshots": 0
+  },
+  "protocol_summary": {
+    "a2a": {
+      "killed_agents_initial": 3,
+      "final_alive": 8,
+      "total_agents": 8
+    }
+  },
+  "qa_summary": {
+    "total_tasks": 10,
+    "found_answers": 2,
+    "answer_found_rate": 0.2,
+    "groups_tested": 2,
+    "group_range": "0-1",
+    "answer_sources": {
+      "local": 2,
+      "neighbor": 0,
+      "unknown": 0
+    },
+    "success_rate": 1.0
+  }
+}

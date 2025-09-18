@@ -1,0 +1,93 @@
+{
+  "metadata": {
+    "scenario": "fail_storm_recovery",
+    "protocol": "a2a",
+    "start_time": 1758062512.9441361,
+    "end_time": 1758062711.1098816,
+    "fault_injection_time": 1758062651.2188609,
+    "first_recovery_time": 1758062664.8939915,
+    "steady_state_time": 1758062666.89818,
+    "duration_sec": 198.16574549674988,
+    "phase_final": "post_recovery"
+  },
+  "failstorm_metrics": {
+    "recovery_ms": 13675.130605697632,
+    "steady_state_ms": 15679.319143295288,
+    "success_rate_drop": 0.0,
+    "duplicate_work_ratio": 0.0,
+    "bytes_reconnect": 0
+  },
+  "performance_analysis": {
+    "pre_fault_performance": {
+      "count": 1003,
+      "mean": 0.9065025941443705,
+      "median": 0.7577409744262695,
+      "std": 2.4112489895418947,
+      "min": 0.0,
+      "max": 19.403175592422485
+    },
+    "recovery_performance": {
+      "count": 0,
+      "mean": 0.0,
+      "median": 0.0,
+      "std": 0.0
+    },
+    "post_fault_performance": {
+      "count": 233,
+      "mean": 0.8408220213370262,
+      "median": 0.0,
+      "std": 3.27947280102337,
+      "min": 0.0,
+      "max": 19.119025707244873
+    },
+    "total_task_executions": 1236,
+    "successful_executions": 713,
+    "network_events_count": 0,
+    "reconnection_attempts": 0,
+    "topology_snapshots": 0
+  },
+  "qa_metrics": {
+    "total_qa_tasks": 1236,
+    "successful_tasks": 713,
+    "tasks_with_answers": 190,
+    "success_rate": 0.5768608414239482,
+    "answer_found_rate": 0.15372168284789645,
+    "answer_sources": {
+      "local": 96,
+      "neighbor": 94
+    },
+    "pre_fault_answer_rate": 0.14768683274021352,
+    "post_fault_answer_rate": 0.21428571428571427,
+    "average_task_duration": 0.8941210622154779
+  },
+  "agents": {
+    "states": {},
+    "topology_snapshots_last": []
+  },
+  "counts": {
+    "task_executions": 1236,
+    "network_events": 0,
+    "reconnection_attempts": 0,
+    "topology_snapshots": 0
+  },
+  "protocol_summary": {
+    "a2a": {
+      "killed_agents_initial": 0,
+      "final_alive": 8,
+      "total_agents": 8
+    }
+  },
+  "qa_summary": {
+    "total_tasks": 1236,
+    "found_answers": 190,
+    "answer_found_rate": 0.15372168284789645,
+    "groups_tested": 85,
+    "group_range": "0-84",
+    "answer_sources": {
+      "local": 96,
+      "neighbor": 94,
+      "unknown": 0
+    },
+    "success_rate": 1.0
+  }
+}

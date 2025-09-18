@@ -215,7 +215,7 @@ class ACPAdapter(BaseProtocolAdapter):
                 f"{self.base_url}{self.message_path}",
                 json=acp_message,
                 headers=headers,
-                timeout=60.0
+                timeout=120.0  # Increase timeout for complex tasks
             )
             response.raise_for_status()
             return response.json()
