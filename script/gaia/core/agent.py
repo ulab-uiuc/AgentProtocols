@@ -296,9 +296,6 @@ class ToolCallAgent(ReActAgent):
             except Exception:
                 pass
 
-            # Save code before execution (for SandboxPythonExecute tool)
-            await self._save_code_before_execution(name, args)
-
             # Execute the tool
             logger.info(f"🔧 Activating tool: '{name}'...")
             result = await self.available_tools.execute(name=name, tool_input=args)
@@ -738,44 +735,44 @@ class MeshAgent(ToolCallAgent, ABC):
             "memory_limit": self.memory.max_messages
         }
 
-    async def _save_code_before_execution(self, tool_name: str, args: dict):
-        """Save code to workspace before execution for supported tools."""
-        import os
-        import datetime
+    # async def _save_code_before_execution(self, tool_name: str, args: dict):
+    #     """Save code to workspace before execution for supported tools."""
+    #     import os
+    #     import datetime
         
-        # Only save code for SandboxPythonExecute tool
-        if tool_name != "SandboxPythonExecute":
-            return
+    #     # Only save code for SandboxPythonExecute tool
+    #     if tool_name != "SandboxPythonExecute":
+    #         return
         
-        # Extract code from arguments
-        code = args.get("code", "")
-        if not code or not code.strip():
-            return
+    #     # Extract code from arguments
+    #     code = args.get("code", "")
+    #     if not code or not code.strip():
+    #         return
             
-        try:
-            # Get workspace directory from environment
-            workspace_dir = os.environ.get("GAIA_AGENT_WORKSPACE_DIR", "")
-            if not workspace_dir:
-                logger.warning("No workspace directory set - skipping code save")
-                return
+    #     try:
+    #         # Get workspace directory from environment
+    #         workspace_dir = os.environ.get("GAIA_AGENT_WORKSPACE_DIR", "")
+    #         if not workspace_dir:
+    #             logger.warning("No workspace directory set - skipping code save")
+    #             return
                 
-            # Ensure workspace directory exists
-            os.makedirs(workspace_dir, exist_ok=True)
+    #         # Ensure workspace directory exists
+    #         os.makedirs(workspace_dir, exist_ok=True)
             
-            # Generate filename with timestamp
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"executed_code_{timestamp}.py"
-            filepath = os.path.join(workspace_dir, filename)
+    #         # Generate filename with timestamp
+    #         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    #         filename = f"executed_code_{timestamp}.py"
+    #         filepath = os.path.join(workspace_dir, filename)
             
-            # Save code to file
-            with open(filepath, 'w', encoding='utf-8') as f:
-                f.write(f"# Code executed at {datetime.datetime.now().isoformat()}\n")
-                f.write(f"# Tool: {tool_name}\n")
-                f.write(f"# Agent: {self.name} (ID: {self.id})\n")
-                f.write(f"# Task: {self.task_id}\n\n")
-                f.write(code)
+    #         # Save code to file
+    #         with open(filepath, 'w', encoding='utf-8') as f:
+    #             f.write(f"# Code executed at {datetime.datetime.now().isoformat()}\n")
+    #             f.write(f"# Tool: {tool_name}\n")
+    #             f.write(f"# Agent: {self.name} (ID: {self.id})\n")
+    #             f.write(f"# Task: {self.task_id}\n\n")
+    #             f.write(code)
                 
-            logger.info(f"💾 Code saved to: {filepath}")
+    #         logger.info(f"💾 Code saved to: {filepath}")
             
-        except Exception as e:
-            logger.warning(f"Failed to save code before execution: {e}")
+    #     except Exception as e:
+    #         logger.warning(f"Failed to save code before execution: {e}")

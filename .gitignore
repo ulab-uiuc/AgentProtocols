@@ -61,7 +61,7 @@ dist/
 .agora/
 # Logs
 *.log
-workspaces/
+# workspaces/
 # OS / Editor specific
 .DS_Store
 Thumbs.db

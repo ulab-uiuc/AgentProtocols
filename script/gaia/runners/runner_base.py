@@ -7,6 +7,7 @@ import json
 import time
 import yaml
 import os
+import shutil
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from tqdm import tqdm
@@ -89,25 +90,54 @@ class RunnerBase(abc.ABC):
             return str(GAIA_ROOT / 'workspaces' / self.protocol_name / cfg_path)
         return str(default_output)
 
-    # -------------------- Helper: resolve used file from task --------------------
-    def _resolve_used_file(self, task: Dict[str, Any]) -> Optional[str]:
-        """从 task 中解析 file_name，并解析为绝对路径。
-        - 若 file_name 为空或无效，返回 None
-        - 若为相对路径，则相对当前任务文件所在目录进行解析
+    def _setup_task_workspace(self, task_id: str, task: Dict[str, Any]) -> Path:
         """
-        try:
-            if not isinstance(task, dict):
-                return None
-            fn = task.get("file_name")
-            if not isinstance(fn, str) or not fn.strip():
-                return None
-            p = Path(fn)
-            if not p.is_absolute():
-                base = Path(self._task_file_path).parent
-                p = (base / fn).resolve()
-            return str(p)
-        except Exception:
-            return None
+        创建并设置任务专用的工作区目录，复制所需文件到工作区。
+        
+        Args:
+            task_id: 任务ID
+            task: 任务数据字典
+            
+        Returns:
+            Path: 任务工作区路径 (workspaces/<protocol_name>/<task_id>)
+        """
+        # 创建任务工作区目录
+        workspace_dir = GAIA_ROOT / 'workspaces' / self.protocol_name / task_id
+        workspace_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 复制任务所需文件到工作区
+        file_name = task.get("file_name")
+        if file_name and isinstance(file_name, str) and file_name.strip():
+            # 解析源文件路径 (相对于数据集目录)
+            dataset_dir = Path(self._task_file_path).parent
+            source_file = dataset_dir / file_name
+            
+            if source_file.exists():
+                # 保持文件名，复制到工作区
+                dest_file = workspace_dir / file_name
+                dest_file.parent.mkdir(parents=True, exist_ok=True)  # 创建子目录如果需要
+                
+                try:
+                    shutil.copy2(source_file, dest_file)
+                    print(f"📄 Copied task file: {file_name} -> {workspace_dir}")
+                except Exception as e:
+                    print(f"⚠️ Failed to copy task file {file_name}: {e}")
+            else:
+                print(f"⚠️ Task file not found: {source_file}")
+        
+        # 复制数据集通用文件（如果存在）
+        dataset_dir = Path(self._task_file_path).parent
+        common_files = ['multimodal.jsonl', 'metadata.jsonl']
+        for common_file in common_files:
+            source = dataset_dir / common_file
+            if source.exists():
+                dest = workspace_dir / common_file
+                try:
+                    shutil.copy2(source, dest)
+                except Exception as e:
+                    print(f"⚠️ Failed to copy {common_file}: {e}")
+        
+        return workspace_dir
 
     # -------------------- Abstract Methods --------------------
     @abc.abstractmethod
@@ -246,11 +276,23 @@ class RunnerBase(abc.ABC):
         print("=" * 60)
 
     # -------------------- Stepwise hooks --------------------
-    async def plan(self, task_id: str, level: int, task_doc: str, used_file: Optional[str] = None) -> Path:
-        # 将当前 Runner 的协议名传入 Planner，确保工作区路径为 workspaces/<protocol>/<task_id>
-        # 以及按对应协议的资源/配置做规划
+    async def plan(self, task_id: str, level: int, task_doc: str, workspace_dir: Path) -> Path:
+        """
+        Plan agents for the task using the dedicated workspace directory.
+        
+        Args:
+            task_id: Task ID
+            level: Task level
+            task_doc: Task description
+            workspace_dir: Task-specific workspace directory
+            
+        Returns:
+            Path: Agent configuration file path
+        """
+        # 将当前 Runner 的协议名和工作区路径传入 Planner
         planner = TaskPlanner(task_id=task_id, level=level, protocol_name=self.protocol_name)
-        config_path = await planner.plan_agents(task_doc, used_file=used_file)
+        # 传入工作区路径，让 planner 在该目录下工作
+        config_path = await planner.plan_agents(task_doc, workspace_dir=workspace_dir)
         return Path(config_path)
 
     async def check_health(self, network: Any) -> None:
@@ -289,11 +331,11 @@ class RunnerBase(abc.ABC):
             }
 
         try:
-            # 解析可选附件文件路径（绝对路径）
-            used_file: Optional[str] = self._resolve_used_file(task)
-
-            # Plan -> Config
-            config_path = await self.plan(task_id, level, task_doc, used_file=used_file)
+            # 设置任务专用工作区并复制所需文件
+            workspace_dir = self._setup_task_workspace(task_id, task)
+            
+            # Plan -> Config (使用工作区路径)
+            config_path = await self.plan(task_id, level, task_doc, workspace_dir)
             general_config = self.load_planned_config(config_path)
 
             # Merge network configuration from runner config into planned config
@@ -311,8 +353,10 @@ class RunnerBase(abc.ABC):
 
             # Expose workspace and dataset dirs to tools via environment variables
             try:
-                config_dir = str(Path(config_path).parent)
-                os.environ["GAIA_WORKSPACE_DIR"] = config_dir
+                # 使用任务专用的工作区目录
+                os.environ["GAIA_AGENT_WORKSPACE_DIR"] = str(workspace_dir)
+                os.environ["GAIA_WORKSPACE_DIR"] = str(workspace_dir)  # 向后兼容
+                print(f"📁 Task workspace created at {workspace_dir}")
             except Exception:
                 pass
             try:
@@ -431,14 +475,14 @@ class RunnerBase(abc.ABC):
         if self.mode == "debug":
             # Debug mode: limit to 1 task
             if isinstance(tasks, list) and tasks:
-                tasks = tasks[:1]
+                tasks = tasks[:3]
             else:
                 print(f"[WARN] Debug 模式下任务结构异常，tasks 类型: {type(tasks).__name__}")
                 tasks = [] if tasks is None else ([tasks] if isinstance(tasks, dict) else [])
         elif self.mode == "mm":
             # Multimodal mode: only run first 3 tasks
             if isinstance(tasks, list) and tasks:
-                tasks = tasks[1:3]
+                tasks = tasks[:3]
                 print("🎯 MM 模式：仅运行前 3 条任务 (multimodal.jsonl)")
             else:
                 print(f"[WARN] MM 模式下任务结构异常，tasks 类型: {type(tasks).__name__}")

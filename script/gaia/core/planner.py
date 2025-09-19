@@ -57,14 +57,26 @@ class TaskPlanner:
         except Exception as e:
             raise FileNotFoundError(f"Config file not found: {config_path}")
 
-    async def analyze_and_plan(self, gaia_task_document: str, used_file: Optional[str] = None) -> tuple[Dict[str, Any], str]:
-        """Analyze Gaia task and generate optimal agent configuration.
-        Optionally accept a resolved absolute path to an attached file (used_file) and include it in the config.
+    async def analyze_and_plan(self, gaia_task_document: str, workspace_dir: Optional[Path] = None) -> tuple[Dict[str, Any], str]:
+        """
+        Analyze Gaia task and generate optimal agent configuration.
+        
+        Args:
+            gaia_task_document: Task description
+            workspace_dir: Optional pre-created workspace directory
+            
+        Returns:
+            tuple: (config dict, config file path)
         """
         # Plan reuse control via general.yaml: planner.reuse_plan (bool, default: False)
         protocol_name = self.protocol_name or "general"
         task_id = self.task_id or time.strftime("%Y-%m-%d-%H-%M")
-        existing_path = GAIA_ROOT / "workspaces" / protocol_name / task_id / "agent_config.json"
+        
+        if workspace_dir is not None:
+            existing_path = workspace_dir / "agent_config.json"
+        else:
+            existing_path = GAIA_ROOT / "workspaces" / protocol_name / task_id / "agent_config.json"
+            
         reuse_plan = False
         try:
             planner_cfg = (self.config.get("planner") if isinstance(self.config, dict) else None) or {}
@@ -80,17 +92,6 @@ class TaskPlanner:
                     existing_cfg = json.load(f)
             except Exception:
                 existing_cfg = {}
-            # Ensure used_file propagated for tools
-            if used_file and isinstance(existing_cfg, dict) and not existing_cfg.get("task_context", {}).get("used_file"):
-                if "task_context" not in existing_cfg or not isinstance(existing_cfg["task_context"], dict):
-                    existing_cfg["task_context"] = {}
-                existing_cfg["task_context"]["used_file"] = used_file
-                try:
-                    existing_path.parent.mkdir(parents=True, exist_ok=True)
-                    with open(existing_path, 'w', encoding='utf-8') as f:
-                        json.dump(existing_cfg, f, indent=2, ensure_ascii=False)
-                except Exception:
-                    pass
             return existing_cfg, str(existing_path)
         elif existing_path.exists() and not reuse_plan:
             print(f"{Colors.YELLOW}\nPlanner: Reuse disabled. Ignoring existing plan at {existing_path} and regenerating.{Colors.RESET}")
@@ -115,16 +116,8 @@ class TaskPlanner:
         print("📋 Generating agent configuration...")
         agent_config = await self._generate_config(task_analysis, gaia_task_document)
         
-        # 将 used_file 注入配置，供后续网络/工具直接使用
-        if used_file:
-            agent_config.setdefault("task_context", {})
-            if isinstance(agent_config["task_context"], dict):
-                agent_config["task_context"]["used_file"] = used_file
-            else:
-                agent_config["task_context"] = {"used_file": used_file}
-        
         print("💾 Saving configuration...")
-        config_path = await self._save_config(agent_config, agent_config.get("task_id"))
+        config_path = await self._save_config(agent_config, agent_config.get("task_id"), workspace_dir)
         
         return agent_config, str(config_path)  # 将 PosixPath 转换为字符串 
     
@@ -531,25 +524,49 @@ Remember: The success of the entire workflow depends on you providing the precis
             "max_total_tokens": base_token_limit * multiplier
         }
     
-    async def plan_agents(self, gaia_task_doc: str, used_file: Optional[str] = None) -> str:
-        """Plan agents and return configuration file path. Accepts optional used_file absolute path."""
-        _, config_path = await self.analyze_and_plan(gaia_task_doc, used_file=used_file)
+    async def plan_agents(self, gaia_task_doc: str, workspace_dir: Optional[Path] = None) -> str:
+        """
+        Plan agents and return configuration file path.
+        
+        Args:
+            gaia_task_doc: Task description
+            workspace_dir: Optional pre-created workspace directory
+            
+        Returns:
+            str: Path to agent configuration file
+        """
+        _, config_path = await self.analyze_and_plan(gaia_task_doc, workspace_dir=workspace_dir)
         return config_path
     
-    async def _save_config(self, config: Dict[str, Any], task_id: Optional[str] = None):
-        """Save configuration to JSON file under GAIA_ROOT/workspaces/<protocol>/<task_id>/agent_config.json."""
+    async def _save_config(self, config: Dict[str, Any], task_id: Optional[str] = None, workspace_dir: Optional[Path] = None):
+        """
+        Save configuration to JSON file.
+        
+        Args:
+            config: Configuration data
+            task_id: Task ID
+            workspace_dir: Pre-created workspace directory (if provided)
+            
+        Returns:
+            Path: Configuration file path
+        """
         if task_id is None:
             task_id = time.strftime("%Y-%m-%d-%H-%M")
-        # 使用 GAIA_ROOT/workspaces/<protocol>/<task_id>
-        protocol_name = self.protocol_name or "general"
-        workspace_dir = GAIA_ROOT / "workspaces" / protocol_name
-        task_workspace_dir = workspace_dir / task_id
-        task_workspace_dir.mkdir(parents=True, exist_ok=True)
+        
+        if workspace_dir is not None:
+            # 使用提供的工作区目录
+            task_workspace_dir = workspace_dir
+        else:
+            # 使用默认路径创建工作区
+            protocol_name = self.protocol_name or "general"
+            workspace_dir = GAIA_ROOT / "workspaces" / protocol_name
+            task_workspace_dir = workspace_dir / task_id
+            task_workspace_dir.mkdir(parents=True, exist_ok=True)
+        
         config_path = task_workspace_dir / "agent_config.json"
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=2, ensure_ascii=False)
         print(f"✅ Configuration saved to {config_path}")
-        print(f"📁 Task workspace created at {task_workspace_dir}")
         return config_path
 
 

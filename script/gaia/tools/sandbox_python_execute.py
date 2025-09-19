@@ -1,16 +1,7 @@
 """
 Docker Sandbox Python Execution Tool
 
-Provides s            # Configure sandbox with Python scientific computing image
-            sandbox_config = SandboxSettings(
-                use_sandbox=True,
-                image="python:3.11-slim",  # Use more common Python 3.11 slim image
-                work_dir="/workspace", 
-                memory_limit="2g",  # More memory for scientific computing
-                cpu_limit=2.0,
-                timeout=300,
-                network_enabled=True  # Allow package installation
-            )lated Python code execution with package installation support.
+Provides isolated Python code execution with package installation support.
 """
 import asyncio
 import json
@@ -19,6 +10,7 @@ from typing import Dict, Optional
 
 from .base import BaseTool, ToolResult
 from .utils.config import config
+from .utils.logger import logger
 from sandbox.client import create_sandbox_client
 
 
@@ -70,11 +62,36 @@ class SandboxPythonExecute(BaseTool):
                 network_enabled=True  # Allow package installation
             )
             
-            # Get workspace binding
+            # Get workspace binding - improved with task-specific support
             workspace_bindings = {}
-            agent_ws = os.environ.get("GAIA_WORKSPACE_DIR") or os.environ.get("GAIA_AGENT_WORKSPACE_DIR")
-            if agent_ws and os.path.isdir(agent_ws):
-                workspace_bindings[agent_ws] = "/workspace"
+            
+            # Try multiple workspace environment variables in priority order
+            workspace_candidates = [
+                os.environ.get("GAIA_WORKSPACE_DIR"),          # Primary: task-specific workspace
+                os.environ.get("GAIA_AGENT_WORKSPACE_DIR"),    # Legacy: agent-specific workspace
+            ]
+            
+            # Add dataset directory for multimodal tasks
+            dataset_dir = os.environ.get("GAIA_DATASET_DIR")
+            if dataset_dir and os.path.isdir(dataset_dir):
+                workspace_bindings[dataset_dir] = "/dataset"
+                logger.info(f"📁 Mounting dataset directory: {dataset_dir} -> /dataset")
+            
+            # Mount the primary workspace
+            for agent_ws in workspace_candidates:
+                if agent_ws and os.path.isdir(agent_ws):
+                    workspace_bindings[agent_ws] = "/workspace"
+                    logger.info(f"🏗️ Mounting workspace: {agent_ws} -> /workspace")
+                    break
+            else:
+                # Create default workspace if none found
+                task_id = os.environ.get("GAIA_TASK_ID", "default")
+                protocol_name = os.environ.get("GAIA_PROTOCOL_NAME", "default")
+                gaia_root = os.environ.get("GAIA_ROOT", "/tmp")
+                default_ws = os.path.join(gaia_root, "workspaces", protocol_name, task_id)
+                os.makedirs(default_ws, exist_ok=True)
+                workspace_bindings[default_ws] = "/workspace"
+                logger.info(f"🆕 Created and mounted default workspace: {default_ws} -> /workspace")
             
             self._sandbox_client = create_sandbox_client()
             await self._sandbox_client.create(sandbox_config, workspace_bindings)
@@ -125,15 +142,46 @@ class SandboxPythonExecute(BaseTool):
             if packages:
                 install_output = await self._install_packages(packages)
             
-            # Create Python script
+            # Create Python script with enhanced path handling
             script_content = f"""
 import sys
 import traceback
+import os
 from io import StringIO
 
 # Capture stdout
 old_stdout = sys.stdout
 sys.stdout = captured_output = StringIO()
+
+# Add dataset directory to sys.path if available
+if os.path.exists('/dataset'):
+    sys.path.insert(0, '/dataset')
+    os.environ['DATASET_DIR'] = '/dataset'
+    print("Dataset directory available at /dataset")
+
+# Add workspace directory to sys.path
+if os.path.exists('/workspace'):
+    sys.path.insert(0, '/workspace')
+    os.environ['WORKSPACE_DIR'] = '/workspace'
+    print("Workspace directory available at /workspace")
+    # Set working directory to workspace
+    os.chdir('/workspace')
+
+# Import file path resolver functionality
+def resolve_dataset_file(filename):
+    \"\"\"Helper function to resolve dataset file paths.\"\"\"
+    if os.path.exists('/dataset'):
+        candidate = os.path.join('/dataset', filename)
+        if os.path.exists(candidate):
+            return candidate
+        # Try case-insensitive search
+        for f in os.listdir('/dataset'):
+            if f.lower() == filename.lower():
+                return os.path.join('/dataset', f)
+    return filename
+
+# Make resolve_dataset_file available globally
+__builtins__['resolve_dataset_file'] = resolve_dataset_file
 
 try:
     # Execute user code

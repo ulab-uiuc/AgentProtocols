@@ -6,6 +6,7 @@ Enhancements:
     it under the dataset/workspace directories via a shallow recursive search.
 - If an absolute path is provided but doesn't exist (e.g., /documents/foo.txt),
     rebase it into workspace/dataset roots so LLM-provided paths still work.
+- Automatically handle file name corrections for multimodal tasks
 """
 import asyncio
 import os
@@ -14,25 +15,49 @@ from typing import Optional, Union
 
 from .base import BaseTool, ToolResult
 from .exceptions import ToolError
+from .file_path_resolver import get_file_path_resolver
+from .utils.logger import logger
 from .utils.config import PROJECT_ROOT as GAIA_ROOT_DEFAULT  # 新增：用于默认回退
 
 
 class FileOperators(BaseTool):
-    """Tool for basic file operations."""
-
+    """
+    File operations tool with smart path resolution for GAIA tasks.
+    
+    Supports multimodal tasks by automatically resolving file names from task metadata.
+    For multimodal tasks, you can reference files by their task-specific names and they
+    will be automatically resolved to the correct dataset paths.
+    
+    Use 'task_info' operation to see available files and expected file names.
+    """
+    
     name: str = "file_operators"
-    description: str = "Perform file operations like reading, writing, and listing files."
+    description: str = """
+    Perform file operations with smart path resolution for GAIA multimodal tasks.
+    
+    Available operations:
+    - read: Read file content (automatically resolves file names for multimodal tasks)  
+    - write: Write content to file
+    - list: List directory contents
+    - exists: Check if path exists
+    - is_dir: Check if path is directory
+    - task_info: Show current task information and available files
+    - run_command: Execute shell command
+    
+    For multimodal tasks, file names from the task metadata will be automatically resolved.
+    Use 'task_info' to see the expected file name and all available files.
+    """
     parameters: dict = {
         "type": "object",
         "properties": {
             "operation": {
                 "type": "string",
-                "description": "The operation to perform: read, write, list, exists, is_dir, run_command",
-                "enum": ["read", "write", "list", "exists", "is_dir", "run_command"]
+                "description": "The operation to perform. Use 'task_info' to see current task files and expected file name.",
+                "enum": ["read", "write", "list", "exists", "is_dir", "run_command", "task_info"]
             },
             "path": {
                 "type": "string",
-                "description": "The file or directory path"
+                "description": "File or directory path. For multimodal tasks, you can use the task-specific file name which will be auto-resolved."
             },
             "command": {
                 "type": "string",
@@ -71,6 +96,8 @@ class FileOperators(BaseTool):
                 return await self._check_is_dir(path)
             elif operation == "run_command":
                 return await self._run_command(kwargs.get("command"))
+            elif operation == "task_info":
+                return await self._get_task_info()
             else:
                 raise ToolError(f"Unknown operation: {operation}")
                 
@@ -78,11 +105,33 @@ class FileOperators(BaseTool):
             return ToolResult(error=str(e))
 
     async def _read_file(self, path: str) -> ToolResult:
-        """Read file content."""
+        """Read file content with smart path resolution for multimodal tasks."""
         try:
-            file_path = self._resolve_path(Path(path))
-            if not file_path.exists():
-                return ToolResult(error=f"File not found: {path}")
+            # First try to resolve using the file path resolver for multimodal tasks
+            resolver = get_file_path_resolver()
+            resolved_path = resolver.resolve_file_path(path)
+            
+            if resolved_path and os.path.exists(resolved_path):
+                file_path = Path(resolved_path)
+                logger.info(f"📖 Reading resolved file: {resolved_path}")
+            else:
+                # Fall back to original path resolution
+                file_path = self._resolve_path(Path(path))
+                if not file_path.exists():
+                    # Provide helpful error message with available files
+                    available_files = resolver.list_available_files()
+                    error_msg = f"File not found: {path}"
+                    if available_files:
+                        error_msg += f"\nAvailable files in dataset: {', '.join(available_files[:10])}"
+                        if len(available_files) > 10:
+                            error_msg += f" (and {len(available_files) - 10} more)"
+                    
+                    # Include actual filename from task metadata if available
+                    actual_filename = resolver.get_actual_filename()
+                    if actual_filename:
+                        error_msg += f"\nExpected file for this task: {actual_filename}"
+                    
+                    return ToolResult(error=error_msg)
             
             content = file_path.read_text(encoding='utf-8')
             return ToolResult(output=f"File content of {file_path}::\n{content}")
@@ -150,6 +199,33 @@ class FileOperators(BaseTool):
             return ToolResult(output=f"STDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}")
         except Exception as e:
             return ToolResult(error=f"Error running command: {e}")
+    
+    async def _get_task_info(self) -> ToolResult:
+        """Get information about the current task and available files."""
+        try:
+            resolver = get_file_path_resolver()
+            task_info = resolver.get_task_info()
+            
+            info_lines = [
+                f"Task ID: {task_info['task_id'] or 'Not set'}",
+                f"Dataset Directory: {task_info['dataset_dir'] or 'Not set'}",
+                f"Has Task Metadata: {task_info['has_metadata']}",
+                f"Expected File: {task_info['actual_filename'] or 'Not specified'}",
+                "",
+                "Available Files in Dataset:"
+            ]
+            
+            if task_info['available_files']:
+                for i, file in enumerate(task_info['available_files'][:20], 1):
+                    info_lines.append(f"  {i}. {file}")
+                if len(task_info['available_files']) > 20:
+                    info_lines.append(f"  ... and {len(task_info['available_files']) - 20} more files")
+            else:
+                info_lines.append("  No files found in dataset directory")
+            
+            return ToolResult(output="\n".join(info_lines))
+        except Exception as e:
+            return ToolResult(error=f"Error getting task info: {e}")
 
     # ---------------- Internal helpers ----------------
     def _resolve_path(self, p: Path, prefer_as_given: bool = False) -> Path:

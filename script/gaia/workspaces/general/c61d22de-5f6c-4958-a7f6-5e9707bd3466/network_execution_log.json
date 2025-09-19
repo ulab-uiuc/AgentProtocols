@@ -1,0 +1,68 @@
+{
+  "network_memory": [],
+  "workflow_progress": {
+    "total_steps": 4,
+    "completed_steps": 4,
+    "completion_rate": 1.0,
+    "status_breakdown": {
+      "pending": 0,
+      "processing": 0,
+      "success": 0,
+      "error": 4,
+      "timeout": 0
+    },
+    "step_details": {
+      "0": "error",
+      "1": "error",
+      "2": "error",
+      "3": "error"
+    }
+  },
+  "step_executions": {
+    "step_0": {
+      "step": 0,
+      "agent_id": "0",
+      "agent_name": "ArXivResearcher",
+      "status": "error",
+      "start_time": 1758284034.2124803,
+      "end_time": 1758284034.2143855,
+      "duration": 0.001905202865600586,
+      "messages": [],
+      "error_message": "[MetaProtocol] Delivery failed to 0: NetworkMemoryPool.add_step_execution() got an unexpected keyword argument 'step_idx'"
+    },
+    "step_1": {
+      "step": 1,
+      "agent_id": "1",
+      "agent_name": "SocietyArticleFinder",
+      "status": "error",
+      "start_time": 1758284034.2144592,
+      "end_time": 1758284034.2164235,
+      "duration": 0.0019643306732177734,
+      "messages": [],
+      "error_message": "[MetaProtocol] Delivery failed to 1: NetworkMemoryPool.add_step_execution() got an unexpected keyword argument 'step_idx'"
+    },
+    "step_2": {
+      "step": 2,
+      "agent_id": "2",
+      "agent_name": "WordMatcher",
+      "status": "error",
+      "start_time": 1758284034.216479,
+      "end_time": 1758284034.2182217,
+      "duration": 0.0017426013946533203,
+      "messages": [],
+      "error_message": "[MetaProtocol] Delivery failed to 2: NetworkMemoryPool.add_step_execution() got an unexpected keyword argument 'step_idx'"
+    },
+    "step_3": {
+      "step": 3,
+      "agent_id": "3",
+      "agent_name": "FinalAnswerSynthesizer",
+      "status": "error",
+      "start_time": 1758284034.2182825,
+      "end_time": 1758284034.219034,
+      "duration": 0.000751495361328125,
+      "messages": [],
+      "error_message": "[MetaProtocol] Delivery failed to 3: NetworkMemoryPool.add_step_execution() got an unexpected keyword argument 'step_idx'"
+    }
+  },
+  "timestamp": 1758284034.219115
+}
