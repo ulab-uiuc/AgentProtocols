@@ -2,23 +2,23 @@ scenario:
   name: "fail_storm_recovery_a2a_failover_test"
   protocol: "a2a"
   agent_count: 8
-  total_runtime: 180.0  # 3 minutes total for testing
-  fault_injection_time: 60.0   # First fault at 1 minute
+  total_runtime: 1800.0  # Large runtime to support long run (e.g., ~33.3h for 1000 cycles of 120s)
+  fault_injection_time: 120.0   # Start injection at 120s
   recovery_duration: 60  # 1 minute recovery time
   kill_fraction: 0.375  # Kill 3 out of 8 agents each cycle
   heartbeat_interval: 10.0  # Reduce heartbeat frequency for long test
   heartbeat_timeout: 30.0  # Longer timeout for stability
   cyclic_faults: true  # Enable cyclic fault injection
-  fault_cycle_interval: 120.0  # Every 2 minutes (120 seconds)
+  fault_cycle_interval: 120.0  # Inject every 120 seconds
   agents_per_fault: 3  # Kill 3 agents per cycle
   normal_phase_duration: 120.0  # 2 minutes normal phase before first fault
-  max_groups: 5000  # Increase max groups for longer test
+  max_groups: 1000  # Run 1000 groups
 
 llm:
-  type: "openai"
-  model: "gpt-4o"
-  openai_api_key: "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"
-  openai_base_url: "https://api.openai.com/v1"
+  type: "local"
+  model: "Qwen2.5-VL-72B-Instruct"
+  openai_api_key: "dummy-key"
+  openai_base_url: "http://127.0.0.1:8000/v1"
   temperature: 0.2
   max_tokens: 8192
   timeout: 30.0
@@ -41,14 +41,20 @@ a2a:
     reconnect_delay: 5.0  # Wait 5 seconds before attempting reconnection
 
 network:
-  base_port: 9000
+  base_port: 9100
   heartbeat_interval: 5.0
   heartbeat_timeout: 12.0
   connection_timeout: 10.0
 
 agents:
-  base_port: 9000
+  base_port: 9100
   host: "127.0.0.1"
+
+results:
+  base_path: "results"
+  save_intermediate: true
+  save_final: true
+  detailed_metrics: true
 
 shard_qa:
   data_dir: "data/shards"

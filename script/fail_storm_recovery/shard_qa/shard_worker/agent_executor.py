@@ -233,7 +233,9 @@ class ShardWorker:
             self.core = Core(core_config)
             
             if self.output:
-                self.output.success(f"[{self.shard_id}] Core LLM initialized successfully: {model_config['type']} - {model_config.get('name', 'unknown')}")
+                # Prefer actual resolved local model id if available
+                resolved_name = getattr(self.core, "_local_model_id", model_config.get('name', 'unknown'))
+                self.output.success(f"[{self.shard_id}] Core LLM initialized successfully: {model_config['type']} - {resolved_name}")
                 
         except ImportError as e:
             if self.output:
@@ -1670,7 +1672,7 @@ class ShardWorkerExecutor(AgentExecutor):
         sender = "unknown"
         meta = {}
         
-        # ✅ 双重保险的TTL提取：A2A meta + 消息内容解析
+        # ✅ 双重保险的TTL提取：A2A meta + 消消息内容解析
         sender = "unknown"
         meta = {}
         
@@ -1769,4 +1771,4 @@ class ShardWorkerExecutor(AgentExecutor):
     async def cancel(
         self, context: BaseRequestContext, event_queue: BaseEventQueue
     ) -> None:
-        raise Exception('cancel not supported') 
+        raise Exception('cancel not supported')

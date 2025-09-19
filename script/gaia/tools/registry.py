@@ -6,7 +6,8 @@ from .tool_collection import ToolCollection
 
 # Import available tools
 from .ask_human import AskHuman
-from .python_execute import PythonExecute
+# from .python_execute import PythonExecute
+from .sandbox_python_execute import SandboxPythonExecute
 from .str_replace_editor import StrReplaceEditor
 from .create_chat_completion import CreateChatCompletion
 import sys
@@ -30,7 +31,7 @@ class ToolRegistry:
         
         # Available tools collection - add new tools here directly
         tools = [
-            PythonExecute(),
+            SandboxPythonExecute(),
             StrReplaceEditor(),
             CreateChatCompletion(),
         ]

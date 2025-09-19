@@ -70,14 +70,14 @@ class RunnerBase(abc.ABC):
     def _resolve_output_file(self, runtime_config: Dict[str, Any]) -> str:
         """解析结果输出文件路径。
         规则:
-          - 默认: GAIA_ROOT/workspaces/gaia_results.json
+          - 默认: GAIA_ROOT/workspaces/<protocol_name>/gaia_<protocol_name>_results.json
           - 若 runtime.output_file 提供:
               * 绝对路径: 原样使用
               * 相对路径:
                   - 以 workspaces 开头: GAIA_ROOT/<path>
-                  - 否则: GAIA_ROOT/workspaces/<path>
+                  - 否则: GAIA_ROOT/workspaces/<protocol_name>/<path>
         """
-        default_output = GAIA_ROOT / 'workspaces' / 'gaia_results.json'
+        default_output = GAIA_ROOT / 'workspaces' / self.protocol_name / f'gaia_{self.protocol_name}_results.json'
         cfg_output = runtime_config.get('output_file')
         if cfg_output:
             cfg_path = Path(cfg_output)
@@ -86,7 +86,7 @@ class RunnerBase(abc.ABC):
             first_part = cfg_path.parts[0] if cfg_path.parts else ''
             if first_part == 'workspaces':
                 return str(GAIA_ROOT / cfg_path)  # 避免重复 workspaces/workspaces
-            return str(GAIA_ROOT / 'workspaces' / cfg_path)
+            return str(GAIA_ROOT / 'workspaces' / self.protocol_name / cfg_path)
         return str(default_output)
 
     # -------------------- Helper: resolve used file from task --------------------
@@ -438,7 +438,7 @@ class RunnerBase(abc.ABC):
         elif self.mode == "mm":
             # Multimodal mode: only run first 3 tasks
             if isinstance(tasks, list) and tasks:
-                tasks = tasks[:3]
+                tasks = tasks[1:3]
                 print("🎯 MM 模式：仅运行前 3 条任务 (multimodal.jsonl)")
             else:
                 print(f"[WARN] MM 模式下任务结构异常，tasks 类型: {type(tasks).__name__}")
