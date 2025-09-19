@@ -354,17 +354,23 @@ class WebSearch(BaseTool):
     ) -> Optional[List[SearchResult]]:
         """Try specialized APIs for GAIA-specific information sources."""
         
-        # Check if query is asking for arXiv papers
+        # Priority 1: Try Google Custom Search API first for general queries
+        google_results = await self._search_google_api(query, num_results)
+        if google_results:
+            logger.info("🔍 Google Custom Search API returned results")
+            return google_results
+        
+        # Priority 2: Check if query is asking for arXiv papers
         if any(keyword in query.lower() for keyword in ['arxiv', 'arxiv.org', 'preprint', 'submitted to arxiv']):
             logger.info("🔬 Detected arXiv query, using arXiv API...")
             return await self._search_arxiv_api(query, num_results)
         
-        # Check if query is asking for Wikipedia information
+        # Priority 3: Check if query is asking for Wikipedia information
         if any(keyword in query.lower() for keyword in ['wikipedia', 'wiki', 'encyclopedia']):
             logger.info("📚 Detected Wikipedia query, using Wikipedia API...")
             return await self._search_wikipedia_api(query, num_results)
         
-        # Check if query mentions specific academic domains
+        # Priority 4: Check if query mentions specific academic domains
         if any(keyword in query.lower() for keyword in ['physics and society', 'nature', 'science', 'journal']):
             logger.info("📄 Detected academic query, trying arXiv API first...")
             arxiv_results = await self._search_arxiv_api(query, num_results)
@@ -372,6 +378,112 @@ class WebSearch(BaseTool):
                 return arxiv_results
         
         return None
+
+    async def _search_google_api(self, query: str, num_results: int) -> List[SearchResult]:
+        """Search using Google Custom Search API."""
+        try:
+            import aiohttp
+            
+            # Google Custom Search API credentials (hardcoded for GAIA)
+            api_key = "AIzaSyD3etlPWwsFFnChC4xtPwOSc-Ue6SyFmOE"
+            cx = "e12302dcf18c04756"
+            
+            # Google Custom Search API endpoint
+            url = "https://www.googleapis.com/customsearch/v1"
+            params = {
+                "key": api_key,
+                "cx": cx,
+                "q": query,
+                "num": min(num_results, 10),  # Google API max is 10 per request
+                "safe": "off",
+                "fields": "items(title,link,snippet,displayLink)"
+            }
+            
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
+                async with session.get(url, params=params) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        results = []
+                        
+                        items = data.get('items', [])
+                        for i, item in enumerate(items):
+                            title = item.get('title', 'No title')
+                            link = item.get('link', '')
+                            snippet = item.get('snippet', '')
+                            display_link = item.get('displayLink', '')
+                            
+                            results.append(SearchResult(
+                                position=i + 1,
+                                url=link,
+                                title=title,
+                                description=f"{display_link} | {snippet}" if display_link else snippet,
+                                source="google_api"
+                            ))
+                        
+                        logger.info(f"Google Custom Search API returned {len(results)} results")
+                        
+                        # Fetch content for arXiv links
+                        enhanced_results = []
+                        for result in results:
+                            if 'arxiv.org/abs/' in result.url:
+                                # Fetch arXiv abstract page content
+                                try:
+                                    async with session.get(result.url, timeout=10.0) as content_response:
+                                        if content_response.status == 200:
+                                            content_text = await content_response.text()
+                                            # Extract key information from arXiv page
+                                            result.raw_content = self._extract_arxiv_content(content_text)
+                                            logger.info(f"Fetched content for arXiv paper: {result.title[:50]}...")
+                                except Exception as e:
+                                    logger.warning(f"Failed to fetch content for {result.url}: {e}")
+                                    result.raw_content = ""
+                            enhanced_results.append(result)
+                        
+                        return enhanced_results
+                    else:
+                        logger.warning(f"Google Custom Search API returned status {response.status}")
+                        
+        except Exception as e:
+            logger.error(f"Google Custom Search API failed: {e}")
+        
+        return []
+
+    def _extract_arxiv_content(self, html_content: str) -> str:
+        """Extract key information from arXiv abstract page."""
+        try:
+            from bs4 import BeautifulSoup
+            
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Extract title
+            title_elem = soup.find('h1', class_='title')
+            title = title_elem.get_text().strip() if title_elem else ""
+            
+            # Extract submission date
+            dateline_elem = soup.find('div', class_='dateline')
+            dateline = dateline_elem.get_text().strip() if dateline_elem else ""
+            
+            # Extract abstract
+            abstract_elem = soup.find('blockquote', class_='abstract')
+            abstract = abstract_elem.get_text().strip() if abstract_elem else ""
+            
+            # Extract categories
+            subjects_elem = soup.find('td', class_='subjects')
+            subjects = subjects_elem.get_text().strip() if subjects_elem else ""
+            
+            # Combine all content
+            content = f"""
+TITLE: {title}
+SUBMITTED: {dateline}
+CATEGORIES: {subjects}
+ABSTRACT: {abstract}
+            """.strip()
+            
+            return content
+            
+        except Exception as e:
+            logger.warning(f"Failed to parse arXiv content: {e}")
+            return html_content[:1000]  # Fallback to raw HTML snippet
 
     async def _parse_arxiv_query_with_llm(self, query: str) -> dict:
         """
