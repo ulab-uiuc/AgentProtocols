@@ -442,21 +442,21 @@ import traceback
 import os
 from io import StringIO
 
-# Capture stdout
-old_stdout = sys.stdout
-sys.stdout = captured_output = StringIO()
+# Store original stdout for final output
+original_stdout = sys.stdout
+
+# Capture stdout for user code
+captured_output = StringIO()
 
 # Add dataset directory to sys.path if available
 if os.path.exists('/dataset'):
     sys.path.insert(0, '/dataset')
     os.environ['DATASET_DIR'] = '/dataset'
-    print("Dataset directory available at /dataset")
 
 # Add workspace directory to sys.path
 if os.path.exists('/workspace'):
     sys.path.insert(0, '/workspace')
     os.environ['WORKSPACE_DIR'] = '/workspace'
-    print("Workspace directory available at /workspace")
     # Set working directory to workspace
     os.chdir('/workspace')
 
@@ -485,28 +485,46 @@ try:
         setattr(__builtins__, 'resolve_dataset_file', resolve_dataset_file)
 except Exception as builtins_error:
     # Fallback: add to globals and print warning
-    print(f"Warning: Could not add to __builtins__ ({{builtins_error}}), using globals fallback")
     globals()['resolve_dataset_file'] = resolve_dataset_file
 
 try:
-    # Execute user code
-{self._indent_code(current_code, '    ')}
+    # Redirect stdout to capture user output
+    sys.stdout = captured_output
     
-    # Get the output and restore stdout
-    output = captured_output.getvalue()
-    sys.stdout = old_stdout
+    # Print environment info to captured output
+    if os.path.exists('/dataset'):
+        print("Dataset directory available at /dataset")
+    if os.path.exists('/workspace'):
+        print("Workspace directory available at /workspace")
     
+    # Create namespace for execution
+    exec_globals = globals().copy()
+    
+    # 准备要执行的完整代码
+    full_code = '''
+{current_code}
+'''.strip()
+
+    # 将整个代码块作为一个整体来执行
+    # 这会保留所有的缩进和代码结构
+    exec(full_code, exec_globals)
+    
+    # Restore stdout and get captured output
+    sys.stdout = original_stdout
+    user_output = captured_output.getvalue()
+    
+    # Print success markers and output
     print("EXECUTION_SUCCESS")
     print("OUTPUT_START")
-    if output.strip():
-        print(output.strip())
+    if user_output.strip():
+        print(user_output.strip())
     else:
         print("(No output)")
     print("OUTPUT_END")
     
 except Exception as e:
     # Restore stdout first
-    sys.stdout = old_stdout
+    sys.stdout = original_stdout
     print("EXECUTION_ERROR") 
     print("ERROR_START")
     print(f"{{type(e).__name__}}: {{str(e)}}")
@@ -518,12 +536,16 @@ except Exception as e:
                 
                 # Write script to container
                 await self._sandbox_client.write_file("execute_code.py", script_content)
+                await self._sandbox_client.write_file("execute_code.py", script_content)
                 
                 # Execute the script
                 result = await self._sandbox_client.run_command(
                     "cd /workspace && python execute_code.py", 
                     timeout=timeout
                 )
+                
+                # Debug: log raw result for troubleshooting
+                logger.debug(f"Raw sandbox result (attempt {attempt + 1}):\n{result}")
                 
                 # Parse result
                 output_lines = result.split('\n')
@@ -543,7 +565,8 @@ except Exception as e:
                         full_output += f"Code Execution Output:\n{execution_output}"
                         
                         return ToolResult(output=full_output)
-                    except (ValueError, IndexError):
+                    except (ValueError, IndexError) as parse_error:
+                        logger.warning(f"Failed to parse successful execution output: {parse_error}")
                         if attempt < max_retries:
                             continue  # Retry on parsing failure
                         return ToolResult(output=f"Execution completed but output parsing failed:\n{result}")

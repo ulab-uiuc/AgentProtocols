@@ -4,21 +4,21 @@ import traceback
 import os
 from io import StringIO
 
-# Capture stdout
-old_stdout = sys.stdout
-sys.stdout = captured_output = StringIO()
+# Store original stdout for final output
+original_stdout = sys.stdout
+
+# Capture stdout for user code
+captured_output = StringIO()
 
 # Add dataset directory to sys.path if available
 if os.path.exists('/dataset'):
     sys.path.insert(0, '/dataset')
     os.environ['DATASET_DIR'] = '/dataset'
-    print("Dataset directory available at /dataset")
 
 # Add workspace directory to sys.path
 if os.path.exists('/workspace'):
     sys.path.insert(0, '/workspace')
     os.environ['WORKSPACE_DIR'] = '/workspace'
-    print("Workspace directory available at /workspace")
     # Set working directory to workspace
     os.chdir('/workspace')
 
@@ -47,44 +47,69 @@ try:
         setattr(__builtins__, 'resolve_dataset_file', resolve_dataset_file)
 except Exception as builtins_error:
     # Fallback: add to globals and print warning
-    print(f"Warning: Could not add to __builtins__ ({builtins_error}), using globals fallback")
     globals()['resolve_dataset_file'] = resolve_dataset_file
 
 try:
-    # Execute user code
-    import pandas as pd
+    # Redirect stdout to capture user output
+    sys.stdout = captured_output
+    
+    # Print environment info to captured output
+    if os.path.exists('/dataset'):
+        print("Dataset directory available at /dataset")
+    if os.path.exists('/workspace'):
+        print("Workspace directory available at /workspace")
+    
+    # Create namespace for execution
+    exec_globals = globals().copy()
+    
+    # 准备要执行的完整代码
+    full_code = '''
+import pandas as pd
 
-    # Load the Excel file
-    try:
-        df = pd.read_excel('32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx')
+# Load the spreadsheet to find the oldest Blu-Ray
+try:
+    file_path = '32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx'
     
-        # Filter for Blu-Ray only
-        df_blu_ray = df[df['Format'] == 'Blu-Ray']
+    # Read the Excel file
+    xls = pd.ExcelFile(file_path)
     
-        # Find the row with the oldest release year
-        oldest_blu_ray = df_blu_ray.loc[df_blu_ray['Release Year'].idxmin()]
+    # Load the first sheet
+    sheet_name = xls.sheet_names[0]
+    df = pd.read_excel(file_path, sheet_name=sheet_name)
     
-        oldest_blu_ray_title = oldest_blu_ray['Title']
-        oldest_blu_ray_title
-    except Exception as e:
-        print(f'Error: {e}')
-        print('Attempting to handle the error gracefully...')
+    # Filter only Blu-Ray items
+    df_blu_ray = df[df['Format'] == 'Blu-Ray']
     
-    # Get the output and restore stdout
-    output = captured_output.getvalue()
-    sys.stdout = old_stdout
+    # Find the oldest Blu-Ray by release year
+    oldest_blu_ray = df_blu_ray.loc[df_blu_ray['Release Year'].idxmin()]
+    oldest_title = oldest_blu_ray['Title']
     
+    oldest_title
+except Exception as e:
+    print(f'Error: {e}')
+    print('Attempting to handle the error gracefully...')
+'''.strip()
+
+    # 将整个代码块作为一个整体来执行
+    # 这会保留所有的缩进和代码结构
+    exec(full_code, exec_globals)
+    
+    # Restore stdout and get captured output
+    sys.stdout = original_stdout
+    user_output = captured_output.getvalue()
+    
+    # Print success markers and output
     print("EXECUTION_SUCCESS")
     print("OUTPUT_START")
-    if output.strip():
-        print(output.strip())
+    if user_output.strip():
+        print(user_output.strip())
     else:
         print("(No output)")
     print("OUTPUT_END")
     
 except Exception as e:
     # Restore stdout first
-    sys.stdout = old_stdout
+    sys.stdout = original_stdout
     print("EXECUTION_ERROR") 
     print("ERROR_START")
     print(f"{type(e).__name__}: {str(e)}")
