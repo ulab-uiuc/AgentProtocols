@@ -215,24 +215,25 @@ ACTUAL PROTOCOL PERFORMANCE DATA (from real fail_storm_recovery tests):
 - A2A: 59.6% success rate, 19.1% answer discovery rate, 7.39s avg response, 6.0s recovery time
 - ACP: 59.0% success rate, 17.9% answer discovery rate, 7.83s avg response, 8.0s recovery time
 
-FAIL STORM RECOVERY CRITICAL METRICS:
-1. ANSWER DISCOVERY RATE (most important) - ANP leads at 22.0%
-2. RECOVERY TIME (second most important) - A2A leads at 6.0s
-3. Overall success rate - ANP leads at 61.0%
-4. Response time - ANP leads at 6.76s
+FAIL STORM RECOVERY CRITICAL METRICS (in priority order):
+1. RECOVERY TIME (most critical) - A2A leads at 6.0s, Agora 6.1s, ACP 8.0s, ANP 10.0s
+2. ANSWER DISCOVERY RATE (important) - ANP 22.0%, Agora 20.0%, A2A 19.1%, ACP 17.9%
+3. Overall success rate - ANP 61.0%, Agora 60.0%, A2A 59.6%, ACP 59.0%
+4. Response time - ANP 6.76s, Agora 7.10s, A2A 7.39s, ACP 7.83s
 
 ASSIGNMENT REQUIREMENTS:
 - You must assign exactly 8 agents (agent_1 through agent_8)
-- PRIORITIZE: Answer discovery rate and fast recovery time
-- Consider fault tolerance: distribute across multiple protocols
-- Balance performance vs resilience
+- PRIMARY GOAL: Minimize recovery time during faults (A2A: 6.0s is optimal)
+- SECONDARY GOAL: Maximize answer discovery rate while maintaining fast recovery
+- Consider fault tolerance: use protocols with proven fast recovery
+- Prioritize speed over marginal accuracy gains
 
 OPTIMAL STRATEGY:
-- Use ANP for highest answer discovery (22.0%) and best response time (6.76s)
-- Use A2A for fastest recovery (6.0s) and good throughput
-- Use Agora for balanced performance and stability
-- AVOID ACP due to lowest answer rate (17.9%) unless specifically needed
-- You can assign 0 agents to poor-performing protocols
+- Use A2A for fastest recovery (6.0s) - critical for fault tolerance
+- Use Agora for balanced performance (6.1s recovery) and good answer rate (20.0%)
+- Consider ANP only if answer discovery rate significantly outweighs recovery time concerns
+- AVOID ACP due to poor performance across all metrics
+- You can assign 0 agents to underperforming protocols
 - Focus on 1-2 best protocols rather than spreading across all protocols
 
 Use tool calling to provide structured protocol selection for all 8 agents."""
@@ -249,20 +250,28 @@ Current Protocol Status:
 
 ASSIGNMENT REQUIREMENTS:
 - Must assign exactly {num_agents} agents (agent0 through agent{num_agents-1})
-- PRIORITIZE: Answer discovery rate (ANP: 22.0% > Agora: 20.0% > A2A: 19.1% > ACP: 17.9%)
-- PRIORITIZE: Fast recovery time (A2A: 6.0s < Agora: 6.1s < ACP: 8.0s < ANP: 10.0s)
-- Consider fault tolerance: distribute across multiple protocols for resilience
-- Balance high answer discovery with fast recovery
+- PRIMARY PRIORITY: Fast recovery time (A2A: 6.0s < Agora: 6.1s < ACP: 8.0s < ANP: 10.0s)
+- SECONDARY PRIORITY: Answer discovery rate (ANP: 22.0% > Agora: 20.0% > A2A: 19.1% > ACP: 17.9%)
+- Consider fault tolerance: use fast-recovering protocols for resilience
+- Prioritize recovery speed over marginal accuracy improvements
 
-RECOMMENDED DISTRIBUTION for {num_agents} agents:
-- ANP: 3-4 agents (best answer discovery rate 22.0%)
-- A2A: 2-3 agents (fastest recovery 6.0s)
-- Agora: 1-2 agents (balanced performance)
-- ACP: 0-1 agents (lowest priority due to poor answer rate)
+EXTREME PROTOCOL SELECTION STRATEGY:
+- You can use as few as 1 protocol for all agents if it's clearly the best choice
+- You can use 2-3 protocols if there are complementary strengths
+- You do NOT need to use all 4 protocols - focus on optimal performance
+- Avoid weak protocols entirely - better to concentrate on strengths
 
-IMPORTANT: You do NOT need to use all protocols. Some protocols can have 0 agents assigned.
-Focus on the best performing protocols for the specific task requirements.
-Prefer fewer protocols with better performance over using all protocols.
+RECOMMENDED EXTREME DISTRIBUTIONS for {num_agents} agents:
+Option 1 (Recovery-optimized): A2A: 6-8 agents, Agora: 0-2 agents (minimize recovery time)
+Option 2 (Dual-fast): A2A: 4-5 agents, Agora: 3-4 agents (fast recovery + good answers)  
+Option 3 (Single-protocol): ALL 8 agents on A2A (maximum recovery speed)
+Option 4 (Balanced-fast): A2A: 5-6 agents, Agora: 2-3 agents (prioritize recovery with some answer boost)
+
+AVOID PROTOCOLS WITH POOR PERFORMANCE:
+- ACP: Only use if specific enterprise/compliance requirements
+- Consider assigning 0 agents to underperforming protocols
+
+EXTREME FOCUS: Better to have 8 agents on 1 excellent protocol than spreading across 4 mediocre ones.
 
 Use the select_protocols tool to make your decision."""
 
@@ -297,7 +306,7 @@ Use the select_protocols tool to make your decision."""
                             "selected_protocols": {
                                 "type": "array",
                                 "items": {"type": "string", "enum": ["anp", "agora", "a2a", "acp"]},
-                                "description": "List of selected protocol names",
+                                "description": "List of selected protocol names (can be 1-4 protocols)",
                                 "minItems": 1,
                                 "maxItems": 4
                             },
@@ -320,8 +329,8 @@ Use the select_protocols tool to make your decision."""
                             },
                             "strategy": {
                                 "type": "string",
-                                "enum": ["answer_discovery_optimized", "recovery_time_optimized", "balanced_performance"],
-                                "description": "Routing strategy used"
+                                "enum": ["single_protocol_focus", "dual_protocol_optimal", "answer_discovery_optimized", "recovery_time_optimized", "balanced_performance"],
+                                "description": "Routing strategy used (prefer extreme focus over balanced spreading)"
                             }
                         },
                         "required": ["selected_protocols", "agent_assignments", "reasoning", "confidence", "strategy"]

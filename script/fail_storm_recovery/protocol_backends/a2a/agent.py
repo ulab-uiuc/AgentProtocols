@@ -90,6 +90,12 @@ class A2ANativeServer:
             except Exception as e:
                 return {"status": "error", "message": str(e)}
         
+        # NEW: alias route for clients that POST to /message
+        @app.post("/message")
+        async def handle_a2a_message_alias(request: dict):
+            """Alias route for /message compatibility."""
+            return await handle_a2a_message(request)
+        
         # Compatibility endpoints
         @app.get('/health')
         async def health_check():

@@ -149,6 +149,7 @@ class ANPAgent:
             
             # Add missing /message endpoint for inter-agent communication
             @self.simple_node.app.post("/message")
+            @self.simple_node.app.post("/anp/message")  # Add ANP-specific route
             async def handle_message(request):
                 """Handle incoming messages from other agents."""
                 try:

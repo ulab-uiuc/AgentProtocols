@@ -422,13 +422,15 @@ class MetaProtocolRunner(FailStormRunnerBase):
                                 agent_id=dst_id
                             )
                         elif dst_protocol == "anp":
-                            # 创建 ANPAdapter 前，若必要的 env 不存在，直接跳过
+                            # Try DID-based ANP adapter first
                             import os
-                            if not (os.getenv("ANP_DID_SERVICE_URL") and os.getenv("ANP_DID_API_KEY")):
-                                print(f"⚠️  Skip ANP adapter to {dst_id}: missing DID service config")
-                                continue
-                            # ANP requires DID-based connection
-                            adapter = await self._create_anp_adapter(src_base_agent, dst_base_agent, dst_id)
+                            if os.getenv("ANP_DID_SERVICE_URL") and os.getenv("ANP_DID_API_KEY"):
+                                # ANP requires DID-based connection
+                                adapter = await self._create_anp_adapter(src_base_agent, dst_base_agent, dst_id)
+                            else:
+                                # Fallback to simple HTTP adapter for development/testing (DID missing)
+                                print(f"⚠️  ANP DID missing; falling back to simple HTTP adapter for {dst_id} (dev-only)")
+                                adapter = self._create_simple_http_adapter(src_base_agent, dst_url, dst_id)
                         else:
                             continue
                         
@@ -452,6 +454,82 @@ class MetaProtocolRunner(FailStormRunnerBase):
         except Exception as e:
             print(f"❌ Failed to install cross-protocol adapters: {e}")
             raise
+
+    def _create_simple_http_adapter(self, src_base_agent, dst_url: str, dst_id: str):
+        """Create an ANP-HTTP adapter for ANP fallback."""
+        
+        class ANPHTTPAdapter:
+            """ANP-HTTP adapter that maintains ANP protocol semantics over HTTP transport."""
+            
+            def __init__(self, httpx_client, base_url: str, agent_id: str):
+                self.httpx_client = httpx_client
+                self.base_url = base_url.rstrip('/')
+                self.agent_id = agent_id
+                self.protocol_name = "ANP"  # ANP protocol over HTTP transport
+                
+            async def initialize(self):
+                """Initialize adapter - check if target ANP agent is reachable."""
+                try:
+                    response = await self.httpx_client.get(f"{self.base_url}/health", timeout=5.0)
+                    if response.status_code == 200:
+                        return
+                except:
+                    pass
+                # If /health fails, that's ok for ANP-HTTP adapter
+                
+            async def send_message(self, dst_id: str, payload):
+                """Send message using ANP-compatible format over HTTP."""
+                import json
+                import time
+                import uuid
+                
+                # Convert to ANP agent expected format (simple content + meta)
+                anp_message = {
+                    "content": payload,  # ANP agent expects 'content' field
+                    "sender": self.agent_id,
+                    "meta": {
+                        "id": str(uuid.uuid4()),
+                        "timestamp": time.time(),
+                        "transport": "anp_http_fallback"
+                    }
+                }
+                
+                # Try ANP-specific endpoints first, then fallback
+                endpoints = ["/anp/message", "/message", "/"]
+                
+                for endpoint in endpoints:
+                    try:
+                        headers = {
+                            "Content-Type": "application/json",
+                            "X-Protocol": "ANP-HTTP",  # Indicate ANP protocol over HTTP
+                            "X-Agent-ID": self.agent_id
+                        }
+                        
+                        response = await self.httpx_client.post(
+                            f"{self.base_url}{endpoint}",
+                            json=anp_message,
+                            headers=headers,
+                            timeout=30.0
+                        )
+                        response.raise_for_status()
+                        return response.json()
+                    except Exception as e:
+                        if endpoint != endpoints[-1]:  # Not the last endpoint
+                            continue  # Try next endpoint
+                        else:
+                            raise e  # All endpoints failed
+                
+                raise ConnectionError(f"All ANP-HTTP endpoints failed for {self.base_url}")
+            
+            async def receive_message(self):
+                """Receive message (not used in outbound adapter)."""
+                return {}
+            
+            def get_agent_card(self):
+                """Get agent card (not used in outbound adapter)."""
+                return {"agent_id": self.agent_id, "protocol": "anp_http"}
+        
+        return ANPHTTPAdapter(src_base_agent._httpx_client, dst_url, dst_id)
 
     async def _create_anp_adapter(self, src_agent: MetaBaseAgent, dst_agent: MetaBaseAgent, dst_id: str):
         """Create ANP adapter with DID-based connection."""
@@ -958,7 +1036,14 @@ class MetaProtocolRunner(FailStormRunnerBase):
                             agent_id=dst_id
                         )
                     elif dst_protocol == "anp":
-                        adapter = await self._create_anp_adapter(src_base_agent, dst_base_agent, dst_id)
+                        # Try DID-based ANP adapter first
+                        import os
+                        if os.getenv("ANP_DID_SERVICE_URL") and os.getenv("ANP_DID_API_KEY"):
+                            adapter = await self._create_anp_adapter(src_base_agent, dst_base_agent, dst_id)
+                        else:
+                            # Skip ANP agents without DID (avoid protocol mismatch)
+                            print(f"⚠️  ANP DID missing for {dst_id}; skipping outbound adapter (dev-only)")
+                            continue
                     else:
                         continue
                     

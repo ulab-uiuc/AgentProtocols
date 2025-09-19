@@ -900,10 +900,19 @@ class BaseAgent:
 
         # Find outbound adapter
         if dst_id not in self._outbound:
+            # Protocol name defense: if dst_id is a protocol name, find any adapter with that protocol
+            if dst_id.upper() in {"ANP", "A2A", "AGORA", "ACP"}:
+                for aid, adp in self._outbound.items():
+                    if getattr(adp, "protocol_name", "").upper() == dst_id.upper():
+                        adapter = adp
+                        break
+                else:
+                    raise RuntimeError(f"No {dst_id} protocol adapter found")
             # Try default if specific not found
-            if "default" not in self._outbound:
+            elif "default" not in self._outbound:
                 raise RuntimeError(f"No outbound adapter found for destination {dst_id}")
-            adapter = self._outbound["default"]
+            else:
+                adapter = self._outbound["default"]
         else:
             adapter = self._outbound[dst_id]
 
