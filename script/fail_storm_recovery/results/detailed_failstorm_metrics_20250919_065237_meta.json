@@ -1,0 +1,138 @@
+{
+  "metadata": {
+    "scenario": "fail_storm_recovery",
+    "protocol": "meta",
+    "start_time": 1758262942.7536516,
+    "end_time": 1758264757.9162638,
+    "fault_injection_time": 1758264647.328632,
+    "first_recovery_time": null,
+    "steady_state_time": 1758264653.8752725,
+    "duration_sec": 1815.1626121997833,
+    "phase_final": "post_recovery"
+  },
+  "failstorm_metrics": {
+    "recovery_ms": null,
+    "steady_state_ms": 6546.640396118164,
+    "success_rate_drop": 0.0,
+    "duplicate_work_ratio": 0.0,
+    "bytes_reconnect": 0,
+    "accuracy_analysis": {
+      "pre_fault": {
+        "total_tasks": 3095,
+        "successful_tasks": 3095,
+        "success_rate": 1.0,
+        "tasks_with_answers": 460,
+        "answer_rate": 0.14862681744749595,
+        "answer_sources": {
+          "local": 10,
+          "neighbor": 450,
+          "unknown": 0
+        }
+      },
+      "recovery": {
+        "total_tasks": 11,
+        "successful_tasks": 11,
+        "success_rate": 1.0,
+        "tasks_with_answers": 1,
+        "answer_rate": 0.09090909090909091,
+        "answer_sources": {
+          "local": 0,
+          "neighbor": 1,
+          "unknown": 0
+        }
+      },
+      "post_fault": {
+        "total_tasks": 186,
+        "successful_tasks": 186,
+        "success_rate": 1.0,
+        "tasks_with_answers": 26,
+        "answer_rate": 0.13978494623655913,
+        "answer_sources": {
+          "local": 0,
+          "neighbor": 26,
+          "unknown": 0
+        }
+      },
+      "overall": {
+        "total_tasks": 3292,
+        "successful_tasks": 3292,
+        "success_rate": 1.0,
+        "tasks_with_answers": 487,
+        "answer_rate": 0.14793438639125153,
+        "answer_sources": {
+          "local": 10,
+          "neighbor": 477,
+          "unknown": 0
+        }
+      }
+    }
+  },
+  "performance_analysis": {
+    "pre_fault_performance": {
+      "count": 214,
+      "mean": 4.327751956253408,
+      "median": 3.772581934928894,
+      "std": 1.9817699484692026,
+      "min": 1.60616135597229,
+      "max": 13.166557312011719
+    },
+    "recovery_performance": {
+      "count": 13,
+      "mean": 3.7925633650559645,
+      "median": 3.6380207538604736,
+      "std": 0.9254036857538457,
+      "min": 2.5010592937469482,
+      "max": 6.077901363372803
+    },
+    "post_fault_performance": {
+      "count": 3065,
+      "mean": 4.18222928327215,
+      "median": 3.7300868034362793,
+      "std": 1.6262388632030245,
+      "min": 1.5517685413360596,
+      "max": 16.264875888824463
+    },
+    "total_task_executions": 3292,
+    "successful_executions": 3292,
+    "network_events_count": 0,
+    "reconnection_attempts": 0,
+    "topology_snapshots": 0
+  },
+  "qa_metrics": {
+    "total_qa_tasks": 3292,
+    "successful_tasks": 3292,
+    "tasks_with_answers": 487,
+    "success_rate": 1.0,
+    "answer_found_rate": 0.14793438639125153,
+    "answer_sources": {
+      "neighbor": 477,
+      "local": 10
+    },
+    "pre_fault_answer_rate": 0.14862681744749595,
+    "post_fault_answer_rate": 0.13705583756345177,
+    "average_task_duration": 4.1901503631874535
+  },
+  "agents": {
+    "states": {},
+    "topology_snapshots_last": []
+  },
+  "counts": {
+    "task_executions": 3292,
+    "network_events": 0,
+    "reconnection_attempts": 0,
+    "topology_snapshots": 0
+  },
+  "qa_summary": {
+    "total_tasks": 3292,
+    "found_answers": 487,
+    "answer_found_rate": 0.14793438639125153,
+    "groups_tested": 424,
+    "group_range": "0-423",
+    "answer_sources": {
+      "local": 10,
+      "neighbor": 477,
+      "unknown": 0
+    },
+    "success_rate": 1.0
+  }
+}

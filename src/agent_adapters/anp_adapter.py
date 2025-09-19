@@ -10,6 +10,8 @@ from typing import Any, Dict, Optional, AsyncIterator, Callable
 import asyncio
 import json
 import logging
+# Ensure logger is defined before any early-use
+logger = logging.getLogger(__name__)
 import uuid
 import time
 from urllib.parse import urlparse
@@ -66,8 +68,6 @@ try:
 except Exception as e:
     logger.warning(f"Failed to apply global DID verification patch: {e}")
 AGENTCONNECT_AVAILABLE = True
-
-logger = logging.getLogger(__name__)
 
 
 class ANPAdapter(BaseProtocolAdapter):
@@ -530,7 +530,17 @@ class ANPAdapter(BaseProtocolAdapter):
     async def _setup_protocol_container(self) -> None:
         """Setup application protocol container for dynamic protocol loading."""
         try:
-            self.protocol_container = ProtocolContainer()
+            # If negotiation disabled, skip container cleanly to avoid noisy warnings
+            if not self.enable_protocol_negotiation:
+                logger.info("Protocol negotiation disabled; skipping protocol container init")
+                return
+            
+            # Try new signature first (protocol_dir, meta_data)
+            try:
+                self.protocol_container = ProtocolContainer(self.protocol_code_path, {})
+            except TypeError:
+                # Fallback to legacy no-arg constructor
+                self.protocol_container = ProtocolContainer()
             
             # Load any existing protocols from the protocol path
             if os.path.exists(self.protocol_code_path):

@@ -1,11 +1,11 @@
 # ACP protocol configuration for Gaia multi-agent framework
 protocol: "acp"
-mode: "debug"
+mode: "mm"
 
 # Runtime configuration
 runtime:
   task_file: "script/gaia/dataset/2023/validation/metadata.jsonl"
-  output_file: "workspaces/gaia_acp_results.json"
+  output_file: "workspaces/acp/gaia_acp_results.json"
   timeout: 300  # seconds per task
 
 # Framework configuration

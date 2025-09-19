@@ -1,10 +1,10 @@
 # Meta Protocol Configuration for GAIA Framework
 # Intelligent protocol selection and cross-protocol communication
-
+mode: "mm"
 # Runtime configuration
 runtime:
   task_file: "script/gaia/dataset/2023/validation/metadata.jsonl"
-  output_file: "workspaces/gaia_results.json"
+  output_file: "workspaces/meta/gaia_results.json"
   timeout: 300  # seconds per task
   max_tasks: 1  # Test single task only
 

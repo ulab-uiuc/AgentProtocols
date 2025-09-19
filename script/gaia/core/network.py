@@ -439,7 +439,7 @@ class MeshNetwork(ABC):
         try:
             task_id = self.config.get("task_id", "unknown") if isinstance(self.config, dict) else "unknown"
             protocol_name = (self.config.get("protocol") if isinstance(self.config, dict) else None) or "general"
-            logs_dir = GAIA_ROOT / "workspaces" / protocol_name / task_id / "logs"
+            logs_dir = GAIA_ROOT / "workspaces" / protocol_name / task_id
             logs_dir.mkdir(parents=True, exist_ok=True)
             
             # Save network memory with step-based structure

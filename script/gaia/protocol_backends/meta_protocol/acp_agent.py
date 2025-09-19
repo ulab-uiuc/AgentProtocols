@@ -88,8 +88,8 @@ class ACPExecutorWrapper:
                     # Create tool collection for this agent
                     if agent_tool == 'browser_use':
                         tools = registry.create_collection(['browser_use'], 'acp_browser')
-                    elif agent_tool == 'str_replace_editor':
-                        tools = registry.create_collection(['str_replace_editor'], 'acp_editor')
+                    elif agent_tool == 'file_operators':
+                        tools = registry.create_collection(['file_operators'], 'acp_file_ops')
                     elif agent_tool == 'python_execute':
                         tools = registry.create_collection(['python_execute'], 'acp_python')
                     else:  # Default to create_chat_completion

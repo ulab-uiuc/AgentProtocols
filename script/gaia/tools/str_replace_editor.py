@@ -195,17 +195,37 @@ class StrReplaceEditor(BaseTool):
                 )
 
     def _resolve_to_workspace(self, path: Path) -> Path:
-        """If path is relative, place it under the agent workspace directory.
-        Otherwise return as-is.
+        """If path is relative, place it under the current task workspace directory.
+        For relative paths (including ./path), resolve to current workspace without creating agent_name directories.
+        
+        Resolution order:
+        1. If absolute path -> return as-is
+        2. Try GAIA_WORKSPACE_DIR (set by runner to workspaces/<protocol>/<task_id>/)
+        3. Try GAIA_AGENT_WORKSPACE_DIR (legacy)
+        4. Fallback to current working directory
         """
         if path.is_absolute():
             return path
+        
+        # Remove leading './' if present for cleaner path handling
+        path_str = str(path)
+        if path_str.startswith('./'):
+            path = Path(path_str[2:])
+        
         try:
+            # Primary: Use GAIA_WORKSPACE_DIR set by runner (workspaces/<protocol>/<task_id>/)
+            ws = os.environ.get("GAIA_WORKSPACE_DIR")
+            if ws:
+                return (Path(ws) / path).resolve()
+            
+            # Fallback: Use GAIA_AGENT_WORKSPACE_DIR (legacy)
             ws = os.environ.get("GAIA_AGENT_WORKSPACE_DIR")
             if ws:
                 return (Path(ws) / path).resolve()
         except Exception:
             pass
+        
+        # Last resort: resolve relative to current working directory
         return path.resolve()
 
     async def view(

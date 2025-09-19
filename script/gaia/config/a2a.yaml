@@ -1,11 +1,11 @@
 # A2A protocol configuration for Gaia multi-agent framework
 protocol: "a2a"
-mode: "debug"
+mode: "mm"
 
 # Runtime configuration
 runtime:
   task_file: "script/gaia/dataset/2023/validation/metadata.jsonl"
-  output_file: "workspaces/gaia_a2a_results.json"
+  output_file: "workspaces/a2a/gaia_a2a_results.json"
   timeout: 600  # seconds per task (10 minutes for complex tasks)
   max_tasks: 1  # Test single task first
 

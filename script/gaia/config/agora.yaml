@@ -5,7 +5,7 @@ mode: "debug"
 # Runtime configuration
 runtime:
   task_file: "script/gaia/dataset/2023/validation/metadata.jsonl"
-  output_file: "workspaces/gaia_agora_results.json"
+  output_file: "workspaces/agora/gaia_agora_results.json"
   timeout: 300  # seconds per task
 
 # Framework configuration

@@ -173,15 +173,22 @@ class Core:
         if self.config["model"]["type"] == "local":
             for attempt in range(2):
                 try:
+                    # Build tools properly: accept either full tool schema or raw functions
+                    tools = []
+                    if isinstance(functions, list) and len(functions) > 0:
+                        first = functions[0]
+                        if isinstance(first, dict) and first.get("type") == "function" and "function" in first:
+                            tools = functions  # already tool schema
+                        else:
+                            # wrap raw function defs into tool schema
+                            for fn in functions:
+                                if isinstance(fn, dict) and "name" in fn:
+                                    tools.append({"type": "function", "function": fn})
+                    
                     response = self.client.chat.completions.create(
                         model=self._local_model_id,
                         messages=truncated_messages,
-                        tools=[                       
-                            {
-                                "type": "function",
-                                "function": functions[0]
-                            }
-                        ],
+                        tools=tools,
                         tool_choice="auto",
                         temperature=self.config["model"]["temperature"],
                         n=1,

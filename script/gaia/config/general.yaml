@@ -3,6 +3,9 @@
 # - 下方 llm.* 对应原 TOML 中的 [llm] / [llm.vision]
 # - 可选块（browser / search / sandbox / runflow 等）以注释形式保留，按需启用
 # - 若集成到基于 AppConfig / Config 的加载逻辑，可再做键名调整
+planner:
+  reuse_plan: false  # 是否复用已有计划
+
 llm:
   default:
     model: "gpt-4o"          # 主模型
@@ -35,8 +38,6 @@ runflow:
 protocol: "dummy"
 mode: "debug" # debug or normal 
 
-planner:
-  reuse_plan: false  # 是否复用已有计划
 # Runtime configuration
 runtime:
   task_file: "script/gaia/dataset/2023/validation/metadata.jsonl"
@@ -154,7 +155,7 @@ search:
 sandbox:
   use_sandbox: false
   image: "python:3.12-slim"
-  work_dir: "/workspace"
+  # work_dir: "/workspace"
   memory_limit: "1g"
   cpu_limit: 2.0
   timeout: 300

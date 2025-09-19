@@ -1,0 +1,43 @@
+{
+  "total_agents": 4,
+  "protocols": [
+    "anp",
+    "a2a",
+    "acp",
+    "agora"
+  ],
+  "summary": {
+    "anp": {
+      "agents": 1,
+      "total_questions": 0,
+      "avg_response_time": 0.0,
+      "total_errors": 3,
+      "total_failures": 3,
+      "total_recoveries": 0
+    },
+    "a2a": {
+      "agents": 1,
+      "total_questions": 2,
+      "avg_response_time": 0.001104593276977539,
+      "total_errors": 4,
+      "total_failures": 4,
+      "total_recoveries": 0
+    },
+    "acp": {
+      "agents": 1,
+      "total_questions": 2,
+      "avg_response_time": 0.0008776187896728516,
+      "total_errors": 0,
+      "total_failures": 0,
+      "total_recoveries": 0
+    },
+    "agora": {
+      "agents": 1,
+      "total_questions": 1,
+      "avg_response_time": 0.018091201782226562,
+      "total_errors": 1,
+      "total_failures": 1,
+      "total_recoveries": 0
+    }
+  }
+}
