@@ -52,27 +52,23 @@ except Exception as builtins_error:
 
 try:
     # Execute user code
-    import json
+    import pandas as pd
 
-    # Read the JSON file content to extract ORCID IDs
-    file_path = 'bec74516-02fc-48dc-b202-55e78d0e17cf.jsonld'
-    with open(file_path, 'r') as file:
-        data = json.load(file)
-
-    # Extract ORCID IDs from the JSON data
-    orcid_ids = []
-    if data.get('author'):
-        author_id = data['author'].get('@id')
-        if author_id:
-            orcid_ids.append(author_id)
-
-    if data.get('editor'):
-        for editor in data['editor']:
-            editor_id = editor.get('@id')
-            if editor_id:
-                orcid_ids.append(editor_id)
-
-    orcid_ids
+    # Load the Excel file
+    try:
+        df = pd.read_excel('32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx')
+    
+        # Filter for Blu-Ray only
+        df_blu_ray = df[df['Format'] == 'Blu-Ray']
+    
+        # Find the row with the oldest release year
+        oldest_blu_ray = df_blu_ray.loc[df_blu_ray['Release Year'].idxmin()]
+    
+        oldest_blu_ray_title = oldest_blu_ray['Title']
+        oldest_blu_ray_title
+    except Exception as e:
+        print(f'Error: {e}')
+        print('Attempting to handle the error gracefully...')
     
     # Get the output and restore stdout
     output = captured_output.getvalue()

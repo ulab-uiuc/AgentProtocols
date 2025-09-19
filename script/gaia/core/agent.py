@@ -260,7 +260,10 @@ class ToolCallAgent(ReActAgent):
         return "\n\n".join(results)
 
     async def execute_tool(self, command) -> str:
-        """Execute a single tool call with robust error handling"""
+        """Execute a single tool call with robust error handling and detailed logging"""
+        import time
+        start_time = time.time()
+        
         # Handle both ToolCall object and dict formats
         if hasattr(command, 'function'):
             # ToolCall object format
@@ -286,6 +289,12 @@ class ToolCallAgent(ReActAgent):
         try:
             # Parse arguments
             args = json.loads(arguments)
+            
+            # Enhanced logging: Tool call initiation
+            print(f"🔧 TOOL CALL START - Agent: {self.name}, Tool: {name}, ID: {tool_call_id}")
+            logger.info(f"🔧 TOOL CALL START - Agent: {self.name}, Tool: {name}, ID: {tool_call_id}")
+            print(f"📋 Tool Arguments: {json.dumps(args, indent=2)}")
+            logger.info(f"📋 Tool Arguments: {json.dumps(args, indent=2)}")
 
             # Inject per-agent environment for tools (workspace/task/protocol)
             try:
@@ -293,12 +302,27 @@ class ToolCallAgent(ReActAgent):
                 os.environ["GAIA_TASK_ID"] = self.task_id
                 protocol_name = (self.config.get("protocol") if isinstance(self.config, dict) else None) or "default"
                 os.environ["GAIA_PROTOCOL_NAME"] = protocol_name
-            except Exception:
-                pass
+                logger.info(f"🌍 Environment: workspace={self.ws}, task_id={self.task_id}, protocol={protocol_name}")
+            except Exception as env_error:
+                logger.warning(f"⚠️  Environment setup warning: {env_error}")
 
             # Execute the tool
-            logger.info(f"🔧 Activating tool: '{name}'...")
+            logger.info(f"⚡ Executing tool: '{name}'...")
             result = await self.available_tools.execute(name=name, tool_input=args)
+            
+            # Enhanced logging: Tool execution result
+            execution_time = time.time() - start_time
+            print(f"✅ TOOL CALL SUCCESS - Tool: {name}, Duration: {execution_time:.2f}s")
+            logger.info(f"✅ TOOL CALL SUCCESS - Tool: {name}, Duration: {execution_time:.2f}s")
+            
+            # Log result summary (truncated for readability)
+            result_str = str(result)
+            result_preview = result_str[:2000] + "..." if len(result_str) > 2000 else result_str
+            print(f"📤 Tool Result Preview: {result_preview}")
+            logger.info(f"📤 Tool Result Preview: {result_preview}")
+            
+            # Log full result for detailed analysis
+            logger.debug(f"📋 Full Tool Result: {result_str}")
 
             # Handle special tools
             await self._handle_special_tool(name=name, result=result)
@@ -307,6 +331,7 @@ class ToolCallAgent(ReActAgent):
             if hasattr(result, "base64_image") and result.base64_image:
                 # Store the base64_image for later use in tool_message
                 self._current_base64_image = result.base64_image
+                logger.info(f"🖼️  Base64 image captured from tool result")
 
             # Format result for display (standard case)
             observation = (
@@ -316,15 +341,19 @@ class ToolCallAgent(ReActAgent):
             )
 
             return observation
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as json_error:
+            execution_time = time.time() - start_time
             error_msg = f"Error parsing arguments for {name}: Invalid JSON format"
-            logger.error(
-                f"📝 Oops! The arguments for '{name}' don't make sense - invalid JSON, arguments:{command.function.arguments}"
-            )
+            logger.error(f"❌ TOOL CALL FAILED - Tool: {name}, Duration: {execution_time:.2f}s")
+            logger.error(f"� JSON Parse Error: {json_error}")
+            logger.error(f"📝 Invalid arguments: {arguments}")
             return f"Error: {error_msg}"
         except Exception as e:
+            execution_time = time.time() - start_time
             error_msg = f"⚠️ Tool '{name}' encountered a problem: {str(e)}"
-            logger.exception(error_msg)
+            logger.error(f"❌ TOOL CALL FAILED - Tool: {name}, Duration: {execution_time:.2f}s")
+            logger.error(f"💥 Exception Details: {str(e)}")
+            logger.exception(f"🔍 Full Exception Traceback for tool '{name}':")
             return f"Error: {error_msg}"
 
     async def _handle_special_tool(self, name: str, result: Any, **kwargs):

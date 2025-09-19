@@ -35,37 +35,54 @@ def resolve_dataset_file(filename):
                 return os.path.join('/dataset', f)
     return filename
 
-# Make resolve_dataset_file available globally
-__builtins__['resolve_dataset_file'] = resolve_dataset_file
+# Make resolve_dataset_file available globally (with error handling)
+try:
+    # Try different ways to make function globally available
+    if isinstance(__builtins__, dict):
+        __builtins__['resolve_dataset_file'] = resolve_dataset_file
+    elif hasattr(__builtins__, '__dict__'):
+        __builtins__.__dict__['resolve_dataset_file'] = resolve_dataset_file
+    else:
+        # __builtins__ is a module in some environments
+        setattr(__builtins__, 'resolve_dataset_file', resolve_dataset_file)
+except Exception as builtins_error:
+    # Fallback: add to globals and print warning
+    print(f"Warning: Could not add to __builtins__ ({builtins_error}), using globals fallback")
+    globals()['resolve_dataset_file'] = resolve_dataset_file
 
 try:
     # Execute user code
     from Bio.PDB import PDBParser
     import numpy as np
 
-    # Function to calculate the distance between two atoms given their coordinates
-    def calculate_distance(coord1, coord2):
-        return np.linalg.norm(coord1 - coord2)
+    # Parse the PDB file
+    def calculate_distance_between_first_two_atoms(filename):
+        parser = PDBParser(QUIET=True)
+        structure = parser.get_structure('5wb7_structure', filename)
 
-    # Load the PDB file
-    pdb_id = "5wb7"
-    parser = PDBParser(PERMISSIVE=1)
-    structure = parser.get_structure(pdb_id, f'{pdb_id}.pdb')
+        # Extract the first model
+        model = next(structure.get_models())
 
-    # Extract the first two atoms
-    atoms = list(structure.get_atoms())
+        # Extract the first two atoms
+        atom_list = list(model.get_atoms())
+        if len(atom_list) < 2:
+            raise ValueError("The file does not contain enough atoms to calculate a distance.")
 
-    # Get the coordinates of the first and second atom
-    coord1 = atoms[0].get_coord()
-    coord2 = atoms[1].get_coord()
+        first_atom = atom_list[0]
+        second_atom = atom_list[1]
+
+        # Calculate the distance between the first and second atoms
+        distance = np.linalg.norm(first_atom.coord - second_atom.coord)
+    
+        # Convert distance from angstroms to picometers and round
+        distance_in_pm = round(distance * 100, 0)
+        return distance_in_pm
+
+    # Path to the PDB file
+    pdb_file_path = '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb'
 
     # Calculate the distance
-    distance = calculate_distance(coord1, coord2)
-
-    # Round the distance to the nearest picometer (10^-3 Angstrom)
-    rounded_distance_in_picometers = round(distance * 1000)
-
-    rounded_distance_in_picometers
+    calculate_distance_between_first_two_atoms(pdb_file_path)
     
     # Get the output and restore stdout
     output = captured_output.getvalue()

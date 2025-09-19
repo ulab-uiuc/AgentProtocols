@@ -52,27 +52,66 @@ except Exception as builtins_error:
 
 try:
     # Execute user code
+    import requests
     import json
+    import sys
 
-    # Read the JSON file content to extract ORCID IDs
-    file_path = 'bec74516-02fc-48dc-b202-55e78d0e17cf.jsonld'
-    with open(file_path, 'r') as file:
-        data = json.load(file)
+    # List of ORCID IDs from JSON-LD file
+    dataset = {
+        "contributors": [
+            "0000-0003-0396-0333",
+            "0000-0002-2605-6569",
+            "0000-0001-6102-7846",
+            "0000-0002-0209-2784",
+            "0000-0002-1053-2030"
+        ]
+    }
 
-    # Extract ORCID IDs from the JSON data
-    orcid_ids = []
-    if data.get('author'):
-        author_id = data['author'].get('@id')
-        if author_id:
-            orcid_ids.append(author_id)
+    # ORCID API base URL
+    base_url = "https://pub.orcid.org/v3.0/"
 
-    if data.get('editor'):
-        for editor in data['editor']:
-            editor_id = editor.get('@id')
-            if editor_id:
-                orcid_ids.append(editor_id)
+    # Headers for ORCID API requests
+    def get_headers():
+        return {
+            'Accept': 'application/json'
+        }
 
-    orcid_ids
+    # Function to fetch works for a given ORCID ID
+    def fetch_works(orcid_id):
+        url = f"{base_url}{orcid_id}/works"
+        response = requests.get(url, headers=get_headers())
+        response.raise_for_status()
+        return response.json()
+
+    # Function to count pre-2020 works
+    def count_pre_2020_works(works):
+        count = 0
+        for group in works["group"]:
+            for work_summary in group["work-summary"]:
+                if "publication-date" in work_summary and "year" in work_summary["publication-date"]:
+                    year = int(work_summary["publication-date"]["year"]["value"])
+                    if year < 2020:
+                        count += 1
+        return count
+
+    # Fetch and analyze works for each contributor total pre-2020 works
+    pre_2020_works_counts = []
+
+    for orcid_id in dataset["contributors"]:
+        try:
+            works = fetch_works(orcid_id)
+            pre_2020_count = count_pre_2020_works(works)
+            pre_2020_works_counts.append(pre_2020_count)
+        except Exception as e:
+            print(f"Error fetching data for {orcid_id}: {e}", file=sys.stderr)
+
+    # Calculate the average number of works
+    if pre_2020_works_counts:
+        average_pre_2020_works = sum(pre_2020_works_counts) / len(pre_2020_works_counts)
+    else:
+        average_pre_2020_works = 0
+
+    average_pre_2020_works
     
     # Get the output and restore stdout
     output = captured_output.getvalue()

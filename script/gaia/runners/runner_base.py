@@ -105,37 +105,43 @@ class RunnerBase(abc.ABC):
         workspace_dir = GAIA_ROOT / 'workspaces' / self.protocol_name / task_id
         workspace_dir.mkdir(parents=True, exist_ok=True)
         
-        # 复制任务所需文件到工作区
+        # 复制任务所需文件到工作区并设置环境变量
         file_name = task.get("file_name")
-        if file_name and isinstance(file_name, str) and file_name.strip():
-            # 解析源文件路径 (相对于数据集目录)
-            dataset_dir = Path(self._task_file_path).parent
-            source_file = dataset_dir / file_name
-            
-            if source_file.exists():
-                # 保持文件名，复制到工作区
-                dest_file = workspace_dir / file_name
-                dest_file.parent.mkdir(parents=True, exist_ok=True)  # 创建子目录如果需要
-                
-                try:
-                    shutil.copy2(source_file, dest_file)
-                    print(f"📄 Copied task file: {file_name} -> {workspace_dir}")
-                except Exception as e:
-                    print(f"⚠️ Failed to copy task file {file_name}: {e}")
-            else:
-                print(f"⚠️ Task file not found: {source_file}")
+        copied_files = []
         
-        # 复制数据集通用文件（如果存在）
-        dataset_dir = Path(self._task_file_path).parent
-        common_files = ['multimodal.jsonl', 'metadata.jsonl']
-        for common_file in common_files:
-            source = dataset_dir / common_file
-            if source.exists():
-                dest = workspace_dir / common_file
-                try:
-                    shutil.copy2(source, dest)
-                except Exception as e:
-                    print(f"⚠️ Failed to copy {common_file}: {e}")
+        if file_name and isinstance(file_name, str) and file_name.strip():
+            # 排除不需要复制的文件
+            if file_name not in ['multimodal.jsonl', 'metadata.jsonl']:
+                # 解析源文件路径 (相对于数据集目录)
+                dataset_dir = Path(self._task_file_path).parent
+                source_file = dataset_dir / file_name
+                
+                if source_file.exists():
+                    # 保持文件名，复制到工作区
+                    dest_file = workspace_dir / file_name
+                    dest_file.parent.mkdir(parents=True, exist_ok=True)  # 创建子目录如果需要
+                    
+                    try:
+                        shutil.copy2(source_file, dest_file)
+                        copied_files.append(file_name)
+                        print(f"📄 Copied task file: {file_name} -> {workspace_dir}")
+                    except Exception as e:
+                        print(f"⚠️ Failed to copy task file {file_name}: {e}")
+                else:
+                    print(f"⚠️ Task file not found: {source_file}")
+            else:
+                print(f"📋 Skipping system file: {file_name} (not copied to workspace)")
+        
+        # 设置文件名环境变量，供agent prompt使用
+        if copied_files:
+            os.environ["GAIA_TASK_FILE_NAMES"] = ",".join(copied_files)
+            os.environ["GAIA_PRIMARY_FILE_NAME"] = copied_files[0]  # 主要文件名
+        else:
+            os.environ.pop("GAIA_TASK_FILE_NAMES", None)
+            os.environ.pop("GAIA_PRIMARY_FILE_NAME", None)
+        
+        # 不再复制数据集通用文件（multimodal.jsonl, metadata.jsonl）
+        # 这些文件保留在原始数据集目录中，通过环境变量访问
         
         return workspace_dir
 

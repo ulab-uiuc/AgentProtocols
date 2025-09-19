@@ -52,27 +52,11 @@ except Exception as builtins_error:
 
 try:
     # Execute user code
-    import json
+    # Given that a p-value of 0.04 indicates a 4% chance that the null hypothesis is incorrectly rejected,
+    # the false positive rate for a p-value of 0.04 is essentially 0.04.
 
-    # Read the JSON file content to extract ORCID IDs
-    file_path = 'bec74516-02fc-48dc-b202-55e78d0e17cf.jsonld'
-    with open(file_path, 'r') as file:
-        data = json.load(file)
-
-    # Extract ORCID IDs from the JSON data
-    orcid_ids = []
-    if data.get('author'):
-        author_id = data['author'].get('@id')
-        if author_id:
-            orcid_ids.append(author_id)
-
-    if data.get('editor'):
-        for editor in data['editor']:
-            editor_id = editor.get('@id')
-            if editor_id:
-                orcid_ids.append(editor_id)
-
-    orcid_ids
+    false_positive_rate = 0.04
+    false_positive_rate
     
     # Get the output and restore stdout
     output = captured_output.getvalue()

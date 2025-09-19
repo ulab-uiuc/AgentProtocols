@@ -1,6 +1,6 @@
 # Meta Protocol Configuration for GAIA Framework
 # Intelligent protocol selection and cross-protocol communication
-
+mode: "mm"
 # Runtime configuration
 runtime:
   task_file: "script/gaia/dataset/2023/validation/metadata.jsonl"
