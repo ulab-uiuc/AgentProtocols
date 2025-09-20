@@ -169,12 +169,25 @@ async def main():
     try:
         # 1) 启动RG
         import subprocess
-        procs.append(subprocess.Popen([
+        # Debug: capture stderr to see what's going wrong
+        proc = subprocess.Popen([
             sys.executable, "-c",
-            "from script.safety_tech.core.registration_gateway import RegistrationGateway;\n"
+            f"import sys; sys.path.insert(0, '{PROJECT_ROOT}'); "
+            "from script.safety_tech.core.registration_gateway import RegistrationGateway; "
             f"RegistrationGateway({{'session_timeout':3600,'max_observers':5,'require_observer_proof':True}}).run(host='127.0.0.1', port={rg_port})"
-        ], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT))
-        await _wait_http_ok(f"http://127.0.0.1:{rg_port}/health", 15.0)
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        procs.append(proc)
+        print(f"Started RG process with PID: {proc.pid}")
+        try:
+            await _wait_http_ok(f"http://127.0.0.1:{rg_port}/health", 15.0)
+        except RuntimeError as e:
+            # Check if process is still running and get error output
+            if proc.poll() is not None:
+                stdout, stderr = proc.communicate()
+                print(f"RG process exited with code: {proc.returncode}")
+                print(f"stdout: {stdout}")
+                print(f"stderr: {stderr}")
+            raise e
 
         # 2) 启动Coordinator
         coordinator = RGCoordinator({

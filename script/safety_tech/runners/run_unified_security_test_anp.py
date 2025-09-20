@@ -27,6 +27,10 @@ import time
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
+HERE = Path(__file__).resolve().parent
+SAFETY_TECH = HERE.parent
+PROJECT_ROOT = SAFETY_TECH.parent.parent
+
 import httpx
 import subprocess
 import logging
@@ -220,12 +224,23 @@ async def main():
     procs: List[subprocess.Popen] = []
     try:
         # 1) 启动RG
-        procs.append(_spawn([
+        proc = subprocess.Popen([
             sys.executable, "-c",
-            "from script.safety_tech.core.registration_gateway import RegistrationGateway;\n"
+            f"import sys; sys.path.insert(0, '{PROJECT_ROOT}'); "
+            "from script.safety_tech.core.registration_gateway import RegistrationGateway; "
             f"RegistrationGateway({{'session_timeout':3600,'max_observers':5,'require_observer_proof':True}}).run(host='127.0.0.1', port={rg_port})"
-        ]))
-        await _wait_http_ok(f"http://127.0.0.1:{rg_port}/health", 12.0)
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        procs.append(proc)
+        print(f"Started ANP RG process with PID: {proc.pid}")
+        try:
+            await _wait_http_ok(f"http://127.0.0.1:{rg_port}/health", 12.0)
+        except RuntimeError as e:
+            if proc.poll() is not None:
+                stdout, stderr = proc.communicate()
+                print(f"ANP RG process exited with code: {proc.returncode}")
+                print(f"stdout: {stdout}")
+                print(f"stderr: {stderr}")
+            raise e
 
         # 2) 启动Coordinator（本进程）
         coordinator = RGCoordinator({

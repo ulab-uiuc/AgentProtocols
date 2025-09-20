@@ -23,6 +23,7 @@ import subprocess
 
 HERE = Path(__file__).resolve().parent
 SAFETY_TECH = HERE.parent
+PROJECT_ROOT = SAFETY_TECH.parent.parent
 sys.path.insert(0, str(SAFETY_TECH))
 
 # 直接在本进程内启动协调器与Observer，避免子进程 -c 引起的不确定性
@@ -219,12 +220,23 @@ async def main():
     procs: List[subprocess.Popen] = []
     try:
         # 1) 启动 RG
-        procs.append(_spawn([
+        proc = subprocess.Popen([
             sys.executable, "-c",
-            "from script.safety_tech.core.registration_gateway import RegistrationGateway;\n"
+            f"import sys; sys.path.insert(0, '{PROJECT_ROOT}'); "
+            "from script.safety_tech.core.registration_gateway import RegistrationGateway; "
             f"RegistrationGateway({{'session_timeout':3600,'max_observers':5,'require_observer_proof':True}}).run(host='127.0.0.1', port={rg_port})"
-        ]))
-        await _wait_http_ok(f"http://127.0.0.1:{rg_port}/health", 12.0)
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        procs.append(proc)
+        print(f"Started ACP RG process with PID: {proc.pid}")
+        try:
+            await _wait_http_ok(f"http://127.0.0.1:{rg_port}/health", 12.0)
+        except RuntimeError as e:
+            if proc.poll() is not None:
+                stdout, stderr = proc.communicate()
+                print(f"ACP RG process exited with code: {proc.returncode}")
+                print(f"stdout: {stdout}")
+                print(f"stderr: {stderr}")
+            raise e
 
         # 2) 启动 协调器（同进程）
         coordinator = RGCoordinator({
@@ -236,8 +248,10 @@ async def main():
         await _wait_http_ok(f"http://127.0.0.1:{coord_port}/health", 20.0)
 
         # 3) 启动 原生ACP A/B 服务
-        procs.append(_spawn([sys.executable, "-m", "uvicorn", "script.safety_tech.dev.acp_server_a:app", "--host", "127.0.0.1", "--port", str(a_port)]))
-        procs.append(_spawn([sys.executable, "-m", "uvicorn", "script.safety_tech.dev.acp_server_b:app", "--host", "127.0.0.1", "--port", str(b_port)]))
+        procs.append(_spawn([sys.executable, "-m", "uvicorn", "dev.acp_server_a:app", "--host", "127.0.0.1", "--port", str(a_port)], 
+                           env={"PYTHONPATH": str(SAFETY_TECH)}))
+        procs.append(_spawn([sys.executable, "-m", "uvicorn", "dev.acp_server_b:app", "--host", "127.0.0.1", "--port", str(b_port)], 
+                           env={"PYTHONPATH": str(SAFETY_TECH)}))
         await _wait_http_ok(f"http://127.0.0.1:{a_port}/agents", 12.0)
         await _wait_http_ok(f"http://127.0.0.1:{b_port}/agents", 12.0)
 
