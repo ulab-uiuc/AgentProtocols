@@ -127,7 +127,7 @@ class RGCoordinator:
         # 启动HTTP服务器
         import threading
         def run_server():
-            uvicorn.run(self.app, host="127.0.0.1", port=self.port, log_level="info")
+            uvicorn.run(self.app, host="127.0.0.1", port=self.port, log_level="warning", access_log=False)
         
         server_thread = threading.Thread(target=run_server, daemon=True)
         server_thread.start()

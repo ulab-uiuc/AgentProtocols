@@ -90,7 +90,7 @@ class RGDoctorAAgent(DoctorAAgent):
                     "type": "llm_conversation"
                 })
                 
-                logger.info(f"[{self.agent_id}] Processed message from {sender_id}, generated {len(response)} chars response")
+                logger.debug(f"[{self.agent_id}] Processed message from {sender_id}, generated {len(response)} chars response")
                 
                 return {
                     "status": "processed",
@@ -185,7 +185,7 @@ class RGDoctorAAgent(DoctorAAgent):
     
     def run_server(self):
         """运行FastAPI服务器"""
-        uvicorn.run(self.app, host="127.0.0.1", port=self.port, log_level="info")
+        uvicorn.run(self.app, host="127.0.0.1", port=self.port, log_level="warning", access_log=False)
 
 
 class RGDoctorBAgent(DoctorBAgent):
@@ -241,7 +241,7 @@ class RGDoctorBAgent(DoctorBAgent):
                     "type": "llm_conversation"
                 })
                 
-                logger.info(f"[{self.agent_id}] Processed message from {sender_id}, generated {len(response)} chars response")
+                logger.debug(f"[{self.agent_id}] Processed message from {sender_id}, generated {len(response)} chars response")
                 
                 # 自动回复给发送者
                 if sender_id != self.agent_id:
@@ -348,7 +348,7 @@ class RGDoctorBAgent(DoctorBAgent):
     
     def run_server(self):
         """运行FastAPI服务器"""
-        uvicorn.run(self.app, host="127.0.0.1", port=self.port, log_level="info")
+        uvicorn.run(self.app, host="127.0.0.1", port=self.port, log_level="warning", access_log=False)
 
 
 async def create_and_start_doctor_agent(agent_class, agent_id: str, config: Dict[str, Any], port: int):

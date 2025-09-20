@@ -45,6 +45,11 @@ class AgoraRealLLMTest:
     def __init__(self, config_path: str):
         self.config_path = config_path
         self.config = self._load_config()
+        # 降低第三方日志噪声
+        try:
+            logging.getLogger("httpx").setLevel(logging.WARNING)
+        except Exception:
+            pass
         
         # 组件实例
         self.rg: Optional[RegistrationGateway] = None
