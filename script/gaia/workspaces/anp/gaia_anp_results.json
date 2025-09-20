@@ -6,73 +6,147 @@
     "error_tasks": 3,
     "success_rate": 0.0,
     "timeout_per_task": 300,
-    "execution_timestamp": 1758353858.6168733,
-    "avg_quality_score": 2.3333333333333335,
-    "total_execution_time": 136.58937549591064
+    "execution_timestamp": 1758366351.0570598,
+    "avg_quality_score": 2.6666666666666665,
+    "total_execution_time": 79.48867321014404,
+    "total_toolcall_time": 23.1542,
+    "total_execution_time_minus_toolcalls": 56.334473
   },
   "results": [
     {
       "task_id": "32102e3e-d12a-4209-9163-7b3a104efe5d",
       "question": "The attached spreadsheet shows the inventory for a movie and video game rental store in Seattle, Washington. What is the title of the oldest Blu-Ray recorded in this spreadsheet? Return it as appearing in the spreadsheet.",
       "ground_truth": "Time-Parking 2: Parallel Universe",
-      "predicted_answer": "The task was to identify the title of the oldest Blu-Ray from a spreadsheet containing the inventory of a movie and video game rental store in Seattle. Initially, there was an error due to the absence of the 'pandas' library, which was needed to process the spreadsheet. After successfully installing the necessary packages, an error related to the spreadsheet format was encountered. The task of identifying the oldest Blu-Ray title from the spreadsheet remains incomplete due to these technical issues.",
-      "final_answer_extracted": "The task was to identify the title of the oldest Blu-Ray from a spreadsheet containing the inventory of a movie and video game rental store in Seattle. Initially, there was an error due to the absence of the 'pandas' library, which was needed to process the spreadsheet. After successfully installing the necessary packages, an error related to the spreadsheet format was encountered. The task of identifying the oldest Blu-Ray title from the spreadsheet remains incomplete due to these technical issues.",
-      "execution_time": 30.219249963760376,
+      "predicted_answer": "The task was to identify the title of the oldest Blu-Ray from a spreadsheet containing the inventory of a movie and video game rental store in Seattle. Initially, there was an issue with missing Python packages required to process the spreadsheet. After successfully installing the necessary packages, an error related to the spreadsheet format was encountered, preventing further analysis. As a result, the task of identifying the oldest Blu-Ray title could not be completed.",
+      "final_answer_extracted": "The task was to identify the title of the oldest Blu-Ray from a spreadsheet containing the inventory of a movie and video game rental store in Seattle. Initially, there was an issue with missing Python packages required to process the spreadsheet. After successfully installing the necessary packages, an error related to the spreadsheet format was encountered, preventing further analysis. As a result, the task of identifying the oldest Blu-Ray title could not be completed.",
+      "execution_time": 19.427802324295044,
       "status": "failed",
       "level": 2,
       "enhanced_llm_judge": {
         "result": "incorrect",
         "is_correct": false,
         "quality_score": 2,
-        "reasoning": "The extracted final answer is incorrect as it does not provide the title of the oldest Blu-Ray, which is 'Time-Parking 2: Parallel Universe'. Instead, it describes the process and issues encountered, without reaching a solution. The process quality is poor because the AI failed to overcome technical issues and did not make meaningful progress towards solving the task. The AI encountered errors with the 'pandas' library and spreadsheet format, and it did not demonstrate a clear, logical approach to resolving these issues. The process was fundamentally flawed as it did not result in any relevant output or partial solution.",
+        "reasoning": "The extracted final answer is incorrect as it does not provide the title of the oldest Blu-Ray, which is 'Time-Parking 2: Parallel Universe'. Instead, it describes the process and issues encountered without reaching a solution. The process quality is poor because the AI system failed to overcome technical issues and did not make meaningful progress toward solving the task. The agent encountered errors related to missing packages and spreadsheet format but did not resolve these issues to extract the required information. Therefore, the process was fundamentally flawed, leading to an inability to provide the correct answer.",
         "answer_quality": "poor",
         "final_answer_present": false,
-        "judge_execution_time": 3.5045876502990723,
+        "judge_execution_time": 3.476574420928955,
         "judge_method": "llm",
         "error_message": null
-      }
+      },
+      "task_toolcall_time": 12.527245,
+      "task_toolcall_count": 2,
+      "agent_tool_stats": [
+        {
+          "agent_id": 0,
+          "agent_name": "SpreadsheetAnalyzer",
+          "toolcall_total": 1.086222,
+          "toolcall_count": 1
+        },
+        {
+          "agent_id": 1,
+          "agent_name": "FinalAnswerSynthesizer",
+          "toolcall_total": 11.441023,
+          "toolcall_count": 1
+        }
+      ]
     },
     {
       "task_id": "7dd30055-0198-452e-8c25-f73dbe27dcb8",
       "question": "Using the Biopython library in Python, parse the PDB file of the protein identified by the PDB ID 5wb7 from the RCSB Protein Data Bank. Calculate the distance between the first and second atoms as they are listed in the PDB file. Report the answer in Angstroms, rounded to the nearest picometer.",
       "ground_truth": "1.456",
-      "predicted_answer": "The task was to use the Biopython library in Python to parse the PDB file of the protein with PDB ID 5wb7 from the RCSB Protein Data Bank and calculate the distance between the first and second atoms listed in the file. However, during the process, there were repeated errors related to a missing 'pandas' module, which was not relevant to the task. Despite successful installation of Biopython and numpy, the task was not completed due to these errors, and the distance calculation was not performed.",
-      "final_answer_extracted": "The task was to use the Biopython library in Python to parse the PDB file of the protein with PDB ID 5wb7 from the RCSB Protein Data Bank and calculate the distance between the first and second atoms listed in the file. However, during the process, there were repeated errors related to a missing 'pandas' module, which was not relevant to the task. Despite successful installation of Biopython and numpy, the task was not completed due to these errors, and the distance calculation was not performed.",
-      "execution_time": 49.88485026359558,
+      "predicted_answer": "The task was to use the Biopython library in Python to parse the PDB file for the protein with PDB ID 5wb7 from the RCSB Protein Data Bank and calculate the distance between the first and second atoms listed in the file. Despite some initial confusion with unnecessary module imports, the task was successfully completed using Biopython. The distance was calculated and reported in Angstroms, then converted and rounded to the nearest picometer. The final calculated distance between the first and second atoms was 153 picometers.",
+      "final_answer_extracted": "The task was to use the Biopython library in Python to parse the PDB file for the protein with PDB ID 5wb7 from the RCSB Protein Data Bank and calculate the distance between the first and second atoms listed in the file. Despite some initial confusion with unnecessary module imports, the task was successfully completed using Biopython. The distance was calculated and reported in Angstroms, then converted and rounded to the nearest picometer. The final calculated distance between the first and second atoms was 153 picometers.",
+      "execution_time": 28.41013216972351,
       "status": "failed",
       "level": 2,
       "enhanced_llm_judge": {
         "result": "incorrect",
         "is_correct": false,
-        "quality_score": 2,
-        "reasoning": "The extracted final answer is incorrect as it does not provide a numerical distance between the first and second atoms, which is the expected output. Instead, it describes an error encountered during the process. The process quality is poor because the agent failed to complete the task due to errors related to a missing 'pandas' module, which was not relevant to the task. This indicates a significant misunderstanding or misconfiguration in the environment setup. The agent did not demonstrate a clear, logical progression towards solving the problem, as it was unable to overcome the error and proceed with the distance calculation. Therefore, the quality score is 2, reflecting a fundamentally flawed approach.",
-        "answer_quality": "poor",
-        "final_answer_present": false,
-        "judge_execution_time": 5.952342987060547,
+        "quality_score": 3,
+        "reasoning": "The extracted final answer states that the distance between the first and second atoms was calculated as 153 picometers, which is incorrect when compared to the ground truth answer of 1.456 Angstroms (or 145.6 picometers). The process trace indicates that the task was completed using Biopython, but there was some initial confusion with unnecessary module imports. Despite this, the agent successfully parsed the PDB file and calculated the distance, but the final conversion to picometers was incorrect. The process was logical and demonstrated a correct understanding of the problem, but the error occurred in the final calculation step, which affected the correctness of the answer.",
+        "answer_quality": "fair",
+        "final_answer_present": true,
+        "judge_execution_time": 2.913675546646118,
         "judge_method": "llm",
         "error_message": null
-      }
+      },
+      "task_toolcall_time": 9.018464,
+      "task_toolcall_count": 3,
+      "agent_tool_stats": [
+        {
+          "agent_id": 0,
+          "agent_name": "PDBFileParser",
+          "toolcall_total": 7.944562,
+          "toolcall_count": 1
+        },
+        {
+          "agent_id": 1,
+          "agent_name": "DistanceCalculator",
+          "toolcall_total": 1.073894,
+          "toolcall_count": 1
+        },
+        {
+          "agent_id": 2,
+          "agent_name": "ResultFormatter",
+          "toolcall_total": 8e-06,
+          "toolcall_count": 1
+        }
+      ]
     },
     {
       "task_id": "bec74516-02fc-48dc-b202-55e78d0e17cf",
       "question": "What is the average number of pre-2020 works on the open researcher and contributor identification pages of the people whose identification is in this file?",
       "ground_truth": "26.4",
-      "predicted_answer": "The task was to determine the average number of pre-2020 works listed on the ORCID pages of individuals identified in a provided file. The file contained ORCID IDs for several researchers. Attempts to access these ORCID pages to extract the necessary data were unsuccessful due to limitations in accessing ORCID content in a headless server environment and restrictions on the ORCID website itself. Consequently, the specific number of pre-2020 works could not be retrieved, and the average could not be calculated. Further investigation or alternative methods of accessing ORCID data would be needed to complete the task.",
-      "final_answer_extracted": "The task was to determine the average number of pre-2020 works listed on the ORCID pages of individuals identified in a provided file. The file contained ORCID IDs for several researchers. Attempts to access these ORCID pages to extract the necessary data were unsuccessful due to limitations in accessing ORCID content in a headless server environment and restrictions on the ORCID website itself. Consequently, the specific number of pre-2020 works could not be retrieved, and the average could not be calculated. Further investigation or alternative methods of accessing ORCID data would be needed to complete the task.",
-      "execution_time": 41.57461333274841,
+      "predicted_answer": "The task was to determine the average number of pre-2020 works on the ORCID pages of individuals listed in a provided JSON-LD file. The file contained ORCID IDs for several researchers. Attempts were made to access these ORCID pages to gather the necessary data, but the process was hindered by technical issues, such as the requirement for JavaScript and errors in headless mode navigation. Consequently, the task could not be completed as the ORCID pages could not be accessed to extract the needed information.",
+      "final_answer_extracted": "The task was to determine the average number of pre-2020 works on the ORCID pages of individuals listed in a provided JSON-LD file. The file contained ORCID IDs for several researchers. Attempts were made to access these ORCID pages to gather the necessary data, but the process was hindered by technical issues, such as the requirement for JavaScript and errors in headless mode navigation. Consequently, the task could not be completed as the ORCID pages could not be accessed to extract the needed information.",
+      "execution_time": 21.5403254032135,
       "status": "failed",
       "level": 3,
       "enhanced_llm_judge": {
         "result": "incorrect",
         "is_correct": false,
         "quality_score": 3,
-        "reasoning": "The extracted final answer is incorrect as it does not provide the ground truth answer of 26.4. Instead, it explains the inability to access the necessary data to calculate the average. However, the process quality is fair. The AI system correctly identified the task and attempted to access the ORCID pages to gather the required data. The failure was due to external limitations (access restrictions), not a misunderstanding of the task. The process was logical and clear, demonstrating a correct understanding of the problem and making reasonable attempts to solve it. The failure occurred due to external constraints, not a flaw in the AI's methodology.",
+        "reasoning": "The extracted final answer is incorrect as it does not provide a numerical value and instead explains the inability to complete the task due to technical issues. The ground truth answer is 26.4, which is not provided in the AI's response. However, the process quality is fair. The AI correctly identified the task, attempted to access the ORCID pages, and encountered technical issues that prevented completion. The process was logical and demonstrated an understanding of the problem, but it was ultimately unsuccessful due to external constraints. The AI did not make any illogical steps or misunderstand the task, but it failed to reach a solution due to technical limitations.",
         "answer_quality": "fair",
         "final_answer_present": false,
-        "judge_execution_time": 4.931816816329956,
+        "judge_execution_time": 3.284729242324829,
         "judge_method": "llm",
         "error_message": null
-      }
+      },
+      "task_toolcall_time": 1.608491,
+      "task_toolcall_count": 15,
+      "agent_tool_stats": [
+        {
+          "agent_id": 0,
+          "agent_name": "FileProcessor",
+          "toolcall_total": 0.000266,
+          "toolcall_count": 1
+        },
+        {
+          "agent_id": 1,
+          "agent_name": "ORCIDDataFetcher",
+          "toolcall_total": 0.681779,
+          "toolcall_count": 5
+        },
+        {
+          "agent_id": 2,
+          "agent_name": "DataAnalyzer",
+          "toolcall_total": 2.6e-05,
+          "toolcall_count": 1
+        },
+        {
+          "agent_id": 3,
+          "agent_name": "AverageCalculator",
+          "toolcall_total": 0.529421,
+          "toolcall_count": 5
+        },
+        {
+          "agent_id": 4,
+          "agent_name": "FinalSynthesizer",
+          "toolcall_total": 0.396999,
+          "toolcall_count": 3
+        }
+      ]
     }
   ],
   "failed_tasks": [
@@ -80,64 +154,136 @@
       "task_id": "32102e3e-d12a-4209-9163-7b3a104efe5d",
       "question": "The attached spreadsheet shows the inventory for a movie and video game rental store in Seattle, Washington. What is the title of the oldest Blu-Ray recorded in this spreadsheet? Return it as appearing in the spreadsheet.",
       "ground_truth": "Time-Parking 2: Parallel Universe",
-      "predicted_answer": "The task was to identify the title of the oldest Blu-Ray from a spreadsheet containing the inventory of a movie and video game rental store in Seattle. Initially, there was an error due to the absence of the 'pandas' library, which was needed to process the spreadsheet. After successfully installing the necessary packages, an error related to the spreadsheet format was encountered. The task of identifying the oldest Blu-Ray title from the spreadsheet remains incomplete due to these technical issues.",
-      "final_answer_extracted": "The task was to identify the title of the oldest Blu-Ray from a spreadsheet containing the inventory of a movie and video game rental store in Seattle. Initially, there was an error due to the absence of the 'pandas' library, which was needed to process the spreadsheet. After successfully installing the necessary packages, an error related to the spreadsheet format was encountered. The task of identifying the oldest Blu-Ray title from the spreadsheet remains incomplete due to these technical issues.",
-      "execution_time": 30.219249963760376,
+      "predicted_answer": "The task was to identify the title of the oldest Blu-Ray from a spreadsheet containing the inventory of a movie and video game rental store in Seattle. Initially, there was an issue with missing Python packages required to process the spreadsheet. After successfully installing the necessary packages, an error related to the spreadsheet format was encountered, preventing further analysis. As a result, the task of identifying the oldest Blu-Ray title could not be completed.",
+      "final_answer_extracted": "The task was to identify the title of the oldest Blu-Ray from a spreadsheet containing the inventory of a movie and video game rental store in Seattle. Initially, there was an issue with missing Python packages required to process the spreadsheet. After successfully installing the necessary packages, an error related to the spreadsheet format was encountered, preventing further analysis. As a result, the task of identifying the oldest Blu-Ray title could not be completed.",
+      "execution_time": 19.427802324295044,
       "status": "failed",
       "level": 2,
       "enhanced_llm_judge": {
         "result": "incorrect",
         "is_correct": false,
         "quality_score": 2,
-        "reasoning": "The extracted final answer is incorrect as it does not provide the title of the oldest Blu-Ray, which is 'Time-Parking 2: Parallel Universe'. Instead, it describes the process and issues encountered, without reaching a solution. The process quality is poor because the AI failed to overcome technical issues and did not make meaningful progress towards solving the task. The AI encountered errors with the 'pandas' library and spreadsheet format, and it did not demonstrate a clear, logical approach to resolving these issues. The process was fundamentally flawed as it did not result in any relevant output or partial solution.",
+        "reasoning": "The extracted final answer is incorrect as it does not provide the title of the oldest Blu-Ray, which is 'Time-Parking 2: Parallel Universe'. Instead, it describes the process and issues encountered without reaching a solution. The process quality is poor because the AI system failed to overcome technical issues and did not make meaningful progress toward solving the task. The agent encountered errors related to missing packages and spreadsheet format but did not resolve these issues to extract the required information. Therefore, the process was fundamentally flawed, leading to an inability to provide the correct answer.",
         "answer_quality": "poor",
         "final_answer_present": false,
-        "judge_execution_time": 3.5045876502990723,
+        "judge_execution_time": 3.476574420928955,
         "judge_method": "llm",
         "error_message": null
-      }
+      },
+      "task_toolcall_time": 12.527245,
+      "task_toolcall_count": 2,
+      "agent_tool_stats": [
+        {
+          "agent_id": 0,
+          "agent_name": "SpreadsheetAnalyzer",
+          "toolcall_total": 1.086222,
+          "toolcall_count": 1
+        },
+        {
+          "agent_id": 1,
+          "agent_name": "FinalAnswerSynthesizer",
+          "toolcall_total": 11.441023,
+          "toolcall_count": 1
+        }
+      ]
     },
     {
       "task_id": "7dd30055-0198-452e-8c25-f73dbe27dcb8",
       "question": "Using the Biopython library in Python, parse the PDB file of the protein identified by the PDB ID 5wb7 from the RCSB Protein Data Bank. Calculate the distance between the first and second atoms as they are listed in the PDB file. Report the answer in Angstroms, rounded to the nearest picometer.",
       "ground_truth": "1.456",
-      "predicted_answer": "The task was to use the Biopython library in Python to parse the PDB file of the protein with PDB ID 5wb7 from the RCSB Protein Data Bank and calculate the distance between the first and second atoms listed in the file. However, during the process, there were repeated errors related to a missing 'pandas' module, which was not relevant to the task. Despite successful installation of Biopython and numpy, the task was not completed due to these errors, and the distance calculation was not performed.",
-      "final_answer_extracted": "The task was to use the Biopython library in Python to parse the PDB file of the protein with PDB ID 5wb7 from the RCSB Protein Data Bank and calculate the distance between the first and second atoms listed in the file. However, during the process, there were repeated errors related to a missing 'pandas' module, which was not relevant to the task. Despite successful installation of Biopython and numpy, the task was not completed due to these errors, and the distance calculation was not performed.",
-      "execution_time": 49.88485026359558,
+      "predicted_answer": "The task was to use the Biopython library in Python to parse the PDB file for the protein with PDB ID 5wb7 from the RCSB Protein Data Bank and calculate the distance between the first and second atoms listed in the file. Despite some initial confusion with unnecessary module imports, the task was successfully completed using Biopython. The distance was calculated and reported in Angstroms, then converted and rounded to the nearest picometer. The final calculated distance between the first and second atoms was 153 picometers.",
+      "final_answer_extracted": "The task was to use the Biopython library in Python to parse the PDB file for the protein with PDB ID 5wb7 from the RCSB Protein Data Bank and calculate the distance between the first and second atoms listed in the file. Despite some initial confusion with unnecessary module imports, the task was successfully completed using Biopython. The distance was calculated and reported in Angstroms, then converted and rounded to the nearest picometer. The final calculated distance between the first and second atoms was 153 picometers.",
+      "execution_time": 28.41013216972351,
       "status": "failed",
       "level": 2,
       "enhanced_llm_judge": {
         "result": "incorrect",
         "is_correct": false,
-        "quality_score": 2,
-        "reasoning": "The extracted final answer is incorrect as it does not provide a numerical distance between the first and second atoms, which is the expected output. Instead, it describes an error encountered during the process. The process quality is poor because the agent failed to complete the task due to errors related to a missing 'pandas' module, which was not relevant to the task. This indicates a significant misunderstanding or misconfiguration in the environment setup. The agent did not demonstrate a clear, logical progression towards solving the problem, as it was unable to overcome the error and proceed with the distance calculation. Therefore, the quality score is 2, reflecting a fundamentally flawed approach.",
-        "answer_quality": "poor",
-        "final_answer_present": false,
-        "judge_execution_time": 5.952342987060547,
+        "quality_score": 3,
+        "reasoning": "The extracted final answer states that the distance between the first and second atoms was calculated as 153 picometers, which is incorrect when compared to the ground truth answer of 1.456 Angstroms (or 145.6 picometers). The process trace indicates that the task was completed using Biopython, but there was some initial confusion with unnecessary module imports. Despite this, the agent successfully parsed the PDB file and calculated the distance, but the final conversion to picometers was incorrect. The process was logical and demonstrated a correct understanding of the problem, but the error occurred in the final calculation step, which affected the correctness of the answer.",
+        "answer_quality": "fair",
+        "final_answer_present": true,
+        "judge_execution_time": 2.913675546646118,
         "judge_method": "llm",
         "error_message": null
-      }
+      },
+      "task_toolcall_time": 9.018464,
+      "task_toolcall_count": 3,
+      "agent_tool_stats": [
+        {
+          "agent_id": 0,
+          "agent_name": "PDBFileParser",
+          "toolcall_total": 7.944562,
+          "toolcall_count": 1
+        },
+        {
+          "agent_id": 1,
+          "agent_name": "DistanceCalculator",
+          "toolcall_total": 1.073894,
+          "toolcall_count": 1
+        },
+        {
+          "agent_id": 2,
+          "agent_name": "ResultFormatter",
+          "toolcall_total": 8e-06,
+          "toolcall_count": 1
+        }
+      ]
     },
     {
       "task_id": "bec74516-02fc-48dc-b202-55e78d0e17cf",
       "question": "What is the average number of pre-2020 works on the open researcher and contributor identification pages of the people whose identification is in this file?",
       "ground_truth": "26.4",
-      "predicted_answer": "The task was to determine the average number of pre-2020 works listed on the ORCID pages of individuals identified in a provided file. The file contained ORCID IDs for several researchers. Attempts to access these ORCID pages to extract the necessary data were unsuccessful due to limitations in accessing ORCID content in a headless server environment and restrictions on the ORCID website itself. Consequently, the specific number of pre-2020 works could not be retrieved, and the average could not be calculated. Further investigation or alternative methods of accessing ORCID data would be needed to complete the task.",
-      "final_answer_extracted": "The task was to determine the average number of pre-2020 works listed on the ORCID pages of individuals identified in a provided file. The file contained ORCID IDs for several researchers. Attempts to access these ORCID pages to extract the necessary data were unsuccessful due to limitations in accessing ORCID content in a headless server environment and restrictions on the ORCID website itself. Consequently, the specific number of pre-2020 works could not be retrieved, and the average could not be calculated. Further investigation or alternative methods of accessing ORCID data would be needed to complete the task.",
-      "execution_time": 41.57461333274841,
+      "predicted_answer": "The task was to determine the average number of pre-2020 works on the ORCID pages of individuals listed in a provided JSON-LD file. The file contained ORCID IDs for several researchers. Attempts were made to access these ORCID pages to gather the necessary data, but the process was hindered by technical issues, such as the requirement for JavaScript and errors in headless mode navigation. Consequently, the task could not be completed as the ORCID pages could not be accessed to extract the needed information.",
+      "final_answer_extracted": "The task was to determine the average number of pre-2020 works on the ORCID pages of individuals listed in a provided JSON-LD file. The file contained ORCID IDs for several researchers. Attempts were made to access these ORCID pages to gather the necessary data, but the process was hindered by technical issues, such as the requirement for JavaScript and errors in headless mode navigation. Consequently, the task could not be completed as the ORCID pages could not be accessed to extract the needed information.",
+      "execution_time": 21.5403254032135,
       "status": "failed",
       "level": 3,
       "enhanced_llm_judge": {
         "result": "incorrect",
         "is_correct": false,
         "quality_score": 3,
-        "reasoning": "The extracted final answer is incorrect as it does not provide the ground truth answer of 26.4. Instead, it explains the inability to access the necessary data to calculate the average. However, the process quality is fair. The AI system correctly identified the task and attempted to access the ORCID pages to gather the required data. The failure was due to external limitations (access restrictions), not a misunderstanding of the task. The process was logical and clear, demonstrating a correct understanding of the problem and making reasonable attempts to solve it. The failure occurred due to external constraints, not a flaw in the AI's methodology.",
+        "reasoning": "The extracted final answer is incorrect as it does not provide a numerical value and instead explains the inability to complete the task due to technical issues. The ground truth answer is 26.4, which is not provided in the AI's response. However, the process quality is fair. The AI correctly identified the task, attempted to access the ORCID pages, and encountered technical issues that prevented completion. The process was logical and demonstrated an understanding of the problem, but it was ultimately unsuccessful due to external constraints. The AI did not make any illogical steps or misunderstand the task, but it failed to reach a solution due to technical limitations.",
         "answer_quality": "fair",
         "final_answer_present": false,
-        "judge_execution_time": 4.931816816329956,
+        "judge_execution_time": 3.284729242324829,
         "judge_method": "llm",
         "error_message": null
-      }
+      },
+      "task_toolcall_time": 1.608491,
+      "task_toolcall_count": 15,
+      "agent_tool_stats": [
+        {
+          "agent_id": 0,
+          "agent_name": "FileProcessor",
+          "toolcall_total": 0.000266,
+          "toolcall_count": 1
+        },
+        {
+          "agent_id": 1,
+          "agent_name": "ORCIDDataFetcher",
+          "toolcall_total": 0.681779,
+          "toolcall_count": 5
+        },
+        {
+          "agent_id": 2,
+          "agent_name": "DataAnalyzer",
+          "toolcall_total": 2.6e-05,
+          "toolcall_count": 1
+        },
+        {
+          "agent_id": 3,
+          "agent_name": "AverageCalculator",
+          "toolcall_total": 0.529421,
+          "toolcall_count": 5
+        },
+        {
+          "agent_id": 4,
+          "agent_name": "FinalSynthesizer",
+          "toolcall_total": 0.396999,
+          "toolcall_count": 3
+        }
+      ]
     }
   ]
 }

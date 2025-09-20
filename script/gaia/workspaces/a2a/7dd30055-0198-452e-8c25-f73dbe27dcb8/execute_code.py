@@ -65,29 +65,30 @@ try:
     
     # 准备要执行的完整代码
     full_code = '''
-from Bio.PDB import PDBParser
-import numpy as np
-
-# Load the PDB file
-pdb_filename = '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb'
-parser = PDBParser(QUIET=True)
-structure = parser.get_structure('5wb7', pdb_filename)
-
-# Extract the first two atoms
-atoms = list(structure.get_atoms())
+from Bio import PDB
+import os
+# Check if the PDB file exists
+def file_exists(file_path):
+    return os.path.exists(file_path)
+# Calculate the distance between two atoms
+from math import sqrt
+# Parse the PDB file and calculate distance
+pdb_parser = PDB.PDBParser()
+structure = pdb_parser.get_structure("5wb7", "7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb")
+# Access the first model
+model = structure[0]
+# Get a list of all atoms
+atoms = list(model.get_atoms())
+# Get the first two atoms
 atom1 = atoms[0]
 atom2 = atoms[1]
-
-# Calculate the distance between the first and second atoms
-coord1 = atom1.coord
-coord2 = atom2.coord
-distance = np.linalg.norm(coord1 - coord2)
-
-# Convert the distance to picometers and round
-# 1 Angstrom = 100 Picometers
-distance_pm = round(distance * 100)
-
-print(distance_pm)
+# Calculate the Euclidean distance
+coord1 = atom1.get_coord()
+coord2 = atom2.get_coord()
+distance = sqrt((coord1[0] - coord2[0]) ** 2 + (coord1[1] - coord2[1]) ** 2 + (coord1[2] - coord2[2]) ** 2)
+# Round to the nearest picometer
+rounded_distance = round(distance, 3)
+print(rounded_distance)
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

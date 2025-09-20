@@ -66,37 +66,47 @@ try:
     # 准备要执行的完整代码
     full_code = '''
 from Bio.PDB import PDBParser
-import os
+import math
 
-# Check if the PDB file exists
-pdb_file = '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb'
-if not os.path.exists(pdb_file):
-    raise FileNotFoundError(f"The file {pdb_file} does not exist.")
+# Define a function to calculate the distance between two atoms
+def calculate_distance(atom1, atom2):
+    # Extract coordinates
+    coord1 = atom1.coord
+    coord2 = atom2.coord
+    # Calculate the Euclidean distance
+    distance = math.sqrt((coord1[0] - coord2[0]) ** 2 + (coord1[1] - coord2[1]) ** 2 + (coord1[2] - coord2[2]) ** 2)
+    return distance
 
-# Initialize the PDB parser
-parser = PDBParser(QUIET=True)
+# Parse the PDB file
+parser = PDBParser()
+structure = parser.get_structure('5wb7', '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb')
 
-# Parse the structure
-structure = parser.get_structure('5wb7', pdb_file)
+# Get the first two atoms in the structure
+model = structure[0]
+first_atom = None
+second_atom = None
 
-# Extract atoms and calculate the distance
-atoms = list(structure.get_atoms())
+for chain in model:
+    for residue in chain:
+        for atom in residue:
+            if first_atom is None:
+                first_atom = atom
+            elif second_atom is None:
+                second_atom = atom
+                break
+        if second_atom is not None:
+            break
+    if second_atom is not None:
+        break
 
-# Ensure there are at least two atoms
-if len(atoms) < 2:
-    raise ValueError("Less than two atoms found in the structure.")
-
-# Extract the first and second atoms
-atom1 = atoms[0]
-atom2 = atoms[1]
-
-# Calculate the distance between the two atoms
-from scipy.spatial.distance import euclidean
-
-distance_angstroms = euclidean(atom1.coord, atom2.coord)
-# Convert to picometers (1 Angstrom = 100 Picometers) and round
-rounded_distance_pm = round(distance_angstroms * 100)
-print(rounded_distance_pm)
+# Calculate the distance between the first and second atoms
+if first_atom is not None and second_atom is not None:
+    distance_in_angstroms = calculate_distance(first_atom, second_atom)
+    # Convert the distance to picometers and round it
+    distance_in_picometers = round(distance_in_angstroms * 100)
+    print(distance_in_picometers)
+else:
+    print('Could not find two atoms in the structure.')
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

@@ -67,23 +67,33 @@ try:
     full_code = '''
 import json
 
-# Load the JSON file to extract ORCID IDs
-with open('bec74516-02fc-48dc-b202-55e78d0e17cf.jsonld', 'r') as f:
-    data = json.load(f)
+# Load the JSON-LD file content
+file_path = 'bec74516-02fc-48dc-b202-55e78d0e17cf.jsonld'
 
-# Extract ORCID IDs from the JSON structure
-def extract_orcid_ids(data):
+try:
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+
+    # Extract ORCID IDs
     orcid_ids = []
-    if '@id' in data['author']:
-        orcid_ids.append(data['author']['@id'])
-    if 'editor' in data:
-        for editor in data['editor']:
-            if '@id' in editor:
-                orcid_ids.append(editor['@id'])
-    return orcid_ids
 
-orcid_ids = extract_orcid_ids(data)
-print(orcid_ids)
+    # Extract ORCID ID from author
+    author_id = data.get('author', {}).get('@id', '')
+    if author_id:
+        orcid_ids.append(author_id)
+
+    # Extract ORCID IDs from editors
+    editors = data.get('editor', [])
+    for editor in editors:
+        editor_id = editor.get('@id', '')
+        if editor_id:
+            orcid_ids.append(editor_id)
+
+    # Print extracted ORCID IDs
+    print(orcid_ids)
+    
+except Exception as e:
+    print(f'Error reading JSON file: {e}')
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

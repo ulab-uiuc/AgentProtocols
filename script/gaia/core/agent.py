@@ -263,6 +263,11 @@ class ToolCallAgent(ReActAgent):
         """Execute a single tool call with robust error handling and detailed logging"""
         import time
         start_time = time.time()
+        # Ensure per-agent accumulators exist
+        if not hasattr(self, '_toolcall_total'):
+            self._toolcall_total = 0.0
+        if not hasattr(self, '_toolcall_count'):
+            self._toolcall_count = 0
         
         # Handle both ToolCall object and dict formats
         if hasattr(command, 'function'):
@@ -308,12 +313,23 @@ class ToolCallAgent(ReActAgent):
 
             # Execute the tool
             logger.info(f"⚡ Executing tool: '{name}'...")
+            # Measure toolcall duration separately
+            tool_start = time.time()
             result = await self.available_tools.execute(name=name, tool_input=args)
-            
+            tool_duration = time.time() - tool_start
+
+            # Accumulate toolcall metrics
+            try:
+                self._toolcall_total += float(tool_duration)
+                self._toolcall_count += 1
+            except Exception:
+                # Defensive: if attributes are not numeric for any reason
+                pass
+
             # Enhanced logging: Tool execution result
             execution_time = time.time() - start_time
-            print(f"✅ TOOL CALL SUCCESS - Tool: {name}, Duration: {execution_time:.2f}s")
-            logger.info(f"✅ TOOL CALL SUCCESS - Tool: {name}, Duration: {execution_time:.2f}s")
+            print(f"✅ TOOL CALL SUCCESS - Tool: {name}, Duration: {execution_time:.2f}s (toolcall: {tool_duration:.2f}s)")
+            logger.info(f"✅ TOOL CALL SUCCESS - Tool: {name}, Duration: {execution_time:.2f}s (toolcall: {tool_duration:.2f}s)")
             
             # Log result summary (truncated for readability)
             result_str = str(result)
@@ -342,6 +358,12 @@ class ToolCallAgent(ReActAgent):
 
             return observation
         except json.JSONDecodeError as json_error:
+            tool_duration = time.time() - start_time
+            try:
+                self._toolcall_total += float(tool_duration)
+                self._toolcall_count += 1
+            except Exception:
+                pass
             execution_time = time.time() - start_time
             error_msg = f"Error parsing arguments for {name}: Invalid JSON format"
             logger.error(f"❌ TOOL CALL FAILED - Tool: {name}, Duration: {execution_time:.2f}s")
@@ -349,6 +371,12 @@ class ToolCallAgent(ReActAgent):
             logger.error(f"📝 Invalid arguments: {arguments}")
             return f"Error: {error_msg}"
         except Exception as e:
+            tool_duration = time.time() - start_time
+            try:
+                self._toolcall_total += float(tool_duration)
+                self._toolcall_count += 1
+            except Exception:
+                pass
             execution_time = time.time() - start_time
             error_msg = f"⚠️ Tool '{name}' encountered a problem: {str(e)}"
             logger.error(f"❌ TOOL CALL FAILED - Tool: {name}, Duration: {execution_time:.2f}s")

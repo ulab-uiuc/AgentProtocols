@@ -66,18 +66,13 @@ try:
     # 准备要执行的完整代码
     full_code = '''
 import pandas as pd
-
 # Load the spreadsheet
 file_path = '32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx'
-
-# Read the spreadsheet
-try:
-    df = pd.read_excel(file_path)
-    
-    # Display the first few rows of the dataframe
-    print(df.head().to_string())
-except Exception as e:
-    print(f'Error reading the spreadsheet: {e}')
+# Read the spreadsheet and inspect the data
+excel_data = pd.ExcelFile(file_path)
+# Since we need to identify the sheet with Blu-Ray records, let's view the sheet names first
+sheet_names = excel_data.sheet_names
+print(sheet_names)
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

@@ -66,22 +66,26 @@ try:
     # 准备要执行的完整代码
     full_code = '''
 from Bio.PDB import PDBParser
-import numpy as np
+
 # Parse the PDB file
-parser = PDBParser(PERMISSIVE=1)
+parser = PDBParser(QUIET=True)
 structure = parser.get_structure('5wb7', '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb')
-# Get the first model in the structure
-model = structure[0]
-# Extract all atoms
-atoms = list(model.get_atoms())
-# Get the coordinates of the first and second atoms
-coord1 = atoms[0].coord
-coord2 = atoms[1].coord
-# Calculate the distance between the two atoms
-distance = np.linalg.norm(coord1 - coord2)
-# Convert the distance from Angstroms to picometers and round to nearest picometer
-rounded_distance = round(distance * 100)
-print(rounded_distance)
+
+# Extract the first two atoms
+atoms = list(structure.get_atoms())
+first_atom = atoms[0]
+second_atom = atoms[1]
+
+# Calculate the distance between the first and second atom
+from numpy import linalg
+
+distance = linalg.norm(first_atom.coord - second_atom.coord)
+
+# Convert to picometers and round
+# 1 Angstrom = 100 picometers
+distance_picometers = round(distance * 100)
+
+print(distance_picometers)
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

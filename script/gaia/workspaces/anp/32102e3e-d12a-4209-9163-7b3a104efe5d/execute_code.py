@@ -67,22 +67,13 @@ try:
     full_code = '''
 import pandas as pd
 
-# Load the spreadsheet
 try:
-    file_path = '32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx'
-    
-    # Read the Excel file
-    df = pd.read_excel(file_path)
-    
-    # Filter for Blu-Ray format only
-    blu_ray_df = df[df['Format'] == 'Blu-Ray']
-    
-    # Sort by the release year to get the oldest movie
-    oldest_blu_ray = blu_ray_df.sort_values('Release Year').iloc[0]
-    
-    # Get the title of the oldest Blu-Ray
-    oldest_blu_ray_title = oldest_blu_ray['Title']
-    oldest_blu_ray_title
+    df = pd.read_excel('32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx')
+    # Filter for Blu-Ray items
+    blu_rays = df[df['Format'] == 'Blu-Ray']
+    # Sort by Release Year
+    oldest_blu_ray = blu_rays.sort_values('Release Year').iloc[0]['Title']
+    oldest_blu_ray
 except Exception as e:
     print(f'Error: {e}')
     print('Attempting to handle the error gracefully...')

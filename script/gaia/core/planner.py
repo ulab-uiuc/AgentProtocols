@@ -26,6 +26,9 @@ class TaskPlanner:
     _max_ports_per_task = 20  # Reserve 20 ports per task
 
     def __init__(self, config_path: Optional[str] = None, task_id: Optional[List[str]] = None, level: Optional[int] = 1, protocol_name: Optional[str] = None):
+        # Ensure protocol_name is established before loading config so load_config
+        # can pick a protocol-specific default file (e.g. config/meta_protocol.yaml).
+        self.protocol_name = protocol_name or "dummy"
         self.tool_registry = ToolRegistry()
         self.llm = call_llm()
         self.prompt_builder = PromptBuilder()
@@ -48,14 +51,69 @@ class TaskPlanner:
         print(f"🔌 Task {task_id} assigned port base: {self.port_base}")
 
     def load_config(self, config_path: Optional[str] = None) -> Dict[str, Any]:
-        """Load configuration from YAML file."""
-        if config_path is None:
-            config_path = Path(__file__).parent.parent / "config" / "general.yaml"
+        """Load configuration from YAML file with flexible relative resolution.
+
+        Resolution strategy:
+        - If config_path is provided and absolute, use it.
+        - If config_path is provided and relative, try in order:
+            1. GAIA_ROOT/config/<config_path>
+            2. GAIA_ROOT/<config_path>
+            3. runners_dir/<config_path>
+        - If config_path is None, try protocol-specific candidates in order:
+            1. GAIA_ROOT/config/{protocol_name}.yaml
+            2. GAIA_ROOT/config/{protocol_name}_protocol.yaml
+            3. GAIA_ROOT/config/meta_protocol.yaml
+            4. GAIA_ROOT/config/general.yaml
+        Raises FileNotFoundError with attempted paths if none found.
+        """
+        runners_dir = Path(__file__).parent
+        gaia_root = runners_dir.parent
+
+        candidates: List[Path] = []
+        if config_path:
+            p = Path(config_path)
+            if p.is_absolute():
+                candidates = [p]
+            else:
+                candidates = [
+                    gaia_root / 'config' / p,
+                    gaia_root / p,
+                    runners_dir / p,
+                ]
+        else:
+            # Try protocol-specific and common fallbacks
+            candidates = [
+                gaia_root / 'config' / f"{self.protocol_name}.yaml",
+                gaia_root / 'config' / f"{self.protocol_name}_protocol.yaml",
+                gaia_root / 'config' / 'meta_protocol.yaml',
+                gaia_root / 'config' / 'general.yaml',
+            ]
+
+        # Remove duplicates while preserving order
+        seen = set()
+        uniq: List[Path] = []
+        for c in candidates:
+            if c not in seen:
+                uniq.append(c)
+                seen.add(c)
+        candidates = uniq
+
+        tried = []
+        target: Optional[Path] = None
+        for cand in candidates:
+            tried.append(str(cand))
+            if cand.exists():
+                target = cand
+                break
+
+        if target is None:
+            raise FileNotFoundError("Config file not found; tried:\n" + "\n".join(tried))
+
         try:
-            with open(config_path, 'r', encoding='utf-8') as f:
+            with open(target, 'r', encoding='utf-8') as f:
                 return yaml.safe_load(f) or {}
         except Exception as e:
-            raise FileNotFoundError(f"Config file not found: {config_path}")
+            raise FileNotFoundError(f"Config file not found: {target} ({e})")
 
     async def analyze_and_plan(self, gaia_task_document: str, workspace_dir: Optional[Path] = None) -> tuple[Dict[str, Any], str]:
         """

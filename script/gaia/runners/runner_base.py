@@ -47,6 +47,12 @@ class RunnerBase(abc.ABC):
 
     def __init__(self, config_path: str, protocol_name: str = "base") -> None:
         self.protocol_name = protocol_name
+        # Preserve the original config path so downstream components (TaskPlanner)
+        # can load the same file if they need to. Keep as Path for easy resolution.
+        try:
+            self._config_path = Path(config_path) if config_path else None
+        except Exception:
+            self._config_path = None
         self.config = self._load_config(config_path)
         
         # Initialize runtime configuration
@@ -269,7 +275,7 @@ class RunnerBase(abc.ABC):
             return json.load(f)
 
     # -------------------- Result Display Helper --------------------
-    def display_results(self, total_tasks: int, success_count: int, timeout_count: int, error_count: int, avg_quality: Optional[float] = None) -> None:
+    def display_results(self, total_tasks: int, success_count: int, timeout_count: int, error_count: int, avg_quality: Optional[float] = None, total_toolcall_time: Optional[float] = None) -> None:
         """展示运行结果汇总信息。"""
         print("\n" + "=" * 60)
         print("📊 GAIA Benchmark Results Summary")
@@ -289,6 +295,15 @@ class RunnerBase(abc.ABC):
                 print(f"⭐ Average quality_score (1-5): {avg_quality}")
         else:
             print("⭐ Average quality_score (1-5): N/A")
+
+        # Print total toolcall time if provided
+        if total_toolcall_time is not None:
+            try:
+                print(f"⏱️ Total toolcall time: {total_toolcall_time:.2f} seconds")
+            except Exception:
+                print(f"⏱️ Total toolcall time: {total_toolcall_time}")
+        else:
+            print("⏱️ Total toolcall time: N/A")
 
         print("=" * 60)
 
@@ -323,6 +338,52 @@ class RunnerBase(abc.ABC):
             return None
         return sum(scores) / len(scores)
 
+    def compute_task_toolcall_metrics(self, network: Any) -> Dict[str, Any]:
+        """Compute total toolcall time and counts for a running/just-stopped network.
+
+        This inspects agents attached to the provided network and sums the
+        per-agent attributes `._toolcall_total` and `._toolcall_count` that
+        agents are expected to maintain in-memory.
+
+        Returns a dict with:
+          - task_toolcall_time: float (seconds)
+          - task_toolcall_count: int
+          - agent_tool_stats: list of {agent_id, agent_name, total, count}
+        """
+        total_time = 0.0
+        total_count = 0
+        agent_stats = []
+        try:
+            agents = getattr(network, 'agents', None) or []
+            for a in agents:
+                try:
+                    t = float(getattr(a, '_toolcall_total', 0.0) or 0.0)
+                except Exception:
+                    t = 0.0
+                try:
+                    c = int(getattr(a, '_toolcall_count', 0) or 0)
+                except Exception:
+                    c = 0
+                total_time += t
+                total_count += c
+                agent_stats.append({
+                    'agent_id': getattr(a, 'id', None),
+                    'agent_name': getattr(a, 'name', None),
+                    'toolcall_total': round(t, 6),
+                    'toolcall_count': c,
+                })
+        except Exception:
+            # Defensive: if network shape is unexpected just return zeros
+            return {
+                'task_toolcall_time': 0.0,
+                'task_toolcall_count': 0,
+                'agent_tool_stats': []
+            }
+        return {
+            'task_toolcall_time': round(total_time, 6),
+            'task_toolcall_count': total_count,
+            'agent_tool_stats': agent_stats,
+        }
     # -------------------- Stepwise hooks --------------------
     async def plan(self, task_id: str, level: int, task_doc: str, workspace_dir: Path) -> Path:
         """
@@ -342,7 +403,10 @@ class RunnerBase(abc.ABC):
             Path: Agent configuration file path (GAIA_ROOT/workspaces/agent_config.<task_id>.json)
         """
         # 将当前 Runner 的协议名和工作区路径传入 Planner
-        planner = TaskPlanner(task_id=task_id, level=level, protocol_name=self.protocol_name)
+        # Pass through the runner's actual config path so the planner loads the
+        # exact same configuration file instead of falling back to defaults.
+        planner_cfg_path = str(self._config_path) if getattr(self, '_config_path', None) else None
+        planner = TaskPlanner(config_path=planner_cfg_path, task_id=task_id, level=level, protocol_name=self.protocol_name)
         # 让 planner 在该目录下工作并返回其生成的配置（路径或内容）
         planner_result = await planner.plan_agents(task_doc, workspace_dir=workspace_dir)
 
@@ -488,7 +552,7 @@ class RunnerBase(abc.ABC):
                 )
                 
                 # Format result using the enhanced judge
-                return judge.format_judgment_for_result(
+                formatted = judge.format_judgment_for_result(
                     judgment=judgment,
                     task_id=task_id,
                     question=task_doc,
@@ -497,6 +561,16 @@ class RunnerBase(abc.ABC):
                     execution_time=execution_time,
                     level=level
                 )
+                try:
+                    metrics = self.compute_task_toolcall_metrics(network)
+                    formatted['task_toolcall_time'] = metrics.get('task_toolcall_time', 0.0)
+                    formatted['task_toolcall_count'] = metrics.get('task_toolcall_count', 0)
+                    formatted['agent_tool_stats'] = metrics.get('agent_tool_stats', [])
+                except Exception:
+                    formatted['task_toolcall_time'] = 0.0
+                    formatted['task_toolcall_count'] = 0
+                    formatted['agent_tool_stats'] = []
+                return formatted
             except asyncio.TimeoutError:
                 execution_time = time.time() - start_time
                 
@@ -515,7 +589,7 @@ class RunnerBase(abc.ABC):
                 )
                 
                 # Format result using the enhanced judge
-                return judge.format_judgment_for_result(
+                formatted = judge.format_judgment_for_result(
                     judgment=judgment,
                     task_id=task_id,
                     question=task_doc,
@@ -524,6 +598,16 @@ class RunnerBase(abc.ABC):
                     execution_time=execution_time,
                     level=level
                 )
+                try:
+                    metrics = self.compute_task_toolcall_metrics(network)
+                    formatted['task_toolcall_time'] = metrics.get('task_toolcall_time', 0.0)
+                    formatted['task_toolcall_count'] = metrics.get('task_toolcall_count', 0)
+                    formatted['agent_tool_stats'] = metrics.get('agent_tool_stats', [])
+                except Exception:
+                    formatted['task_toolcall_time'] = 0.0
+                    formatted['task_toolcall_count'] = 0
+                    formatted['agent_tool_stats'] = []
+                return formatted
             finally:
                 await self.stop_network(network)
         except NotImplementedError:
@@ -546,7 +630,7 @@ class RunnerBase(abc.ABC):
             )
             
             # Format result using the enhanced judge
-            return judge.format_judgment_for_result(
+            formatted = judge.format_judgment_for_result(
                 judgment=judgment,
                 task_id=task_id,
                 question=task_doc,
@@ -555,6 +639,16 @@ class RunnerBase(abc.ABC):
                 execution_time=execution_time,
                 level=level
             )
+            try:
+                metrics = self.compute_task_toolcall_metrics(network)
+                formatted['task_toolcall_time'] = metrics.get('task_toolcall_time', 0.0)
+                formatted['task_toolcall_count'] = metrics.get('task_toolcall_count', 0)
+                formatted['agent_tool_stats'] = metrics.get('agent_tool_stats', [])
+            except Exception:
+                formatted['task_toolcall_time'] = 0.0
+                formatted['task_toolcall_count'] = 0
+                formatted['agent_tool_stats'] = []
+            return formatted
 
     # -------------------- Common Workflow --------------------
     async def run(self) -> None:
@@ -642,6 +736,17 @@ class RunnerBase(abc.ABC):
                     })
                 pbar.update(1)
 
+        # Aggregate total toolcall time across all task results
+        total_toolcall_time = 0.0
+        for r in results:
+            try:
+                total_toolcall_time += float(r.get('task_toolcall_time', 0.0) or 0.0)
+            except Exception:
+                continue
+
+        total_execution_time = time.time() - run_start_time
+        total_execution_time_minus_toolcalls = max(0.0, total_execution_time - total_toolcall_time)
+
         output_data = {
             "metadata": {
                 "total_tasks": len(tasks),
@@ -654,7 +759,11 @@ class RunnerBase(abc.ABC):
                 # Average quality score (1-5) across evaluated tasks, null if unavailable
                 "avg_quality_score": self.compute_avg_quality(results),
                 # Total execution time for the whole run in seconds
-                "total_execution_time": time.time() - run_start_time,
+                "total_execution_time": total_execution_time,
+                # Aggregate toolcall time across all agents/tasks
+                "total_toolcall_time": round(total_toolcall_time, 6),
+                # Total execution time minus toolcall time
+                "total_execution_time_minus_toolcalls": round(total_execution_time_minus_toolcalls, 6),
             },
             "results": results,
             "failed_tasks": failed_tasks,
@@ -667,7 +776,8 @@ class RunnerBase(abc.ABC):
 
         # 调用封装的结果展示函数
         avg_quality = output_data.get('metadata', {}).get('avg_quality_score')
-        self.display_results(len(tasks), success_count, timeout_count, error_count, avg_quality)
+        total_tool_time = output_data.get('metadata', {}).get('total_toolcall_time')
+        self.display_results(len(tasks), success_count, timeout_count, error_count, avg_quality, total_tool_time)
 
 
 async def _main():

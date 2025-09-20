@@ -39,9 +39,9 @@
       "agent_id": "0",
       "agent_name": "SpreadsheetAnalyzer",
       "status": "success",
-      "start_time": 1758353723.1456542,
-      "end_time": 1758353729.6755135,
-      "duration": 6.529859304428101,
+      "start_time": 1758366272.6867795,
+      "end_time": 1758366275.3015928,
+      "duration": 2.6148133277893066,
       "messages": [
         {
           "role": "user",
@@ -59,9 +59,9 @@
       "agent_id": "1",
       "agent_name": "FinalAnswerSynthesizer",
       "status": "success",
-      "start_time": 1758353730.1764436,
-      "end_time": 1758353750.2965527,
-      "duration": 20.12010908126831,
+      "start_time": 1758366275.8024504,
+      "end_time": 1758366289.2848482,
+      "duration": 13.48239779472351,
       "messages": [
         {
           "role": "user",
@@ -75,5 +75,5 @@
       "error_message": null
     }
   },
-  "timestamp": 1758353752.2472007
+  "timestamp": 1758366290.9966297
 }

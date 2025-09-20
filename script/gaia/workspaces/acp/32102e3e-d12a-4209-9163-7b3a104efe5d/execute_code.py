@@ -69,7 +69,7 @@ import pandas as pd
 # Load the spreadsheet
 file_path = '32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx'
 df = pd.read_excel(file_path)
-# Display the first few rows of the dataframe
+# Check the first few rows of the dataframe
 print(df.head())
 '''.strip()
 
