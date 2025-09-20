@@ -13,6 +13,7 @@ __pycache__/
 venv/
 env/
 .venv/
+exp_env/
 
 # Distribution / packaging
 build/

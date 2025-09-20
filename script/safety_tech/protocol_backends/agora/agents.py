@@ -129,13 +129,13 @@ class AgoraPrivacySimulator:
         self.receptionist.set_network(network)
         self.doctor.set_network(network)
 
-    async def simulate_conversation(self, patient_question: str, rounds: int = 3) -> List[Dict[str, Any]]:
+    async def simulate_conversation(self, patient_question: str, rounds: int = 2) -> List[Dict[str, Any]]:
         """
-        Simulate privacy testing conversation between receptionist and doctor.
+        Simulate medical consultation between two doctors.
         
         Args:
-            patient_question: Enhanced patient question with sensitive information
-            rounds: Number of conversation rounds
+            patient_question: Medical case information 
+            rounds: Number of discussion rounds
             
         Returns:
             List of conversation messages
@@ -143,55 +143,74 @@ class AgoraPrivacySimulator:
         conversation = []
         current_message = patient_question
 
+        print(f"\n🏥 Medical Case Discussion")
+        print("=" * 60)
+        print(f"📋 Initial Case: {patient_question}")
+        print("=" * 60)
+
         for round_num in range(rounds):
-            # Receptionist processes patient question/doctor request
-            receptionist_response = await self.receptionist.process_message(
-                "Patient" if round_num == 0 else "Agora_Doctor", 
+            # Doctor A analyzes the case
+            doctor_a_response = await self.receptionist.process_message(
+                "Patient" if round_num == 0 else "Agora_Doctor_B", 
                 current_message
             )
             
-            conversation.append({
-                "round": round_num + 1,
-                "sender": "Agora_Receptionist",
-                "message": receptionist_response,
-                "timestamp": time.time()
-            })
-
-            # Doctor responds with invasive query
-            doctor_response = await self.doctor.process_message(
-                "Agora_Receptionist", 
-                receptionist_response
-            )
+            print(f"\n👨‍⚕️ Doctor A (Round {round_num + 1}):")
+            print(f"   {doctor_a_response}")
             
             conversation.append({
                 "round": round_num + 1,
-                "sender": "Agora_Doctor", 
-                "message": doctor_response,
+                "sender": "Agora_Doctor_A",
+                "message": doctor_a_response,
+                "timestamp": time.time()
+            })
+
+            # Doctor B provides specialist opinion
+            doctor_b_response = await self.doctor.process_message(
+                "Agora_Doctor_A", 
+                doctor_a_response
+            )
+            
+            print(f"\n👩‍⚕️ Doctor B (Round {round_num + 1}):")
+            print(f"   {doctor_b_response}")
+            
+            conversation.append({
+                "round": round_num + 1,
+                "sender": "Agora_Doctor_B", 
+                "message": doctor_b_response,
                 "timestamp": time.time()
             })
 
             # Prepare next round
-            current_message = doctor_response
+            current_message = doctor_b_response
 
+        print("\n" + "=" * 60)
+        print("✅ Medical consultation completed")
+        print("=" * 60)
+        
         return conversation
 
-    async def run_privacy_test_batch(self, enhanced_questions: List[str], rounds_per_conversation: int = 3) -> Dict[str, Any]:
+    async def run_privacy_test_batch(self, enhanced_questions: List[str], rounds_per_conversation: int = 2) -> Dict[str, Any]:
         """
-        Run batch privacy testing with multiple enhanced questions.
+        Run batch medical consultations with multiple cases.
         
         Args:
-            enhanced_questions: List of patient questions with sensitive info
-            rounds_per_conversation: Conversation rounds per question
+            enhanced_questions: List of medical cases
+            rounds_per_conversation: Discussion rounds per case
             
         Returns:
-            Complete conversation data for privacy analysis
+            Complete conversation data
         """
         all_conversations = []
+        
+        print(f"\n🎯 Starting {len(enhanced_questions)} Medical Consultations")
+        print(f"📊 Each consultation will have {rounds_per_conversation} discussion rounds")
         
         for i, question in enumerate(enhanced_questions):
             conversation_id = f"agora_conversation_{i+1}"
             
             try:
+                print(f"\n📝 Consultation {i+1}/{len(enhanced_questions)}")
                 conversation_messages = await self.simulate_conversation(question, rounds_per_conversation)
                 
                 conversation_data = {
@@ -205,12 +224,13 @@ class AgoraPrivacySimulator:
                 all_conversations.append(conversation_data)
                 
                 if self.output:
-                    self.output.info(f"Completed Agora conversation {i+1}/{len(enhanced_questions)}")
+                    self.output.success(f"✅ Completed medical consultation {i+1}/{len(enhanced_questions)}")
                 
             except Exception as e:
-                print(f"[AgoraPrivacySimulator] Error in conversation {i+1}: {e}")
+                print(f"❌ Error in consultation {i+1}: {e}")
                 continue
 
+        print(f"\n🏆 All {len(all_conversations)} medical consultations completed!")
         return {
             "protocol": "agora",
             "total_conversations": len(all_conversations),
