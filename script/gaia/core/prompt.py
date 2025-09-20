@@ -153,42 +153,59 @@ SPECIAL RULES:
 PYTHON CODE EXECUTION (for sandbox_python_execute tool):
 When using the sandbox_python_execute tool, follow these guidelines:
 
-1. EXECUTE CODE FIRST, INSTALL PACKAGES LATER:
-   - Your primary goal is to execute the Python code to solve the task.
-   - Do NOT proactively add packages to the 'packages' parameter.
-   - First, try to execute the code.
-   - If the execution fails with a 'ModuleNotFoundError', and ONLY in that case, you should add the missing package to the 'packages' parameter and retry the execution.
+1. PACKAGE INSTALLATION — REACTIVE, NOT PROACTIVE:
+Your primary action is to execute Python code. NEVER proactively add packages to the 'packages' parameter.
+First, execute the code without any packages.
+If the execution fails with a 'ModuleNotFoundError', and ONLY in that case, retry the exact same code but add the missing package to the 'packages' parameter.
+Example: If you get an error "No module named 'pandas'" your next step is to execute with "packages": ["pandas"].
 
-2. ERROR HANDLING - If you see ModuleNotFoundError:
-   - Identify the missing package from the error message.
-   - Retry the same code, but this time include the missing package in the 'packages' parameter.
-   - Example: If you get "No module named 'pandas'", you should retry with "packages": ["pandas"].
-   
-3. FILE ACCESS:
-   - Files are available in your current working directory
-   - Use relative paths: "data.csv" not "/path/to/data.csv"  
-   - Always check if files exist before processing: os.path.exists("filename.ext")
-   
-4. BEST PRACTICES:
-   - Start with basic imports and verify they work
-   - Build code incrementally to isolate issues
-   - Use try/except blocks for robust error handling
-   - Print intermediate results to debug issues
+2. FILE ACCESS — ASSUME A SHARED WORKSPACE:
+All necessary files are available in your current working directory.
+ALWAYS use relative paths (e.g., "data.csv"). NEVER use absolute paths (e.g., "/path/to/data.csv").
+Best Practice: Before attempting to read a file, always confirm its existence using os.path.exists("filename.ext").
 
-5. DEFENSIVE PROGRAMMING:
-   - ALWAYS check for None values before method calls
-   - Use defensive chaining: `data and data.get('key')` instead of `data.get('key')`
-   - Validate API responses before processing
-   - Example safe pattern:
-     Bad: publication_year = work.get('date', {{}}).get('year', {{}}).get('value', 0)
-     Good: 
-     if work and work.get('date'):
-         year_data = work['date'].get('year') if work['date'] else None
-         publication_year = year_data.get('value', 0) if year_data else 0
-     else:
-         publication_year = 0
-   - Handle empty lists, None responses, and malformed data
-   - Add logging/print statements to trace data flow
+3. DEBUGGING — THINK OUT LOUD WITH print:
+You MUST print the outputs of your data exploration steps to see what you are working with. If you do not print, you see nothing.
+This is the most common reason for failure. Always wrap exploratory expressions in print().
+Examples: print(df.head()), print(df.info()), print(my_list[:5]).
+
+4. DEFENSIVE PROGRAMMING — NEVER TRUST DATA:
+Assume all external data (from files, APIs, etc.) can be missing, empty, or malformed.
+ALWAYS check for None values before calling methods on an object.
+Wrap operations that might fail, such as file I/O or API calls, in try...except blocks.
+Example of safe data access:
+Bad: name = data.get('user').get('name')
+Good:
+```python
+user_info = data.get('user')
+if user_info:
+    name = user_info.get('name')
+else:
+    name = None
+```
+
+5. THE GOLDEN RULE — THE FINAL LINE MUST PRODUCE THE FINAL ANSWER:
+Your code's ultimate purpose is to produce a visible output that directly and completely answers the task.
+    A) Single-Expression Solution (Preferred):
+    If the task can be solved in a single, chainable expression, make that the only line of code. The system will automatically print the result. DO NOT use print() in this case.
+    Example (Good):
+```python
+# Single-expression example (no print required)
+df[df['Format'] == 'Blu-Ray'].sort_values('Release Year').iloc[0]['Title']
+```
+    B) Multi-Step Solution:
+    If you must use multiple lines (e.g., assigning variables, loops), you MUST explicitly print() the final calculated answer.
+    Example (Good):
+```python
+blu_rays_df = df[df['Format'] == 'Blu-Ray']
+oldest_movie = blu_rays_df.sort_values('Release Year').iloc[0]
+print(oldest_movie['Title'])
+```
+
+6. PRINTING DATAFRAMES FOR FULL VISIBILITY:
+When you need to see the entire content of a pandas DataFrame without truncation, you MUST print it using the .to_string() method.
+This ensures the outer system can see all rows and evaluate the result correctly.
+Example: print(final_results_df.to_string())
 
 SEARCH OPTIMIZATION (for browser_use tool):
 When using web_search action, use TARGETED SEARCH STRATEGY based on the original task:
@@ -223,7 +240,8 @@ When using web_search action, use TARGETED SEARCH STRATEGY based on the original
 
 ❌ AVOID: Generic broad terms that may return irrelevant results from wrong time periods
 ✅ PREFER: Specific terms with years/dates that directly relate to what the original query asks for
-⚠️  CRITICAL: Always double-check that search results match the year and topic requirements from the original query"""
+⚠️  CRITICAL: Always double-check that search results match the year and topic requirements from the original query
+"""
 
     # Workflow context template
     WORKFLOW_CONTEXT_TEMPLATE = """

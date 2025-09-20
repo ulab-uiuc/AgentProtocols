@@ -1,6 +1,6 @@
 # ANP protocol configuration for Gaia multi-agent framework
 protocol: "anp"
-mode: "debug"
+mode: "mm"
 
 # Runtime configuration
 runtime:

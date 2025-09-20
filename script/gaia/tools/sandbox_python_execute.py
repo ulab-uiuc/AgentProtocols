@@ -412,15 +412,6 @@ Make sure the fixed code is complete and self-contained. If the error is about m
     ) -> ToolResult:
         """
         Executes Python code in a Docker sandbox with intelligent retry and error recovery.
-
-        Args:
-            code (str): The Python code to execute.
-            packages (list): Python packages to install before execution.
-            timeout (int): Execution timeout in seconds.
-            max_retries (int): Maximum number of retry attempts for failed executions.
-
-        Returns:
-            ToolResult: Contains execution output or error message.
         """
         packages = packages or []
         current_code = code  # Track the current version of code
@@ -434,6 +425,32 @@ Make sure the fixed code is complete and self-contained. If the error is about m
                 install_output = ""
                 if packages:
                     install_output = await self._install_packages(packages)
+
+                # =================== START: 新增的智能修复“安全网”逻辑 ===================
+                
+                modified_code = current_code.strip()
+                lines = [line for line in modified_code.splitlines() if line.strip()]
+
+                # 检查代码是否已经包含了 print 语句
+                has_print_statement = 'print(' in modified_code
+
+                # 如果代码不为空且没有 print 语句，则尝试自动添加
+                if lines and not has_print_statement:
+                    last_line = lines[-1].strip()
+                    # 检查最后一行是否可能是一个旨在输出的表达式
+                    # (不是赋值、定义、导入或控制流语句)
+                    keywords_that_are_not_expressions = ('=', 'import ', 'from ', 'def ', 'class ', 'if ', 'for ', 'while ', 'try:', 'except:')
+                    if not last_line.startswith(keywords_that_are_not_expressions):
+                        logger.info(f"🔧 Safety Net: No 'print' statement found. Auto-wrapping the last line: '{last_line}'")
+                        
+                        # 修改代码，将最后一行包裹在 print() 中
+                        code_to_wrap = "\n".join(lines[:-1])
+                        wrapped_last_line = f"print({last_line})"
+                        
+                        if code_to_wrap:
+                            modified_code = f"{code_to_wrap}\n{wrapped_last_line}"
+                        else:
+                            modified_code = wrapped_last_line
                 
                 # Create Python script with enhanced path handling and error recovery
                 script_content = f"""
@@ -441,6 +458,7 @@ import sys
 import traceback
 import os
 from io import StringIO
+import pandas
 
 # Store original stdout for final output
 original_stdout = sys.stdout
@@ -502,13 +520,44 @@ try:
     
     # 准备要执行的完整代码
     full_code = '''
-{current_code}
+{modified_code}
 '''.strip()
 
-    # 将整个代码块作为一个整体来执行
-    # 这会保留所有的缩进和代码结构
-    exec(full_code, exec_globals)
-    
+    # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())
+    try:
+        try:
+            compiled_expr = compile(full_code, '<string>', 'eval')
+        except SyntaxError:
+            compiled_expr = None
+
+        if compiled_expr is not None:
+            # 是单个表达式，使用 eval 获取返回值并尝试以友好形式打印
+            result_value = eval(compiled_expr, exec_globals)
+            try:
+                # pandas DataFrame / Series 的友好打印
+                if hasattr(result_value, 'to_string'):
+                    print(result_value.to_string())
+                # numpy arrays 或其他有 shape 的对象，尽量用 repr
+                elif hasattr(result_value, '__array__') or hasattr(result_value, 'shape'):
+                    try:
+                        import numpy as _np
+                        # 尝试限制输出长度
+                        print(repr(result_value))
+                    except Exception:
+                        print(repr(result_value))
+                else:
+                    print(repr(result_value))
+            except Exception:
+                # 即使格式化失败，也确保有输出
+                print(repr(result_value))
+        else:
+            # 不是表达式，作为普通脚本执行（保留原有行为）
+            exec(compile(full_code, '<string>', 'exec'), exec_globals)
+
+    except Exception:
+        # 抛出异常以便外层捕获并触发智能修复流程
+        raise
+
     # Restore stdout and get captured output
     sys.stdout = original_stdout
     user_output = captured_output.getvalue()
@@ -535,7 +584,6 @@ except Exception as e:
 """
                 
                 # Write script to container
-                await self._sandbox_client.write_file("execute_code.py", script_content)
                 await self._sandbox_client.write_file("execute_code.py", script_content)
                 
                 # Execute the script

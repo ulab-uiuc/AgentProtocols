@@ -3,22 +3,23 @@ import sys
 import traceback
 import os
 from io import StringIO
+import pandas
 
-# Capture stdout
-old_stdout = sys.stdout
-sys.stdout = captured_output = StringIO()
+# Store original stdout for final output
+original_stdout = sys.stdout
+
+# Capture stdout for user code
+captured_output = StringIO()
 
 # Add dataset directory to sys.path if available
 if os.path.exists('/dataset'):
     sys.path.insert(0, '/dataset')
     os.environ['DATASET_DIR'] = '/dataset'
-    print("Dataset directory available at /dataset")
 
 # Add workspace directory to sys.path
 if os.path.exists('/workspace'):
     sys.path.insert(0, '/workspace')
     os.environ['WORKSPACE_DIR'] = '/workspace'
-    print("Workspace directory available at /workspace")
     # Set working directory to workspace
     os.chdir('/workspace')
 
@@ -47,87 +48,96 @@ try:
         setattr(__builtins__, 'resolve_dataset_file', resolve_dataset_file)
 except Exception as builtins_error:
     # Fallback: add to globals and print warning
-    print(f"Warning: Could not add to __builtins__ ({builtins_error}), using globals fallback")
     globals()['resolve_dataset_file'] = resolve_dataset_file
 
 try:
-    # Execute user code
-    import requests
-    import json
-    import sys
+    # Redirect stdout to capture user output
+    sys.stdout = captured_output
+    
+    # Print environment info to captured output
+    if os.path.exists('/dataset'):
+        print("Dataset directory available at /dataset")
+    if os.path.exists('/workspace'):
+        print("Workspace directory available at /workspace")
+    
+    # Create namespace for execution
+    exec_globals = globals().copy()
+    
+    # 准备要执行的完整代码
+    full_code = '''
+# First, we need to open the provided JSON-LD file to extract the ORCID identifiers of all the authors.
+import json
+# Load the JSON-LD file
+file_path = 'bec74516-02fc-48dc-b202-55e78d0e17cf.jsonld'
+with open(file_path, 'r') as file:
+    data = json.load(file)
+# Extract ORCID identifiers
+orcid_ids = []
+# The 'author' field
+if 'author' in data:
+    author = data['author']
+    if '@id' in author and 'orcid.org' in author['@id']:
+        orcid_ids.append(author['@id'])
+# The 'editor' field, if present
+if 'editor' in data:
+    for editor in data['editor']:
+        if '@id' in editor and 'orcid.org' in editor['@id']:
+            orcid_ids.append(editor['@id'])
+# Print the extracted ORCID IDs
+print(orcid_ids)
+'''.strip()
 
-    # List of ORCID IDs from JSON-LD file
-    dataset = {
-        "contributors": [
-            "0000-0003-0396-0333",
-            "0000-0002-2605-6569",
-            "0000-0001-6102-7846",
-            "0000-0002-0209-2784",
-            "0000-0002-1053-2030"
-        ]
-    }
-
-    # ORCID API base URL
-    base_url = "https://pub.orcid.org/v3.0/"
-
-    # Headers for ORCID API requests
-    def get_headers():
-        return {
-            'Accept': 'application/json'
-        }
-
-    # Function to fetch works for a given ORCID ID
-    def fetch_works(orcid_id):
-        url = f"{base_url}{orcid_id}/works"
-        response = requests.get(url, headers=get_headers())
-        response.raise_for_status()
-        return response.json()
-
-    # Function to count pre-2020 works
-    def count_pre_2020_works(works):
-        count = 0
-        for group in works["group"]:
-            for work_summary in group["work-summary"]:
-                if "publication-date" in work_summary and "year" in work_summary["publication-date"]:
-                    year = int(work_summary["publication-date"]["year"]["value"])
-                    if year < 2020:
-                        count += 1
-        return count
-
-    # Fetch and analyze works for each contributor total pre-2020 works
-    pre_2020_works_counts = []
-
-    for orcid_id in dataset["contributors"]:
+    # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())
+    try:
         try:
-            works = fetch_works(orcid_id)
-            pre_2020_count = count_pre_2020_works(works)
-            pre_2020_works_counts.append(pre_2020_count)
-        except Exception as e:
-            print(f"Error fetching data for {orcid_id}: {e}", file=sys.stderr)
+            compiled_expr = compile(full_code, '<string>', 'eval')
+        except SyntaxError:
+            compiled_expr = None
 
-    # Calculate the average number of works
-    if pre_2020_works_counts:
-        average_pre_2020_works = sum(pre_2020_works_counts) / len(pre_2020_works_counts)
-    else:
-        average_pre_2020_works = 0
+        if compiled_expr is not None:
+            # 是单个表达式，使用 eval 获取返回值并尝试以友好形式打印
+            result_value = eval(compiled_expr, exec_globals)
+            try:
+                # pandas DataFrame / Series 的友好打印
+                if hasattr(result_value, 'to_string'):
+                    print(result_value.to_string())
+                # numpy arrays 或其他有 shape 的对象，尽量用 repr
+                elif hasattr(result_value, '__array__') or hasattr(result_value, 'shape'):
+                    try:
+                        import numpy as _np
+                        # 尝试限制输出长度
+                        print(repr(result_value))
+                    except Exception:
+                        print(repr(result_value))
+                else:
+                    print(repr(result_value))
+            except Exception:
+                # 即使格式化失败，也确保有输出
+                print(repr(result_value))
+        else:
+            # 不是表达式，作为普通脚本执行（保留原有行为）
+            exec(compile(full_code, '<string>', 'exec'), exec_globals)
 
-    average_pre_2020_works
+    except Exception:
+        # 抛出异常以便外层捕获并触发智能修复流程
+        raise
+
+    # Restore stdout and get captured output
+    sys.stdout = original_stdout
+    user_output = captured_output.getvalue()
     
-    # Get the output and restore stdout
-    output = captured_output.getvalue()
-    sys.stdout = old_stdout
-    
+    # Print success markers and output
     print("EXECUTION_SUCCESS")
     print("OUTPUT_START")
-    if output.strip():
-        print(output.strip())
+    if user_output.strip():
+        print(user_output.strip())
     else:
         print("(No output)")
     print("OUTPUT_END")
     
 except Exception as e:
     # Restore stdout first
-    sys.stdout = old_stdout
+    sys.stdout = original_stdout
     print("EXECUTION_ERROR") 
     print("ERROR_START")
     print(f"{type(e).__name__}: {str(e)}")

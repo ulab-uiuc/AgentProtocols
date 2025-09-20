@@ -3,22 +3,23 @@ import sys
 import traceback
 import os
 from io import StringIO
+import pandas
 
-# Capture stdout
-old_stdout = sys.stdout
-sys.stdout = captured_output = StringIO()
+# Store original stdout for final output
+original_stdout = sys.stdout
+
+# Capture stdout for user code
+captured_output = StringIO()
 
 # Add dataset directory to sys.path if available
 if os.path.exists('/dataset'):
     sys.path.insert(0, '/dataset')
     os.environ['DATASET_DIR'] = '/dataset'
-    print("Dataset directory available at /dataset")
 
 # Add workspace directory to sys.path
 if os.path.exists('/workspace'):
     sys.path.insert(0, '/workspace')
     os.environ['WORKSPACE_DIR'] = '/workspace'
-    print("Workspace directory available at /workspace")
     # Set working directory to workspace
     os.chdir('/workspace')
 
@@ -47,54 +48,113 @@ try:
         setattr(__builtins__, 'resolve_dataset_file', resolve_dataset_file)
 except Exception as builtins_error:
     # Fallback: add to globals and print warning
-    print(f"Warning: Could not add to __builtins__ ({builtins_error}), using globals fallback")
     globals()['resolve_dataset_file'] = resolve_dataset_file
 
 try:
-    # Execute user code
-    from Bio.PDB import PDBParser
-    import numpy as np
-
-    def calculate_distance(atom1, atom2):
-        coord1 = np.array(atom1.coord)
-        coord2 = np.array(atom2.coord)
-        return np.linalg.norm(coord1 - coord2)
-
-    # Initialize PDB parser
-    parser = PDBParser(QUIET=True)
-
-    # Parse the PDB file
-    structure = parser.get_structure('5wb7', '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb')
-
-    # Extract atoms
-    atoms = list(structure.get_atoms())
-
-    if len(atoms) >= 2:
-        # Calculate the distance between the first and second atom
-        dist = calculate_distance(atoms[0], atoms[1])
-        # Round the distance to the nearest picometer (1 Angstrom = 10000 picometers)
-        dist_picometers = round(dist * 10000)
-        output = f"Distance between first and second atom: {dist_picometers} pm"
-    else:
-        output = "Not enough atoms in the structure to calculate the distance."
-
-    output
+    # Redirect stdout to capture user output
+    sys.stdout = captured_output
     
-    # Get the output and restore stdout
-    output = captured_output.getvalue()
-    sys.stdout = old_stdout
+    # Print environment info to captured output
+    if os.path.exists('/dataset'):
+        print("Dataset directory available at /dataset")
+    if os.path.exists('/workspace'):
+        print("Workspace directory available at /workspace")
     
+    # Create namespace for execution
+    exec_globals = globals().copy()
+    
+    # 准备要执行的完整代码
+    full_code = '''
+# Importing necessary libraries to calculate the distance between first and second atoms
+from Bio.PDB import PDBParser
+import numpy as np
+
+# Define a function to calculate the distance between two atoms
+def calculate_distance(atom1, atom2):
+    coord1 = atom1.get_vector()
+    coord2 = atom2.get_vector()
+    # Calculate the Euclidean distance
+    distance = np.linalg.norm(coord1 - coord2)
+    # Return the distance in Angstroms, rounded to the nearest picometer
+    return round(distance * 1000)
+
+# Using PDBParser to parse the PDB file
+pdb_parser = PDBParser(QUIET=True)
+structure = pdb_parser.get_structure('5wb7', '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb')
+
+# Extract the first model (there might be multiple models in a PDB file)
+model = structure[0]
+
+# Initialize a list to hold all atoms in the structure
+atoms = []
+
+# Iterate through all chains, residues, and atoms to populate the atoms list
+for chain in model:
+    for residue in chain:
+        for atom in residue:
+            atoms.append(atom)
+
+# Get the first and second atoms
+atom1 = atoms[0]
+atom2 = atoms[1]
+
+# Calculate the distance between the first and second atoms
+distance_in_pm = calculate_distance(atom1, atom2)
+
+print(distance_in_pm)
+'''.strip()
+
+    # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())
+    try:
+        try:
+            compiled_expr = compile(full_code, '<string>', 'eval')
+        except SyntaxError:
+            compiled_expr = None
+
+        if compiled_expr is not None:
+            # 是单个表达式，使用 eval 获取返回值并尝试以友好形式打印
+            result_value = eval(compiled_expr, exec_globals)
+            try:
+                # pandas DataFrame / Series 的友好打印
+                if hasattr(result_value, 'to_string'):
+                    print(result_value.to_string())
+                # numpy arrays 或其他有 shape 的对象，尽量用 repr
+                elif hasattr(result_value, '__array__') or hasattr(result_value, 'shape'):
+                    try:
+                        import numpy as _np
+                        # 尝试限制输出长度
+                        print(repr(result_value))
+                    except Exception:
+                        print(repr(result_value))
+                else:
+                    print(repr(result_value))
+            except Exception:
+                # 即使格式化失败，也确保有输出
+                print(repr(result_value))
+        else:
+            # 不是表达式，作为普通脚本执行（保留原有行为）
+            exec(compile(full_code, '<string>', 'exec'), exec_globals)
+
+    except Exception:
+        # 抛出异常以便外层捕获并触发智能修复流程
+        raise
+
+    # Restore stdout and get captured output
+    sys.stdout = original_stdout
+    user_output = captured_output.getvalue()
+    
+    # Print success markers and output
     print("EXECUTION_SUCCESS")
     print("OUTPUT_START")
-    if output.strip():
-        print(output.strip())
+    if user_output.strip():
+        print(user_output.strip())
     else:
         print("(No output)")
     print("OUTPUT_END")
     
 except Exception as e:
     # Restore stdout first
-    sys.stdout = old_stdout
+    sys.stdout = original_stdout
     print("EXECUTION_ERROR") 
     print("ERROR_START")
     print(f"{type(e).__name__}: {str(e)}")

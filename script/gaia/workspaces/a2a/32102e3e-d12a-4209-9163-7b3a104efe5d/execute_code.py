@@ -3,22 +3,23 @@ import sys
 import traceback
 import os
 from io import StringIO
+import pandas
 
-# Capture stdout
-old_stdout = sys.stdout
-sys.stdout = captured_output = StringIO()
+# Store original stdout for final output
+original_stdout = sys.stdout
+
+# Capture stdout for user code
+captured_output = StringIO()
 
 # Add dataset directory to sys.path if available
 if os.path.exists('/dataset'):
     sys.path.insert(0, '/dataset')
     os.environ['DATASET_DIR'] = '/dataset'
-    print("Dataset directory available at /dataset")
 
 # Add workspace directory to sys.path
 if os.path.exists('/workspace'):
     sys.path.insert(0, '/workspace')
     os.environ['WORKSPACE_DIR'] = '/workspace'
-    print("Workspace directory available at /workspace")
     # Set working directory to workspace
     os.chdir('/workspace')
 
@@ -47,34 +48,91 @@ try:
         setattr(__builtins__, 'resolve_dataset_file', resolve_dataset_file)
 except Exception as builtins_error:
     # Fallback: add to globals and print warning
-    print(f"Warning: Could not add to __builtins__ ({builtins_error}), using globals fallback")
     globals()['resolve_dataset_file'] = resolve_dataset_file
 
 try:
-    # Execute user code
-    import pandas as pd
-
-    # Load the excel file
-    df = pd.read_excel('32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx')
-
-    # Display the first few rows of the dataframe to understand its structure
-    df.head()
+    # Redirect stdout to capture user output
+    sys.stdout = captured_output
     
-    # Get the output and restore stdout
-    output = captured_output.getvalue()
-    sys.stdout = old_stdout
+    # Print environment info to captured output
+    if os.path.exists('/dataset'):
+        print("Dataset directory available at /dataset")
+    if os.path.exists('/workspace'):
+        print("Workspace directory available at /workspace")
     
+    # Create namespace for execution
+    exec_globals = globals().copy()
+    
+    # 准备要执行的完整代码
+    full_code = '''
+import pandas as pd
+# Load the spreadsheet
+file_path = '32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx'
+df = pd.read_excel(file_path)
+# Set the first row as the header
+new_header = df.iloc[1] # grab the first row for the header
+df = df[2:] # take the data less the header row
+df.columns = new_header # set the header row as the df header
+# Filter only Blu-Rays
+blu_rays_df = df[df['Format'] == 'Blu-Ray']
+# Find the oldest Blu-Ray by Release Year
+oldest_blu_ray = blu_rays_df.sort_values(by='Release Year').iloc[0]
+# Return the title of the oldest Blu-Ray
+oldest_blu_ray_title = oldest_blu_ray['Title']
+print(oldest_blu_ray_title)
+'''.strip()
+
+    # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())
+    try:
+        try:
+            compiled_expr = compile(full_code, '<string>', 'eval')
+        except SyntaxError:
+            compiled_expr = None
+
+        if compiled_expr is not None:
+            # 是单个表达式，使用 eval 获取返回值并尝试以友好形式打印
+            result_value = eval(compiled_expr, exec_globals)
+            try:
+                # pandas DataFrame / Series 的友好打印
+                if hasattr(result_value, 'to_string'):
+                    print(result_value.to_string())
+                # numpy arrays 或其他有 shape 的对象，尽量用 repr
+                elif hasattr(result_value, '__array__') or hasattr(result_value, 'shape'):
+                    try:
+                        import numpy as _np
+                        # 尝试限制输出长度
+                        print(repr(result_value))
+                    except Exception:
+                        print(repr(result_value))
+                else:
+                    print(repr(result_value))
+            except Exception:
+                # 即使格式化失败，也确保有输出
+                print(repr(result_value))
+        else:
+            # 不是表达式，作为普通脚本执行（保留原有行为）
+            exec(compile(full_code, '<string>', 'exec'), exec_globals)
+
+    except Exception:
+        # 抛出异常以便外层捕获并触发智能修复流程
+        raise
+
+    # Restore stdout and get captured output
+    sys.stdout = original_stdout
+    user_output = captured_output.getvalue()
+    
+    # Print success markers and output
     print("EXECUTION_SUCCESS")
     print("OUTPUT_START")
-    if output.strip():
-        print(output.strip())
+    if user_output.strip():
+        print(user_output.strip())
     else:
         print("(No output)")
     print("OUTPUT_END")
     
 except Exception as e:
     # Restore stdout first
-    sys.stdout = old_stdout
+    sys.stdout = original_stdout
     print("EXECUTION_ERROR") 
     print("ERROR_START")
     print(f"{type(e).__name__}: {str(e)}")

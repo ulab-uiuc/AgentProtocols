@@ -4,7 +4,7 @@
 # - 可选块（browser / search / sandbox / runflow 等）以注释形式保留，按需启用
 # - 若集成到基于 AppConfig / Config 的加载逻辑，可再做键名调整
 planner:
-  reuse_plan: false  # 是否复用已有计划
+  reuse_plan: true  # 是否复用已有计划
 
 llm:
   default:

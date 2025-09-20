@@ -3,6 +3,7 @@ import sys
 import traceback
 import os
 from io import StringIO
+import pandas
 
 # Store original stdout for final output
 original_stdout = sys.stdout
@@ -65,35 +66,54 @@ try:
     # 准备要执行的完整代码
     full_code = '''
 import pandas as pd
-
-# Load the spreadsheet to find the oldest Blu-Ray
+# Load the spreadsheet file
 try:
-    file_path = '32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx'
-    
-    # Read the Excel file
-    xls = pd.ExcelFile(file_path)
-    
-    # Load the first sheet
-    sheet_name = xls.sheet_names[0]
-    df = pd.read_excel(file_path, sheet_name=sheet_name)
-    
-    # Filter only Blu-Ray items
-    df_blu_ray = df[df['Format'] == 'Blu-Ray']
-    
-    # Find the oldest Blu-Ray by release year
-    oldest_blu_ray = df_blu_ray.loc[df_blu_ray['Release Year'].idxmin()]
-    oldest_title = oldest_blu_ray['Title']
-    
-    oldest_title
+    df = pd.read_excel('32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx')
+    # Filter rows where the format is Blu-Ray
+    blu_ray_df = df[df['Format'] == 'Blu-Ray']
+    # Find the oldest Blu-Ray by sorting the release year in ascending order and picking the first
+    oldest_blu_ray_title = blu_ray_df.sort_values('Release Year').iloc[0]['Title']
+    oldest_blu_ray_title
 except Exception as e:
     print(f'Error: {e}')
     print('Attempting to handle the error gracefully...')
 '''.strip()
 
-    # 将整个代码块作为一个整体来执行
-    # 这会保留所有的缩进和代码结构
-    exec(full_code, exec_globals)
-    
+    # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())
+    try:
+        try:
+            compiled_expr = compile(full_code, '<string>', 'eval')
+        except SyntaxError:
+            compiled_expr = None
+
+        if compiled_expr is not None:
+            # 是单个表达式，使用 eval 获取返回值并尝试以友好形式打印
+            result_value = eval(compiled_expr, exec_globals)
+            try:
+                # pandas DataFrame / Series 的友好打印
+                if hasattr(result_value, 'to_string'):
+                    print(result_value.to_string())
+                # numpy arrays 或其他有 shape 的对象，尽量用 repr
+                elif hasattr(result_value, '__array__') or hasattr(result_value, 'shape'):
+                    try:
+                        import numpy as _np
+                        # 尝试限制输出长度
+                        print(repr(result_value))
+                    except Exception:
+                        print(repr(result_value))
+                else:
+                    print(repr(result_value))
+            except Exception:
+                # 即使格式化失败，也确保有输出
+                print(repr(result_value))
+        else:
+            # 不是表达式，作为普通脚本执行（保留原有行为）
+            exec(compile(full_code, '<string>', 'exec'), exec_globals)
+
+    except Exception:
+        # 抛出异常以便外层捕获并触发智能修复流程
+        raise
+
     # Restore stdout and get captured output
     sys.stdout = original_stdout
     user_output = captured_output.getvalue()

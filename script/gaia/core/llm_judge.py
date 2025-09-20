@@ -22,7 +22,7 @@ class JudgeResult(Enum):
 class JudgmentOutput:
     """Structured output from LLM judge."""
     result: JudgeResult
-    confidence: float  # 0.0 to 1.0
+    quality_score: int  # 1 (poor) .. 5 (excellent)
     reasoning: str
     answer_quality: str  # excellent/good/fair/poor
     final_answer_present: bool
@@ -54,51 +54,68 @@ class EnhancedLLMJudge:
         
     def _create_judge_prompt(self, question: str, ground_truth: str, 
                            predicted_answer: str, final_answer: str) -> str:
-        """Create comprehensive judge prompt."""
-        return f"""You are an expert judge evaluating AI system responses to GAIA benchmark questions.
+        """Create comprehensive judge prompt with a process-oriented quality rubric."""
+        return f"""You are an expert judge evaluating AI system responses for the GAIA benchmark. Your evaluation must consider both the final answer's correctness and the quality of the process taken by the AI.
 
-ORIGINAL QUESTION:
-{question}
-
-GROUND TRUTH ANSWER:
-{ground_truth}
-
-AI SYSTEM RESPONSE:
+**TASK DETAILS:**
+- **ORIGINAL QUESTION:** {question}
+- **GROUND TRUTH ANSWER:** {ground_truth}
+- **FULL AI SYSTEM RESPONSE (TRACE):**
 {predicted_answer}
 
-EXTRACTED FINAL ANSWER:
-{final_answer}
+- **EXTRACTED FINAL ANSWER:** {final_answer}
 
-Your task is to evaluate if the AI system's response correctly answers the original question.
+---
+**EVALUATION INSTRUCTIONS:**
 
-Evaluation criteria:
-1. Does the extracted final answer match or closely match the ground truth?
-2. Is the answer factually correct and complete?
-3. Does the response demonstrate proper understanding of the question?
-4. Consider partial correctness for complex multi-part questions
-5. Account for different valid formulations of the same answer
+Your task is to perform a two-part evaluation:
+1.  **Correctness (`is_correct`):** First, determine if the `EXTRACTED FINAL ANSWER` is correct when compared to the `GROUND TRUTH ANSWER`. Consider semantic equivalence and allow for minor formatting differences.
+2.  **Process Quality (`quality_score`):** Second, and just as importantly, evaluate the agent's problem-solving process based on the `FULL AI SYSTEM RESPONSE (TRACE)`. Use the detailed rubric below to assign a score from 1 to 5.
 
-For numerical answers:
-- Allow for reasonable rounding differences
-- Consider scientific notation equivalents
-- Check for unit consistency
+---
+**QUALITY SCORE RUBRIC (1-5):**
 
-For text answers:
-- Consider semantic equivalence over exact string matching
-- Allow for different phrasings of the same concept
-- Check for completeness of multi-part answers
+Your primary focus for the `quality_score` is the agent's methodology. A high score can be given for a good process even if the final answer is incorrect.
 
-Respond with a JSON object:
+- **Score 5 (Excellent):**
+  - The final answer is correct.
+  - The process is clear, logical, and highly efficient.
+  - Tools are used correctly and effectively without unnecessary steps. The agent proceeds directly to the solution.
+
+- **Score 4 (Good):**
+  - The final answer is correct, but the process may have minor inefficiencies (e.g., an extra exploratory step, a slightly roundabout logic).
+  - OR, the process is perfect, but the final answer has a trivial error (e.g., a typo, wrong rounding, minor formatting issue).
+
+- **Score 3 (Fair / Good Process):**
+  - **This score is awarded for a solid, logical process, even if the final answer is incorrect.**
+  - The agent demonstrates a correct understanding of the problem.
+  - **It successfully uses tools, communicates between steps, and makes clear, logical progress toward a solution.**
+  - The failure occurs late in the process, perhaps due to a flawed final calculation or misinterpretation of the tool's output.
+
+- **Score 2 (Poor):**
+  - The agent's approach is fundamentally flawed or shows significant misunderstanding.
+  - It may use tools incorrectly (e.g., wrong parameters), get stuck in a loop, or fail to make meaningful progress.
+  - The agent's steps are illogical or chaotic.
+
+- **Score 1 (Very Poor):**
+  - The agent produces no relevant output.
+  - It hallucinates tool usage, fails immediately on the first step, or its response is completely unrelated to the question.
+
+---
+**RESPONSE FORMAT:**
+
+Respond with a single JSON object. Do not include any other text or explanations outside the JSON.
 {{
   "is_correct": true/false,
-  "confidence": 0.0-1.0,
-  "reasoning": "Detailed explanation of your evaluation including specific points of comparison",
+  "quality_score": 1-5,
+  "reasoning": "Detailed explanation for your judgment. Justify BOTH the correctness of the final answer and the quality score based on the process trace and the rubric.",
   "answer_quality": "excellent/good/fair/poor",
   "final_answer_present": true/false,
   "partial_credit": 0.0-1.0
 }}
 
-Be thorough but fair in your evaluation. Provide specific reasoning for your judgment."""
+Be thorough but fair in your evaluation. Provide specific reasoning for your judgment.
+"""
 
     def _extract_json_from_response(self, response: str) -> Optional[Dict[str, Any]]:
         """Extract JSON from LLM response with robust parsing."""
@@ -120,7 +137,8 @@ Be thorough but fair in your evaluation. Provide specific reasoning for your jud
             # Extract key-value pairs using regex
             patterns = {
                 "is_correct": r'"is_correct":\s*(true|false)',
-                "confidence": r'"confidence":\s*([0-9.]+)',
+                "quality_score": r'"quality_score":\s*([0-9]+)',
+                "quality": r'"quality":\s*([0-9]+)',
                 "reasoning": r'"reasoning":\s*"([^"]*)"',
                 "answer_quality": r'"answer_quality":\s*"([^"]*)"',
                 "final_answer_present": r'"final_answer_present":\s*(true|false)',
@@ -134,7 +152,12 @@ Be thorough but fair in your evaluation. Provide specific reasoning for your jud
                     value = match.group(1)
                     if key in ["is_correct", "final_answer_present"]:
                         extracted[key] = value.lower() == "true"
-                    elif key in ["confidence", "partial_credit"]:
+                    elif key in ["quality_score", "quality"]:
+                        try:
+                            extracted["quality_score"] = int(value)
+                        except Exception:
+                            extracted["quality_score"] = None
+                    elif key in ["partial_credit"]:
                         extracted[key] = float(value)
                     else:
                         extracted[key] = value
@@ -158,7 +181,7 @@ Be thorough but fair in your evaluation. Provide specific reasoning for your jud
         if final_clean == truth_clean:
             return JudgmentOutput(
                 result=JudgeResult.CORRECT,
-                confidence=0.9,  # High confidence for exact match
+                quality_score=5,  # Excellent for exact match
                 reasoning=f"Exact string match between final answer and ground truth. {error_msg}",
                 answer_quality="good",
                 final_answer_present=bool(final_answer.strip()),
@@ -174,7 +197,7 @@ Be thorough but fair in your evaluation. Provide specific reasoning for your jud
         if contains_match:
             return JudgmentOutput(
                 result=JudgeResult.PARTIAL,
-                confidence=0.6,
+                quality_score=3,
                 reasoning=f"Partial match detected between answers. {error_msg}",
                 answer_quality="fair", 
                 final_answer_present=bool(final_answer.strip()),
@@ -186,7 +209,7 @@ Be thorough but fair in your evaluation. Provide specific reasoning for your jud
         # No match
         return JudgmentOutput(
             result=JudgeResult.INCORRECT,
-            confidence=0.7,
+            quality_score=1,
             reasoning=f"No match found between final answer and ground truth. {error_msg}",
             answer_quality="poor",
             final_answer_present=bool(final_answer.strip()),
@@ -200,7 +223,7 @@ Be thorough but fair in your evaluation. Provide specific reasoning for your jud
         """Handle timeout cases with appropriate judgment."""
         return JudgmentOutput(
             result=JudgeResult.TIMEOUT,
-            confidence=0.0,
+            quality_score=1,
             reasoning=f"Task execution timed out after {execution_time:.1f} seconds. "
                      "Unable to generate a complete response for evaluation.",
             answer_quality="poor",
@@ -236,7 +259,7 @@ Be thorough but fair in your evaluation. Provide specific reasoning for your jud
         if status in ["error", "execution_error"]:
             return JudgmentOutput(
                 result=JudgeResult.ERROR,
-                confidence=0.0,
+                quality_score=1,
                 reasoning=f"Task execution failed with error. Predicted answer: {predicted_answer[:100]}...",
                 answer_quality="poor",
                 final_answer_present=False,
@@ -275,6 +298,20 @@ Be thorough but fair in your evaluation. Provide specific reasoning for your jud
                 # Successfully parsed LLM judge response
                 is_correct = judge_data.get("is_correct", False)
                 partial_credit = judge_data.get("partial_credit", 0.0)
+                quality_score = judge_data.get("quality_score", None)
+                if quality_score is None:
+                    # Try legacy 'quality' key
+                    quality_score = judge_data.get("quality", 3)
+                
+                # Normalize quality_score
+                try:
+                    quality_score = int(quality_score)
+                    if quality_score < 1:
+                        quality_score = 1
+                    if quality_score > 5:
+                        quality_score = 5
+                except Exception:
+                    quality_score = 3
                 
                 # Determine result based on correctness and partial credit
                 if is_correct:
@@ -286,7 +323,7 @@ Be thorough but fair in your evaluation. Provide specific reasoning for your jud
                 
                 return JudgmentOutput(
                     result=result,
-                    confidence=judge_data.get("confidence", 0.5),
+                    quality_score=quality_score,
                     reasoning=judge_data.get("reasoning", "LLM judge evaluation completed"),
                     answer_quality=judge_data.get("answer_quality", "unknown"),
                     final_answer_present=judge_data.get("final_answer_present", bool(final_answer.strip())),
@@ -347,7 +384,7 @@ Be thorough but fair in your evaluation. Provide specific reasoning for your jud
             "enhanced_llm_judge": {
                 "result": judgment.result.value,
                 "is_correct": judgment.result in [JudgeResult.CORRECT, JudgeResult.PARTIAL],
-                "confidence": judgment.confidence,
+                "quality_score": judgment.quality_score,
                 "reasoning": judgment.reasoning,
                 "answer_quality": judgment.answer_quality,
                 "final_answer_present": judgment.final_answer_present,
@@ -381,7 +418,7 @@ async def test_llm_judge():
         execution_time=2.5
     )
     print(f"Result: {result1.result.value}")
-    print(f"Confidence: {result1.confidence}")
+    print(f"Quality score: {result1.quality_score}")
     print(f"Reasoning: {result1.reasoning[:100]}...")
     
     # Test case 2: Timeout case

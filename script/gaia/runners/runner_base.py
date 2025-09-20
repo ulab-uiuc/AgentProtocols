@@ -269,7 +269,7 @@ class RunnerBase(abc.ABC):
             return json.load(f)
 
     # -------------------- Result Display Helper --------------------
-    def display_results(self, total_tasks: int, success_count: int, timeout_count: int, error_count: int) -> None:
+    def display_results(self, total_tasks: int, success_count: int, timeout_count: int, error_count: int, avg_quality: Optional[float] = None) -> None:
         """展示运行结果汇总信息。"""
         print("\n" + "=" * 60)
         print("📊 GAIA Benchmark Results Summary")
@@ -278,28 +278,114 @@ class RunnerBase(abc.ABC):
         print(f"✅ Successful: {success_count} ({(success_count/total_tasks*100 if total_tasks else 0):.1f}%)")
         print(f"⏰ Timeout: {timeout_count} ({(timeout_count/total_tasks*100 if total_tasks else 0):.1f}%)")
         print(f"❌ Errors: {error_count} ({(error_count/total_tasks*100 if total_tasks else 0):.1f}%)")
+        print()
         print(f"💾 Results saved to: {self.output_file}")
+
+        # Print average quality score if provided
+        if avg_quality is not None:
+            try:
+                print(f"⭐ Average quality_score (1-5): {avg_quality:.2f}")
+            except Exception:
+                print(f"⭐ Average quality_score (1-5): {avg_quality}")
+        else:
+            print("⭐ Average quality_score (1-5): N/A")
+
         print("=" * 60)
+
+    def compute_avg_quality(self, results: List[Dict[str, Any]]) -> Optional[float]:
+        """Compute average enhanced LLM judge quality_score (1-5) from results.
+
+        Args:
+            results: List of result dicts as saved to output file.
+
+        Returns:
+            Average quality score as float, or None if no valid scores found.
+        """
+        if not results:
+            return None
+        scores = []
+        for e in results:
+            try:
+                if isinstance(e, dict):
+                    # Prefer enhanced_llm_judge.quality_score
+                    judge = e.get('enhanced_llm_judge') or {}
+                    score = judge.get('quality_score')
+                    if score is None:
+                        # Some historical outputs may use 'quality' or 'quality_score' at top level
+                        score = e.get('quality_score') or e.get('quality')
+                    if score is None and isinstance(e, (int, float)):
+                        score = float(e)
+                    if score is not None:
+                        scores.append(float(score))
+            except Exception:
+                continue
+        if not scores:
+            return None
+        return sum(scores) / len(scores)
 
     # -------------------- Stepwise hooks --------------------
     async def plan(self, task_id: str, level: int, task_doc: str, workspace_dir: Path) -> Path:
         """
         Plan agents for the task using the dedicated workspace directory.
-        
+
+        This implementation normalizes planner output so that all protocols produce
+        a single config file at: <GAIA_ROOT>/workspaces/agent_config.<task_id>.json
+        which ensures fair comparison across protocols.
+
         Args:
             task_id: Task ID
             level: Task level
             task_doc: Task description
             workspace_dir: Task-specific workspace directory
-            
+
         Returns:
-            Path: Agent configuration file path
+            Path: Agent configuration file path (GAIA_ROOT/workspaces/agent_config.<task_id>.json)
         """
         # 将当前 Runner 的协议名和工作区路径传入 Planner
         planner = TaskPlanner(task_id=task_id, level=level, protocol_name=self.protocol_name)
-        # 传入工作区路径，让 planner 在该目录下工作
-        config_path = await planner.plan_agents(task_doc, workspace_dir=workspace_dir)
-        return Path(config_path)
+        # 让 planner 在该目录下工作并返回其生成的配置（路径或内容）
+        planner_result = await planner.plan_agents(task_doc, workspace_dir=workspace_dir)
+
+        # Ensure top-level workspaces dir exists and write unified config there
+        top_workspaces_dir = GAIA_ROOT / 'workspaces'
+        top_workspaces_dir.mkdir(parents=True, exist_ok=True)
+
+        # Use a dedicated agent_config directory under top-level workspaces
+        agent_config_dir = top_workspaces_dir / 'agent_config'
+        agent_config_dir.mkdir(parents=True, exist_ok=True)
+
+        dest_path = agent_config_dir / f"{task_id}.json"
+
+        # Normalize planner_result to JSON-serializable dict
+        config_data = None
+        try:
+            # If planner returned a Path-like string that exists on disk, try several locations
+            candidate = Path(planner_result)
+            if candidate.is_absolute() and candidate.exists():
+                with candidate.open('r', encoding='utf-8') as f:
+                    config_data = json.load(f)
+            else:
+                # Try relative to workspace_dir
+                rel_candidate = Path(workspace_dir) / candidate
+                if rel_candidate.exists():
+                    with rel_candidate.open('r', encoding='utf-8') as f:
+                        config_data = json.load(f)
+                else:
+                    # Maybe planner returned a JSON string
+                    config_data = json.loads(str(planner_result))
+        except Exception:
+            # If planner returned a dict-like object, use it directly
+            if isinstance(planner_result, dict):
+                config_data = planner_result
+            else:
+                # As a fallback, wrap the string representation
+                config_data = {"planner_output": str(planner_result)}
+
+        # Write unified config file at GAIA_ROOT/workspaces/agent_config.<task_id>.json
+        with dest_path.open('w', encoding='utf-8') as f:
+            json.dump(config_data, f, indent=2, ensure_ascii=False)
+
+        return dest_path
 
     async def check_health(self, network: Any) -> None:
         ok = await network.monitor_agent_health()
@@ -474,6 +560,7 @@ class RunnerBase(abc.ABC):
     async def run(self) -> None:
         """Main runner orchestration (load tasks, iterate, save results)."""
         tasks = self.tasks
+        run_start_time = time.time()
         # For fast iteration/dev, limit here if needed
         runtime_config = self.config.get('runtime', {})
         max_tasks = runtime_config.get('max_tasks', None)
@@ -564,6 +651,10 @@ class RunnerBase(abc.ABC):
                 "success_rate": (success_count / len(tasks) * 100) if tasks else 0.0,
                 "timeout_per_task": self.timeout,
                 "execution_timestamp": time.time(),
+                # Average quality score (1-5) across evaluated tasks, null if unavailable
+                "avg_quality_score": self.compute_avg_quality(results),
+                # Total execution time for the whole run in seconds
+                "total_execution_time": time.time() - run_start_time,
             },
             "results": results,
             "failed_tasks": failed_tasks,
@@ -575,7 +666,8 @@ class RunnerBase(abc.ABC):
             json.dump(output_data, f, indent=2, ensure_ascii=False)
 
         # 调用封装的结果展示函数
-        self.display_results(len(tasks), success_count, timeout_count, error_count)
+        avg_quality = output_data.get('metadata', {}).get('avg_quality_score')
+        self.display_results(len(tasks), success_count, timeout_count, error_count, avg_quality)
 
 
 async def _main():

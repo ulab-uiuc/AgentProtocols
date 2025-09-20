@@ -3,6 +3,7 @@ import sys
 import traceback
 import os
 from io import StringIO
+import pandas
 
 # Store original stdout for final output
 original_stdout = sys.stdout
@@ -65,39 +66,65 @@ try:
     # 准备要执行的完整代码
     full_code = '''
 from Bio.PDB import PDBParser
-from math import sqrt
+import numpy as np
 
-def calculate_distance(atom1, atom2):
-    return sqrt((atom1.coord[0] - atom2.coord[0]) ** 2 +
-                (atom1.coord[1] - atom2.coord[1]) ** 2 +
-                (atom1.coord[2] - atom2.coord[2]) ** 2) * 10000  # Convert to picometers
+# Parse the PDB file
+def get_first_two_atoms_distance(pdb_filename):
+    parser = PDBParser(PERMISSIVE=1)
+    structure = parser.get_structure('PDB', pdb_filename)
+    atoms = list(structure.get_atoms())
+    
+    # Get the first two atoms
+    atom1, atom2 = atoms[0], atoms[1]
+    
+    # Calculate the distance between the first two atoms
+    distance = atom1 - atom2
+    
+    # Convert to Angstroms and round to the nearest picometer
+    distance_angstroms = np.round(distance * 1000) / 1000 # Round to nearest picometer
+    
+    return distance_angstroms
 
-# Initialize the parser
-parser = PDBParser(QUIET=True)
-
-# Parse the structure
-structure = parser.get_structure('5wb7', '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb')
-
-# Get the first model
-model = structure[0]
-
-# Obtain the first two atoms
-atoms = list(model.get_atoms())
-
-if len(atoms) < 2:
-    raise ValueError("The PDB file does not contain enough atoms.")
-
-# Calculate the distance between the first and second atom
-distance = calculate_distance(atoms[0], atoms[1])
-
-# Print the result rounded to the nearest picometer
-print(f"Distance between the first and second atom: {round(distance)} pm")
+# Filename of the PDB file
+distance = get_first_two_atoms_distance('7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb')
+print(distance)
 '''.strip()
 
-    # 将整个代码块作为一个整体来执行
-    # 这会保留所有的缩进和代码结构
-    exec(full_code, exec_globals)
-    
+    # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())
+    try:
+        try:
+            compiled_expr = compile(full_code, '<string>', 'eval')
+        except SyntaxError:
+            compiled_expr = None
+
+        if compiled_expr is not None:
+            # 是单个表达式，使用 eval 获取返回值并尝试以友好形式打印
+            result_value = eval(compiled_expr, exec_globals)
+            try:
+                # pandas DataFrame / Series 的友好打印
+                if hasattr(result_value, 'to_string'):
+                    print(result_value.to_string())
+                # numpy arrays 或其他有 shape 的对象，尽量用 repr
+                elif hasattr(result_value, '__array__') or hasattr(result_value, 'shape'):
+                    try:
+                        import numpy as _np
+                        # 尝试限制输出长度
+                        print(repr(result_value))
+                    except Exception:
+                        print(repr(result_value))
+                else:
+                    print(repr(result_value))
+            except Exception:
+                # 即使格式化失败，也确保有输出
+                print(repr(result_value))
+        else:
+            # 不是表达式，作为普通脚本执行（保留原有行为）
+            exec(compile(full_code, '<string>', 'exec'), exec_globals)
+
+    except Exception:
+        # 抛出异常以便外层捕获并触发智能修复流程
+        raise
+
     # Restore stdout and get captured output
     sys.stdout = original_stdout
     user_output = captured_output.getvalue()

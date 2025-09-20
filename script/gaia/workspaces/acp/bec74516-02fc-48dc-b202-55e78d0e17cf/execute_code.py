@@ -3,6 +3,7 @@ import sys
 import traceback
 import os
 from io import StringIO
+import pandas
 
 # Store original stdout for final output
 original_stdout = sys.stdout
@@ -61,57 +62,51 @@ try:
     
     # Create namespace for execution
     exec_globals = globals().copy()
-    exec_locals = {}
     
-    # Split code into lines and execute
-    code_lines = '''
-# Let's extract the ORCID IDs from the JSON-LD file to start the process.
-import json
+    # 准备要执行的完整代码
+    full_code = '''
+import os
+# Check if the file exists
+def file_exists(file_path):
+    return os.path.exists(file_path)
+print(file_exists("bec74516-02fc-48dc-b202-55e78d0e17cf.jsonld"))
+'''.strip()
 
-# Path to the JSON-LD file containing ORCID IDs
-data_file_path = 'bec74516-02fc-48dc-b202-55e78d0e17cf.jsonld'
-
-# Load the JSON-LD data
-def load_jsonld(file_path):
-    with open(file_path, 'r') as file:
-        return json.load(file)
-
-# Extract ORCID IDs
-def extract_orcid_ids(data):
-    ids = []
-    if data.get('author') and '@id' in data['author']:
-        ids.append(data['author']['@id'])
-    if data.get('editor'):
-        for editor in data['editor']:
-            if '@id' in editor:
-                ids.append(editor['@id'])
-    return ids
-
-# Main logic
-json_data = load_jsonld(data_file_path)
-orcid_ids = extract_orcid_ids(json_data)
-orcid_ids
-'''.strip().split('\n')
-    
-    # Execute code line by line, capturing and displaying results of expressions
-    for line in code_lines:
-        line = line.strip()
-        if not line or line.startswith('#'):
-            continue
-            
+    # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())
+    try:
         try:
-            # Try to execute as statement first
-            exec(line, exec_globals, exec_locals)
+            compiled_expr = compile(full_code, '<string>', 'eval')
         except SyntaxError:
-            # If it fails as statement, try as expression and print result
+            compiled_expr = None
+
+        if compiled_expr is not None:
+            # 是单个表达式，使用 eval 获取返回值并尝试以友好形式打印
+            result_value = eval(compiled_expr, exec_globals)
             try:
-                result = eval(line, exec_globals, exec_locals)
-                if result is not None:
-                    print(result)
-            except:
-                # If both fail, execute as statement (this will raise the original error)
-                exec(line, exec_globals, exec_locals)
-    
+                # pandas DataFrame / Series 的友好打印
+                if hasattr(result_value, 'to_string'):
+                    print(result_value.to_string())
+                # numpy arrays 或其他有 shape 的对象，尽量用 repr
+                elif hasattr(result_value, '__array__') or hasattr(result_value, 'shape'):
+                    try:
+                        import numpy as _np
+                        # 尝试限制输出长度
+                        print(repr(result_value))
+                    except Exception:
+                        print(repr(result_value))
+                else:
+                    print(repr(result_value))
+            except Exception:
+                # 即使格式化失败，也确保有输出
+                print(repr(result_value))
+        else:
+            # 不是表达式，作为普通脚本执行（保留原有行为）
+            exec(compile(full_code, '<string>', 'exec'), exec_globals)
+
+    except Exception:
+        # 抛出异常以便外层捕获并触发智能修复流程
+        raise
+
     # Restore stdout and get captured output
     sys.stdout = original_stdout
     user_output = captured_output.getvalue()
