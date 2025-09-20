@@ -67,30 +67,22 @@ try:
     full_code = '''
 import pandas as pd
 
-def find_oldest_blu_ray(file_path):
-    # Load the spreadsheet
-try:
-        df = pd.read_excel(file_path)
+# Load the spreadsheet and view its content.
+file_path = '32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx'
+
+def load_and_view_spreadsheet(file_path):
+    with pd.ExcelFile(file_path) as xls:
+        # Display the sheet names to ensure we are working with the correct sheet.
+        print(xls.sheet_names)
         
-        # Filter for Blu-Ray entries
-        blu_ray_df = df[df['Format'].str.contains('Blu-Ray', na=False)]
-        
-        # Sort by Release Year
-        sorted_blu_ray_df = blu_ray_df.sort_values('Release Year')
-        
-        # Get the title of the oldest Blu-Ray
-        oldest_blu_ray_title = sorted_blu_ray_df.iloc[0]['Title']
-        
-        return oldest_blu_ray_title
-    
-    # Path to the spreadsheet
-    file_path = '32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx'
-    
-    # Find the oldest Blu-Ray
-    find_oldest_blu_ray(file_path)
-except Exception as e:
-    print(f'Error: {e}')
-    print('Attempting to handle the error gracefully...')
+        # Assuming the first sheet is the one we need (as no specific sheet name is given)
+        df = pd.read_excel(xls, sheet_name=xls.sheet_names[0])
+        return df
+
+# Load the data
+df = load_and_view_spreadsheet(file_path)
+
+df.head()  # Display the first few rows for inspection
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

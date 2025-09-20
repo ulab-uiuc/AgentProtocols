@@ -158,6 +158,13 @@ Your primary action is to execute Python code. NEVER proactively add packages to
 First, execute the code without any packages.
 If the execution fails with a 'ModuleNotFoundError', and ONLY in that case, retry the exact same code but add the missing package to the 'packages' parameter.
 Example: If you get an error "No module named 'pandas'" your next step is to execute with "packages": ["pandas"].
+- **PERSISTENCE OF PACKAGES:**
+    - **Once a package is identified as a requirement in a previous step, you MUST include it in all subsequent steps that need it.**
+    - Do not assume packages installed in one step will be available in the next. Each tool call is isolated.
+    - **Example Workflow:**
+    1. **Step 1 (Agent A):** Fails with `ModuleNotFoundError: No module named 'pandas'`.
+    2. **Step 1 (Agent A, Retry):** Succeeds with `packages=["pandas"]`.
+    3. **Step 2 (Agent B):** MUST use `packages=["pandas"]` in its tool call if its code requires pandas.
 
 2. FILE ACCESS — ASSUME A SHARED WORKSPACE:
 All necessary files are available in your current working directory.

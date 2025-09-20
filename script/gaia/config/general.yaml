@@ -52,8 +52,8 @@ framework:
 network:
   host: "127.0.0.1"
   port_range:
-    start: 9100
-    end: 9200
+    start: 9000
+    end: 9100
   timeout_seconds: 60
   max_connections: 10
 

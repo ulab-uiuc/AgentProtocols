@@ -223,7 +223,7 @@ class ANPAgent(MeshAgent):
 
     # ==================== ANP Protocol Specific Methods ====================
     async def _start_anp_node(self):
-        """Start ANP SimpleNode using original ANP-SDK."""
+        """Start ANP SimpleNode as a managed asyncio task."""
         if not ANP_SDK_AVAILABLE:
             return
         
@@ -246,25 +246,45 @@ class ANPAgent(MeshAgent):
             self._simple_node.run()
             
             # Wait for node to be ready
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(0.5)
             
             self.anp_initialized = True
-            self._log(f"✅ ANP SimpleNode started on {self.host_domain}:{self.host_port}")
+            self._log(f"✅ ANP SimpleNode started as a background task on {self.host_domain}:{self.host_port}")
             
         except Exception as e:
             self._log(f"❌ Failed to start ANP node: {e}")
+            self.anp_initialized = False
+            if self._node_task and not self._node_task.done():
+                self._node_task.cancel()
             raise
 
     async def _stop_anp_node(self):
-        """Stop ANP SimpleNode."""
-        if self._simple_node:
+        """Gracefully and robustly stop the ANP SimpleNode task."""
+        if self._simple_node and hasattr(self._simple_node, 'stop'):
             try:
+                # The stop() method should handle the Uvicorn server shutdown.
                 await self._simple_node.stop()
+                self._log("Called SimpleNode.stop()")
             except Exception as e:
-                self._log(f"Warning: Error stopping ANP node: {e}")
-            finally:
-                self._simple_node = None
-                self.anp_initialized = False
+                self._log(f"Warning: Error in SimpleNode.stop(): {e}")
+        
+        if self._node_task and not self._node_task.done():
+            self._node_task.cancel()
+            try:
+                await self._node_task
+            except asyncio.CancelledError:
+                pass # This is expected
+            except Exception as e:
+                self._log(f"Warning: Exception during ANP task cleanup: {e}")
+
+        # Give the OS a brief moment to release the network socket.
+        # This can help prevent race conditions in rapid start/stop cycles.
+        await asyncio.sleep(0.1)
+
+        self._simple_node = None
+        self._node_task = None
+        self.anp_initialized = False
+        self._log(f"ANP Node for port {self.host_port} has been shut down.")
 
     async def _generate_did(self):
         """Generate DID using ANP-SDK."""
