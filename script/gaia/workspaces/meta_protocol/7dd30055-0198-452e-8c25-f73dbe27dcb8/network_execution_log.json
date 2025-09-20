@@ -23,9 +23,9 @@
       "agent_id": "0",
       "agent_name": "PDBFileParser",
       "status": "success",
-      "start_time": 1758365418.037441,
-      "end_time": 1758365426.600283,
-      "duration": 8.562841892242432,
+      "start_time": 1758383272.8560405,
+      "end_time": 1758383283.0700104,
+      "duration": 10.213969945907593,
       "messages": [],
       "error_message": null
     },
@@ -34,9 +34,9 @@
       "agent_id": "1",
       "agent_name": "DistanceCalculator",
       "status": "success",
-      "start_time": 1758365427.1013858,
-      "end_time": 1758365436.3937914,
-      "duration": 9.292405605316162,
+      "start_time": 1758383283.5709286,
+      "end_time": 1758383294.2374454,
+      "duration": 10.666516780853271,
       "messages": [],
       "error_message": null
     },
@@ -45,12 +45,12 @@
       "agent_id": "2",
       "agent_name": "ResultFormatter",
       "status": "success",
-      "start_time": 1758365436.8946056,
-      "end_time": 1758365443.538081,
-      "duration": 6.643475294113159,
+      "start_time": 1758383294.7385018,
+      "end_time": 1758383300.850069,
+      "duration": 6.111567258834839,
       "messages": [],
       "error_message": null
     }
   },
-  "timestamp": 1758365443.5382798
+  "timestamp": 1758383300.8502145
 }

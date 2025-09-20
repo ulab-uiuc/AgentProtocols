@@ -65,30 +65,30 @@ try:
     
     # 准备要执行的完整代码
     full_code = '''
-from Bio import PDB
+from Bio.PDB import PDBParser
 import os
-# Check if the PDB file exists
-def file_exists(file_path):
-    return os.path.exists(file_path)
-# Calculate the distance between two atoms
-from math import sqrt
-# Parse the PDB file and calculate distance
-pdb_parser = PDB.PDBParser()
-structure = pdb_parser.get_structure("5wb7", "7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb")
-# Access the first model
-model = structure[0]
-# Get a list of all atoms
-atoms = list(model.get_atoms())
-# Get the first two atoms
-atom1 = atoms[0]
-atom2 = atoms[1]
-# Calculate the Euclidean distance
-coord1 = atom1.get_coord()
-coord2 = atom2.get_coord()
-distance = sqrt((coord1[0] - coord2[0]) ** 2 + (coord1[1] - coord2[1]) ** 2 + (coord1[2] - coord2[2]) ** 2)
-# Round to the nearest picometer
-rounded_distance = round(distance, 3)
-print(rounded_distance)
+import math
+def calculate_distance(atom1, atom2):
+    return math.sqrt((atom1.coord[0] - atom2.coord[0]) ** 2 +
+                     (atom1.coord[1] - atom2.coord[1]) ** 2 +
+                     (atom1.coord[2] - atom2.coord[2]) ** 2)
+# Load the PDB file
+pdb_file = "7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb"
+if not os.path.exists(pdb_file):
+    raise FileNotFoundError(f"The file {pdb_file} does not exist.")
+parser = PDBParser()
+structure = parser.get_structure("5wb7", pdb_file)
+# Fetch the first and second atoms from the structure
+atoms = list(structure.get_atoms())
+if len(atoms) < 2:
+    raise ValueError("Less than two atoms found in the PDB file.")
+first_atom = atoms[0]
+second_atom = atoms[1]
+# Calculate the distance in Angstroms
+distance_angstroms = calculate_distance(first_atom, second_atom)
+# Convert the distance to picometers (1 Angstrom = 100 picometers)
+distance_picometers = round(distance_angstroms * 100)
+print(distance_picometers)
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

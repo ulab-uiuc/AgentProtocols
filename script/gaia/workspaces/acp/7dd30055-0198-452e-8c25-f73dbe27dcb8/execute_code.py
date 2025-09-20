@@ -67,29 +67,27 @@ try:
     full_code = '''
 from Bio.PDB import PDBParser
 import numpy as np
-# Define a function to calculate the distance between two atoms given their coordinates
-def calculate_distance(atom1_coord, atom2_coord):
-    return np.linalg.norm(atom1_coord - atom2_coord)
-# Parse the PDB file to extract atom coordinates
-def parse_pdb_and_calculate_distance(pdb_filename):
-    parser = PDBParser(PERMISSIVE=1)
-    structure = parser.get_structure('5wb7', pdb_filename)
-    # Fetching all atoms from the structure
-    atoms = list(structure.get_atoms())
-    if len(atoms) < 2:
-        raise ValueError("Not enough atoms to calculate distance.")
-    # Get the coordinates of the first two atoms
-    atom1_coord = atoms[0].coord
-    atom2_coord = atoms[1].coord
-    # Calculate the distance
-    distance = calculate_distance(atom1_coord, atom2_coord)
-    return distance
-# Reading the PDB file and calculating the distance between the first two atoms
-pdb_filename = '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb'
-distance_angstroms = parse_pdb_and_calculate_distance(pdb_filename)
-# Convert the distance to picometers and round
-rounded_distance_picometers = round(distance_angstroms * 100)
-print(rounded_distance_picometers)
+
+# Parse the PDB file
+parser = PDBParser()
+structure = parser.get_structure('5wb7', '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb')
+
+# Get all atoms in the structure
+atoms = [atom for atom in structure.get_atoms()]
+
+# Get the coordinates of the first and second atoms
+atom1_coord = atoms[0].get_coord()
+atom2_coord = atoms[1].get_coord()
+
+# Calculate the distance between the first and second atom
+distance = np.linalg.norm(atom1_coord - atom2_coord)
+
+# Convert the distance to picometers by multiplying by 100 and rounding
+# (since the distance is in Angstroms, we multiply by 100 to convert to picometers)
+distance_picometers = round(distance * 100)
+
+# Output the distance
+print(distance_picometers)
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

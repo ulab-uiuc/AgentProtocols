@@ -275,8 +275,8 @@ class RunnerBase(abc.ABC):
             return json.load(f)
 
     # -------------------- Result Display Helper --------------------
-    def display_results(self, total_tasks: int, success_count: int, timeout_count: int, error_count: int, avg_quality: Optional[float] = None, total_toolcall_time: Optional[float] = None) -> None:
-        """展示运行结果汇总信息。"""
+    def display_results(self, total_tasks: int, success_count: int, timeout_count: int, error_count: int, avg_quality: Optional[float] = None, total_execution_time: Optional[float] = None, communication_overhead: Optional[float] = None) -> None:
+        """Show run summary. Display average quality, total execution time and communication overhead."""
         print("\n" + "=" * 60)
         print("📊 GAIA Benchmark Results Summary")
         print("=" * 60)
@@ -285,7 +285,6 @@ class RunnerBase(abc.ABC):
         print(f"⏰ Timeout: {timeout_count} ({(timeout_count/total_tasks*100 if total_tasks else 0):.1f}%)")
         print(f"❌ Errors: {error_count} ({(error_count/total_tasks*100 if total_tasks else 0):.1f}%)")
         print()
-        print(f"💾 Results saved to: {self.output_file}")
 
         # Print average quality score if provided
         if avg_quality is not None:
@@ -296,15 +295,24 @@ class RunnerBase(abc.ABC):
         else:
             print("⭐ Average quality_score (1-5): N/A")
 
-        # Print total toolcall time if provided
-        if total_toolcall_time is not None:
+        # Display only the requested timing metrics
+        if total_execution_time is not None:
             try:
-                print(f"⏱️ Total toolcall time: {total_toolcall_time:.2f} seconds")
+                print(f"⏱️ Total execution time: {total_execution_time:.2f} seconds")
             except Exception:
-                print(f"⏱️ Total toolcall time: {total_toolcall_time}")
+                print(f"⏱️ Total execution time: {total_execution_time}")
         else:
-            print("⏱️ Total toolcall time: N/A")
+            print("⏱️ Total execution time: N/A")
 
+        if communication_overhead is not None:
+            try:
+                print(f"🔁 Communication time: {communication_overhead:.2f} seconds")
+            except Exception:
+                print(f"🔁 Communication time: {communication_overhead}")
+        else:
+            print("🔁 Communication time: N/A")
+
+        print(f"💾 Results saved to: {self.output_file}")
         print("=" * 60)
 
     def compute_avg_quality(self, results: List[Dict[str, Any]]) -> Optional[float]:
@@ -384,6 +392,53 @@ class RunnerBase(abc.ABC):
             'task_toolcall_count': total_count,
             'agent_tool_stats': agent_stats,
         }
+
+    def compute_task_llm_metrics(self, network: Any) -> Dict[str, Any]:
+        """Compute total LLM call time and counts for a running/just-stopped network.
+
+        This inspects agents attached to the provided network and sums the
+        per-agent attributes `._llm_call_total` and `._llm_call_count` that
+        agents are expected to maintain in-memory (same pattern as toolcalls).
+
+        Returns a dict with:
+          - task_llm_time: float (seconds)
+          - task_llm_count: int
+          - agent_llm_stats: list of {agent_id, agent_name, llm_call_total, llm_call_count}
+        """
+        total_time = 0.0
+        total_count = 0
+        agent_stats = []
+        try:
+            agents = getattr(network, 'agents', None) or []
+            for a in agents:
+                try:
+                    t = float(getattr(a, '_llm_call_total', 0.0) or 0.0)
+                except Exception:
+                    t = 0.0
+                try:
+                    c = int(getattr(a, '_llm_call_count', 0) or 0)
+                except Exception:
+                    c = 0
+                total_time += t
+                total_count += c
+                agent_stats.append({
+                    'agent_id': getattr(a, 'id', None),
+                    'agent_name': getattr(a, 'name', None),
+                    'llm_call_total': round(t, 6),
+                    'llm_call_count': c,
+                })
+        except Exception:
+            return {
+                'task_llm_time': 0.0,
+                'task_llm_count': 0,
+                'agent_llm_stats': []
+            }
+        return {
+            'task_llm_time': round(total_time, 6),
+            'task_llm_count': total_count,
+            'agent_llm_stats': agent_stats,
+        }
+
     # -------------------- Stepwise hooks --------------------
     async def plan(self, task_id: str, level: int, task_doc: str, workspace_dir: Path) -> Path:
         """
@@ -525,6 +580,16 @@ class RunnerBase(abc.ABC):
             except Exception:
                 pass
 
+            # Ensure network has protocol and workspace info so network loggers use correct path
+            try:
+                if isinstance(general_config, dict):
+                    # prefer explicit protocol name from runner (avoids defaulting to 'general')
+                    general_config.setdefault("protocol", self.protocol_name)
+                    # include absolute workspace path for components that prefer it
+                    general_config.setdefault("workspace_dir", str(workspace_dir))
+            except Exception:
+                pass
+
             # Create network (abstract)
             network = self.create_network(general_config)
 
@@ -537,20 +602,27 @@ class RunnerBase(abc.ABC):
                 
                 # Use enhanced LLM as judge to evaluate answer quality
                 from core.llm_judge import create_llm_judge
-                
+
                 # Get judge timeout from config
                 judge_timeout = general_config.get("evaluation", {}).get("judge_timeout", 30)
                 judge = create_llm_judge(judge_timeout=judge_timeout)
-                
+
+                # Determine network log path for this task and pass to judge
+                try:
+                    network_log_path = str(Path(workspace_dir) / 'network_execution_log.json')
+                except Exception:
+                    network_log_path = None
+
                 # Judge the answer with comprehensive handling
                 judgment = await judge.judge_answer(
                     question=task_doc,
                     ground_truth=ground_truth,
                     predicted_answer=result,
                     execution_time=execution_time,
-                    status="success"
+                    status="success",
+                    network_log_path=network_log_path
                 )
-                
+
                 # Format result using the enhanced judge
                 formatted = judge.format_judgment_for_result(
                     judgment=judgment,
@@ -563,13 +635,20 @@ class RunnerBase(abc.ABC):
                 )
                 try:
                     metrics = self.compute_task_toolcall_metrics(network)
+                    llm_metrics = self.compute_task_llm_metrics(network)
                     formatted['task_toolcall_time'] = metrics.get('task_toolcall_time', 0.0)
                     formatted['task_toolcall_count'] = metrics.get('task_toolcall_count', 0)
                     formatted['agent_tool_stats'] = metrics.get('agent_tool_stats', [])
+                    formatted['task_llm_call_time'] = llm_metrics.get('task_llm_time', 0.0)
+                    formatted['task_llm_call_count'] = llm_metrics.get('task_llm_count', 0)
+                    formatted['agent_llm_stats'] = llm_metrics.get('agent_llm_stats', [])
                 except Exception:
                     formatted['task_toolcall_time'] = 0.0
                     formatted['task_toolcall_count'] = 0
                     formatted['agent_tool_stats'] = []
+                    formatted['task_llm_call_time'] = 0.0
+                    formatted['task_llm_call_count'] = 0
+                    formatted['agent_llm_stats'] = []
                 return formatted
             except asyncio.TimeoutError:
                 execution_time = time.time() - start_time
@@ -578,16 +657,23 @@ class RunnerBase(abc.ABC):
                 from core.llm_judge import create_llm_judge
                 judge_timeout = general_config.get("evaluation", {}).get("judge_timeout", 30)
                 judge = create_llm_judge(judge_timeout=judge_timeout)
-                
+
+                # Determine network log path for this task and pass to judge
+                try:
+                    network_log_path = str(Path(workspace_dir) / 'network_execution_log.json')
+                except Exception:
+                    network_log_path = None
+
                 # Judge the timeout case
                 judgment = await judge.judge_answer(
                     question=task_doc,
                     ground_truth=ground_truth,
                     predicted_answer="TIMEOUT: Framework execution exceeded time limit",
                     execution_time=execution_time,
-                    status="timeout"
+                    status="timeout",
+                    network_log_path=network_log_path
                 )
-                
+
                 # Format result using the enhanced judge
                 formatted = judge.format_judgment_for_result(
                     judgment=judgment,
@@ -600,13 +686,20 @@ class RunnerBase(abc.ABC):
                 )
                 try:
                     metrics = self.compute_task_toolcall_metrics(network)
+                    llm_metrics = self.compute_task_llm_metrics(network)
                     formatted['task_toolcall_time'] = metrics.get('task_toolcall_time', 0.0)
                     formatted['task_toolcall_count'] = metrics.get('task_toolcall_count', 0)
                     formatted['agent_tool_stats'] = metrics.get('agent_tool_stats', [])
+                    formatted['task_llm_call_time'] = llm_metrics.get('task_llm_time', 0.0)
+                    formatted['task_llm_call_count'] = llm_metrics.get('task_llm_count', 0)
+                    formatted['agent_llm_stats'] = llm_metrics.get('agent_llm_stats', [])
                 except Exception:
                     formatted['task_toolcall_time'] = 0.0
                     formatted['task_toolcall_count'] = 0
                     formatted['agent_tool_stats'] = []
+                    formatted['task_llm_call_time'] = 0.0
+                    formatted['task_llm_call_count'] = 0
+                    formatted['agent_llm_stats'] = []
                 return formatted
             finally:
                 await self.stop_network(network)
@@ -619,16 +712,23 @@ class RunnerBase(abc.ABC):
             from core.llm_judge import create_llm_judge
             judge_timeout = general_config.get("evaluation", {}).get("judge_timeout", 30)
             judge = create_llm_judge(judge_timeout=judge_timeout)
-            
+
+            # Determine network log path for this task and pass to judge
+            try:
+                network_log_path = str(Path(workspace_dir) / 'network_execution_log.json')
+            except Exception:
+                network_log_path = None
+
             # Judge the error case
             judgment = await judge.judge_answer(
                 question=task_doc,
                 ground_truth=ground_truth,
                 predicted_answer=f"ERROR: {e}",
                 execution_time=execution_time,
-                status="error"
+                status="error",
+                network_log_path=network_log_path
             )
-            
+
             # Format result using the enhanced judge
             formatted = judge.format_judgment_for_result(
                 judgment=judgment,
@@ -648,6 +748,15 @@ class RunnerBase(abc.ABC):
                 formatted['task_toolcall_time'] = 0.0
                 formatted['task_toolcall_count'] = 0
                 formatted['agent_tool_stats'] = []
+            try:
+                llm_metrics = self.compute_task_llm_metrics(network)
+                formatted['task_llm_time'] = llm_metrics.get('task_llm_time', 0.0)
+                formatted['task_llm_count'] = llm_metrics.get('task_llm_count', 0)
+                formatted['agent_llm_stats'] = llm_metrics.get('agent_llm_stats', [])
+            except Exception:
+                formatted['task_llm_time'] = 0.0
+                formatted['task_llm_count'] = 0
+                formatted['agent_llm_stats'] = []
             return formatted
 
     # -------------------- Common Workflow --------------------
@@ -736,16 +845,22 @@ class RunnerBase(abc.ABC):
                     })
                 pbar.update(1)
 
-        # Aggregate total toolcall time across all task results
+        # Aggregate total toolcall and llm call time across all task results
         total_toolcall_time = 0.0
+        total_llm_call_time = 0.0
         for r in results:
             try:
                 total_toolcall_time += float(r.get('task_toolcall_time', 0.0) or 0.0)
             except Exception:
-                continue
+                pass
+            try:
+                total_llm_call_time += float(r.get('task_llm_call_time', 0.0) or 0.0)
+            except Exception:
+                pass
 
         total_execution_time = time.time() - run_start_time
-        total_execution_time_minus_toolcalls = max(0.0, total_execution_time - total_toolcall_time)
+        # Communication overhead = total execution time minus toolcall and llm call time
+        comm_overhead = max(0.0, total_execution_time - total_toolcall_time - total_llm_call_time)
 
         output_data = {
             "metadata": {
@@ -762,8 +877,10 @@ class RunnerBase(abc.ABC):
                 "total_execution_time": total_execution_time,
                 # Aggregate toolcall time across all agents/tasks
                 "total_toolcall_time": round(total_toolcall_time, 6),
-                # Total execution time minus toolcall time
-                "total_execution_time_minus_toolcalls": round(total_execution_time_minus_toolcalls, 6),
+                # Aggregate LLM call time across all agents/tasks
+                "total_llm_call_time": round(total_llm_call_time, 6),
+                # Communication overhead = total_execution_time - total_toolcall_time - total_llm_call_time
+                "communication_overhead": round(comm_overhead, 6),
             },
             "results": results,
             "failed_tasks": failed_tasks,
@@ -777,7 +894,8 @@ class RunnerBase(abc.ABC):
         # 调用封装的结果展示函数
         avg_quality = output_data.get('metadata', {}).get('avg_quality_score')
         total_tool_time = output_data.get('metadata', {}).get('total_toolcall_time')
-        self.display_results(len(tasks), success_count, timeout_count, error_count, avg_quality, total_tool_time)
+        # Pass average quality, total execution time and communication overhead for display
+        self.display_results(len(tasks), success_count, timeout_count, error_count, avg_quality, total_execution_time, comm_overhead)
 
 
 async def _main():

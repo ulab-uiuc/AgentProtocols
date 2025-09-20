@@ -5,6 +5,7 @@ import time
 from typing import Any, Dict, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 
 from .llm import call_llm, LLM
 
@@ -53,53 +54,70 @@ class EnhancedLLMJudge:
         return self._llm_instance
         
     def _create_judge_prompt(self, question: str, ground_truth: str, 
-                           predicted_answer: str, final_answer: str) -> str:
-        """Create comprehensive judge prompt with a process-oriented quality rubric."""
+                           predicted_answer: str, final_answer: str, network_log_path: Optional[str] = None) -> str:
+        """Create comprehensive judge prompt with a process-oriented quality rubric.
+
+        If `network_log_path` is provided and readable, the prompt will include the
+        entire contents of the network execution log (JSON) so the judge evaluates
+        inter-agent communication, tool inputs/outputs, and message content in detail.
+        """
+        # Try to read network execution log if provided
+        network_log_content = ""
+        if network_log_path:
+            try:
+                p = Path(network_log_path)
+                if p.exists():
+                    network_log_content = p.read_text(encoding='utf-8')
+                else:
+                    network_log_content = f"<NETWORK LOG NOT FOUND at {network_log_path}>"
+            except Exception as e:
+                network_log_content = f"<ERROR READING NETWORK LOG: {e}>"
+
         return f"""You are an expert judge evaluating AI system responses for the GAIA benchmark. Your evaluation must consider both the final answer's correctness and the quality of the process taken by the AI.
 
 **TASK DETAILS:**
 - **ORIGINAL QUESTION:** {question}
 - **GROUND TRUTH ANSWER:** {ground_truth}
-- **FULL AI SYSTEM RESPONSE (TRACE):**
-{predicted_answer}
 
 - **EXTRACTED FINAL ANSWER:** {final_answer}
 
+- **FULL AI SYSTEM RESPONSE (TRACE) (Brief summary / final output):**
+{predicted_answer}
+
 ---
+IMPORTANT: When assessing the agent, PRIORITIZE the FULL NETWORK EXECUTION LOG (JSON) below if provided. This log contains all inter-agent messages, tool calls, and intermediate data exchanges. Your process-quality judgment MUST be based primarily on the content, clarity, correctness, and completeness of inter-agent communication and tool interactions recorded in the network execution log. Do NOT rely only on any short summary or the extracted final answer.
+
+**FULL NETWORK EXECUTION LOG (JSON):**
+{network_log_content}
+
+If the network log is unavailable, fall back to using the FULL AI SYSTEM RESPONSE (TRACE) above.
+
 **EVALUATION INSTRUCTIONS:**
 
 Your task is to perform a two-part evaluation:
 1.  **Correctness (`is_correct`):** First, determine if the `EXTRACTED FINAL ANSWER` is correct when compared to the `GROUND TRUTH ANSWER`. Consider semantic equivalence and allow for minor formatting differences.
-2.  **Process Quality (`quality_score`):** Second, and just as importantly, evaluate the agent's problem-solving process based on the `FULL AI SYSTEM RESPONSE (TRACE)`. Use the detailed rubric below to assign a score from 1 to 5.
+2.  **Process Quality (`quality_score`):** Second, and just as importantly, evaluate the agent's problem-solving process based on the FULL NETWORK EXECUTION LOG (preferred) or the `FULL AI SYSTEM RESPONSE (TRACE)` when the log is unavailable. Use the detailed rubric below to assign a score from 1 to 5.
 
 ---
 **QUALITY SCORE RUBRIC (1-5):**
 
-Your primary focus for the `quality_score` is the agent's methodology. A high score can be given for a good process even if the final answer is incorrect.
+Your primary focus for the `quality_score` is the agent's methodology and the quality of inter-agent communication. A high score can be given for a good process even if the final answer is incorrect.
 
 - **Score 5 (Excellent):**
   - The final answer is correct.
-  - The process is clear, logical, and highly efficient.
-  - Tools are used correctly and effectively without unnecessary steps. The agent proceeds directly to the solution.
+  - Inter-agent communication is clear, complete, and correct. Tools are used correctly and efficiently. Intermediate results are validated and shared appropriately.
 
 - **Score 4 (Good):**
-  - The final answer is correct, but the process may have minor inefficiencies (e.g., an extra exploratory step, a slightly roundabout logic).
-  - OR, the process is perfect, but the final answer has a trivial error (e.g., a typo, wrong rounding, minor formatting issue).
+  - The final answer is correct, but communication may have minor inefficiencies or small omissions.
 
 - **Score 3 (Fair / Good Process):**
-  - **This score is awarded for a solid, logical process, even if the final answer is incorrect.**
-  - The agent demonstrates a correct understanding of the problem.
-  - **It successfully uses tools, communicates between steps, and makes clear, logical progress toward a solution.**
-  - The failure occurs late in the process, perhaps due to a flawed final calculation or misinterpretation of the tool's output.
+  - Solid reasoning and reasonable communication, but a late error or omission causes the final answer to be incorrect.
 
 - **Score 2 (Poor):**
-  - The agent's approach is fundamentally flawed or shows significant misunderstanding.
-  - It may use tools incorrectly (e.g., wrong parameters), get stuck in a loop, or fail to make meaningful progress.
-  - The agent's steps are illogical or chaotic.
+  - Communication is incomplete or incorrect, tools are misused, or agents fail to share necessary details.
 
 - **Score 1 (Very Poor):**
-  - The agent produces no relevant output.
-  - It hallucinates tool usage, fails immediately on the first step, or its response is completely unrelated to the question.
+  - No meaningful communication, hallucinated tool use, or completely irrelevant traces.
 
 ---
 **RESPONSE FORMAT:**
@@ -235,7 +253,7 @@ Be thorough but fair in your evaluation. Provide specific reasoning for your jud
 
     async def judge_answer(self, question: str, ground_truth: str, 
                           predicted_answer: str, execution_time: float,
-                          status: str = "success") -> JudgmentOutput:
+                          status: str = "success", network_log_path: Optional[str] = None) -> JudgmentOutput:
         """
         Judge an answer with comprehensive error and timeout handling.
         
@@ -245,6 +263,7 @@ Be thorough but fair in your evaluation. Provide specific reasoning for your jud
             predicted_answer: AI system's predicted answer
             execution_time: Time taken for execution
             status: Execution status (success/timeout/error)
+            network_log_path: Optional path to network execution log (JSON)
             
         Returns:
             JudgmentOutput with comprehensive evaluation
@@ -277,13 +296,17 @@ Be thorough but fair in your evaluation. Provide specific reasoning for your jud
         
         # Create judge prompt
         judge_prompt = self._create_judge_prompt(question, ground_truth, 
-                                                predicted_answer, final_answer)
+                                                predicted_answer, final_answer, network_log_path=network_log_path)
         
         try:
             # Get LLM judge response with timeout
             llm = self._get_llm()
-            judge_messages = [{"role": "user", "content": judge_prompt}]
-            
+            # Add a strong system instruction to force focus on the full trace
+            judge_messages = [
+                {"role": "system", "content": "You are a strict, process-focused judge. Base your evaluation on the FULL AI SYSTEM RESPONSE (TRACE) provided and output ONLY the required JSON object. Do not add any commentary or extra text."},
+                {"role": "user", "content": judge_prompt}
+            ]
+
             # Use asyncio timeout for judge evaluation
             judge_response = await asyncio.wait_for(
                 llm.ask(messages=judge_messages, temperature=0.0),

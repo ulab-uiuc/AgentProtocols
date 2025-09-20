@@ -6,11 +6,12 @@
     "error_tasks": 3,
     "success_rate": 0.0,
     "timeout_per_task": 300,
-    "execution_timestamp": 1758365475.4722629,
+    "execution_timestamp": 1758383340.3584905,
     "avg_quality_score": 1.0,
-    "total_execution_time": 67.3002655506134,
+    "total_execution_time": 81.52177166938782,
     "total_toolcall_time": 0.0,
-    "total_execution_time_minus_toolcalls": 67.300266
+    "total_llm_call_time": 0.0,
+    "communication_overhead": 81.521772
   },
   "results": [
     {
@@ -19,17 +20,17 @@
       "ground_truth": "Time-Parking 2: Parallel Universe",
       "predicted_answer": "No messages to summarize.",
       "final_answer_extracted": "No messages to summarize.",
-      "execution_time": 6.067819356918335,
+      "execution_time": 7.681386947631836,
       "status": "failed",
       "level": 2,
       "enhanced_llm_judge": {
         "result": "incorrect",
         "is_correct": false,
         "quality_score": 1,
-        "reasoning": "The evaluation of the AI system's response reveals that there is no extracted final answer provided, and the trace of the process is completely absent. This means the AI did not produce any output relevant to the task, nor did it demonstrate any problem-solving process. According to the rubric, this situation warrants a quality score of 1, as the agent failed immediately and did not engage with the task at all. Consequently, the final answer is not present, and there is no basis for awarding partial credit.",
-        "answer_quality": "very poor",
+        "reasoning": "The extracted final answer is missing, as indicated by 'No messages to summarize.' This means the AI system failed to provide any answer, let alone the correct one. The network execution log shows that both steps were marked as 'success,' but there are no messages or outputs from the agents, indicating a complete lack of meaningful communication or output. This results in a very poor process quality score, as there is no evidence of tool use or inter-agent communication that could lead to a correct answer.",
+        "answer_quality": "poor",
         "final_answer_present": false,
-        "judge_execution_time": 3.261711835861206,
+        "judge_execution_time": 5.702836275100708,
         "judge_method": "llm",
         "error_message": null
       },
@@ -48,6 +49,22 @@
           "toolcall_total": 0.0,
           "toolcall_count": 0
         }
+      ],
+      "task_llm_call_time": 0.0,
+      "task_llm_call_count": 0,
+      "agent_llm_stats": [
+        {
+          "agent_id": 0,
+          "agent_name": "SpreadsheetAnalyzer",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        },
+        {
+          "agent_id": 1,
+          "agent_name": "FinalAnswerSynthesizer",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        }
       ]
     },
     {
@@ -56,17 +73,17 @@
       "ground_truth": "1.456",
       "predicted_answer": "No messages to summarize.",
       "final_answer_extracted": "No messages to summarize.",
-      "execution_time": 25.934616327285767,
+      "execution_time": 28.52693819999695,
       "status": "failed",
       "level": 2,
       "enhanced_llm_judge": {
         "result": "incorrect",
         "is_correct": false,
         "quality_score": 1,
-        "reasoning": "The evaluation of the AI system's response reveals that there is no final answer provided, nor is there any process trace to evaluate. Without any output or process to analyze, it is impossible to determine if the AI system attempted to solve the problem or if it used any tools correctly. Consequently, the final answer is not present, and the quality of the process cannot be assessed. According to the rubric, this situation warrants a quality score of 1, as the agent produces no relevant output and fails immediately on the first step.",
+        "reasoning": "The extracted final answer is missing, as indicated by 'No messages to summarize.' This means the system failed to provide any answer, let alone the correct one. The network execution log shows that all steps were marked as 'success,' but there is no evidence of any inter-agent communication or tool usage that would lead to a correct answer. The absence of messages or error handling suggests a lack of meaningful communication and process execution, resulting in a very poor process quality score.",
         "answer_quality": "very poor",
         "final_answer_present": false,
-        "judge_execution_time": 2.5928165912628174,
+        "judge_execution_time": 3.5560340881347656,
         "judge_method": "llm",
         "error_message": null
       },
@@ -91,6 +108,28 @@
           "toolcall_total": 0.0,
           "toolcall_count": 0
         }
+      ],
+      "task_llm_call_time": 0.0,
+      "task_llm_call_count": 0,
+      "agent_llm_stats": [
+        {
+          "agent_id": 0,
+          "agent_name": "PDBFileParser",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        },
+        {
+          "agent_id": 1,
+          "agent_name": "DistanceCalculator",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        },
+        {
+          "agent_id": 2,
+          "agent_name": "ResultFormatter",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        }
       ]
     },
     {
@@ -99,17 +138,17 @@
       "ground_truth": "26.4",
       "predicted_answer": "No messages to summarize.",
       "final_answer_extracted": "No messages to summarize.",
-      "execution_time": 26.392216205596924,
+      "execution_time": 32.07433772087097,
       "status": "failed",
       "level": 3,
       "enhanced_llm_judge": {
         "result": "incorrect",
         "is_correct": false,
         "quality_score": 1,
-        "reasoning": "The evaluation of the AI system's response reveals that there is no extracted final answer provided, nor is there any process trace to evaluate. This indicates that the AI system failed to engage with the task at all. Without any attempt to solve the problem or provide an answer, the response is entirely inadequate. According to the rubric, this situation warrants a quality score of 1, as the agent produces no relevant output and fails immediately on the first step. Consequently, the final answer is not present, and no partial credit can be awarded.",
+        "reasoning": "The extracted final answer is 'No messages to summarize,' which is not a valid answer to the question and does not match the ground truth answer of 26.4. The network execution log shows that all steps were marked as 'success,' but there are no messages or data exchanges recorded, indicating a lack of meaningful inter-agent communication or tool usage. This suggests a failure in the process, as no intermediate results or calculations are visible, and the final answer is missing. Therefore, the process quality is very poor, and the final answer is incorrect.",
         "answer_quality": "very poor",
         "final_answer_present": false,
-        "judge_execution_time": 2.7456419467926025,
+        "judge_execution_time": 3.673738718032837,
         "judge_method": "llm",
         "error_message": null
       },
@@ -145,6 +184,40 @@
           "agent_name": "FinalSynthesizer",
           "toolcall_total": 0.0,
           "toolcall_count": 0
+        }
+      ],
+      "task_llm_call_time": 0.0,
+      "task_llm_call_count": 0,
+      "agent_llm_stats": [
+        {
+          "agent_id": 0,
+          "agent_name": "FileProcessor",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        },
+        {
+          "agent_id": 1,
+          "agent_name": "ORCIDDataFetcher",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        },
+        {
+          "agent_id": 2,
+          "agent_name": "DataAnalyzer",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        },
+        {
+          "agent_id": 3,
+          "agent_name": "AverageCalculator",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        },
+        {
+          "agent_id": 4,
+          "agent_name": "FinalSynthesizer",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
         }
       ]
     }
@@ -156,17 +229,17 @@
       "ground_truth": "Time-Parking 2: Parallel Universe",
       "predicted_answer": "No messages to summarize.",
       "final_answer_extracted": "No messages to summarize.",
-      "execution_time": 6.067819356918335,
+      "execution_time": 7.681386947631836,
       "status": "failed",
       "level": 2,
       "enhanced_llm_judge": {
         "result": "incorrect",
         "is_correct": false,
         "quality_score": 1,
-        "reasoning": "The evaluation of the AI system's response reveals that there is no extracted final answer provided, and the trace of the process is completely absent. This means the AI did not produce any output relevant to the task, nor did it demonstrate any problem-solving process. According to the rubric, this situation warrants a quality score of 1, as the agent failed immediately and did not engage with the task at all. Consequently, the final answer is not present, and there is no basis for awarding partial credit.",
-        "answer_quality": "very poor",
+        "reasoning": "The extracted final answer is missing, as indicated by 'No messages to summarize.' This means the AI system failed to provide any answer, let alone the correct one. The network execution log shows that both steps were marked as 'success,' but there are no messages or outputs from the agents, indicating a complete lack of meaningful communication or output. This results in a very poor process quality score, as there is no evidence of tool use or inter-agent communication that could lead to a correct answer.",
+        "answer_quality": "poor",
         "final_answer_present": false,
-        "judge_execution_time": 3.261711835861206,
+        "judge_execution_time": 5.702836275100708,
         "judge_method": "llm",
         "error_message": null
       },
@@ -185,6 +258,22 @@
           "toolcall_total": 0.0,
           "toolcall_count": 0
         }
+      ],
+      "task_llm_call_time": 0.0,
+      "task_llm_call_count": 0,
+      "agent_llm_stats": [
+        {
+          "agent_id": 0,
+          "agent_name": "SpreadsheetAnalyzer",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        },
+        {
+          "agent_id": 1,
+          "agent_name": "FinalAnswerSynthesizer",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        }
       ]
     },
     {
@@ -193,17 +282,17 @@
       "ground_truth": "1.456",
       "predicted_answer": "No messages to summarize.",
       "final_answer_extracted": "No messages to summarize.",
-      "execution_time": 25.934616327285767,
+      "execution_time": 28.52693819999695,
       "status": "failed",
       "level": 2,
       "enhanced_llm_judge": {
         "result": "incorrect",
         "is_correct": false,
         "quality_score": 1,
-        "reasoning": "The evaluation of the AI system's response reveals that there is no final answer provided, nor is there any process trace to evaluate. Without any output or process to analyze, it is impossible to determine if the AI system attempted to solve the problem or if it used any tools correctly. Consequently, the final answer is not present, and the quality of the process cannot be assessed. According to the rubric, this situation warrants a quality score of 1, as the agent produces no relevant output and fails immediately on the first step.",
+        "reasoning": "The extracted final answer is missing, as indicated by 'No messages to summarize.' This means the system failed to provide any answer, let alone the correct one. The network execution log shows that all steps were marked as 'success,' but there is no evidence of any inter-agent communication or tool usage that would lead to a correct answer. The absence of messages or error handling suggests a lack of meaningful communication and process execution, resulting in a very poor process quality score.",
         "answer_quality": "very poor",
         "final_answer_present": false,
-        "judge_execution_time": 2.5928165912628174,
+        "judge_execution_time": 3.5560340881347656,
         "judge_method": "llm",
         "error_message": null
       },
@@ -228,6 +317,28 @@
           "toolcall_total": 0.0,
           "toolcall_count": 0
         }
+      ],
+      "task_llm_call_time": 0.0,
+      "task_llm_call_count": 0,
+      "agent_llm_stats": [
+        {
+          "agent_id": 0,
+          "agent_name": "PDBFileParser",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        },
+        {
+          "agent_id": 1,
+          "agent_name": "DistanceCalculator",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        },
+        {
+          "agent_id": 2,
+          "agent_name": "ResultFormatter",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        }
       ]
     },
     {
@@ -236,17 +347,17 @@
       "ground_truth": "26.4",
       "predicted_answer": "No messages to summarize.",
       "final_answer_extracted": "No messages to summarize.",
-      "execution_time": 26.392216205596924,
+      "execution_time": 32.07433772087097,
       "status": "failed",
       "level": 3,
       "enhanced_llm_judge": {
         "result": "incorrect",
         "is_correct": false,
         "quality_score": 1,
-        "reasoning": "The evaluation of the AI system's response reveals that there is no extracted final answer provided, nor is there any process trace to evaluate. This indicates that the AI system failed to engage with the task at all. Without any attempt to solve the problem or provide an answer, the response is entirely inadequate. According to the rubric, this situation warrants a quality score of 1, as the agent produces no relevant output and fails immediately on the first step. Consequently, the final answer is not present, and no partial credit can be awarded.",
+        "reasoning": "The extracted final answer is 'No messages to summarize,' which is not a valid answer to the question and does not match the ground truth answer of 26.4. The network execution log shows that all steps were marked as 'success,' but there are no messages or data exchanges recorded, indicating a lack of meaningful inter-agent communication or tool usage. This suggests a failure in the process, as no intermediate results or calculations are visible, and the final answer is missing. Therefore, the process quality is very poor, and the final answer is incorrect.",
         "answer_quality": "very poor",
         "final_answer_present": false,
-        "judge_execution_time": 2.7456419467926025,
+        "judge_execution_time": 3.673738718032837,
         "judge_method": "llm",
         "error_message": null
       },
@@ -282,6 +393,40 @@
           "agent_name": "FinalSynthesizer",
           "toolcall_total": 0.0,
           "toolcall_count": 0
+        }
+      ],
+      "task_llm_call_time": 0.0,
+      "task_llm_call_count": 0,
+      "agent_llm_stats": [
+        {
+          "agent_id": 0,
+          "agent_name": "FileProcessor",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        },
+        {
+          "agent_id": 1,
+          "agent_name": "ORCIDDataFetcher",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        },
+        {
+          "agent_id": 2,
+          "agent_name": "DataAnalyzer",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        },
+        {
+          "agent_id": 3,
+          "agent_name": "AverageCalculator",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
+        },
+        {
+          "agent_id": 4,
+          "agent_name": "FinalSynthesizer",
+          "llm_call_total": 0.0,
+          "llm_call_count": 0
         }
       ]
     }

@@ -65,35 +65,16 @@ try:
     
     # 准备要执行的完整代码
     full_code = '''
-import json
-
-# Load the JSON-LD file content
-file_path = 'bec74516-02fc-48dc-b202-55e78d0e17cf.jsonld'
-
-try:
-    with open(file_path, 'r') as file:
-        data = json.load(file)
-
-    # Extract ORCID IDs
-    orcid_ids = []
-
-    # Extract ORCID ID from author
-    author_id = data.get('author', {}).get('@id', '')
-    if author_id:
-        orcid_ids.append(author_id)
-
-    # Extract ORCID IDs from editors
-    editors = data.get('editor', [])
-    for editor in editors:
-        editor_id = editor.get('@id', '')
-        if editor_id:
-            orcid_ids.append(editor_id)
-
-    # Print extracted ORCID IDs
-    print(orcid_ids)
-    
-except Exception as e:
-    print(f'Error reading JSON file: {e}')
+# Let's review the list of ORCID URLs obtained from the jsonld file, which includes researchers with their ORCID IDs.
+orcid_ids = [
+    "https://orcid.org/0000-0003-0396-0333",
+    "https://orcid.org/0000-0002-2605-6569",
+    "https://orcid.org/0000-0001-6102-7846",
+    "https://orcid.org/0000-0002-0209-2784",
+    "https://orcid.org/0000-0002-1053-2030"
+]
+# Outputting the list of ORCID IDs for further steps
+print(orcid_ids)
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

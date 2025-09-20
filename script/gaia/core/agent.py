@@ -93,6 +93,9 @@ class ToolCallAgent(ReActAgent):
 
         try:
             # Get response with tool options
+            # Measure LLM call duration and record per-agent LLM metrics
+            import time
+            llm_start = time.time()
             response = await self.llm.ask_tool(
                 messages=self.messages,
                 system_msgs=(
@@ -103,6 +106,16 @@ class ToolCallAgent(ReActAgent):
                 tools=self.available_tools.to_params(),
                 tool_choice=self.tool_choices,
             )
+            llm_dur = time.time() - llm_start
+            try:
+                if not hasattr(self, '_llm_call_total'):
+                    self._llm_call_total = 0.0
+                if not hasattr(self, '_llm_call_count'):
+                    self._llm_call_count = 0
+                self._llm_call_total += float(llm_dur)
+                self._llm_call_count += 1
+            except Exception:
+                pass
         except ValueError:
             raise
         except Exception as e:

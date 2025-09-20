@@ -25,9 +25,9 @@
       "agent_id": "0",
       "agent_name": "FileProcessor",
       "status": "success",
-      "start_time": 1758365446.8473117,
-      "end_time": 1758365450.0925846,
-      "duration": 3.2452728748321533,
+      "start_time": 1758383305.3257904,
+      "end_time": 1758383308.229362,
+      "duration": 2.903571605682373,
       "messages": [],
       "error_message": null
     },
@@ -36,9 +36,9 @@
       "agent_id": "1",
       "agent_name": "ORCIDDataFetcher",
       "status": "success",
-      "start_time": 1758365450.594069,
-      "end_time": 1758365451.6145198,
-      "duration": 1.0204508304595947,
+      "start_time": 1758383308.7297246,
+      "end_time": 1758383309.9593997,
+      "duration": 1.229675054550171,
       "messages": [],
       "error_message": null
     },
@@ -47,9 +47,9 @@
       "agent_id": "2",
       "agent_name": "DataAnalyzer",
       "status": "success",
-      "start_time": 1758365452.1153665,
-      "end_time": 1758365458.0030658,
-      "duration": 5.887699365615845,
+      "start_time": 1758383310.460245,
+      "end_time": 1758383321.1993039,
+      "duration": 10.73905897140503,
       "messages": [],
       "error_message": null
     },
@@ -58,9 +58,9 @@
       "agent_id": "3",
       "agent_name": "AverageCalculator",
       "status": "success",
-      "start_time": 1758365458.5033813,
-      "end_time": 1758365464.1741486,
-      "duration": 5.670767307281494,
+      "start_time": 1758383321.7001846,
+      "end_time": 1758383327.6318238,
+      "duration": 5.931639194488525,
       "messages": [],
       "error_message": null
     },
@@ -69,12 +69,12 @@
       "agent_id": "4",
       "agent_name": "FinalSynthesizer",
       "status": "success",
-      "start_time": 1758365464.6752145,
-      "end_time": 1758365472.624641,
-      "duration": 7.9494264125823975,
+      "start_time": 1758383328.1334774,
+      "end_time": 1758383336.5828428,
+      "duration": 8.449365377426147,
       "messages": [],
       "error_message": null
     }
   },
-  "timestamp": 1758365472.6248085
+  "timestamp": 1758383336.5829744
 }

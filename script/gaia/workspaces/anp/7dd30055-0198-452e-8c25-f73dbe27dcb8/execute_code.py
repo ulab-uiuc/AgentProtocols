@@ -65,27 +65,47 @@ try:
     
     # 准备要执行的完整代码
     full_code = '''
-from Bio.PDB import PDBParser
+from Bio.PDB import PDBParser, is_aa, Atom
+import numpy as np
 
-# Parse the PDB file
+# Load the PDB file 5wb7
+pdb_file = "7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb"
 parser = PDBParser(QUIET=True)
-structure = parser.get_structure('5wb7', '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb')
+structure = parser.get_structure("5wb7", pdb_file)
 
 # Extract the first two atoms
-atoms = list(structure.get_atoms())
-first_atom = atoms[0]
-second_atom = atoms[1]
+model = structure[0]  # Get the first model
+first_atom = None
+second_atom = None
+atom_counter = 0
 
-# Calculate the distance between the first and second atom
-from numpy import linalg
+for chain in model:
+    for residue in chain:
+        if is_aa(residue):
+            for atom in residue:
+                atom_counter += 1
+                if atom_counter == 1:
+                    first_atom = atom
+                elif atom_counter == 2:
+                    second_atom = atom
+                    break
+            if second_atom:
+                break
+    if second_atom:
+        break
 
-distance = linalg.norm(first_atom.coord - second_atom.coord)
-
-# Convert to picometers and round
-# 1 Angstrom = 100 picometers
-distance_picometers = round(distance * 100)
-
-print(distance_picometers)
+# Calculate the distance in Angstroms
+if first_atom and second_atom:
+    coord1 = first_atom.coord
+    coord2 = second_atom.coord
+    distance = np.linalg.norm(coord1 - coord2)
+    # Convert to picometers: 1 Angstrom = 100 Picometers
+    distance_picometers = distance * 100
+    # Round to the nearest Picometer
+    rounded_distance = round(distance_picometers)
+    print(rounded_distance)
+else:
+    print("Atoms not found.")
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

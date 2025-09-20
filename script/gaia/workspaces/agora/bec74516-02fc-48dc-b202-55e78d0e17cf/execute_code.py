@@ -65,49 +65,23 @@ try:
     
     # 准备要执行的完整代码
     full_code = '''
-# This code is to simulate processing ORCID data for pre-2020 works 
-# to calculate the average number of pre-2020 works per ORCID ID.
-
-# Normally, we would fetch this data using an API or web scraping,
-# but due to limitations, let's assume the following data structure was fetched:
-orcid_data = {
-    '0000-0003-0396-0333': [
-        {'title': 'Work A1', 'year': 2019},
-        {'title': 'Work A2', 'year': 2018},
-        {'title': 'Work A3', 'year': 2020},
-    ],
-    '0000-0002-2605-6569': [
-        {'title': 'Work B1', 'year': 2015},
-        {'title': 'Work B2', 'year': 2017},
-    ],
-    '0000-0001-6102-7846': [
-        {'title': 'Work C1', 'year': 2021},
-    ],
-    '0000-0002-0209-2784': [
-        {'title': 'Work D1', 'year': 2019},
-        {'title': 'Work D2', 'year': 2016},
-        {'title': 'Work D3', 'year': 2013},
-        {'title': 'Work D4', 'year': 2020},
-    ],
-    '0000-0002-1053-2030': [
-        {'title': 'Work E1', 'year': 2018},
-        {'title': 'Work E2', 'year': 2015},
-        {'title': 'Work E3', 'year': 2014},
-    ],
-}
-
-# Calculate the number of pre-2020 works for each ORCID
-pre_2020_counts = []
-
-for orcid, works in orcid_data.items():
-    # Count works before 2020
-    count_pre_2020 = sum(1 for work in works if work['year'] < 2020)
-    pre_2020_counts.append(count_pre_2020)
-
-# Calculate the average number of pre-2020 works
-average_pre_2020_works = sum(pre_2020_counts) / len(pre_2020_counts)
-
-print(average_pre_2020_works)
+import json
+# Load the JSON-LD file to extract ORCID IDs
+file_path = 'bec74516-02fc-48dc-b202-55e78d0e17cf.jsonld'
+with open(file_path, 'r') as file:
+    data = json.load(file)
+# Extract all ORCID IDs from the JSON-LD data
+orcid_ids = []
+# Check author ID
+if 'author' in data and '@id' in data['author']:
+    orcid_ids.append(data['author']['@id'])
+# Check editors IDs
+if 'editor' in data:
+    for editor in data['editor']:
+        if '@id' in editor:
+            orcid_ids.append(editor['@id'])
+# Output the ORCID IDs
+print(orcid_ids)
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

@@ -68,9 +68,9 @@ try:
 import pandas as pd
 # Load the spreadsheet
 file_path = '32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx'
-df = pd.read_excel(file_path)
-# Check the first few rows of the dataframe
-print(df.head())
+sheet_name = 'Sheet1'
+data = pd.read_excel(file_path, sheet_name=sheet_name)
+print(data.head().to_string())
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

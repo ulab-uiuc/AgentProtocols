@@ -174,6 +174,8 @@ class MetaProtocolCommBackend:
                                           payload: Dict[str, Any], protocol: str) -> str:
         """Send message using BaseAgent routing (following fail_storm_recovery pattern)."""
         try:
+            # Ensure router_agent is resolved from instance attribute if available
+            router_agent = getattr(self, '_router_agent', None)
             # Use BaseAgent.send() method like fail_storm_recovery does
             print(f"[MetaProtocol] Routing {src_id} -> {dst_id} via {protocol}")
             
@@ -243,8 +245,9 @@ class MetaProtocolNetwork(MeshNetwork):
     """
     
     def __init__(self, config: Dict[str, Any], task_id: str):
-        # Add task_id to config before passing to parent
-        enhanced_config = {**config, "task_id": task_id}
+        # Ensure config includes a protocol field so parent MeshNetwork will
+        # construct workspace/log paths correctly (avoid defaulting to 'general').
+        enhanced_config = {**config, "task_id": task_id, "protocol": config.get("protocol", "meta_protocol")}
         super().__init__(enhanced_config)
         
         self._comm_backend = MetaProtocolCommBackend()

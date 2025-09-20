@@ -66,47 +66,25 @@ try:
     # 准备要执行的完整代码
     full_code = '''
 from Bio.PDB import PDBParser
-import math
+import numpy as np
 
-# Define a function to calculate the distance between two atoms
-def calculate_distance(atom1, atom2):
-    # Extract coordinates
-    coord1 = atom1.coord
-    coord2 = atom2.coord
-    # Calculate the Euclidean distance
-    distance = math.sqrt((coord1[0] - coord2[0]) ** 2 + (coord1[1] - coord2[1]) ** 2 + (coord1[2] - coord2[2]) ** 2)
-    return distance
+# Load PDB file
+pdb_file = '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb'
+parser = PDBParser(QUIET=True)
+structure = parser.get_structure('5wb7', pdb_file)
 
-# Parse the PDB file
-parser = PDBParser()
-structure = parser.get_structure('5wb7', '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb')
-
-# Get the first two atoms in the structure
-model = structure[0]
-first_atom = None
-second_atom = None
-
-for chain in model:
-    for residue in chain:
-        for atom in residue:
-            if first_atom is None:
-                first_atom = atom
-            elif second_atom is None:
-                second_atom = atom
-                break
-        if second_atom is not None:
-            break
-    if second_atom is not None:
-        break
-
-# Calculate the distance between the first and second atoms
-if first_atom is not None and second_atom is not None:
-    distance_in_angstroms = calculate_distance(first_atom, second_atom)
-    # Convert the distance to picometers and round it
-    distance_in_picometers = round(distance_in_angstroms * 100)
-    print(distance_in_picometers)
+# Extract atoms
+atoms = list(structure.get_atoms())
+if len(atoms) >= 2:
+    atom1 = atoms[0]
+    atom2 = atoms[1]
+    # Calculate distance
+    distance = atom1 - atom2
+    # Convert to picometers and round
+    distance_picometers = round(distance * 100, 1)
+    print(distance_picometers)
 else:
-    print('Could not find two atoms in the structure.')
+    print('Not enough atoms in structure')
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())
