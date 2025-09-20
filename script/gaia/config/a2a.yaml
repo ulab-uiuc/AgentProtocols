@@ -1,6 +1,6 @@
 # A2A protocol configuration for Gaia multi-agent framework
 protocol: "a2a"
-mode: "mm"
+mode: "normal"
 
 # Runtime configuration
 runtime:

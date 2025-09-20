@@ -1,6 +1,6 @@
 # Dummy protocol configuration for Gaia multi-agent framework
 protocol: "dummy"
-mode: "mm"
+mode: "normal"
 
 # Runtime configuration
 runtime:
