@@ -79,6 +79,12 @@ class MetaProtocolCommBackend:
         else:
             self._intelligent_network = None
 
+        # Initialize simple transmission metrics to avoid AttributeError during deliver()
+        self.pkt_cnt = 0
+        self.bytes_tx = 0
+        self.bytes_rx = 0
+        self.header_overhead = 0
+
     async def register_endpoint(self, agent_id: str, address: str) -> None:
         """Register meta protocol agent endpoint."""
         self._endpoints[agent_id] = address
@@ -265,30 +271,47 @@ class MetaProtocolNetwork(MeshNetwork):
         print(f"[MetaProtocolNetwork] Initialized with protocols: {self._available_protocols}")
 
     def _get_agent_by_id(self, dst: int):
-        """Resolve agent by numeric ID when self.agents may be a list or a dict."""
-        # If self.agents is a dict-like container
+        """Resolve agent by numeric or string ID when self.agents may be a list or a dict.
+        More robust than the previous placeholder implementation so downstream logic
+        (deliver -> result_callback) can find the target agent instance.
+        """
+        # If agents is a dict-like container
         if hasattr(self, "agents") and isinstance(self.agents, dict):
-            # keys could be ints or strings; normalize both
+            # direct key match
             if dst in self.agents:
                 return self.agents[dst]
             str_key = str(dst)
             if str_key in self.agents:
                 return self.agents[str_key]
-            # Fallback: scan values
+            # scan values
             for a in self.agents.values():
-                if getattr(a, "id", None) == dst or str(getattr(a, "id", "")) == str_key:
-                    return a
-        # If self.agents is a list-like container
+                try:
+                    if getattr(a, "id", None) == dst or str(getattr(a, "id", "")) == str_key:
+                        return a
+                except Exception:
+                    continue
+        # If agents is a list-like container
         if hasattr(self, "agents") and isinstance(self.agents, list):
             for a in self.agents:
-                if getattr(a, "id", None) == dst or str(getattr(a, "id", "")) == str(dst):
+                try:
+                    if getattr(a, "id", None) == dst or str(getattr(a, "id", "")) == str(dst):
+                        return a
+                except Exception:
+                    continue
+        # Final fallback: attempt to match common agent_id/agent_id field names
+        for a in getattr(self, "agents", []) or []:
+            try:
+                if getattr(a, "agent_id", None) == dst or str(getattr(a, "agent_id", "")) == str(dst):
                     return a
+            except Exception:
+                continue
         return None
 
     async def deliver(self, dst: int, msg: Dict[str, Any]) -> None:
         """
         Deliver message via BaseAgent.send(...) using a source agent (not the destination itself).
-        This avoids self-send deadlocks and leverages installed outbound adapters.
+        Ensure that the destination agent's memory and result_callback are updated so
+        the MeshNetwork can capture messages into NetworkMemoryPool.step_executions.
         """
         try:
             # Resolve destination agent
@@ -300,29 +323,33 @@ class MetaProtocolNetwork(MeshNetwork):
                 raise RuntimeError(f"Agent {dst_agent.name} has no BaseAgent bound")
             dst_base_id = getattr(dst_base, "agent_id", str(dst))
 
-            # Try to resolve source agent from message
+            # Attempt to resolve a source agent; prefer explicit src info in message
             src_agent = None
             src_hint = None
             if isinstance(msg, dict):
-                src_hint = (msg.get("src_id") or
-                            (msg.get("meta") or {}).get("src_id") or
-                            msg.get("from") or msg.get("src"))
-            if src_hint:
+                src_hint = (msg.get("src_id") or (msg.get("meta") or {}).get("src_id") or msg.get("from") or msg.get("src"))
+            if src_hint is not None:
                 # Try match by BaseAgent agent_id or by numeric id
-                for a in self.agents:
-                    if getattr(getattr(a, "_base_agent", None), "agent_id", None) == src_hint:
-                        src_agent = a
-                        break
-                    if str(getattr(a, "id", "")) == str(src_hint):
-                        src_agent = a
-                        break
+                for a in (self.agents if hasattr(self, 'agents') else []):
+                    try:
+                        if getattr(a, '_base_agent', None) and getattr(a, '_base_agent').agent_id == src_hint:
+                            src_agent = a
+                            break
+                        if getattr(a, 'id', None) == src_hint or str(getattr(a, 'id', '')) == str(src_hint):
+                            src_agent = a
+                            break
+                    except Exception:
+                        continue
 
             # If still unknown, pick the first agent that is not the destination
             if src_agent is None:
-                for a in self.agents:
-                    if getattr(a, "_base_agent", None) and a.id != dst_agent.id:
-                        src_agent = a
-                        break
+                for a in (self.agents if hasattr(self, 'agents') else []):
+                    try:
+                        if a is not dst_agent:
+                            src_agent = a
+                            break
+                    except Exception:
+                        continue
 
             # Fallback: use destination itself only if no better choice
             if src_agent is None:
@@ -335,7 +362,6 @@ class MetaProtocolNetwork(MeshNetwork):
             # Build a robust payload envelope
             content = msg.get("content")
             if content is None:
-                # Try common fields, then fallback to json string
                 content = (msg.get("text") or msg.get("result") or json.dumps(msg, ensure_ascii=False))
 
             payload = {
@@ -344,89 +370,75 @@ class MetaProtocolNetwork(MeshNetwork):
                     "content": content
                 },
                 "meta": {
-                    "src_id": getattr(src_base, "agent_id", f"agent:{src_agent.id}"),
+                    "src_id": getattr(src_base, "agent_id", f"agent:{getattr(src_agent,'id', '')}"),
                     "task_id": getattr(self, "task_id", None),
                     "assigned_protocol": getattr(getattr(dst_agent, "config", {}), "get", lambda *_: None)("assigned_protocol")
                 }
             }
 
-            # --- Sequential fallback: if dst == src, route to "next" agent by id order ---
-            try:
-                if src_agent and dst_agent and src_agent.id == dst_agent.id and len(self.agents) > 1:
-                    # Take the "next" agent by id order (circular)
-                    ids = sorted([a.id for a in self.agents])
-                    cur_idx = ids.index(src_agent.id) if src_agent.id in ids else 0
-                    next_id = ids[(cur_idx + 1) % len(ids)]
-                    # If only one agent, keep original; otherwise replace with next hop
-                    if next_id != src_agent.id:
-                        fixed_dst_agent = self._get_agent_by_id(next_id)
-                        if fixed_dst_agent and getattr(fixed_dst_agent, "_base_agent", None):
-                            print(f"[MetaProtocolNetwork] ⚠️ deliver() dst==src (id={src_agent.id}), applying sequential fallback -> {next_id}")
-                            dst_agent = fixed_dst_agent
-                            dst_base = dst_agent._base_agent
-                            dst_base_id = getattr(dst_base, "agent_id", str(dst_agent.id))
-            except Exception as _:
-                pass
-            # --- end fallback ---
-
-            # Check if destination agent is still healthy before sending
-            try:
-                dst_health = await dst_base.health_check()
-                if not dst_health:
-                    logger.warning(f"[MetaProtocol] Destination agent {dst_agent.name} is not healthy, skipping delivery")
-                    return
-            except Exception as e:
-                logger.warning(f"[MetaProtocol] Cannot check health of {dst_agent.name}: {e}, proceeding anyway")
-
             # Send from SOURCE BaseAgent to DESTINATION BaseAgent (id must match adapter registration)
-            response = await src_base.send(dst_base_id, payload)
-            
-            # Trigger destination agent's result_callback with the response
+            raw_response = await src_base.send(dst_base_id, payload)
+
+            # Normalize response and extract text
+            text_content = self._extract_text_from_response(raw_response) if raw_response is not None else ""
+
+            # Ensure messages are appended to destination agent's memory so network can capture them
+            try:
+                # Add original user message
+                if hasattr(dst_agent, 'memory') and getattr(dst_agent, 'memory') is not None:
+                    try:
+                        dst_agent.memory.add_message(Message.user_message(content))
+                    except Exception:
+                        pass
+                    try:
+                        dst_agent.memory.add_message(Message.assistant_message(text_content))
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+            # Trigger destination agent's result_callback with the response so MeshNetwork.capture_result is called
+            complete_message = {
+                "agent_id": getattr(dst_agent, 'id', None),
+                "agent_name": getattr(dst_agent, 'name', None),
+                "sender_id": getattr(src_agent, 'id', None),
+                "message_type": payload.get('message', {}).get('type'),
+                "original_content": payload.get('message', {}).get('content'),
+                "assistant_response": text_content,
+                "assistant_msg": Message.assistant_message(text_content),
+                "processing_steps": getattr(dst_agent, 'current_step', None),
+                "status": "completed"
+            }
+
             if hasattr(dst_agent, 'result_callback') and dst_agent.result_callback:
-                complete_message = {
-                    "agent_id": dst_agent.id,
-                    "agent_name": dst_agent.name,
-                    "sender_id": getattr(src_agent, 'name', 'unknown'),
-                    "message_type": msg.get("type", "task_result"),
-                    "original_content": content,
-                    "assistant_response": str(response) if response else "No response",
-                    "processing_steps": 1,
-                    "status": "completed"
-                }
                 try:
-                    # Trigger result callback for workflow coordination
                     if asyncio.iscoroutinefunction(dst_agent.result_callback):
                         asyncio.create_task(dst_agent.result_callback(complete_message))
                     else:
                         dst_agent.result_callback(complete_message)
-                    logger.info(f"[MetaProtocol] Triggered result_callback for {dst_agent.name}")
                 except Exception as e:
-                    logger.error(f"[MetaProtocol] Error in result callback for {dst_agent.name}: {e}")
+                    print(f"[MetaProtocol] Error calling result_callback for {dst_agent}: {e}")
 
-            # Metrics
+            # Metrics / logging
             self.pkt_cnt += 1
-            self.bytes_tx += len(json.dumps(msg).encode("utf-8"))
+            try:
+                self.bytes_tx += len(json.dumps(msg).encode("utf-8"))
+            except Exception:
+                pass
             logger.info(f"[MetaProtocol] Delivered {getattr(src_agent,'name','?')} -> {dst_agent.name} via BaseAgent.send(...)")
+
+            return {
+                "raw": raw_response,
+                "text": text_content,
+                "protocol_used": payload.get('meta', {}).get('assigned_protocol', 'unknown'),
+                "meta_routing": True
+            }
 
         except Exception as e:
             error_msg = f"[MetaProtocol] Delivery failed to {dst}: {e}"
-            print(error_msg)
+            logger.error(error_msg)
             raise RuntimeError(error_msg)
     
-    async def _deliver_direct_to_agent(self, agent, msg: Dict[str, Any]) -> None:
-        """Deliver message directly to agent without BaseAgent routing."""
-        try:
-            # Convert message to format expected by GAIA agents
-            if hasattr(agent, 'execute'):
-                content = msg.get("content") or json.dumps(msg)
-                result = await agent.execute(content)
-                print(f"[MetaProtocol] Direct delivery to {agent.name}: {result[:50]}...")
-            else:
-                print(f"[MetaProtocol] Agent {agent.name} has no execute method")
-                
-        except Exception as e:
-            print(f"[MetaProtocol] Direct delivery failed: {e}")
-
     def register_agents_from_config(self) -> None:
         """Register meta protocol agents from configuration with LLM-based protocol assignment."""
         print(f"[MetaProtocolNetwork] Registering agents for task {self.task_id}")
@@ -835,8 +847,12 @@ class MetaProtocolNetwork(MeshNetwork):
                 return False
             
             # Check all agents
-            for agent in self.agents.values():
-                if not await self._comm_backend.health_check(str(agent.id)):
+            # self.agents is a list in MeshNetwork; iterate directly
+            for agent in (self.agents if isinstance(self.agents, list) else getattr(self.agents, 'values', lambda: [])()):
+                try:
+                    if not await self._comm_backend.health_check(str(agent.id)):
+                        return False
+                except Exception:
                     return False
             
             return True
@@ -844,3 +860,26 @@ class MetaProtocolNetwork(MeshNetwork):
         except Exception as e:
             print(f"[MetaProtocolNetwork] Health check failed: {e}")
             return False
+
+    def _extract_text_from_response(self, response: Dict[str, Any]) -> str:
+        """Delegate extraction of text from a raw response to the comm backend when possible.
+        This ensures MetaProtocolNetwork.deliver can normalize responses without duplicating logic.
+        """
+        try:
+            if hasattr(self, '_comm_backend') and self._comm_backend:
+                if hasattr(self._comm_backend, '_extract_text_from_response'):
+                    return self._comm_backend._extract_text_from_response(response)
+            # Fallback: inspect common keys
+            if isinstance(response, dict):
+                if 'text' in response:
+                    return response['text']
+                if 'content' in response:
+                    return response['content']
+                if 'result' in response:
+                    return str(response['result'])
+            return str(response)
+        except Exception:
+            try:
+                return json.dumps(response)
+            except Exception:
+                return str(response)

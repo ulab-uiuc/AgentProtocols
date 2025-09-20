@@ -65,47 +65,35 @@ try:
     
     # 准备要执行的完整代码
     full_code = '''
-from Bio.PDB import PDBParser, is_aa, Atom
-import numpy as np
+from Bio.PDB import PDBParser
+from Bio.PDB.PDBExceptions import PDBConstructionWarning
+import warnings
 
-# Load the PDB file 5wb7
-pdb_file = "7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb"
+# Suppress warnings that occur while parsing PDB files
+warnings.simplefilter('ignore', PDBConstructionWarning)
+
+# Initialize the PDB parser
 parser = PDBParser(QUIET=True)
-structure = parser.get_structure("5wb7", pdb_file)
 
-# Extract the first two atoms
-model = structure[0]  # Get the first model
-first_atom = None
-second_atom = None
-atom_counter = 0
+# Parse the structure
+structure = parser.get_structure('5wb7', '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb')
 
-for chain in model:
-    for residue in chain:
-        if is_aa(residue):
-            for atom in residue:
-                atom_counter += 1
-                if atom_counter == 1:
-                    first_atom = atom
-                elif atom_counter == 2:
-                    second_atom = atom
-                    break
-            if second_atom:
-                break
-    if second_atom:
-        break
+# Get all atoms in the structure
+all_atoms = list(structure.get_atoms())
 
-# Calculate the distance in Angstroms
-if first_atom and second_atom:
-    coord1 = first_atom.coord
-    coord2 = second_atom.coord
-    distance = np.linalg.norm(coord1 - coord2)
-    # Convert to picometers: 1 Angstrom = 100 Picometers
-    distance_picometers = distance * 100
-    # Round to the nearest Picometer
-    rounded_distance = round(distance_picometers)
-    print(rounded_distance)
-else:
-    print("Atoms not found.")
+# Get the first and second atoms
+atom1 = all_atoms[0]
+atom2 = all_atoms[1]
+
+# Calculate the distance between the first and second atom
+distance = atom1 - atom2
+
+# Convert the distance to picometers and round to the nearest whole number
+# 1 Angstrom = 100 pm
+distance_pm = round(distance * 100)
+
+# Print the distance in picometers
+print(distance_pm)
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

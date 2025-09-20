@@ -66,11 +66,34 @@ try:
     # 准备要执行的完整代码
     full_code = '''
 import pandas as pd
-# Load the spreadsheet to check its content
+
+# Load the spreadsheet file to check the contents
 file_path = '32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx'
-df = pd.ExcelFile(file_path)
-# Check sheet names to identify which sheet might contain relevant data
-print(df.sheet_names)
+
+def find_oldest_blu_ray_title(file_path):
+    try:
+        # Load the spreadsheet
+        xls = pd.ExcelFile(file_path)
+        # Check sheet names
+        sheet_names = xls.sheet_names
+        print(f"Sheet names: {sheet_names}")
+        
+        # Assume the first sheet contains the necessary data
+        df = pd.read_excel(file_path, sheet_name=sheet_names[0])
+        
+        # Display the dataframe structure to understand it
+        print(df.head())
+        print(df.columns)
+        
+        # Filter for Blu-Ray formats and sort by the release year
+        blu_rays = df[df['Format'] == 'Blu-Ray']
+        oldest_blu_ray = blu_rays.sort_values('Release Year').iloc[0]
+        
+        return oldest_blu_ray['Title']
+    except Exception as e:
+        return str(e)
+
+find_oldest_blu_ray_title(file_path)
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

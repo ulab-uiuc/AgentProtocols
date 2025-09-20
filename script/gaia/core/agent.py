@@ -316,11 +316,11 @@ class ToolCallAgent(ReActAgent):
 
             # Inject per-agent environment for tools (workspace/task/protocol)
             try:
-                os.environ["GAIA_AGENT_WORKSPACE_DIR"] = self.ws
+                os.environ["GAIA_AGENT_WORKSPACE_DIR"] = getattr(self, 'ws', '')
                 os.environ["GAIA_TASK_ID"] = self.task_id
                 protocol_name = (self.config.get("protocol") if isinstance(self.config, dict) else None) or "default"
                 os.environ["GAIA_PROTOCOL_NAME"] = protocol_name
-                logger.info(f"🌍 Environment: workspace={self.ws}, task_id={self.task_id}, protocol={protocol_name}")
+                logger.info(f"🌍 Environment: workspace={getattr(self,'ws','')}, task_id={self.task_id}, protocol={protocol_name}")
             except Exception as env_error:
                 logger.warning(f"⚠️  Environment setup warning: {env_error}")
 
