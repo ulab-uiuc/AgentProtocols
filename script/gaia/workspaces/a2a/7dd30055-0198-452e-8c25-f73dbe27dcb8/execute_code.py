@@ -65,43 +65,29 @@ try:
     
     # 准备要执行的完整代码
     full_code = '''
-# Importing necessary libraries to calculate the distance between first and second atoms
 from Bio.PDB import PDBParser
 import numpy as np
 
-# Define a function to calculate the distance between two atoms
-def calculate_distance(atom1, atom2):
-    coord1 = atom1.get_vector()
-    coord2 = atom2.get_vector()
-    # Calculate the Euclidean distance
-    distance = np.linalg.norm(coord1 - coord2)
-    # Return the distance in Angstroms, rounded to the nearest picometer
-    return round(distance * 1000)
+# Load the PDB file
+pdb_filename = '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb'
+parser = PDBParser(QUIET=True)
+structure = parser.get_structure('5wb7', pdb_filename)
 
-# Using PDBParser to parse the PDB file
-pdb_parser = PDBParser(QUIET=True)
-structure = pdb_parser.get_structure('5wb7', '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb')
-
-# Extract the first model (there might be multiple models in a PDB file)
-model = structure[0]
-
-# Initialize a list to hold all atoms in the structure
-atoms = []
-
-# Iterate through all chains, residues, and atoms to populate the atoms list
-for chain in model:
-    for residue in chain:
-        for atom in residue:
-            atoms.append(atom)
-
-# Get the first and second atoms
+# Extract the first two atoms
+atoms = list(structure.get_atoms())
 atom1 = atoms[0]
 atom2 = atoms[1]
 
 # Calculate the distance between the first and second atoms
-distance_in_pm = calculate_distance(atom1, atom2)
+coord1 = atom1.coord
+coord2 = atom2.coord
+distance = np.linalg.norm(coord1 - coord2)
 
-print(distance_in_pm)
+# Convert the distance to picometers and round
+# 1 Angstrom = 100 Picometers
+distance_pm = round(distance * 100)
+
+print(distance_pm)
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

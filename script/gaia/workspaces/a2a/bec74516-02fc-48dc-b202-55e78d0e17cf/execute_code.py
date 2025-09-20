@@ -65,25 +65,24 @@ try:
     
     # 准备要执行的完整代码
     full_code = '''
-# First, we need to open the provided JSON-LD file to extract the ORCID identifiers of all the authors.
 import json
-# Load the JSON-LD file
-file_path = 'bec74516-02fc-48dc-b202-55e78d0e17cf.jsonld'
-with open(file_path, 'r') as file:
-    data = json.load(file)
-# Extract ORCID identifiers
-orcid_ids = []
-# The 'author' field
-if 'author' in data:
-    author = data['author']
-    if '@id' in author and 'orcid.org' in author['@id']:
-        orcid_ids.append(author['@id'])
-# The 'editor' field, if present
-if 'editor' in data:
-    for editor in data['editor']:
-        if '@id' in editor and 'orcid.org' in editor['@id']:
-            orcid_ids.append(editor['@id'])
-# Print the extracted ORCID IDs
+
+# Load the JSON file to extract ORCID IDs
+with open('bec74516-02fc-48dc-b202-55e78d0e17cf.jsonld', 'r') as f:
+    data = json.load(f)
+
+# Extract ORCID IDs from the JSON structure
+def extract_orcid_ids(data):
+    orcid_ids = []
+    if '@id' in data['author']:
+        orcid_ids.append(data['author']['@id'])
+    if 'editor' in data:
+        for editor in data['editor']:
+            if '@id' in editor:
+                orcid_ids.append(editor['@id'])
+    return orcid_ids
+
+orcid_ids = extract_orcid_ids(data)
 print(orcid_ids)
 '''.strip()
 

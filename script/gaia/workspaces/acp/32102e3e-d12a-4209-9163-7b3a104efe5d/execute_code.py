@@ -66,17 +66,11 @@ try:
     # 准备要执行的完整代码
     full_code = '''
 import pandas as pd
-# Load the spreadsheet file
-try:
-    df = pd.read_excel('32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx')
-    # Filter rows where the format is Blu-Ray
-    blu_ray_df = df[df['Format'] == 'Blu-Ray']
-    # Find the oldest Blu-Ray by sorting the release year in ascending order and picking the first
-    oldest_blu_ray_title = blu_ray_df.sort_values('Release Year').iloc[0]['Title']
-    oldest_blu_ray_title
-except Exception as e:
-    print(f'Error: {e}')
-    print('Attempting to handle the error gracefully...')
+# Load the spreadsheet
+file_path = '32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx'
+df = pd.read_excel(file_path)
+# Display the first few rows of the dataframe
+print(df.head())
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

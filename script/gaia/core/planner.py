@@ -68,21 +68,18 @@ class TaskPlanner:
         Returns:
             tuple: (config dict, config file path)
         """
-        # Plan reuse control via general.yaml: planner.reuse_plan (bool, default: False)
-        protocol_name = self.protocol_name or "general"
+        # Plan reuse control via general.yaml: planner.reuse_plan (bool, default: True)
         task_id = self.task_id or time.strftime("%Y-%m-%d-%H-%M")
-        
-        if workspace_dir is not None:
-            existing_path = workspace_dir / "agent_config.json"
-        else:
-            existing_path = GAIA_ROOT / "workspaces" / protocol_name / task_id / "agent_config.json"
-            
-        reuse_plan = False
+        # Ensure task_id is a simple string for path construction
+        task_id_str = str(task_id)       
+        existing_path = GAIA_ROOT / "workspaces" / "agent_config" / f'{task_id_str}.json'
+        reuse_plan = True
+
         try:
             planner_cfg = (self.config.get("planner") if isinstance(self.config, dict) else None) or {}
-            reuse_plan = bool(planner_cfg.get("reuse_plan", False))
+            reuse_plan = bool(planner_cfg.get("reuse_plan", True))
         except Exception:
-            reuse_plan = False
+            reuse_plan = True
 
         # Early exit only when reuse_plan enabled and file exists
         if reuse_plan and existing_path.exists():

@@ -67,11 +67,14 @@ try:
     full_code = '''
 import pandas as pd
 
-# Read the Excel file
-df = pd.read_excel('32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx')
-
-# Display the first few rows to understand its structure
-print(df.head())
+try:
+    df = pd.read_excel('32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx')
+    blu_rays = df[df['Format'] == 'Blu-Ray']
+    oldest_blu_ray = blu_rays.sort_values('Release Year').iloc[0]['Title']
+    print(oldest_blu_ray)
+except Exception as e:
+    print(f'Error: {e}')
+    print('Attempting to handle the error gracefully...')
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

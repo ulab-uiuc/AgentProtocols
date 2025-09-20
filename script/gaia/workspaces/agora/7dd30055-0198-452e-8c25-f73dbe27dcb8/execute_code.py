@@ -65,13 +65,38 @@ try:
     
     # 准备要执行的完整代码
     full_code = '''
-import pandas as pd
+from Bio.PDB import PDBParser
+import os
 
-# Read the Excel file
-df = pd.read_excel('32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx')
+# Check if the PDB file exists
+pdb_file = '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb'
+if not os.path.exists(pdb_file):
+    raise FileNotFoundError(f"The file {pdb_file} does not exist.")
 
-# Display the first few rows to understand its structure
-print(df.head())
+# Initialize the PDB parser
+parser = PDBParser(QUIET=True)
+
+# Parse the structure
+structure = parser.get_structure('5wb7', pdb_file)
+
+# Extract atoms and calculate the distance
+atoms = list(structure.get_atoms())
+
+# Ensure there are at least two atoms
+if len(atoms) < 2:
+    raise ValueError("Less than two atoms found in the structure.")
+
+# Extract the first and second atoms
+atom1 = atoms[0]
+atom2 = atoms[1]
+
+# Calculate the distance between the two atoms
+from scipy.spatial.distance import euclidean
+
+distance_angstroms = euclidean(atom1.coord, atom2.coord)
+# Convert to picometers (1 Angstrom = 100 Picometers) and round
+rounded_distance_pm = round(distance_angstroms * 100)
+print(rounded_distance_pm)
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

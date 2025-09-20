@@ -66,28 +66,32 @@ try:
     # 准备要执行的完整代码
     full_code = '''
 from Bio.PDB import PDBParser
-import numpy as np
 
-# Parse the PDB file
-def get_first_two_atoms_distance(pdb_filename):
-    parser = PDBParser(PERMISSIVE=1)
-    structure = parser.get_structure('PDB', pdb_filename)
-    atoms = list(structure.get_atoms())
-    
-    # Get the first two atoms
-    atom1, atom2 = atoms[0], atoms[1]
-    
-    # Calculate the distance between the first two atoms
-    distance = atom1 - atom2
-    
-    # Convert to Angstroms and round to the nearest picometer
-    distance_angstroms = np.round(distance * 1000) / 1000 # Round to nearest picometer
-    
-    return distance_angstroms
+# Load the PDB file
+parser = PDBParser()
+structure = parser.get_structure('protein_5wb7', '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb')
 
-# Filename of the PDB file
-distance = get_first_two_atoms_distance('7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb')
-print(distance)
+# Extract all atoms
+atoms = list(structure.get_atoms())
+
+# Ensure that we have at least two atoms
+if len(atoms) < 2:
+    raise ValueError("The structure has less than two atoms.")
+
+# Retrieve the first and second atoms
+first_atom = atoms[0]
+second_atom = atoms[1]
+
+# Calculate distance
+from scipy.spatial.distance import euclidean
+
+distance = euclidean(first_atom.coord, second_atom.coord)
+
+# Convert to picometers and round to the nearest picometer
+# 1 Angstrom = 100 picometers
+distance_picometers = round(distance * 100)
+
+print(distance_picometers)
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())
