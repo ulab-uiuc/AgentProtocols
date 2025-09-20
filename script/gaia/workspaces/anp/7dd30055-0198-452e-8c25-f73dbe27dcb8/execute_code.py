@@ -65,27 +65,23 @@ try:
     
     # 准备要执行的完整代码
     full_code = '''
-import pandas as pd
-
-# Load the spreadsheet
-try:
-    file_path = '32102e3e-d12a-4209-9163-7b3a104efe5d.xlsx'
-    
-    # Read the Excel file
-    df = pd.read_excel(file_path)
-    
-    # Filter for Blu-Ray format only
-    blu_ray_df = df[df['Format'] == 'Blu-Ray']
-    
-    # Sort by the release year to get the oldest movie
-    oldest_blu_ray = blu_ray_df.sort_values('Release Year').iloc[0]
-    
-    # Get the title of the oldest Blu-Ray
-    oldest_blu_ray_title = oldest_blu_ray['Title']
-    oldest_blu_ray_title
-except Exception as e:
-    print(f'Error: {e}')
-    print('Attempting to handle the error gracefully...')
+from Bio.PDB import PDBParser
+import numpy as np
+# Parse the PDB file
+parser = PDBParser(PERMISSIVE=1)
+structure = parser.get_structure('5wb7', '7dd30055-0198-452e-8c25-f73dbe27dcb8.pdb')
+# Get the first model in the structure
+model = structure[0]
+# Extract all atoms
+atoms = list(model.get_atoms())
+# Get the coordinates of the first and second atoms
+coord1 = atoms[0].coord
+coord2 = atoms[1].coord
+# Calculate the distance between the two atoms
+distance = np.linalg.norm(coord1 - coord2)
+# Convert the distance from Angstroms to picometers and round to nearest picometer
+rounded_distance = round(distance * 100)
+print(rounded_distance)
 '''.strip()
 
     # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())

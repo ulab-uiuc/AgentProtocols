@@ -10,6 +10,7 @@ import os
 import sys
 import time
 import uuid
+import uvicorn
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -93,7 +94,7 @@ class ANPAgent(MeshAgent):
         
         # ANP state
         self.anp_initialized = False
-
+        self._uvicorn_server: Optional[uvicorn.Server] = None
         # Pretty initialization output
         print(f"[{name}] ANP Agent on port {port}")
         print(f"[ANPAgent] Initialized with ANP-SDK: {ANP_SDK_AVAILABLE}")
@@ -223,16 +224,18 @@ class ANPAgent(MeshAgent):
 
     # ==================== ANP Protocol Specific Methods ====================
     async def _start_anp_node(self):
-        """Start ANP SimpleNode as a managed asyncio task."""
+        """
+        Start ANP SimpleNode by directly creating and managing the Uvicorn server.
+        This provides full control over the server's lifecycle and prevents SystemExit crashes.
+        """
         if not ANP_SDK_AVAILABLE:
             return
         
         try:
-            # Generate DID if not exists
             if not self.local_did_info.get('did'):
                 await self._generate_did()
             
-            # Create SimpleNode
+            # 1. 实例化 SimpleNode 来准备 FastAPI app
             self._simple_node = SimpleNode(
                 host_domain=self.host_domain,
                 host_port=str(self.host_port),
@@ -240,51 +243,67 @@ class ANPAgent(MeshAgent):
                 private_key_pem=self.local_did_info.get('private_key_pem'),
                 did=self.local_did_info.get('did'),
                 did_document_json=self.local_did_info.get('did_document_json')
+                # 注意：SimpleNode 里的 SSL 参数在这里没有传递，如果需要请添加
             )
             
-            # Start SimpleNode (non-blocking)
-            self._simple_node.run()
+            # 2. 手动创建 uvicorn.Config，模仿 SimpleNode._run() 的行为
+            #    这样可以避免 SimpleNode 内部调用 uvicorn.run，从而避免 SystemExit
+            config = uvicorn.Config(
+                app=self._simple_node.app, # 从 SimpleNode 获取 FastAPI 实例
+                host="0.0.0.0",
+                port=int(self.host_port),
+                lifespan="off" # 保持与 SimpleNode 源码一致
+                # 注意：SSL 配置也需要在这里添加，如果您的用例需要的话
+            )
+
+            # 3. 创建 uvicorn.Server 实例并保存它
+            self._uvicorn_server = uvicorn.Server(config)
+
+            # 4. 将服务器的运行作为一个可管理的后台任务
+            self._node_task = asyncio.create_task(self._uvicorn_server.serve())
             
-            # Wait for node to be ready
+            # 等待服务器完成启动。uvicorn.Server.started 是一个标志位
             await asyncio.sleep(0.5)
-            
+
+            if not self._uvicorn_server.started:
+                 raise RuntimeError(f"Uvicorn server for port {self.host_port} failed to start.")
+
             self.anp_initialized = True
-            self._log(f"✅ ANP SimpleNode started as a background task on {self.host_domain}:{self.host_port}")
-            
+            self._log(f"✅ ANP Uvicorn server started directly on {self.host_domain}:{self.host_port}")
+
         except Exception as e:
             self._log(f"❌ Failed to start ANP node: {e}")
             self.anp_initialized = False
+            # 确保即使启动失败，任务也能被清理
             if self._node_task and not self._node_task.done():
                 self._node_task.cancel()
             raise
 
     async def _stop_anp_node(self):
-        """Gracefully and robustly stop the ANP SimpleNode task."""
-        if self._simple_node and hasattr(self._simple_node, 'stop'):
-            try:
-                # The stop() method should handle the Uvicorn server shutdown.
-                await self._simple_node.stop()
-                self._log("Called SimpleNode.stop()")
-            except Exception as e:
-                self._log(f"Warning: Error in SimpleNode.stop(): {e}")
-        
-        if self._node_task and not self._node_task.done():
-            self._node_task.cancel()
-            try:
-                await self._node_task
-            except asyncio.CancelledError:
-                pass # This is expected
-            except Exception as e:
-                self._log(f"Warning: Exception during ANP task cleanup: {e}")
+        """Gracefully shut down the managed Uvicorn server."""
+        # 优先关闭服务器
+        if self._uvicorn_server and self._uvicorn_server.started:
+            self._log(f"Shutting down Uvicorn server on port {self.host_port}...")
+            # 这是 Uvicorn 官方推荐的优雅关闭方式
+            self._uvicorn_server.should_exit = True
+            
+            # 等待服务器任务真正结束
+            if self._node_task and not self._node_task.done():
+                try:
+                    # 等待任务完成，它会在 should_exit=True 后自行退出
+                    await asyncio.wait_for(self._node_task, timeout=5.0)
+                    self._log(f"✅ Uvicorn server on port {self.host_port} shut down.")
+                except asyncio.TimeoutError:
+                    self._log(f"⚠️ Uvicorn server on port {self.host_port} did not shut down in time, cancelling task.")
+                    self._node_task.cancel()
+                except asyncio.CancelledError:
+                    pass # 任务已经被取消，是正常情况
 
-        # Give the OS a brief moment to release the network socket.
-        # This can help prevent race conditions in rapid start/stop cycles.
-        await asyncio.sleep(0.1)
-
+        # 清理所有相关状态
         self._simple_node = None
+        self._uvicorn_server = None
         self._node_task = None
         self.anp_initialized = False
-        self._log(f"ANP Node for port {self.host_port} has been shut down.")
 
     async def _generate_did(self):
         """Generate DID using ANP-SDK."""

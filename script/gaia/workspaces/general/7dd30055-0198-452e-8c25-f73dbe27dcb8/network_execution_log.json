@@ -1,0 +1,56 @@
+{
+  "network_memory": [],
+  "workflow_progress": {
+    "total_steps": 3,
+    "completed_steps": 3,
+    "completion_rate": 1.0,
+    "status_breakdown": {
+      "pending": 0,
+      "processing": 0,
+      "success": 3,
+      "error": 0,
+      "timeout": 0
+    },
+    "step_details": {
+      "0": "success",
+      "1": "success",
+      "2": "success"
+    }
+  },
+  "step_executions": {
+    "step_0": {
+      "step": 0,
+      "agent_id": "0",
+      "agent_name": "PDBFileParser",
+      "status": "success",
+      "start_time": 1758353983.3852565,
+      "end_time": 1758353992.3328965,
+      "duration": 8.94763994216919,
+      "messages": [],
+      "error_message": null
+    },
+    "step_1": {
+      "step": 1,
+      "agent_id": "1",
+      "agent_name": "DistanceCalculator",
+      "status": "success",
+      "start_time": 1758353992.8333545,
+      "end_time": 1758354004.9713829,
+      "duration": 12.138028383255005,
+      "messages": [],
+      "error_message": null
+    },
+    "step_2": {
+      "step": 2,
+      "agent_id": "2",
+      "agent_name": "ResultFormatter",
+      "status": "success",
+      "start_time": 1758354005.472112,
+      "end_time": 1758354015.889077,
+      "duration": 10.416965007781982,
+      "messages": [],
+      "error_message": null
+    }
+  },
+  "timestamp": 1758354015.889342
+}
