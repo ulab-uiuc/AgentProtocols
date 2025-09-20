@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+"""
+LLM Wrapper for Safety Tech
+
+Bridges Safety Tech's expected Core interface to the shared src.utils.core.Core
+"""
+
+from __future__ import annotations
+
+try:
+    # Prefer absolute import from project root
+    from src.utils.core import Core  # type: ignore
+except Exception as e:  # pragma: no cover
+    # Fallback: attempt relative import if path handling differs
+    from ...src.utils.core import Core  # type: ignore
+
+__all__ = ["Core"]
+
 import time
 import os
 
@@ -96,12 +114,19 @@ class Core:
             while True:
                 rounds += 1
                 try:
-                    response = self.client.chat.completions.create(
-                        model=self.config["model"]["name"],
-                        messages=messages,
-                        temperature=self.config["model"]["temperature"],
-                        n=1,
-                    )
+                    # Build parameters
+                    params = {
+                        "model": self.config["model"]["name"],
+                        "messages": messages,
+                        "temperature": self.config["model"]["temperature"],
+                        "n": 1,
+                    }
+                    
+                    # Add max_tokens if specified
+                    if "max_tokens" in self.config["model"]:
+                        params["max_tokens"] = self.config["model"]["max_tokens"]
+                    
+                    response = self.client.chat.completions.create(**params)
                     content = response.choices[0].message.content
                     return content.strip()
                 except Exception as e:

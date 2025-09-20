@@ -20,7 +20,15 @@ from typing import Dict, List, Any, Optional, Tuple
 try:
     from .llm_wrapper import Core as LLMCore
 except ImportError:
-    from llm_wrapper import Core as LLMCore
+    try:
+        from llm_wrapper import Core as LLMCore
+    except ImportError:
+        # Direct import from src
+        import sys
+        from pathlib import Path
+        project_root = Path(__file__).resolve().parent.parent.parent.parent
+        sys.path.insert(0, str(project_root))
+        from src.utils.core import Core as LLMCore
 
 
 class PrivacyAnalyzerBase(ABC):
