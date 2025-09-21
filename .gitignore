@@ -90,3 +90,4 @@ script/gaia/workspaces/**
 !script/gaia/workspaces/acp/gaia_acp_results.json
 !script/gaia/workspaces/a2a/gaia_a2a_results.json
 !script/gaia/workspaces/meta_protocol/gaia_meta_results.json
+!script/gaia/workspaces/agent_config/*

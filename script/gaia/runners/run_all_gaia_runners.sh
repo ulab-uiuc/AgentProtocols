@@ -29,9 +29,9 @@ else
   echo "5. Running Agora Protocol Runner..."
   python -m script.gaia.runners.run_agora
 
-  echo "---"
-  echo "6. Running Meta Protocol Runner..."
-  python -m script.gaia.runners.run_meta_protocol
+  # echo "---"
+  # echo "6. Running Meta Protocol Runner..."
+  # python -m script.gaia.runners.run_meta_protocol
 fi
 
 echo "---"

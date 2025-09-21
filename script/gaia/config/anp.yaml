@@ -50,7 +50,7 @@ logging:
   packet_logs: true
 
 model:
-  name: "gpt-4o-mini"
+  name: "gpt-4o"
   base_url:  "http://47.254.87.71:3000/v1"
   api_key: "sk-lNAfLdE1AMKr6AV6a3qaNZ86BIPdEUKdyZ26VogskVpeCDjn"
   max_tokens: 4096
