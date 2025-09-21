@@ -58,21 +58,24 @@ AGENTCONNECT_OK = False
 try:
     # 允许多路径
     candidates = [
-        Path(__file__).resolve().parent.parent.parent / 'agentconnect_src',
-        Path.cwd() / 'agentconnect_src',
+        PROJECT_ROOT,
     ]
     for p in candidates:
-        if p.exists():
+        if p.exists() and str(p) not in sys.path:
             sys.path.insert(0, str(p))
-    from agent_connect.simple_node import SimpleNode, SimpleNodeSession
-    from agent_connect.utils.did_generate import did_generate
-    from agent_connect.utils.crypto_tool import (
+    from agentconnect_src.simple_node import SimpleNode, SimpleNodeSession
+    from agentconnect_src.utils.did_generate import did_generate
+    from agentconnect_src.utils.crypto_tool import (
         get_pem_from_private_key,
         get_hex_from_public_key,
         generate_signature_for_json,
     )
     AGENTCONNECT_OK = True
 except Exception as e:
+    # 增加更详细的路径调试信息
+    print(f"DEBUG: sys.path = {sys.path}")
+    print(f"DEBUG: CWD = {Path.cwd()}")
+    print(f"DEBUG: PROJECT_ROOT = {PROJECT_ROOT}")
     raise RuntimeError(f"AgentConnect(ANP) SDK 未就绪: {e}")
 
 
@@ -182,7 +185,7 @@ class ANPDoctorShim:
     def start_http(self):
         import threading
         def run():
-            uvicorn.run(self.app, host='127.0.0.1', port=self.port, log_level='warning', access_log=False)
+            uvicorn.run(self.app, host='127.0.0.1', port=self.port, log_level='warning', lifespan="off", loop="asyncio", http="h11")
         t = threading.Thread(target=run, daemon=True)
         t.start()
 
@@ -211,6 +214,8 @@ class ANPDoctorShim:
                     # 收到None表示连接关闭
                     print(f"   [DEBUG] {self.agent_name}: 会话 {session.remote_did} 连接关闭")
                     break
+        except asyncio.CancelledError:
+            print(f"   [DEBUG] {self.agent_name}: 会话 {session.remote_did} 消息循环被取消")
         except Exception as e:
             print(f"   [DEBUG] {self.agent_name}: 会话消息循环异常: {e}")
         finally:
@@ -234,6 +239,8 @@ class ANPDoctorShim:
                     # 收到None表示连接关闭
                     print(f"   [DEBUG] {self.agent_name}: 出站会话 {session.remote_did} 连接关闭")
                     break
+        except asyncio.CancelledError:
+            print(f"   [DEBUG] {self.agent_name}: 出站会话 {session.remote_did} 消息循环被取消")
         except Exception as e:
             print(f"   [DEBUG] {self.agent_name}: 出站会话消息循环异常: {e}")
         finally:

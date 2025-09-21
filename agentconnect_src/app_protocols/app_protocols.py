@@ -24,9 +24,9 @@ import os
 import traceback
 from typing import Dict, Optional, Tuple
 
-from agent_connect.app_protocols.protocol_base.provider_base import ProviderBase
-from agent_connect.app_protocols.protocol_base.requester_base import RequesterBase
-from agent_connect.app_protocols.protocol_container import (
+from agentconnect_src.app_protocols.protocol_base.provider_base import ProviderBase
+from agentconnect_src.app_protocols.protocol_base.requester_base import RequesterBase
+from agentconnect_src.app_protocols.protocol_container import (
     ProviderContainer,
     RequesterContainer,
 )

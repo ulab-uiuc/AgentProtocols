@@ -10,10 +10,10 @@ import logging
 import traceback
 from typing import Awaitable, Callable, List, Optional, Tuple, Union
 
-from agent_connect.app_protocols import AppProtocols, ProviderBase, RequesterBase
-from agent_connect.meta_protocol import MetaProtocol, ProtocolType
-from agent_connect.simple_node import SimpleNode, SimpleNodeSession
-from agent_connect.utils.llm.base_llm import BaseLLM
+from agentconnect_src.app_protocols import AppProtocols, ProviderBase, RequesterBase
+from agentconnect_src.meta_protocol import MetaProtocol, ProtocolType
+from agentconnect_src.simple_node import SimpleNode, SimpleNodeSession
+from agentconnect_src.utils.llm.base_llm import BaseLLM
 
 
 class MessageReceiverTask:

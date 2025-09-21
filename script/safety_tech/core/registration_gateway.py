@@ -482,7 +482,7 @@ class RegistrationGateway:
     def run(self, host: str = "127.0.0.1", port: int = 8000):
         """运行注册网关服务"""
         logger.info(f"Starting Registration Gateway on {host}:{port}")
-        uvicorn.run(self.app, host=host, port=port, log_level="warning", access_log=False)
+        uvicorn.run(self.app, host=host, port=port, log_level="warning", access_log=False, lifespan="off", loop="asyncio", http="h11")
 
 
 if __name__ == "__main__":

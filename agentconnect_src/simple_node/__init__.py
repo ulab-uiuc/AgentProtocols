@@ -4,7 +4,7 @@ from .simple_node_session import SimpleNodeSession
 from .simple_wss_wraper import HeartbeatTimeoutError, ConnectionError
 from .simple_negotion_node import RequesterSession, ProviderSession, SimpleNegotiationNode
 
-# Define what should be exported when using "from agent_connect.simple_node import *"
+# Define what should be exported when using "from agentconnect_src.simple_node import *"
 __all__ = ['SimpleNode', 
            'SimpleNodeSession', 
            'HeartbeatTimeoutError', 

@@ -30,14 +30,14 @@ import uvicorn
 import websockets
 from fastapi import FastAPI, HTTPException, Response, WebSocket
 
-from agent_connect.simple_node.simple_node_session import SimpleNodeSession
-from agent_connect.simple_node.simple_wss_wraper import (
+from agentconnect_src.simple_node.simple_node_session import SimpleNodeSession
+from agentconnect_src.simple_node.simple_wss_wraper import (
     HeartbeatTimeoutError,
     SimpleClientWssWraper,
     SimpleServerWssWraper,
 )
-from agent_connect.utils.crypto_tool import get_pem_from_private_key
-from agent_connect.utils.did_generate import did_generate
+from agentconnect_src.utils.crypto_tool import get_pem_from_private_key
+from agentconnect_src.utils.did_generate import did_generate
 
 
 class SimpleNode:
@@ -108,7 +108,8 @@ class SimpleNode:
             host="0.0.0.0",
             port=int(self.host_port) if self.host_port else 8000,
             ssl_keyfile=self.ssl_key_path,
-            ssl_certfile=self.ssl_cert_path
+            ssl_certfile=self.ssl_cert_path,
+            lifespan="off"
         )
         server = uvicorn.Server(config)
         await server.serve()

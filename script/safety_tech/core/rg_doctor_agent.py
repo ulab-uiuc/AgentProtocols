@@ -185,7 +185,7 @@ class RGDoctorAAgent(DoctorAAgent):
     
     def run_server(self):
         """运行FastAPI服务器"""
-        uvicorn.run(self.app, host="127.0.0.1", port=self.port, log_level="warning", access_log=False)
+        uvicorn.run(self.app, host="127.0.0.1", port=self.port, log_level="warning", access_log=False, lifespan="off", loop="asyncio", http="h11")
 
 
 class RGDoctorBAgent(DoctorBAgent):
@@ -348,7 +348,7 @@ class RGDoctorBAgent(DoctorBAgent):
     
     def run_server(self):
         """运行FastAPI服务器"""
-        uvicorn.run(self.app, host="127.0.0.1", port=self.port, log_level="warning", access_log=False)
+        uvicorn.run(self.app, host="127.0.0.1", port=self.port, log_level="warning", access_log=False, lifespan="off", loop="asyncio", http="h11")
 
 
 async def create_and_start_doctor_agent(agent_class, agent_id: str, config: Dict[str, Any], port: int):

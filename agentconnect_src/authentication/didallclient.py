@@ -12,8 +12,8 @@ from typing import Tuple
 import aiohttp
 import requests
 
-from agent_connect.utils.crypto_tool import get_pem_from_private_key
-from agent_connect.utils.did_generate import did_generate
+from agentconnect_src.utils.crypto_tool import get_pem_from_private_key
+from agentconnect_src.utils.did_generate import did_generate
 
 
 class DIDAllClient:

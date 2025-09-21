@@ -12,13 +12,13 @@ import logging
 import traceback
 from typing import Optional, Tuple, Union
 
-from agent_connect.e2e_encryption.message_generation import generate_encrypted_message
-from agent_connect.e2e_encryption.short_term_key_generater import ShortTermKeyGenerater
-from agent_connect.simple_node.simple_wss_wraper import (
+from agentconnect_src.e2e_encryption.message_generation import generate_encrypted_message
+from agentconnect_src.e2e_encryption.short_term_key_generater import ShortTermKeyGenerater
+from agentconnect_src.simple_node.simple_wss_wraper import (
     SimpleClientWssWraper,
     SimpleWssWraper,
 )
-from agent_connect.utils.crypto_tool import decrypt_aes_gcm_sha256, generate_random_hex
+from agentconnect_src.utils.crypto_tool import decrypt_aes_gcm_sha256, generate_random_hex
 
 
 class SimpleNodeSession:
