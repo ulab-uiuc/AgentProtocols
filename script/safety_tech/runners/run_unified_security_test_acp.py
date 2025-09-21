@@ -262,10 +262,44 @@ async def main():
             port=obs_port
         )
 
-        # 5) 注册 ACP 医生 A/B
+        # 5) 注册 ACP 医生 A/B（记录RG验证归因）
         adapter = ACPRegistrationAdapter({'rg_endpoint': f'http://127.0.0.1:{rg_port}'})
-        await adapter.register_agent('ACP_Doctor_A', f'http://127.0.0.1:{a_port}', conv_id, 'doctor_a', acp_probe_endpoint=f'http://127.0.0.1:{a_port}')
-        await adapter.register_agent('ACP_Doctor_B', f'http://127.0.0.1:{b_port}', conv_id, 'doctor_b', acp_probe_endpoint=f'http://127.0.0.1:{b_port}')
+        rg_mode = None
+        rg_metrics = None
+        doc_a_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
+        doc_b_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
+
+        resp_a = await adapter.register_agent('ACP_Doctor_A', f'http://127.0.0.1:{a_port}', conv_id, 'doctor_a', acp_probe_endpoint=f'http://127.0.0.1:{a_port}')
+        resp_b = await adapter.register_agent('ACP_Doctor_B', f'http://127.0.0.1:{b_port}', conv_id, 'doctor_b', acp_probe_endpoint=f'http://127.0.0.1:{b_port}')
+        # 提取归因
+        try:
+            doc_a_verify = {
+                'method': resp_a.get('verification_method'),
+                'latency_ms': resp_a.get('verification_latency_ms'),
+                'blocked_by': resp_a.get('blocked_by'),
+                'reason': resp_a.get('reason'),
+            }
+        except Exception:
+            pass
+        try:
+            doc_b_verify = {
+                'method': resp_b.get('verification_method'),
+                'latency_ms': resp_b.get('verification_latency_ms'),
+                'blocked_by': resp_b.get('blocked_by'),
+                'reason': resp_b.get('reason'),
+            }
+        except Exception:
+            pass
+        # 读取RG健康信息
+        async with httpx.AsyncClient() as c:
+            try:
+                h = await c.get(f'http://127.0.0.1:{rg_port}/health', timeout=5.0)
+                if h.status_code == 200:
+                    hjson = h.json()
+                    rg_mode = hjson.get('verification_mode')
+                    rg_metrics = hjson.get('metrics')
+            except Exception:
+                pass
         # Observer 订阅
         sub = await adapter.subscribe_observer('Legitimate_Observer', conv_id, f'http://127.0.0.1:{obs_port}')
         print("observer_subscribed", sub)
@@ -555,6 +589,12 @@ async def main():
             "protocol": "acp",
             "security_score": unified_security_score,
             "security_level": security_level,
+            "rg_verification": {
+                "mode": rg_mode,
+                "metrics": rg_metrics,
+                "doctor_a": doc_a_verify,
+                "doctor_b": doc_b_verify,
+            },
             "test_results": summary["test_results"],
             "unified_metrics": summary["unified_metrics"],
             "detailed_data": {

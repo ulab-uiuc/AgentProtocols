@@ -426,8 +426,9 @@ async def main():
         # 5) 注册到RG + 订阅Observer
         # 记录RG验证归因信息
         rg_mode = None
-        doc_a_verify = {"method": None, "latency_ms": None}
-        doc_b_verify = {"method": None, "latency_ms": None}
+        rg_metrics = None
+        doc_a_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
+        doc_b_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
 
         async with httpx.AsyncClient() as c:
             # 为每个节点构建原生ANP证明
@@ -450,7 +451,9 @@ async def main():
                 respA = rA.json()
                 doc_a_verify = {
                     'method': respA.get('verification_method'),
-                    'latency_ms': respA.get('verification_latency_ms')
+                    'latency_ms': respA.get('verification_latency_ms'),
+                    'blocked_by': respA.get('blocked_by'),
+                    'reason': respA.get('reason'),
                 }
             except Exception:
                 pass
@@ -470,7 +473,9 @@ async def main():
                 respB = rB.json()
                 doc_b_verify = {
                     'method': respB.get('verification_method'),
-                    'latency_ms': respB.get('verification_latency_ms')
+                    'latency_ms': respB.get('verification_latency_ms'),
+                    'blocked_by': respB.get('blocked_by'),
+                    'reason': respB.get('reason'),
                 }
             except Exception:
                 pass
@@ -492,6 +497,7 @@ async def main():
                 if h.status_code == 200:
                     hjson = h.json()
                     rg_mode = hjson.get('verification_mode')
+                    rg_metrics = hjson.get('metrics')
             except Exception:
                 pass
 
@@ -678,6 +684,7 @@ async def main():
             'security_level': level,
             'rg_verification': {
                 'mode': rg_mode,
+                'metrics': rg_metrics,
                 'doctor_a': doc_a_verify,
                 'doctor_b': doc_b_verify
             },

@@ -78,6 +78,11 @@ class RegistrationGateway:
         self.verification_mode: str = str(self.config.get('verification_mode', 'native_delegated')).lower()
         # ANP可选DID文档探针（基准模式仅记录，严格模式强制）
         self.anp_probe_did_doc: bool = bool(self.config.get('anp_probe_did_doc', False))
+        # 重放/时间窗观测指标（仅记录，不阻断）
+        self.metrics = {
+            'nonce_reuse_count': 0,
+            'timestamp_expired_count': 0,
+        }
         
         # 配置参数
         self.session_timeout = self.config.get('session_timeout', 3600)  # 1小时
@@ -133,7 +138,7 @@ class RegistrationGateway:
         @self.app.get("/health")
         async def health_check():
             """健康检查"""
-            return {"status": "healthy", "timestamp": time.time(), "verification_mode": self.verification_mode}
+            return {"status": "healthy", "timestamp": time.time(), "verification_mode": self.verification_mode, "metrics": self.metrics}
         
         @self.app.post("/cleanup")
         async def cleanup_sessions(background_tasks: BackgroundTasks):
@@ -179,7 +184,12 @@ class RegistrationGateway:
             verification_result = await self.protocol_verifiers[protocol](record)
         except Exception as e:
             _latency_ms = int((time.time() - _verify_start) * 1000)
-            logger.error(f"Protocol verification error [{protocol}] blocked_by=protocol latency_ms={_latency_ms} reason={e}")
+            # 记录归因原因
+            try:
+                reason = str(e)
+            except Exception:
+                reason = "verification_exception"
+            logger.error(f"Protocol verification error [{protocol}] blocked_by=protocol latency_ms={_latency_ms} reason={reason}")
             raise
         _latency_ms = int((time.time() - _verify_start) * 1000)
         record.verified = verification_result.get('verified', False)
@@ -208,7 +218,8 @@ class RegistrationGateway:
             "verified": record.verified,
             "verification_method": verification_result.get('verification_method', 'unknown'),
             "verification_latency_ms": _latency_ms,
-            "blocked_by": "none"
+            "blocked_by": "none",
+            "reason": None
         }
 
     async def _handle_subscribe(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -401,7 +412,10 @@ class RegistrationGateway:
         return {"verified": True, "session_token": session_token, "verification_method": "agora_protocol_hash"}
 
     async def _verify_a2a(self, record: RegistrationRecord) -> Dict[str, Any]:
-        """验证A2A协议（移除弱化放行，最小要求：a2a_token+timestamp+nonce）"""
+        """验证A2A协议
+        - 最小要求：a2a_token+timestamp+nonce（始终启用）
+        - 可选：SDK原生challenge-echo探针（a2a_enable_challenge，默认False，以保持公平）
+        """
         proof = record.proof or {}
         required = ['a2a_token', 'timestamp', 'nonce']
         for f in required:
@@ -415,16 +429,49 @@ class RegistrationGateway:
         except Exception:
             return {"verified": False, "error": "Invalid A2A proof timestamp"}
         if abs(now - ts) > 300:
+            # 仅记录
+            self.metrics['timestamp_expired_count'] = self.metrics.get('timestamp_expired_count', 0) + 1
             return {"verified": False, "error": "A2A proof timestamp expired"}
 
         nonce = str(proof.get('nonce', ''))
         if not nonce or nonce in self.used_nonces:
+            # 记录重放嫌疑
+            self.metrics['nonce_reuse_count'] = self.metrics.get('nonce_reuse_count', 0) + 1
             return {"verified": False, "error": "Replay detected: nonce reused or missing"}
         self.used_nonces.add(nonce)
 
-        # 预留：SDK原生challenge接入点（后续增强）
+        # 可选：SDK原生challenge-echo探针
+        if bool(self.config.get('a2a_enable_challenge', False)):
+            base = (record.endpoint or '').rstrip('/')
+            if not base.startswith('http://') and not base.startswith('https://'):
+                return {"verified": False, "error": "A2A endpoint must be http(s) URL for challenge"}
+            try:
+                async with httpx.AsyncClient() as client:
+                    # 通过/message发送标准A2A消息体，要求服务端回执（由adapter统一封装）
+                    payload = {
+                        "params": {
+                            "message": {
+                                "parts": [{"type": "text", "text": f"challenge:{nonce}"}],
+                                "messageId": f"chal_{int(time.time()*1000)}",
+                                "role": "user"
+                            }
+                        }
+                    }
+                    r = await client.post(f"{base}/message", json=payload, timeout=5.0)
+                    if r.status_code != 200:
+                        return {"verified": False, "error": f"A2A challenge failed: status {r.status_code}"}
+                    js = r.json() if r.content else {}
+                    # 统一JSON响应：包含events数组；若包含至少一个事件即视为回执成功
+                    if not isinstance(js, dict) or not js.get('events'):
+                        return {"verified": False, "error": "A2A challenge no events returned"}
+                    verification_method = "a2a_challenge_echo"
+            except Exception as e:
+                return {"verified": False, "error": f"A2A challenge error: {e}"}
+        else:
+            verification_method = "a2a_minimal_token"
+
         session_token = f"a2a_{record.agent_id}_{int(time.time())}"
-        return {"verified": True, "session_token": session_token, "verification_method": "a2a_minimal_token"}
+        return {"verified": True, "session_token": session_token, "verification_method": verification_method}
 
     async def _verify_acp(self, record: RegistrationRecord) -> Dict[str, Any]:
         """验证ACP协议（原生校验，无任何fallback）"""

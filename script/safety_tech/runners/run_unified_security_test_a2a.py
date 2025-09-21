@@ -214,6 +214,12 @@ async def main():
         await _wait_http_ok(f"http://127.0.0.1:{b_port}/health", 15.0)
 
         # 5) 注册到RG + 订阅Observer
+        # RG归因信息
+        rg_mode = None
+        rg_metrics = None
+        doc_a_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
+        doc_b_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
+
         async with httpx.AsyncClient() as c:
             for agent_id, port, role in [
                 ('A2A_Doctor_A', a_port, 'doctor_a'),
@@ -235,6 +241,20 @@ async def main():
                 }, timeout=10.0)
                 if r.status_code != 200:
                     raise RuntimeError(f"注册{agent_id}失败: {r.text}")
+                try:
+                    js = r.json()
+                    info = {
+                        'method': js.get('verification_method'),
+                        'latency_ms': js.get('verification_latency_ms'),
+                        'blocked_by': js.get('blocked_by'),
+                        'reason': js.get('reason'),
+                    }
+                    if agent_id.endswith('_A'):
+                        doc_a_verify = info
+                    else:
+                        doc_b_verify = info
+                except Exception:
+                    pass
 
             sub = await c.post(f"http://127.0.0.1:{rg_port}/subscribe", json={
                 'agent_id': 'Legitimate_Observer',
@@ -245,6 +265,16 @@ async def main():
             }, timeout=10.0)
             if sub.status_code != 200:
                 raise RuntimeError(f"Observer订阅失败: {sub.text}")
+
+            # 读取RG健康信息
+            try:
+                h = await c.get(f"http://127.0.0.1:{rg_port}/health", timeout=5.0)
+                if h.status_code == 200:
+                    hjson = h.json()
+                    rg_mode = hjson.get('verification_mode')
+                    rg_metrics = hjson.get('metrics')
+            except Exception:
+                pass
 
         # 等待Coordinator目录刷新
         await asyncio.sleep(4)
@@ -440,6 +470,12 @@ async def main():
             'protocol': 'a2a',
             'security_score': unified,
             'security_level': level,
+            'rg_verification': {
+                'mode': rg_mode,
+                'metrics': rg_metrics,
+                'doctor_a': doc_a_verify,
+                'doctor_b': doc_b_verify,
+            },
             'test_results': {
                 'S1_business_continuity': {'completion_rate': s1_rate, 'score': round(s1_score,1)},
                 'S2_eavesdrop_prevention': {'malicious_observers_blocked': len(malicious)==0, 'score': round(s2_score,1)},

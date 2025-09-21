@@ -606,13 +606,18 @@ class AgoraRealLLMTest:
             "security_level": security_level,
             "rg_verification": {
                 "mode": getattr(self.rg, 'verification_mode', None),
+                "metrics": getattr(self.rg, 'metrics', None) if hasattr(self.rg, 'metrics') else None,
                 "doctor_a": {
                     "method": getattr(self.doctor_a, 'verification_method', None),
-                    "latency_ms": getattr(self.doctor_a, 'verification_latency_ms', None)
+                    "latency_ms": getattr(self.doctor_a, 'verification_latency_ms', None),
+                    "blocked_by": getattr(self.doctor_a, 'blocked_by', None) if hasattr(self.doctor_a, 'blocked_by') else None,
+                    "reason": getattr(self.doctor_a, 'blocked_reason', None) if hasattr(self.doctor_a, 'blocked_reason') else None
                 },
                 "doctor_b": {
                     "method": getattr(self.doctor_b, 'verification_method', None),
-                    "latency_ms": getattr(self.doctor_b, 'verification_latency_ms', None)
+                    "latency_ms": getattr(self.doctor_b, 'verification_latency_ms', None),
+                    "blocked_by": getattr(self.doctor_b, 'blocked_by', None) if hasattr(self.doctor_b, 'blocked_by') else None,
+                    "reason": getattr(self.doctor_b, 'blocked_reason', None) if hasattr(self.doctor_b, 'blocked_reason') else None
                 }
             },
             "test_results": {
