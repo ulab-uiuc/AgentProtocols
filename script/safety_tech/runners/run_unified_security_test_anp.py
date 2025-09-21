@@ -424,26 +424,58 @@ async def main():
         )
 
         # 5) 注册到RG + 订阅Observer
+        # 记录RG验证归因信息
+        rg_mode = None
+        doc_a_verify = {"method": None, "latency_ms": None}
+        doc_b_verify = {"method": None, "latency_ms": None}
+
         async with httpx.AsyncClient() as c:
             # 为每个节点构建原生ANP证明
             proofs = {
                 'ANP_Doctor_A': doctor_a.build_registration_proof(),
                 'ANP_Doctor_B': doctor_b.build_registration_proof(),
             }
-            for agent_id, port, role in [
-                ('ANP_Doctor_A', a_port, 'doctor_a'),
-                ('ANP_Doctor_B', b_port, 'doctor_b'),
-            ]:
-                r = await c.post(f"http://127.0.0.1:{rg_port}/register", json={
-                    'protocol': 'anp',
-                    'agent_id': agent_id,
-                    'endpoint': f"http://127.0.0.1:{port}",  # 供Coordinator调用
-                    'conversation_id': conv_id,
-                    'role': role,
-                    'proof': proofs[agent_id]
-                }, timeout=10.0)
-                if r.status_code != 200:
-                    raise RuntimeError(f"注册{agent_id}失败: {r.text}")
+            # 注册Doctor A
+            rA = await c.post(f"http://127.0.0.1:{rg_port}/register", json={
+                'protocol': 'anp',
+                'agent_id': 'ANP_Doctor_A',
+                'endpoint': f"http://127.0.0.1:{a_port}",
+                'conversation_id': conv_id,
+                'role': 'doctor_a',
+                'proof': proofs['ANP_Doctor_A']
+            }, timeout=10.0)
+            if rA.status_code != 200:
+                raise RuntimeError(f"注册ANP_Doctor_A失败: {rA.text}")
+            try:
+                respA = rA.json()
+                doc_a_verify = {
+                    'method': respA.get('verification_method'),
+                    'latency_ms': respA.get('verification_latency_ms')
+                }
+            except Exception:
+                pass
+
+            # 注册Doctor B
+            rB = await c.post(f"http://127.0.0.1:{rg_port}/register", json={
+                'protocol': 'anp',
+                'agent_id': 'ANP_Doctor_B',
+                'endpoint': f"http://127.0.0.1:{b_port}",
+                'conversation_id': conv_id,
+                'role': 'doctor_b',
+                'proof': proofs['ANP_Doctor_B']
+            }, timeout=10.0)
+            if rB.status_code != 200:
+                raise RuntimeError(f"注册ANP_Doctor_B失败: {rB.text}")
+            try:
+                respB = rB.json()
+                doc_b_verify = {
+                    'method': respB.get('verification_method'),
+                    'latency_ms': respB.get('verification_latency_ms')
+                }
+            except Exception:
+                pass
+
+            # 订阅Observer
             sub = await c.post(f"http://127.0.0.1:{rg_port}/subscribe", json={
                 'agent_id': 'Legitimate_Observer',
                 'role': 'observer',
@@ -453,6 +485,15 @@ async def main():
             }, timeout=10.0)
             if sub.status_code != 200:
                 raise RuntimeError(f"Observer订阅失败: {sub.text}")
+
+            # 读取RG健康信息，获取verification_mode
+            try:
+                h = await c.get(f"http://127.0.0.1:{rg_port}/health", timeout=5.0)
+                if h.status_code == 200:
+                    hjson = h.json()
+                    rg_mode = hjson.get('verification_mode')
+            except Exception:
+                pass
 
         # 等待Coordinator目录刷新
         await asyncio.sleep(4)
@@ -635,6 +676,11 @@ async def main():
             'protocol': 'anp',
             'security_score': unified,
             'security_level': level,
+            'rg_verification': {
+                'mode': rg_mode,
+                'doctor_a': doc_a_verify,
+                'doctor_b': doc_b_verify
+            },
             'test_results': {
                 'S1_business_continuity': {'completion_rate': s1_rate, 'score': round(s1_score,1)},
                 'S2_eavesdrop_prevention': {'malicious_observers_blocked': len(malicious)==0, 'score': round(s2_score,1)},

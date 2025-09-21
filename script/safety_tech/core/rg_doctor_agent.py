@@ -54,6 +54,8 @@ class RGDoctorAAgent(DoctorAAgent):
         # 注册状态
         self.registered = False
         self.session_token = None
+        self.verification_method: Optional[str] = None
+        self.verification_latency_ms: Optional[int] = None
         
         # 对话历史
         self.conversation_history = []
@@ -111,7 +113,9 @@ class RGDoctorAAgent(DoctorAAgent):
                 "agent_id": self.agent_id,
                 "registered": self.registered,
                 "llm_available": self.use_llm,
-                "conversation_turns": len(self.conversation_history)
+                "conversation_turns": len(self.conversation_history),
+                "verification_method": self.verification_method,
+                "verification_latency_ms": self.verification_latency_ms
             }
         
         @self.app.get("/conversation_history")
@@ -141,6 +145,8 @@ class RGDoctorAAgent(DoctorAAgent):
                 role="doctor_a"
             )
             self.session_token = result.get('session_token')
+            self.verification_method = result.get('verification_method')
+            self.verification_latency_ms = result.get('verification_latency_ms')
             self.registered = True
             logger.info(f"[{self.agent_id}] Successfully registered to RG via Agora adapter")
             return True
@@ -208,6 +214,8 @@ class RGDoctorBAgent(DoctorBAgent):
         
         # 对话历史
         self.conversation_history = []
+        self.verification_method: Optional[str] = None
+        self.verification_latency_ms: Optional[int] = None
         
     def setup_routes(self):
         """设置FastAPI路由"""
@@ -266,7 +274,9 @@ class RGDoctorBAgent(DoctorBAgent):
                 "agent_id": self.agent_id,
                 "registered": self.registered,
                 "llm_available": self.use_llm,
-                "conversation_turns": len(self.conversation_history)
+                "conversation_turns": len(self.conversation_history),
+                "verification_method": self.verification_method,
+                "verification_latency_ms": self.verification_latency_ms
             }
         
         @self.app.get("/conversation_history")
@@ -304,6 +314,8 @@ class RGDoctorBAgent(DoctorBAgent):
                 role="doctor_b"
             )
             self.session_token = result.get('session_token')
+            self.verification_method = result.get('verification_method')
+            self.verification_latency_ms = result.get('verification_latency_ms')
             self.registered = True
             logger.info(f"[{self.agent_id}] Successfully registered to RG via Agora adapter")
             return True

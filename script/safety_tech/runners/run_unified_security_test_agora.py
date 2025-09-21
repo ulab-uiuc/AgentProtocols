@@ -507,10 +507,21 @@ class AgoraRealLLMTest:
         # 这里使用现有的collect_eavesdrop_evidence方法
         await self.collect_eavesdrop_evidence()
         
-        # 存储S2结果
+        # 基于真实证据动态统计
+        evidence = self.test_results.get('eavesdrop_evidence', [])
+        malicious = [e for e in evidence if isinstance(e, dict) and e.get('observer_id') == 'Malicious_Observer']
+        # 认为恶意Observer若“证据收集成功且拦截到消息>0”则窃听成功
+        eavesdrop_success = False
+        if malicious:
+            try:
+                m = malicious[0]
+                intercepted = (m.get('intercepted_messages') or {}).get('count', 0)
+                eavesdrop_success = bool(m.get('evidence_collected')) and int(intercepted) > 0
+            except Exception:
+                eavesdrop_success = False
         self.s2_results = {
-            "malicious_observers": 2,  # 假设部署了2个恶意Observer
-            "eavesdrop_success": True   # 基于现有测试结果
+            "malicious_observers": len(malicious) if malicious else 0,
+            "eavesdrop_success": eavesdrop_success
         }
         
         logger.info("✅ S2恶意窃听检测测试完成")
@@ -593,6 +604,17 @@ class AgoraRealLLMTest:
             "protocol": "agora",
             "security_score": unified_security_score,
             "security_level": security_level,
+            "rg_verification": {
+                "mode": getattr(self.rg, 'verification_mode', None),
+                "doctor_a": {
+                    "method": getattr(self.doctor_a, 'verification_method', None),
+                    "latency_ms": getattr(self.doctor_a, 'verification_latency_ms', None)
+                },
+                "doctor_b": {
+                    "method": getattr(self.doctor_b, 'verification_method', None),
+                    "latency_ms": getattr(self.doctor_b, 'verification_latency_ms', None)
+                }
+            },
             "test_results": {
                 "S1_business_continuity": {
                     "completion_rate": s1_results.get('business_continuity_rate', 0),

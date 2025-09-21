@@ -133,7 +133,7 @@ class RegistrationGateway:
         @self.app.get("/health")
         async def health_check():
             """健康检查"""
-            return {"status": "healthy", "timestamp": time.time()}
+            return {"status": "healthy", "timestamp": time.time(), "verification_mode": self.verification_mode}
         
         @self.app.post("/cleanup")
         async def cleanup_sessions(background_tasks: BackgroundTasks):
@@ -352,38 +352,30 @@ class RegistrationGateway:
 
     # 协议验证器实现
     async def _verify_agora(self, record: RegistrationRecord) -> Dict[str, Any]:
-        """验证Agora协议"""
-        from agora.utils import download_and_verify_protocol
-        proof = record.proof
-        protocol_meta = record.protocol_meta
+        """验证Agora协议（基准模式：仅校验protocol_hash与protocol_sources；不做RG层反重放阻断）"""
+        try:
+            from agora.utils import download_and_verify_protocol
+        except Exception as e:
+            raise RuntimeError(f"Failed to import Agora native utils: {e}")
 
-        # 校验必需字段
-        required = ['protocol_hash', 'protocol_sources', 'timestamp', 'nonce']
-        for f in required:
-            if f not in proof:
-                return {"verified": False, "error": f"Missing required Agora proof field: {f}"}
-
-        # 防重放：检查时间窗（默认5分钟）
-        now = time.time()
-        if abs(now - float(proof.get('timestamp', 0))) > 300:
-            return {"verified": False, "error": "Agora proof timestamp expired"}
-
-        # 防重放：nonce一次性
-        nonce = str(proof.get('nonce', ''))
-        if not nonce or nonce in self.used_nonces:
-            return {"verified": False, "error": "Replay detected: nonce reused or missing"}
-        self.used_nonces.add(nonce)
+        proof = record.proof or {}
 
         # 协议强绑定：仅当record.protocol == 'agora'时接受
         if record.protocol != 'agora':
             return {"verified": False, "error": "Protocol mismatch for Agora verification"}
 
-        # 使用Agora原生工具校验协议hash与来源
-        protocol_hash = proof['protocol_hash']
+        # 校验必需字段（仅hash与sources）
+        required = ['protocol_hash', 'protocol_sources']
+        for f in required:
+            if f not in proof:
+                return {"verified": False, "error": f"Missing required Agora proof field: {f}"}
+
+        protocol_hash = proof.get('protocol_hash')
         sources = proof.get('protocol_sources') or []
         if not isinstance(sources, list) or len(sources) == 0:
             return {"verified": False, "error": "protocol_sources must be a non-empty list"}
 
+        # 使用Agora原生工具校验协议hash与来源
         verified_source_found = False
         for src in sources:
             try:
@@ -397,10 +389,9 @@ class RegistrationGateway:
         if not verified_source_found:
             return {"verified": False, "error": "Protocol hash verification failed for all sources"}
 
-        # 可选：端点归属证明（若启用）
-        require_endpoint_proof = self.config.get('agora_require_endpoint_proof', False)
+        # 可选：端点归属证明（受配置控制，默认关闭）
+        require_endpoint_proof = bool(self.config.get('agora_require_endpoint_proof', False))
         if require_endpoint_proof:
-            endpoint = record.endpoint or ''
             ownership = proof.get('endpoint_ownership_proof')
             if not ownership or not isinstance(ownership, str) or len(ownership) < 8:
                 return {"verified": False, "error": "Invalid or missing endpoint ownership proof"}

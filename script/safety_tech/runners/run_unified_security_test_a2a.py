@@ -17,6 +17,7 @@ import signal
 import sys
 import time
 import logging
+import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -221,7 +222,8 @@ async def main():
                 # A2A 原生证明：此处携带 a2a_token 字段以触发A2A校验器
                 proof = {
                     'a2a_token': f"token_{agent_id}_{int(time.time())}",
-                    'timestamp': time.time()
+                    'timestamp': time.time(),
+                    'nonce': str(uuid.uuid4()),
                 }
                 r = await c.post(f"http://127.0.0.1:{rg_port}/register", json={
                     'protocol': 'a2a',
