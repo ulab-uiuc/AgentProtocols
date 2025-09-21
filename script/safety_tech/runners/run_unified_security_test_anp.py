@@ -352,6 +352,7 @@ class ANPDoctorShim:
                 print(f"   [DEBUG] {self.agent_name}: 签名生成失败: {e}")
         
         return {
+            'did': self.did,
             'did_signature': signature,
             'did_public_key': pub_hex,
             'timestamp': ts,
