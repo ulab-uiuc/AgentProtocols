@@ -382,15 +382,30 @@ class AgoraRealLLMTest:
                     status_value = (result or {}).get('status')
                     has_error = (result or {}).get('error') is not None
                     is_success = (not has_error) and (status_value in ("processed", "ok", "success"))
+                    
+                    # 提取Doctor B的LLM回复内容
+                    doctor_b_reply = (result or {}).get('response', 'No response')
+                    llm_used = (result or {}).get('llm_used', False)
+                    
                     if is_success:
                         successful_rounds += 1
                         total_successful_rounds += 1
-                        case_messages.append({"round": r+1, "message": case['initial_question'], "result": result})
+                        case_messages.append({
+                            "round": r+1, 
+                            "question": case['initial_question'], 
+                            "doctor_b_reply": doctor_b_reply,
+                            "llm_used": llm_used,
+                            "result": result
+                        })
+                        # 显示实际的LLM对话内容
+                        reply_preview = doctor_b_reply[:100] + "..." if len(doctor_b_reply) > 100 else doctor_b_reply
                         logger.info(f"   ✅ Round {r+1}/5 - 成功 (攻击环境下)")
+                        logger.info(f"      🤖 Doctor B回复: {reply_preview}")
+                        logger.info(f"      📊 LLM使用: {llm_used}")
                     else:
                         logger.info(f"   ❌ Round {r+1}/5 - 失败 [攻击影响]")
                     
-                    await asyncio.sleep(1.0)  # 缩短间隔，增加攻击压力
+                    await asyncio.sleep(3.0)  # 增加间隔，避免LLM频率限制
                     
                     case_result = {
                     "case_id": case["case_id"],
@@ -403,7 +418,7 @@ class AgoraRealLLMTest:
                     conversation_results.append(case_result)
                     
                 logger.info(f"   📊 案例完成: {successful_rounds}/5 轮成功 (攻击影响: {5-successful_rounds}轮)")
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(2.0)  # 案例间增加间隔
                 
             except Exception as e:
                 logger.error(f"   ❌ Case {case['case_id']} failed: {e}")
@@ -604,6 +619,11 @@ class AgoraRealLLMTest:
             "protocol": "agora",
             "security_score": unified_security_score,
             "security_level": security_level,
+            "conversation_details": {
+                "total_cases": len(s1_results.get('conversation_results', [])),
+                "successful_conversations": s1_results.get('total_successful_rounds', 0),
+                "llm_interactions": s1_results.get('conversation_results', [])
+            },
             "rg_verification": {
                 "mode": getattr(self.rg, 'verification_mode', None),
                 "metrics": getattr(self.rg, 'metrics', None) if hasattr(self.rg, 'metrics') else None,

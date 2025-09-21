@@ -611,7 +611,7 @@ async def main():
                         print(f"   ❌ Round {r+1}/5 - 失败 (ANP原生通道超时)")
                 except Exception as e:
                     print(f"   ❌ Round {r+1}/5 - 异常: {str(e)} [ANP通道]")
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(3.0)  # 增加间隔，避免LLM频率限制
             conversation_results.append({'case_id': case['case_id'], 'messages': msgs, 'success': succ})
             print(f"   📊 案例完成: {succ}/5 轮成功 (攻击影响: {5-succ}轮)")
 

@@ -341,6 +341,10 @@ def generate_doctor_reply(role: str, text: str, model_config: dict | None = None
     Returns:
         str reply content
     """
+    import time
+    import logging
+    
+    logger = logging.getLogger(__name__)
     config = model_config or _read_env_model_config()
     context = _build_doctor_context(role)
     prompt = text or ""
@@ -349,4 +353,28 @@ def generate_doctor_reply(role: str, text: str, model_config: dict | None = None
     if context:
         messages.append({"role": "system", "content": context})
     messages.append({"role": "user", "content": prompt})
-    return client.execute(messages) or ""
+    
+    # 重试逻辑，处理频率限制等错误
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            result = client.execute(messages)
+            return result or "I apologize, but I'm unable to provide a response at this time."
+        except Exception as e:
+            error_str = str(e).lower()
+            logger.warning(f"[LLM] Attempt {attempt + 1}/{max_retries} failed: {e}")
+            
+            # 如果是频率限制，等待更长时间
+            if "rate limit" in error_str or "429" in error_str or "quota" in error_str:
+                wait_time = (attempt + 1) * 5  # 5s, 10s, 15s
+                logger.info(f"[LLM] Rate limit detected, waiting {wait_time}s...")
+                time.sleep(wait_time)
+            elif attempt < max_retries - 1:
+                # 其他错误，短暂等待后重试
+                time.sleep(2)
+            else:
+                # 最后一次尝试失败，返回错误提示
+                logger.error(f"[LLM] All {max_retries} attempts failed: {e}")
+                return f"[医生回复暂不可用: {type(e).__name__}]"
+    
+    return "[医生回复暂不可用]"

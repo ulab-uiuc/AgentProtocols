@@ -373,7 +373,7 @@ async def main():
                             print(f"   ❌ Round {r+1}/5 - 失败 (状态: {rr.status_code}) [攻击影响]")
                     except Exception as e:
                         print(f"   ❌ Round {r+1}/5 - 异常: {str(e)[:50]}... [攻击影响]")
-                    await asyncio.sleep(1.0)  # 缩短间隔，增加攻击压力
+                    await asyncio.sleep(3.0)  # 增加间隔，避免LLM频率限制
                 
                 case_result = {
                     "case_id": case["case_id"],
@@ -386,7 +386,7 @@ async def main():
                 conversation_results.append(case_result)
                 
                 print(f"   📊 案例完成: {successful_rounds}/5 轮成功 (攻击影响: {5-successful_rounds}轮)")
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(2.0)  # 案例间增加间隔
         
         # 停止攻击任务
         for task in attack_tasks:
