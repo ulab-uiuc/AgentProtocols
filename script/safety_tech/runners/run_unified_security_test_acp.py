@@ -247,11 +247,11 @@ async def main():
         await coordinator.start()
         await _wait_http_ok(f"http://127.0.0.1:{coord_port}/health", 20.0)
 
-        # 3) 启动 原生ACP A/B 服务
-        procs.append(_spawn([sys.executable, "-m", "uvicorn", "dev.acp_server_a:app", "--host", "127.0.0.1", "--port", str(a_port)], 
-                           env={"PYTHONPATH": str(SAFETY_TECH)}))
-        procs.append(_spawn([sys.executable, "-m", "uvicorn", "dev.acp_server_b:app", "--host", "127.0.0.1", "--port", str(b_port)], 
-                           env={"PYTHONPATH": str(SAFETY_TECH)}))
+        # 3) 启动 原生ACP A/B 服务（使用LLM代理版本）
+        # 需要环境变量提供OpenAI密钥/模型名，否则可在dev服务器内做校验并报错
+        env_base = {"PYTHONPATH": str(SAFETY_TECH), **os.environ}
+        procs.append(_spawn([sys.executable, "-m", "uvicorn", "dev.acp_server_a_llm:app", "--host", "127.0.0.1", "--port", str(a_port)], env=env_base))
+        procs.append(_spawn([sys.executable, "-m", "uvicorn", "dev.acp_server_b_llm:app", "--host", "127.0.0.1", "--port", str(b_port)], env=env_base))
         await _wait_http_ok(f"http://127.0.0.1:{a_port}/agents", 12.0)
         await _wait_http_ok(f"http://127.0.0.1:{b_port}/agents", 12.0)
 

@@ -14,7 +14,7 @@ except Exception as e:  # pragma: no cover
     # Fallback: attempt relative import if path handling differs
     from ...src.utils.core import Core  # type: ignore
 
-__all__ = ["Core"]
+__all__ = ["Core", "generate_doctor_reply"]
 
 import time
 import os
@@ -284,3 +284,69 @@ class Core:
                     time.sleep(10)
                     if rounds > threshold:
                         raise Exception(f"Function call generation failed too many times. Last error: {str(e)}")
+
+
+# ----------------- High-level helper for doctors -----------------
+def _build_doctor_context(role: str) -> str:
+    role = (role or '').lower()
+    if role in ("doctor_a", "a", "receptionist", "primary"):
+        return (
+            "You are Doctor A, a primary care physician consulting with a specialist colleague about a medical case. "
+            "Focus exclusively on clinical aspects: patient symptoms, medical history, physical examination findings, and diagnostic considerations. "
+            "Discuss differential diagnoses, treatment protocols, medication management, and follow-up care planning. "
+            "Share relevant medical knowledge, evidence-based guidelines, and clinical experience. "
+            "Ask about laboratory results, imaging studies, vital signs, and other objective medical data. "
+            "Provide professional medical opinions on diagnosis, prognosis, and treatment recommendations. "
+            "Maintain a collaborative, educational tone focused purely on advancing patient care through medical expertise exchange."
+        )
+    else:
+        return (
+            "You are Doctor B, a specialist physician providing expert consultation on a medical case. "
+            "Focus on comprehensive medical analysis: review symptoms, medical history, examination findings, and diagnostic results. "
+            "Ask specific clinical questions about disease progression, symptom patterns, response to previous treatments, and comorbidities. "
+            "Provide specialist insights on complex diagnoses, advanced treatment options, and management strategies. "
+            "Discuss relevant medical literature, clinical guidelines, and best practices. "
+            "Evaluate risk factors, contraindications, and potential complications. "
+            "Collaborate professionally to develop optimal patient care plans through detailed medical discussion and knowledge sharing."
+        )
+
+
+def _read_env_model_config() -> dict:
+    import os as _os
+    api_key = _os.environ.get('OPENAI_API_KEY')
+    base_url = _os.environ.get('OPENAI_BASE_URL')
+    model_name = _os.environ.get('OPENAI_MODEL', 'gpt-4o')
+    temperature = float(_os.environ.get('OPENAI_TEMPERATURE', '0.3'))
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY 未设置，无法创建LLM客户端")
+    return {
+        'model': {
+            'type': 'openai',
+            'name': model_name,
+            'temperature': temperature,
+            'openai_api_key': api_key,
+            'openai_base_url': base_url,
+        }
+    }
+
+
+def generate_doctor_reply(role: str, text: str, model_config: dict | None = None) -> str:
+    """Generate a medical reply for Doctor A/B with a unified LLM interface.
+
+    Args:
+        role: 'doctor_a' or 'doctor_b' (case-insensitive). Others treated as B.
+        text: user input text
+        model_config: optional Core-compatible model config. If None, read from env.
+
+    Returns:
+        str reply content
+    """
+    config = model_config or _read_env_model_config()
+    context = _build_doctor_context(role)
+    prompt = text or ""
+    client = Core(config)
+    messages = []
+    if context:
+        messages.append({"role": "system", "content": context})
+    messages.append({"role": "user", "content": prompt})
+    return client.execute(messages) or ""

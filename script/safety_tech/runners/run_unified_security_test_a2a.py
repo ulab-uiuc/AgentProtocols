@@ -44,6 +44,10 @@ except ImportError:
 
 # 原生A2A（a2a-sdk）服务适配器
 from src.server_adapters.a2a_adapter import A2AServerAdapter
+try:
+    from script.safety_tech.core.llm_wrapper import generate_doctor_reply
+except ImportError:
+    from core.llm_wrapper import generate_doctor_reply
 
 
 def _load_medical_dataset() -> List[Dict[str, Any]]:
@@ -103,6 +107,9 @@ class A2ADoctorServer:
         self._server = None
         self._thread = None
 
+        # 标记医生角色
+        self._doctor_role = 'doctor_a' if agent_id.endswith('_A') else 'doctor_b'
+
         class _Executor:
             async def execute(self_inner, context, event_queue):
                 # 从context提取文本（A2A adapter已封装）
@@ -131,8 +138,12 @@ class A2ADoctorServer:
                 except Exception:
                     text = str(msg)
 
-                reply = f"{self.agent_id} (A2A) received: {text}"
-                await event_queue.enqueue_event(new_agent_text_message(reply))
+                # 使用真实LLM生成回复
+                try:
+                    reply = generate_doctor_reply(self._doctor_role, text or '')
+                except Exception as e:
+                    reply = f"[LLM_ERROR] {e}"
+                await event_queue.enqueue_event(new_agent_text_message(str(reply)))
 
         self._executor = _Executor()
 
@@ -175,7 +186,7 @@ async def main():
             sys.executable, "-c",
             f"import sys; sys.path.insert(0, '{PROJECT_ROOT}'); "
             "from script.safety_tech.core.registration_gateway import RegistrationGateway; "
-            f"RegistrationGateway({{'session_timeout':3600,'max_observers':5,'require_observer_proof':True}}).run(host='127.0.0.1', port={rg_port})"
+            f"RegistrationGateway({{'session_timeout':3600,'max_observers':5,'require_observer_proof':True,'a2a_enable_challenge':True}}).run(host='127.0.0.1', port={rg_port})"
         ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         procs.append(proc)
         print(f"Started RG process with PID: {proc.pid}")

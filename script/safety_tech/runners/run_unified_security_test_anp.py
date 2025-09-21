@@ -43,6 +43,12 @@ HERE = Path(__file__).resolve().parent
 SAFETY_TECH = HERE.parent
 sys.path.insert(0, str(SAFETY_TECH))
 
+# 统一LLM回复封装
+try:
+    from script.safety_tech.core.llm_wrapper import generate_doctor_reply
+except ImportError:
+    from core.llm_wrapper import generate_doctor_reply
+
 # 尝试导入核心组件
 try:
     from core.rg_coordinator import RGCoordinator
@@ -154,13 +160,17 @@ class ANPDoctorShim:
         self._peer_session: Optional[SimpleNodeSession] = None  # 使用官方API的会话对象
         self._inbox: asyncio.Queue = asyncio.Queue()
         self._setup_routes()
+        self._doctor_role = 'doctor_a' if self.agent_name.endswith('_A') else 'doctor_b'
 
     def _setup_routes(self):
         @self.app.post('/message')
         async def receive_message(payload: Dict[str, Any]):
             # 入站仅作业务触发，实际回执通过原生ANP通道发送给对端DID
             text = payload.get('text') or payload.get('content') or ''
-            response = f"{self.agent_name} (ANP) received: {text}"
+            try:
+                response = generate_doctor_reply(self._doctor_role, str(text))
+            except Exception as e:
+                response = f"[LLM_ERROR] {e}"
             if self.simple_node and self._peer_did:
                 try:
                     await self.simple_node.send_message(response, self._peer_did)

@@ -14,6 +14,7 @@ from fastapi import FastAPI, HTTPException
 import uvicorn
 import httpx
 import logging
+import os
 try:
     from ..protocol_backends.agora.registration_adapter import AgoraRegistrationAdapter
 except ImportError:
@@ -33,6 +34,12 @@ try:
     from .privacy_agent_base import DoctorAAgent, DoctorBAgent
 except ImportError:
     from core.privacy_agent_base import DoctorAAgent, DoctorBAgent
+
+# 统一LLM回复封装
+try:
+    from .llm_wrapper import generate_doctor_reply
+except Exception:
+    from core.llm_wrapper import generate_doctor_reply
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +70,24 @@ class RGDoctorAAgent(DoctorAAgent):
     def setup_routes(self):
         """设置FastAPI路由"""
         
+        def _build_model_config() -> Optional[Dict[str, Any]]:
+            core_cfg = (self.config or {}).get('core', {}) if isinstance(self.config, dict) else {}
+            if not isinstance(core_cfg, dict) or not core_cfg:
+                return None
+            base_url = core_cfg.get('openai_base_url') or core_cfg.get('nvidia_base_url') or os.getenv('OPENAI_BASE_URL')
+            api_key = core_cfg.get('openai_api_key') or os.getenv('OPENAI_API_KEY')
+            name = core_cfg.get('name') or os.getenv('OPENAI_MODEL') or 'gpt-4o'
+            temperature = core_cfg.get('temperature', 0.3)
+            return {
+                'model': {
+                    'type': core_cfg.get('type', 'openai'),
+                    'name': name,
+                    'temperature': temperature,
+                    'openai_api_key': api_key,
+                    'openai_base_url': base_url,
+                }
+            }
+
         @self.app.post("/message")
         async def receive_message(payload: Dict[str, Any]):
             """接收消息并处理"""
@@ -80,8 +105,8 @@ class RGDoctorAAgent(DoctorAAgent):
                 if not content:
                     return {"status": "no_content", "agent_id": self.agent_id}
                 
-                # 使用LLM处理消息
-                response = await self.process_message(sender_id, content)
+                # 使用统一LLM封装生成回复
+                response = generate_doctor_reply('doctor_a', str(content), model_config=_build_model_config())
                 
                 # 保存对话历史
                 self.conversation_history.append({
@@ -112,7 +137,7 @@ class RGDoctorAAgent(DoctorAAgent):
                 "status": "healthy",
                 "agent_id": self.agent_id,
                 "registered": self.registered,
-                "llm_available": self.use_llm,
+                "llm_available": True,
                 "conversation_turns": len(self.conversation_history),
                 "verification_method": self.verification_method,
                 "verification_latency_ms": self.verification_latency_ms
@@ -220,6 +245,24 @@ class RGDoctorBAgent(DoctorBAgent):
     def setup_routes(self):
         """设置FastAPI路由"""
         
+        def _build_model_config() -> Optional[Dict[str, Any]]:
+            core_cfg = (self.config or {}).get('core', {}) if isinstance(self.config, dict) else {}
+            if not isinstance(core_cfg, dict) or not core_cfg:
+                return None
+            base_url = core_cfg.get('openai_base_url') or core_cfg.get('nvidia_base_url') or os.getenv('OPENAI_BASE_URL')
+            api_key = core_cfg.get('openai_api_key') or os.getenv('OPENAI_API_KEY')
+            name = core_cfg.get('name') or os.getenv('OPENAI_MODEL') or 'gpt-4o'
+            temperature = core_cfg.get('temperature', 0.3)
+            return {
+                'model': {
+                    'type': core_cfg.get('type', 'openai'),
+                    'name': name,
+                    'temperature': temperature,
+                    'openai_api_key': api_key,
+                    'openai_base_url': base_url,
+                }
+            }
+
         @self.app.post("/message")
         async def receive_message(payload: Dict[str, Any]):
             """接收消息并处理"""
@@ -237,8 +280,8 @@ class RGDoctorBAgent(DoctorBAgent):
                 if not content:
                     return {"status": "no_content", "agent_id": self.agent_id}
                 
-                # 使用LLM处理消息
-                response = await self.process_message(sender_id, content)
+                # 使用统一LLM封装生成回复
+                response = generate_doctor_reply('doctor_b', str(content), model_config=_build_model_config())
                 
                 # 保存对话历史
                 self.conversation_history.append({
@@ -273,7 +316,7 @@ class RGDoctorBAgent(DoctorBAgent):
                 "status": "healthy",
                 "agent_id": self.agent_id,
                 "registered": self.registered,
-                "llm_available": self.use_llm,
+                "llm_available": True,
                 "conversation_turns": len(self.conversation_history),
                 "verification_method": self.verification_method,
                 "verification_latency_ms": self.verification_latency_ms
