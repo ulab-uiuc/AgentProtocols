@@ -1,7 +1,7 @@
 import pytest
 import pytest_asyncio
 
-from .core.sandbox import DockerSandbox
+from sandbox.core.sandbox import DockerSandbox
 from tools.utils.config import SandboxSettings
 
 

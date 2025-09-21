@@ -8,7 +8,6 @@ runtime:
   task_file: "script/gaia/dataset/2023/validation/metadata.jsonl"
   output_file: "workspaces/meta_protocol/gaia_meta_results.json"
   timeout: 300  # seconds per task
-  max_tasks: 1  # Test single task only
 
 meta_protocol:
   # Available protocols for intelligent selection
@@ -22,7 +21,7 @@ meta_protocol:
   router_type: "llm_based"  # "llm_based" or "load_balanced"
   router:
     llm_model: "gpt-4o"
-    temperature: 0.1
+    temperature: 0.0
     # Performance vs reliability weighting
     performance_weight: 0.4    # Favor performance
     reliability_weight: 0.6    # Favor reliability (important for GAIA tasks)
@@ -70,10 +69,15 @@ meta_protocol:
     protocol_health_check_interval: 30  # seconds
     auto_protocol_switching: true
 
+# Sandbox Configuration
+sandbox:
+  use_sandbox: true
+  network_enabled: true
+
 # LLM Configuration
 llm:
   model: "gpt-4o"
-  temperature: 0.1
+  temperature: 0.0
   max_tokens: 4096
   timeout: 30.0
 
@@ -89,7 +93,7 @@ agents:
   # This will be populated by the planner or task configuration
   default_config:
     openai_model: "gpt-4o"
-    openai_temperature: 0.1
+    openai_temperature: 0.0
     max_tokens: 4096
     use_meta_protocol: true
     protocol_selection: "intelligent"  # "intelligent", "fixed", or "round_robin"

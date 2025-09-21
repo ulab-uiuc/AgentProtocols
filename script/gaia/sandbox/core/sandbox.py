@@ -105,6 +105,27 @@ class DockerSandbox:
             )
             await self.terminal.init()
 
+            # 如果允许联网，则在容器内尝试预安装 pandas（升级 pip/setuptools/wheel 后安装）
+            try:
+                if getattr(self.config, 'network_enabled', True):
+                    print("📥 Sandbox: attempting to install pandas inside container...")
+                    install_cmd = (
+                        "python -m pip install --upgrade pip setuptools wheel && "
+                        "python -m pip install --no-cache-dir pandas"
+                    )
+                    try:
+                        install_out = await self.terminal.run_command(install_cmd, timeout=300)
+                        # 只打印简短提示，避免输出过长
+                        last_line = install_out.strip().splitlines()[-1] if install_out and install_out.strip() else ""
+                        print(f"✅✅✅ Sandbox: pandas install finished: {last_line}")
+                    except Exception as e:
+                        print(f"⚠️ Sandbox: failed to install pandas (continuing): {e}")
+                else:
+                    print("ℹ️ Sandbox network disabled; skipping pandas installation")
+            except Exception:
+                # 不阻塞创建流程；只做最佳努力安装
+                pass
+
             return self
 
         except Exception as e:

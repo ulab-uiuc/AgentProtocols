@@ -172,6 +172,12 @@ class LLM:
     def count_message_tokens(self, messages: List[dict]) -> int:
         return self.token_counter.count_message_tokens(messages)
 
+    def reset_token_counts(self) -> None:
+        """Reset the token counters to zero."""
+        self.total_input_tokens = 0
+        self.total_completion_tokens = 0
+        print("Token counters have been reset.")
+
     def update_token_count(self, input_tokens: int, completion_tokens: int = 0) -> None:
         """Update token counts"""
         self.total_input_tokens += input_tokens

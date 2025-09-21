@@ -54,7 +54,7 @@ model:
   base_url:  "http://47.254.87.71:3000/v1"
   api_key: "sk-lNAfLdE1AMKr6AV6a3qaNZ86BIPdEUKdyZ26VogskVpeCDjn"
   max_tokens: 4096
-  temperature: 0.9
+  temperature: 0.0
   timeout: 30
   top_p: 1.0
   frequency_penalty: 0.0

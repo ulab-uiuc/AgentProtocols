@@ -34,6 +34,7 @@ gaia/
 ├── workspaces/           # 工作空间和输出
 └── docs/                 # 文档
 ```
+具体架构设计请参考[gaia design doc](docs/gaia_design.md)
 
 ### 核心组件
 

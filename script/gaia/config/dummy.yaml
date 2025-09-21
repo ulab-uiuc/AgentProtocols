@@ -7,7 +7,6 @@ runtime:
   task_file: "script/gaia/dataset/2023/validation/metadata.jsonl"
   output_file: "workspaces/dummy/gaia_dummy_results.json"
   timeout: 300  # seconds per task
-  max_tasks: 1  # Test single task
 
 # Framework configuration
 framework:
