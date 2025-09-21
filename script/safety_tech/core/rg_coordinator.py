@@ -39,6 +39,7 @@ class ConversationMessage:
     timestamp: float
     message_id: str
     role: str
+    correlation_id: str | None = None
 
 
 class RGCoordinator:
@@ -85,6 +86,12 @@ class RGCoordinator:
                 if not sender_id:
                     raise HTTPException(status_code=400, detail="Missing sender_id")
                 
+                # 统一关联ID：如未提供则生成
+                corr = payload.get('correlation_id')
+                if not corr:
+                    corr = f"corr_{int(time.time()*1000)}"
+                    payload['correlation_id'] = corr
+
                 result = await self.route_message(sender_id, receiver_id, payload)
                 return result
                 
@@ -94,6 +101,42 @@ class RGCoordinator:
                     logger.debug(f"Message routing blocked: {e}")
                 else:
                     logger.error(f"Message routing error: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
+
+        @self.app.post("/deliver")
+        async def deliver_message_endpoint(payload: Dict[str, Any]):
+            """由目标Agent回投的业务回执。
+            期望字段：sender_id, receiver_id, correlation_id, content/text/body 可三选一。
+            """
+            try:
+                sender_id = payload.get('sender_id')
+                receiver_id = payload.get('receiver_id')
+                if not sender_id:
+                    raise HTTPException(status_code=400, detail="Missing sender_id")
+                # 内容抽取
+                content = self._extract_message_content(payload)
+                correlation_id = payload.get('correlation_id')
+                # 角色推断
+                role = self.participants.get(sender_id).role if sender_id in self.participants else 'unknown'
+                message = ConversationMessage(
+                    sender_id=sender_id,
+                    receiver_id=receiver_id or 'broadcast',
+                    content=content,
+                    timestamp=time.time(),
+                    message_id=f"deliver_{int(time.time()*1000)}",
+                    role=role,
+                    correlation_id=correlation_id
+                )
+                # 入库
+                self._store_message(message)
+                # 镜像给Observers
+                if self.enable_live_mirror:
+                    await self._broadcast_to_observers(message, payload)
+                return {"status": "received", "message_id": message.message_id, "correlation_id": correlation_id}
+            except HTTPException:
+                raise
+            except Exception as e:
+                logger.error(f"Deliver handling error: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
         
         @self.app.get("/conversation_status")
@@ -233,13 +276,15 @@ class RGCoordinator:
         content = self._extract_message_content(payload)
         
         # 创建消息记录
+        corr_id = payload.get('correlation_id')
         message = ConversationMessage(
             sender_id=sender_id,
             receiver_id=receiver_id or 'broadcast',
             content=content,
             timestamp=time.time(),
             message_id=f"msg_{int(time.time() * 1000)}",
-            role=sender.role
+            role=sender.role,
+            correlation_id=corr_id
         )
         
         # 存储消息历史
@@ -312,7 +357,8 @@ class RGCoordinator:
                 "content": message.content,
                 "timestamp": message.timestamp,
                 "message_id": message.message_id,
-                "sender_role": message.role
+                "sender_role": message.role,
+                "correlation_id": message.correlation_id
             },
             "original_payload": original_payload
         }
@@ -371,6 +417,10 @@ class RGCoordinator:
             if participant.protocol == 'acp':
                 # 提取文本
                 text = self._extract_message_content(payload)
+                corr = payload.get('correlation_id')
+                if isinstance(corr, str) and corr:
+                    # 将correlation_id编码到文本前缀，便于下游原生ACP服务解析并回投
+                    text = f"[CID:{corr}] {text}"
                 req = {
                     "agent_name": participant.agent_id,
                     "input": [
@@ -379,7 +429,29 @@ class RGCoordinator:
                     "mode": "sync"
                 }
                 response = await client.post(f"{endpoint}/runs", json=req, timeout=30.0)
+            elif participant.protocol == 'a2a':
+                # 仅对A2A：发送到/message，并注入[CID:...]前缀以便后端回投
+                send_payload = payload.copy()
+                try:
+                    txt = self._extract_message_content(payload)
+                    corr = payload.get('correlation_id')
+                    if isinstance(corr, str) and corr:
+                        txt = f"[CID:{corr}] {txt}"
+                        send_payload = {
+                            "params": {
+                                "message": {
+                                    "text": txt,
+                                    "role": "user",
+                                    "parts": [{"type": "text", "text": txt}],
+                                    "meta": {"sender_id": payload.get('sender_id')}
+                                }
+                            }
+                        }
+                except Exception:
+                    pass
+                response = await client.post(f"{endpoint}/message", json=send_payload, timeout=30.0)
             else:
+                # 其他协议（如agora）保持原始payload与/message语义，避免破坏各自适配器
                 response = await client.post(f"{endpoint}/message", json=payload, timeout=30.0)
 
             if response.status_code == 200 or response.status_code == 202:
@@ -431,7 +503,8 @@ class RGCoordinator:
                 "content": msg.content,
                 "timestamp": msg.timestamp,
                 "message_id": msg.message_id,
-                "sender_role": msg.role
+                "sender_role": msg.role,
+                "correlation_id": msg.correlation_id
             }
             for msg in messages
         ]

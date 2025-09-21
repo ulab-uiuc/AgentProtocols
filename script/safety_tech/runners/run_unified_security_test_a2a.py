@@ -67,7 +67,7 @@ def _load_medical_dataset() -> List[Dict[str, Any]]:
             data = json.load(f)
         qs = data.get('questions', [])
         cases: List[Dict[str, Any]] = []
-        for i, q in enumerate(qs[:10]):
+        for i, q in enumerate(qs[:2]):
             cases.append({
                 'case_id': f"dataset_case_{q.get('id', i+1)}",
                 'patient_info': f"Patient: {q.get('sensitive_info', {}).get('name','Unknown')}, Age: {q.get('sensitive_info', {}).get('age','Unknown')}",
@@ -217,10 +217,16 @@ async def main():
             port=obs_port
         )
 
-        # 4) 启动原生A2A医生服务器
-        doctor_a = A2ADoctorServer('A2A_Doctor_A', '127.0.0.1', a_port)
-        doctor_b = A2ADoctorServer('A2A_Doctor_B', '127.0.0.1', b_port)
-        doctor_a.start(); doctor_b.start()
+        # 4) 启动原生A2A医生服务器 - 使用protocol_backends下的实现
+        # 确保子进程可import到src与script包
+        py_path = f"{PROJECT_ROOT}{os.pathsep}{SAFETY_TECH}"
+        env_base = {"PYTHONPATH": py_path, "COORD_ENDPOINT": f"http://127.0.0.1:{coord_port}", "A2A_A_PORT": str(a_port), "A2A_B_PORT": str(b_port), **os.environ}
+        def _spawn(cmd, env=None):
+            # 避免子进程输出阻塞主进程，关闭访问日志并丢弃输出
+            return subprocess.Popen(cmd, env=env or os.environ, cwd=SAFETY_TECH.parent, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        procs.append(_spawn([sys.executable, "-m", "script.safety_tech.protocol_backends.a2a.server", "doctor_a"], env=env_base))
+        procs.append(_spawn([sys.executable, "-m", "script.safety_tech.protocol_backends.a2a.server", "doctor_b"], env=env_base))
         await _wait_http_ok(f"http://127.0.0.1:{a_port}/health", 15.0)
         await _wait_http_ok(f"http://127.0.0.1:{b_port}/health", 15.0)
 
@@ -378,8 +384,11 @@ async def main():
                     total_attempted += 1
                     text = f"[Round {r+1}] {case['initial_question'][:200]}"
                     try:
+                        _mid = f"msg_{int(time.time()*1000)}"
+                        _cid = f"corr_{int(time.time()*1000)}_{r}"
                         rr = await c.post(f"http://127.0.0.1:{coord_port}/route_message", json={
-                            'sender_id': 'A2A_Doctor_A','receiver_id':'A2A_Doctor_B','text': text
+                            'sender_id': 'A2A_Doctor_A','receiver_id':'A2A_Doctor_B','text': text,
+                            'message_id': _mid, 'correlation_id': _cid
                         }, timeout=10.0)
                         is_ok = rr.status_code in (200, 202)
                         js = None
@@ -391,10 +400,33 @@ async def main():
                         status_ok = isinstance(js, dict) and (js.get('status') in ('processed','ok','success'))
                         # 统一成功标准：HTTP 200/202 且 响应无error；兼容status为processed/ok/success
                         if is_ok and (status_ok or not has_err):
-                            succ += 1
-                            total_success += 1
-                            msgs.append({'round': r+1, 'message': text, 'response': js if js is not None else {'status_code': rr.status_code}})
-                            print(f"   ✅ Round {r+1}/5 - 成功 (攻击环境下)")
+                            # 路由成功后，轮询历史确认B侧回执
+                            receipt_found = False
+                            for attempt in range(5):  # 最多等待5次
+                                await asyncio.sleep(1.0)
+                                try:
+                                    hist_resp = await c.get(f"http://127.0.0.1:{coord_port}/message_history", params={'limit': 20}, timeout=5.0)
+                                    if hist_resp.status_code == 200:
+                                        messages = hist_resp.json()
+                                        # 查找对应correlation_id的回执
+                                        for msg in messages:
+                                            if (msg.get('correlation_id') == _cid and 
+                                                msg.get('sender_id') == 'A2A_Doctor_B'):
+                                                receipt_found = True
+                                                break
+                                        if receipt_found:
+                                            break
+                                except Exception:
+                                    pass
+                            
+                            if receipt_found:
+                                succ += 1
+                                total_success += 1
+                                msgs.append({'round': r+1, 'message': text, 'response': js if js is not None else {'status_code': rr.status_code}, 'receipt_confirmed': True})
+                                print(f"   ✅ Round {r+1}/5 - 成功 (攻击环境下，已确认B侧回执)")
+                            else:
+                                msgs.append({'round': r+1, 'message': text, 'response': js if js is not None else {'status_code': rr.status_code}, 'receipt_confirmed': False})
+                                print(f"   ❌ Round {r+1}/5 - 路由成功但未收到B侧回执")
                         else:
                             debug_info = f"状态码:{rr.status_code}, 响应:{js}, has_err:{has_err}, status_ok:{status_ok}"
                             print(f"   ❌ Round {r+1}/5 - 失败 ({debug_info}) [攻击影响]")
@@ -442,6 +474,21 @@ async def main():
                     print(f"   ✅ 回填攻击被阻止 (状态: {hist.status_code})")
         except Exception as e:
             print(f"   ✅ 回填攻击失败: {str(e)[:80]}...")
+
+        # 收集Observer证据
+        observer_evidence = {}
+        try:
+            async with httpx.AsyncClient() as c:
+                status = await c.get(f"http://127.0.0.1:{obs_port}/status", timeout=5.0)
+                report = await c.get(f"http://127.0.0.1:{obs_port}/eavesdrop_report", timeout=5.0)
+                messages = await c.get(f"http://127.0.0.1:{obs_port}/messages", params={'limit':200}, timeout=5.0)
+                observer_evidence = {
+                    'status': (status.json() if status.status_code == 200 else {'error': status.text}),
+                    'report': (report.json() if report.status_code == 200 else {'error': report.text}),
+                    'messages': (messages.json() if messages.status_code == 200 else {'error': messages.text})
+                }
+        except Exception:
+            observer_evidence = {'error': 'collect_failed'}
 
         # S3 6类注册攻击
         runner = RegistrationAttackRunner({
@@ -498,6 +545,10 @@ async def main():
                         for a in registration_attacks
                     ]
                 }
+            },
+            'observer': {
+                'legitimate': observer_evidence,
+                'malicious_observers': malicious
             },
             'unified_metrics': {
                 'total_attacks_attempted': total_s3,

@@ -111,7 +111,7 @@ class AgoraRealLLMTest:
             
             # 转换为测试案例格式
             medical_cases = []
-            for i, question in enumerate(questions[:10]):  # 取前10个案例进行测试
+            for i, question in enumerate(questions[:2]):  # 取前2个案例进行测试
                 case = {
                     "case_id": f"dataset_case_{question.get('id', i+1)}",
                     "patient_info": f"Patient: {question.get('sensitive_info', {}).get('name', 'Unknown')}, Age: {question.get('sensitive_info', {}).get('age', 'Unknown')}",

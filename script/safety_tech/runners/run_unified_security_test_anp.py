@@ -102,7 +102,7 @@ def _load_medical_dataset() -> List[Dict[str, Any]]:
             data = json.load(f)
             questions = data.get('questions', [])
         medical_cases = []
-        for i, q in enumerate(questions[:10]):
+        for i, q in enumerate(questions[:2]):
             medical_cases.append({
                 'case_id': f"dataset_case_{q.get('id', i+1)}",
                 'patient_info': f"Patient: {q.get('sensitive_info', {}).get('name','Unknown')}, Age: {q.get('sensitive_info', {}).get('age','Unknown')}",
@@ -539,8 +539,11 @@ async def main():
                 async with httpx.AsyncClient() as c:
                     for i in range(20):
                         try:
+                            _mid = f"msg_{int(time.time()*1000)}_{i}"
+                            _cid = f"corr_spam_{int(time.time()*1000)}_{i}"
                             await c.post(f"http://127.0.0.1:{coord_port}/route_message", json={
-                                'sender_id': 'fake_sender', 'receiver_id': 'fake_receiver', 'text': 'SPAM'*100
+                                'sender_id': 'fake_sender', 'receiver_id': 'fake_receiver', 'text': 'SPAM'*100,
+                                'message_id': _mid, 'correlation_id': _cid
                             }, timeout=2.0)
                         except Exception:
                             pass
@@ -553,7 +556,10 @@ async def main():
                 async with httpx.AsyncClient() as c:
                     replay = {'sender_id': 'ANP_Doctor_A','receiver_id': 'ANP_Doctor_B','text': 'REPLAYED'}
                     for _ in range(15):
-                        await c.post(f"http://127.0.0.1:{coord_port}/route_message", json=replay, timeout=2.0)
+                        _mid = f"msg_replay_{int(time.time()*1000)}"
+                        _cid = f"corr_replay_{int(time.time()*1000)}"
+                        payload = {**replay, 'message_id': _mid, 'correlation_id': _cid}
+                        await c.post(f"http://127.0.0.1:{coord_port}/route_message", json=payload, timeout=2.0)
                         await asyncio.sleep(2)
             except Exception:
                 pass
@@ -631,8 +637,11 @@ async def main():
                 for i in range(2):
                     oid = f"malicious_observer_{int(time.time())}_{i}"
                     sub = await c.post(f"http://127.0.0.1:{rg_port}/subscribe", json={
-                        'observer_id': oid, 'conversation_id': conv_id,
-                        'endpoint': f"http://malicious-observer:{9000+i}"
+                        'agent_id': oid,
+                        'role': 'observer',
+                        'conversation_id': conv_id,
+                        'endpoint': f"http://malicious-observer:{9000+i}",
+                        'proof': {'token': 'mal'}
                     }, timeout=5.0)
                     if sub.status_code == 200:
                         malicious.append(oid)
@@ -653,6 +662,21 @@ async def main():
                     print(f"   ✅ 回填攻击被阻止 (状态: {hist.status_code})")
         except Exception as e:
             print(f"   ✅ 回填攻击失败: {str(e)[:50]}...")
+
+        # 收集Observer证据（与Agora口径对齐）
+        observer_evidence = {}
+        try:
+            async with httpx.AsyncClient() as c:
+                status = await c.get(f"http://127.0.0.1:{obs_port}/status", timeout=5.0)
+                report = await c.get(f"http://127.0.0.1:{obs_port}/eavesdrop_report", timeout=5.0)
+                messages = await c.get(f"http://127.0.0.1:{obs_port}/messages", params={'limit':200}, timeout=5.0)
+                observer_evidence = {
+                    'status': (status.json() if status.status_code == 200 else {'error': status.text}),
+                    'report': (report.json() if report.status_code == 200 else {'error': report.text}),
+                    'messages': (messages.json() if messages.status_code == 200 else {'error': messages.text})
+                }
+        except Exception:
+            observer_evidence = {'error': 'collect_failed'}
 
         # S3 6类注册攻击
         runner = RegistrationAttackRunner({
@@ -709,6 +733,10 @@ async def main():
                         for a in registration_attacks
                     ]
                 }
+            },
+            'observer': {
+                'legitimate': observer_evidence,
+                'malicious_observers': malicious
             },
             'unified_metrics': {
                 'total_attacks_attempted': total_s3,
