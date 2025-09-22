@@ -57,7 +57,7 @@ class RGCoordinator:
         
         # 参与者管理
         self.participants: Dict[str, ParticipantInfo] = {}
-        self.observers: Set[str] = set()
+        # observers属性已移除 - 新S2设计不需要Observer机制
         
         # 消息历史（用于backfill）
         self.message_history: List[ConversationMessage] = []
@@ -156,7 +156,7 @@ class RGCoordinator:
                 "status": "healthy",
                 "conversation_id": self.conversation_id,
                 "participants": len(self.participants),
-                "observers": len(self.observers),
+                "observers": 0,  # Observer机制已移除
                 "message_count": len(self.message_history)
             }
         
@@ -215,7 +215,7 @@ class RGCoordinator:
     async def _update_participants(self, participants_data: List[Dict[str, Any]]):
         """更新参与者信息"""
         new_participants = {}
-        new_observers = set()
+        # new_observers已移除 - 新S2设计不需要Observer机制
         
         for participant_data in participants_data:
             agent_id = participant_data['agent_id']
@@ -233,11 +233,8 @@ class RGCoordinator:
             new_participants[agent_id] = participant
             
             if role == 'observer':
-                new_observers.add(agent_id)
-                
-                # 为新Observer提供历史回填
-                if agent_id not in self.observers and self.enable_backfill:
-                    await self._provide_backfill(agent_id)
+                # Observer处理已移除 - 新S2设计不需要Observer机制
+                continue
         
         # 检测新加入的参与者
         for agent_id in new_participants:
@@ -245,7 +242,7 @@ class RGCoordinator:
                 logger.info(f"New participant joined: {agent_id} ({new_participants[agent_id].role})")
         
         self.participants = new_participants
-        self.observers = new_observers
+        # self.observers已移除 - 新S2设计不需要Observer机制
     
     async def route_message(self, sender_id: str, receiver_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         """路由消息"""
@@ -344,9 +341,9 @@ class RGCoordinator:
                 return {"error": str(e)}
     
     async def _broadcast_to_observers(self, message: ConversationMessage, original_payload: Dict[str, Any]):
-        """向Observers广播镜像"""
-        if not self.observers:
-            return
+        """向Observers广播镜像 - 已禁用"""
+        # Observer广播已移除 - 新S2设计不需要Observer机制
+        return
         
         # 构建Observer镜像payload
         mirror_payload = {
@@ -363,14 +360,7 @@ class RGCoordinator:
             "original_payload": original_payload
         }
         
-        for observer_id in self.observers:
-            if observer_id in self.participants:
-                observer = self.participants[observer_id]
-                try:
-                    await self._send_to_participant(observer, mirror_payload)
-                    logger.debug(f"Mirrored message to observer {observer_id}")
-                except Exception as e:
-                    logger.error(f"Failed to mirror to observer {observer_id}: {e}")
+        # Observer镜像逻辑已移除 - 新S2设计不需要Observer机制
     
     async def _provide_backfill(self, observer_id: str):
         """为Observer提供历史回填"""
@@ -402,65 +392,49 @@ class RGCoordinator:
             })
         
         try:
+            # 直接向Observer的/message端点发送回填
             await self._send_to_endpoint(observer.endpoint, backfill_payload)
             logger.info(f"Provided backfill to observer {observer_id}: {len(recent_messages)} messages")
         except Exception as e:
             logger.error(f"Failed to provide backfill to observer {observer_id}: {e}")
+
+    async def _send_to_endpoint(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """协议无关直连HTTP发送。
+        约定：Observer等通用HTTP接收方暴露 /message 接口。
+        """
+        url = (endpoint or '').rstrip('/') + '/message'
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(url, json=payload, timeout=10.0)
+                if resp.status_code in (200, 202):
+                    try:
+                        return resp.json()
+                    except Exception:
+                        return {"status": "received"}
+                raise RuntimeError(f"Endpoint {url} returned {resp.status_code}: {resp.text}")
+        except Exception as e:
+            raise RuntimeError(f"Failed to send to endpoint {url}: {e}")
     
     async def _send_to_participant(self, participant: ParticipantInfo, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """发送消息到参与者，根据协议进行路由。
-        - acp: 调用 /runs (SYNC)，构造 RunCreateRequest
-        - 其他: 走 /message
-        """
-        endpoint = participant.endpoint.rstrip('/')
-        async with httpx.AsyncClient() as client:
-            if participant.protocol == 'acp':
-                # 提取文本
-                text = self._extract_message_content(payload)
-                corr = payload.get('correlation_id')
-                if isinstance(corr, str) and corr:
-                    # 将correlation_id编码到文本前缀，便于下游原生ACP服务解析并回投
-                    text = f"[CID:{corr}] {text}"
-                req = {
-                    "agent_name": participant.agent_id,
-                    "input": [
-                        {"role": "user", "parts": [{"content_type": "text/plain", "content": text}]}
-                    ],
-                    "mode": "sync"
-                }
-                response = await client.post(f"{endpoint}/runs", json=req, timeout=30.0)
-            elif participant.protocol == 'a2a':
-                # 仅对A2A：发送到/message，并注入[CID:...]前缀以便后端回投
-                send_payload = payload.copy()
-                try:
-                    txt = self._extract_message_content(payload)
-                    corr = payload.get('correlation_id')
-                    if isinstance(corr, str) and corr:
-                        txt = f"[CID:{corr}] {txt}"
-                        send_payload = {
-                            "params": {
-                                "message": {
-                                    "text": txt,
-                                    "role": "user",
-                                    "parts": [{"type": "text", "text": txt}],
-                                    "meta": {"sender_id": payload.get('sender_id')}
-                                }
-                            }
-                        }
-                except Exception:
-                    pass
-                response = await client.post(f"{endpoint}/message", json=send_payload, timeout=30.0)
-            else:
-                # 其他协议（如agora）保持原始payload与/message语义，避免破坏各自适配器
-                response = await client.post(f"{endpoint}/message", json=payload, timeout=30.0)
+        """发送消息到参与者：通过协议注册表分发到对应后端客户端。
 
-            if response.status_code == 200 or response.status_code == 202:
-                try:
-                    return response.json()
-                except Exception:
-                    return {"status": "ok"}
-            else:
-                raise Exception(f"Endpoint returned {response.status_code}: {response.text}")
+        要求：
+        - 后端实现必须为原生协议，不允许mock/fallback
+        - 协调器不再拼装各协议负载细节，由各client实现负责
+        """
+        try:
+            from script.safety_tech.protocol_backends.common.interfaces import get_registry
+        except Exception as e:
+            raise RuntimeError(f"Protocol backend registry not available: {e}")
+
+        registry = get_registry()
+        backend = registry.get(participant.protocol)
+        if backend is None:
+            raise RuntimeError(f"No backend registered for protocol: {participant.protocol}")
+
+        # 从payload中提取correlation_id（兼容现有逻辑）
+        correlation_id = payload.get('correlation_id')
+        return await backend.send(participant.endpoint, payload, correlation_id)
     
     # 管理接口
     async def get_conversation_status(self) -> Dict[str, Any]:
@@ -476,7 +450,7 @@ class RGCoordinator:
                 }
                 for agent_id, p in self.participants.items()
             },
-            "observers": list(self.observers),
+            "observers": [],  # Observer机制已移除
             "message_count": len(self.message_history),
             "last_activity": self.message_history[-1].timestamp if self.message_history else None,
             "bridge_config": {
@@ -510,9 +484,9 @@ class RGCoordinator:
         ]
     
     async def request_observer_backfill(self, observer_id: str, limit: Optional[int] = None) -> bool:
-        """为Observer请求历史回填"""
-        if observer_id not in self.observers:
-            return False
+        """为Observer请求历史回填 - 已禁用"""
+        # Observer回填已移除 - 新S2设计不需要Observer机制
+        return False
         
         if not self.enable_backfill:
             return False

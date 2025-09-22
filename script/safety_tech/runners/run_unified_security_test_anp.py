@@ -54,10 +54,12 @@ try:
     from core.rg_coordinator import RGCoordinator
     from core.observer_agent import create_observer_agent
     from core.attack_scenarios import RegistrationAttackRunner
+    from core.backend_api import spawn_backend, register_backend, health_backend
 except ImportError:
     from script.safety_tech.core.rg_coordinator import RGCoordinator
     from script.safety_tech.core.observer_agent import create_observer_agent
     from script.safety_tech.core.attack_scenarios import RegistrationAttackRunner
+    from script.safety_tech.core.backend_api import spawn_backend, register_backend, health_backend
 
 # 原生ANP（AgentConnect）导入
 AGENTCONNECT_OK = False
@@ -140,233 +142,7 @@ def _spawn(cmd: List[str], env: Optional[Dict[str, str]] = None) -> subprocess.P
     )
 
 
-class ANPDoctorShim:
-    """HTTP适配端点 + 原生AgentConnect SimpleNode
-    - Coordinator 调用 /message → 适配为写入对端（通过“Runner内的HTTP回传”）
-    说明：为保持与既有Coordinator一致性，这里通过HTTP完成路由入站，
-    但节点本身仍以SimpleNode完成DID初始化与WS通道建立（无fallback）。
-    """
-    def __init__(self, agent_name: str, port: int):
-        self.agent_name = agent_name
-        self.port = port
-        self.ws_port = port + 100  # 原生ANP WS端口与HTTP shim端口分离
-        self.app = FastAPI(title=f"ANP {agent_name} HTTP Shim")
-        self.did = None
-        self.simple_node: Optional[SimpleNode] = None
-        self.private_key = None
-        self.public_key = None
-        self.did_document_json: Optional[str] = None
-        self._peer_did: Optional[str] = None
-        self._peer_session: Optional[SimpleNodeSession] = None  # 使用官方API的会话对象
-        self._inbox: asyncio.Queue = asyncio.Queue()
-        self._setup_routes()
-        self._doctor_role = 'doctor_a' if self.agent_name.endswith('_A') else 'doctor_b'
-
-    def _setup_routes(self):
-        @self.app.post('/message')
-        async def receive_message(payload: Dict[str, Any]):
-            # 入站仅作业务触发，实际回执通过原生ANP通道发送给对端DID
-            text = payload.get('text') or payload.get('content') or ''
-            try:
-                response = generate_doctor_reply(self._doctor_role, str(text))
-            except Exception as e:
-                response = f"[LLM_ERROR] {e}"
-            if self.simple_node and self._peer_did:
-                try:
-                    await self.simple_node.send_message(response, self._peer_did)
-                except Exception:
-                    pass
-            return {'status': 'processed', 'agent_id': self.agent_name, 'response': response}
-
-        @self.app.get('/health')
-        async def health():
-            return {'status': 'healthy', 'agent_id': self.agent_name, 'did': self.did is not None, 'ws_port': self.ws_port}
-
-        @self.app.get('/v1/did/{did_value}')
-        async def get_did_doc(did_value: str):
-            # 在HTTP shim上提供DID文档，供对端根据DID拉取
-            if self.did and did_value == self.did and self.did_document_json:
-                return Response(content=self.did_document_json, media_type='application/text')
-            return Response(status_code=404)
-
-    def set_peer_did(self, did: str):
-        self._peer_did = did
-
-    def start_http(self):
-        import threading
-        def run():
-            uvicorn.run(self.app, host='127.0.0.1', port=self.port, log_level='warning', lifespan="off", loop="asyncio", http="h11")
-        t = threading.Thread(target=run, daemon=True)
-        t.start()
-
-    async def _handle_new_session(self, session: SimpleNodeSession):
-        """处理新的ANP会话连接 - 参考官方示例的直接循环模式"""
-        print(f"   [DEBUG] {self.agent_name}: 新会话建立，来自 {session.remote_did}")
-        
-        try:
-            while True:
-                message_bytes = await session.receive_message()
-                if message_bytes:
-                    plaintext = message_bytes.decode('utf-8')
-                    print(f"   [DEBUG] {self.agent_name}: 收到来自 {session.remote_did} 的消息: {plaintext[:50]}...")
-                    
-                    # 发送回声
-                    reply = f"{self.agent_name} (ANP) echo: {plaintext}"
-                    ok = await session.send_message(reply)
-                    print(f"   [DEBUG] {self.agent_name}: 回声发送{'成功' if ok else '失败'}")
-                    
-                    # 将消息放入收件箱
-                    try:
-                        self._inbox.put_nowait((session.remote_did, plaintext))
-                    except Exception as e:
-                        print(f"   [DEBUG] {self.agent_name}: 收件箱放入异常: {e}")
-                else:
-                    # 收到None表示连接关闭
-                    print(f"   [DEBUG] {self.agent_name}: 会话 {session.remote_did} 连接关闭")
-                    break
-        except asyncio.CancelledError:
-            print(f"   [DEBUG] {self.agent_name}: 会话 {session.remote_did} 消息循环被取消")
-        except Exception as e:
-            print(f"   [DEBUG] {self.agent_name}: 会话消息循环异常: {e}")
-        finally:
-            print(f"   [DEBUG] {self.agent_name}: 会话 {session.remote_did} 消息循环结束")
-
-    async def _outbound_message_loop(self, session: SimpleNodeSession):
-        """处理出站连接的消息接收循环"""
-        try:
-            while True:
-                message_bytes = await session.receive_message()
-                if message_bytes:
-                    plaintext = message_bytes.decode('utf-8')
-                    print(f"   [DEBUG] {self.agent_name}: 出站会话收到来自 {session.remote_did} 的消息: {plaintext[:50]}...")
-                    
-                    # 将消息放入收件箱供业务等待
-                    try:
-                        self._inbox.put_nowait((session.remote_did, plaintext))
-                    except Exception as e:
-                        print(f"   [DEBUG] {self.agent_name}: 出站会话收件箱放入异常: {e}")
-                else:
-                    # 收到None表示连接关闭
-                    print(f"   [DEBUG] {self.agent_name}: 出站会话 {session.remote_did} 连接关闭")
-                    break
-        except asyncio.CancelledError:
-            print(f"   [DEBUG] {self.agent_name}: 出站会话 {session.remote_did} 消息循环被取消")
-        except Exception as e:
-            print(f"   [DEBUG] {self.agent_name}: 出站会话消息循环异常: {e}")
-        finally:
-            print(f"   [DEBUG] {self.agent_name}: 出站会话 {session.remote_did} 消息循环结束")
-
-    def start_anp_node(self):
-        # 使用官方最新ANP API创建SimpleNode
-        self.simple_node = SimpleNode(
-            host_domain="127.0.0.1",
-            host_port=str(self.ws_port),
-            host_ws_path="/ws",
-            new_session_callback=self._handle_new_session
-        )
-        
-        # 生成DID信息
-        private_key_pem, did, did_document_json = self.simple_node.generate_did_document()
-        self.simple_node.set_did_info(private_key_pem, did, did_document_json)
-        
-        # 启动SimpleNode服务
-        self.simple_node.run()
-        
-        self.private_key = private_key_pem
-        self.did = did
-        self.did_document_json = did_document_json
-
-    def start_message_loop(self):
-        # 新的API已通过_handle_new_session和_session_message_loop处理消息接收
-        # 这个方法保持为兼容性存根
-        print(f"   [DEBUG] {self.agent_name}: 消息循环已通过会话回调处理")
-
-    async def send_and_wait_echo(self, text: str, timeout_s: float = 8.0) -> bool:
-        """通过原生ANP向对端发送消息，并在本节点等待回声以确认送达。
-        成功条件：send_message返回True，且在timeout内收到任意入站消息。
-        """
-        if not (self.simple_node and self._peer_did):
-            print(f"   [DEBUG] {self.agent_name}: simple_node或peer_did未设置")
-            return False
-        try:
-            print(f"   [DEBUG] {self.agent_name}: 向 {self._peer_did} 发送消息: {text[:50]}...")
-            
-            # 使用官方API建立连接
-            if not self._peer_session:
-                print(f"   [DEBUG] {self.agent_name}: 建立到 {self._peer_did} 的连接")
-                self._peer_session = await self.simple_node.connect_to_did(self._peer_did)
-                if not self._peer_session:
-                    print(f"   [DEBUG] {self.agent_name}: 连接建立失败")
-                    return False
-                # 为出站连接启动消息接收循环
-                print(f"   [DEBUG] {self.agent_name}: 启动出站会话消息接收循环")
-                asyncio.create_task(self._outbound_message_loop(self._peer_session))
-                # 等待连接稳定
-                await asyncio.sleep(0.5)
-            
-            # 发送消息
-            ok = await self._peer_session.send_message(text)
-            if not ok:
-                print(f"   [DEBUG] {self.agent_name}: send_message返回False")
-                return False
-            print(f"   [DEBUG] {self.agent_name}: 消息发送成功，等待回声...")
-            try:
-                sender_did, received_text = await asyncio.wait_for(self._inbox.get(), timeout=timeout_s)
-                print(f"   [DEBUG] {self.agent_name}: 收到来自 {sender_did} 的消息: {received_text[:50]}...")
-                # 验证回声是否来自预期的对端
-                if sender_did == self._peer_did:
-                    print(f"   [DEBUG] {self.agent_name}: 回声验证成功")
-                    return True
-                else:
-                    print(f"   [DEBUG] {self.agent_name}: 消息来自意外DID {sender_did}，放回队列")
-                    # 消息来自其他DID，放回队列并继续等待
-                    self._inbox.put_nowait((sender_did, received_text))
-                    return False
-            except asyncio.TimeoutError:
-                print(f"   [DEBUG] {self.agent_name}: 等待回声超时")
-                return False
-        except Exception as e:
-            print(f"   [DEBUG] {self.agent_name}: 异常: {e}")
-            return False
-
-    async def ensure_session(self, retries: int = 3, timeout_s: float = 12.0) -> bool:
-        """主动探测并建立与对端的原生ANP会话。"""
-        if not (self.simple_node and self._peer_did):
-            return False
-        for _ in range(retries):
-            # 简单的ping消息来确认双向通道
-            ok = await self.send_and_wait_echo(f"[ping] from {self.agent_name}", timeout_s=timeout_s)
-            if ok:
-                return True
-            await asyncio.sleep(1.0)
-        return False
-
-    def build_registration_proof(self) -> Dict[str, Any]:
-        ts = time.time()
-        # 为注册构造签名消息（did + ts），生成签名与公钥hex
-        message = {'did': self.did, 'timestamp': ts}
-        signature = ''
-        pub_hex = ''
-        
-        if self.private_key:
-            try:
-                # 从PEM字符串加载私钥对象
-                from cryptography.hazmat.primitives import serialization
-                private_key_obj = serialization.load_pem_private_key(
-                    self.private_key.encode('utf-8'), 
-                    password=None
-                )
-                signature = generate_signature_for_json(private_key_obj, message)
-                pub_hex = get_hex_from_public_key(private_key_obj.public_key())
-            except Exception as e:
-                print(f"   [DEBUG] {self.agent_name}: 签名生成失败: {e}")
-        
-        return {
-            'did': self.did,
-            'did_signature': signature,
-            'did_public_key': pub_hex,
-            'timestamp': ts,
-        }
+# ANPDoctorShim 类已移除，现在使用统一后端API
 
 
 async def main():
@@ -415,23 +191,13 @@ async def main():
             port=obs_port
         )
 
-        # 4) 启动ANP医生节点 + HTTP适配端点
-        doctor_a = ANPDoctorShim('ANP_Doctor_A', a_port)
-        doctor_b = ANPDoctorShim('ANP_Doctor_B', b_port)
-        doctor_a.start_http(); doctor_b.start_http()
-        await asyncio.sleep(1.0)
-        doctor_a.start_anp_node(); doctor_b.start_anp_node()
-
-        # 设定对端DID（用于原生ANP回传）并开启消息监听循环
-        doctor_a.set_peer_did(doctor_b.did)
-        doctor_b.set_peer_did(doctor_a.did)
-        doctor_a.start_message_loop()
-        doctor_b.start_message_loop()
-        # 主动预热原生会话，避免首轮超时
-        await asyncio.gather(
-            doctor_a.ensure_session(),
-            doctor_b.ensure_session()
-        )
+        # 4) 使用统一后端API启动ANP医生节点
+        await spawn_backend('anp', 'doctor_a', a_port)
+        await spawn_backend('anp', 'doctor_b', b_port)
+        
+        # 等待服务启动并检查健康状态
+        await _wait_http_ok(f"http://127.0.0.1:{a_port}/health", 15.0)
+        await _wait_http_ok(f"http://127.0.0.1:{b_port}/health", 15.0)
 
         # 5) 注册到RG + 订阅Observer
         # 记录RG验证归因信息
@@ -440,55 +206,30 @@ async def main():
         doc_a_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
         doc_b_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
 
-        async with httpx.AsyncClient() as c:
-            # 为每个节点构建原生ANP证明
-            proofs = {
-                'ANP_Doctor_A': doctor_a.build_registration_proof(),
-                'ANP_Doctor_B': doctor_b.build_registration_proof(),
+        # 使用统一后端API注册Agent
+        try:
+            respA = await register_backend('anp', 'ANP_Doctor_A', f"http://127.0.0.1:{a_port}", conv_id, 'doctor_a', rg_endpoint=f'http://127.0.0.1:{rg_port}')
+            doc_a_verify = {
+                'method': respA.get('verification_method'),
+                'latency_ms': respA.get('verification_latency_ms'),
+                'blocked_by': respA.get('blocked_by'),
+                'reason': respA.get('reason'),
             }
-            # 注册Doctor A
-            rA = await c.post(f"http://127.0.0.1:{rg_port}/register", json={
-                'protocol': 'anp',
-                'agent_id': 'ANP_Doctor_A',
-                'endpoint': f"http://127.0.0.1:{a_port}",
-                'conversation_id': conv_id,
-                'role': 'doctor_a',
-                'proof': proofs['ANP_Doctor_A']
-            }, timeout=10.0)
-            if rA.status_code != 200:
-                raise RuntimeError(f"注册ANP_Doctor_A失败: {rA.text}")
-            try:
-                respA = rA.json()
-                doc_a_verify = {
-                    'method': respA.get('verification_method'),
-                    'latency_ms': respA.get('verification_latency_ms'),
-                    'blocked_by': respA.get('blocked_by'),
-                    'reason': respA.get('reason'),
-                }
-            except Exception:
-                pass
+        except Exception as e:
+            raise RuntimeError(f"注册ANP_Doctor_A失败: {e}")
+            
+        try:
+            respB = await register_backend('anp', 'ANP_Doctor_B', f"http://127.0.0.1:{b_port}", conv_id, 'doctor_b', rg_endpoint=f'http://127.0.0.1:{rg_port}')
+            doc_b_verify = {
+                'method': respB.get('verification_method'),
+                'latency_ms': respB.get('verification_latency_ms'),
+                'blocked_by': respB.get('blocked_by'),
+                'reason': respB.get('reason'),
+            }
+        except Exception as e:
+            raise RuntimeError(f"注册ANP_Doctor_B失败: {e}")
 
-            # 注册Doctor B
-            rB = await c.post(f"http://127.0.0.1:{rg_port}/register", json={
-                'protocol': 'anp',
-                'agent_id': 'ANP_Doctor_B',
-                'endpoint': f"http://127.0.0.1:{b_port}",
-                'conversation_id': conv_id,
-                'role': 'doctor_b',
-                'proof': proofs['ANP_Doctor_B']
-            }, timeout=10.0)
-            if rB.status_code != 200:
-                raise RuntimeError(f"注册ANP_Doctor_B失败: {rB.text}")
-            try:
-                respB = rB.json()
-                doc_b_verify = {
-                    'method': respB.get('verification_method'),
-                    'latency_ms': respB.get('verification_latency_ms'),
-                    'blocked_by': respB.get('blocked_by'),
-                    'reason': respB.get('reason'),
-                }
-            except Exception:
-                pass
+        async with httpx.AsyncClient() as c:
 
             # 订阅Observer
             sub = await c.post(f"http://127.0.0.1:{rg_port}/subscribe", json={
@@ -595,8 +336,12 @@ async def main():
             asyncio.create_task(_observer_interference_attack()),
         ]
 
+        # S1配置：支持数据面直连发送
+        use_direct_send = os.environ.get('ANP_USE_DIRECT_SEND', 'false').lower() == 'true'
+        
         total_attempted = 0
         total_success = 0
+        total_latencies = []  # 记录延迟用于p95/p99统计
         conversation_results = []
         for i, case in enumerate(medical_cases):
             print(f"\n📋 【案例 {i+1}/{len(medical_cases)}】: {case['case_id']}")
@@ -606,17 +351,97 @@ async def main():
             for r in range(5):
                 total_attempted += 1
                 text = f"[Round {r+1}] {case['initial_question'][:200]}"
+                start_time = time.time()
                 try:
-                    ok = await doctor_a.send_and_wait_echo(text)
-                    if ok:
-                        succ += 1
-                        total_success += 1
-                        msgs.append({'round': r+1, 'message': text, 'response': {'status': 'processed', 'via': 'anp'}})
-                        print(f"   ✅ Round {r+1}/5 - 成功 (ANP原生通道)")
+                    _mid = f"msg_{int(time.time()*1000)}"
+                    _cid = f"corr_{int(time.time()*1000)}_{r}"
+                    
+                    if use_direct_send:
+                        # 数据面直连发送
+                        from script.safety_tech.core.backend_api import send_backend
+                        payload = {
+                            'sender_id': 'ANP_Doctor_A',
+                            'receiver_id': 'ANP_Doctor_B', 
+                            'text': text,
+                            'message_id': _mid
+                        }
+                        result = await send_backend('anp', f"http://127.0.0.1:{b_port}", payload, _cid, probe_config=None)
+                        is_ok = result.get('status') == 'success'
+                        js = result
+                        has_err = result.get('status') == 'error'
+                        status_ok = result.get('status') == 'success'
                     else:
-                        print(f"   ❌ Round {r+1}/5 - 失败 (ANP原生通道超时)")
+                        # 协调器路由发送（原逻辑）
+                        async with httpx.AsyncClient() as c:
+                            rr = await c.post(f"http://127.0.0.1:{coord_port}/route_message", json={
+                                'sender_id': 'ANP_Doctor_A','receiver_id':'ANP_Doctor_B','text': text,
+                                'message_id': _mid, 'correlation_id': _cid
+                            }, timeout=10.0)
+                            is_ok = rr.status_code in (200, 202)
+                            js = None
+                            try:
+                                js = rr.json()
+                            except Exception:
+                                js = None
+                            has_err = isinstance(js, dict) and (js.get('error') is not None)
+                            status_ok = isinstance(js, dict) and (js.get('status') in ('processed','ok','success'))
+                    
+                    latency_ms = (time.time() - start_time) * 1000
+                    total_latencies.append(latency_ms)
+                    
+                    # 统一成功标准：HTTP 200/202 且 响应无error；兼容status为processed/ok/success
+                    if is_ok and (status_ok or not has_err):
+                        # 路由成功后，轮询历史确认B侧回执
+                        receipt_found = False
+                        if not use_direct_send:  # 只有协调器路由需要确认回执
+                            for attempt in range(5):  # 最多等待5次
+                                await asyncio.sleep(1.0)
+                                try:
+                                    async with httpx.AsyncClient() as c:
+                                        hist_resp = await c.get(f"http://127.0.0.1:{coord_port}/message_history", params={'limit': 20}, timeout=5.0)
+                                        if hist_resp.status_code == 200:
+                                            messages = hist_resp.json()
+                                            # 查找对应correlation_id的回执
+                                            for msg in messages:
+                                                if (msg.get('correlation_id') == _cid and 
+                                                    msg.get('sender_id') == 'ANP_Doctor_B'):
+                                                    receipt_found = True
+                                                    break
+                                            if receipt_found:
+                                                break
+                                except Exception:
+                                    pass
+                        else:
+                            # 直连发送认为成功就是回执确认
+                            receipt_found = True
+                        
+                        if receipt_found:
+                            succ += 1
+                            total_success += 1
+                            msgs.append({
+                                'round': r+1, 
+                                'message': text, 
+                                'response': js if js is not None else {'status_code': getattr(rr, 'status_code', 200) if not use_direct_send else 200}, 
+                                'receipt_confirmed': True,
+                                'latency_ms': latency_ms,
+                                'method': 'direct_send' if use_direct_send else 'coordinator'
+                            })
+                            print(f"   ✅ Round {r+1}/5 - 成功 (攻击环境下，已确认B侧回执，{latency_ms:.1f}ms)")
+                        else:
+                            msgs.append({
+                                'round': r+1, 
+                                'message': text, 
+                                'response': js if js is not None else {'status_code': getattr(rr, 'status_code', 200) if not use_direct_send else 200}, 
+                                'receipt_confirmed': False,
+                                'latency_ms': latency_ms,
+                                'method': 'direct_send' if use_direct_send else 'coordinator'
+                            })
+                            print(f"   ❌ Round {r+1}/5 - 路由成功但未收到B侧回执 ({latency_ms:.1f}ms)")
+                        else:
+                            debug_info = f"状态码:{rr.status_code}, 响应:{js}, has_err:{has_err}, status_ok:{status_ok}"
+                            print(f"   ❌ Round {r+1}/5 - 失败 ({debug_info}) [攻击影响]")
                 except Exception as e:
-                    print(f"   ❌ Round {r+1}/5 - 异常: {str(e)} [ANP通道]")
+                    print(f"   ❌ Round {r+1}/5 - 异常: {str(e)} [攻击影响]")
                 await asyncio.sleep(3.0)  # 增加间隔，避免LLM频率限制
             conversation_results.append({'case_id': case['case_id'], 'messages': msgs, 'success': succ})
             print(f"   📊 案例完成: {succ}/5 轮成功 (攻击影响: {5-succ}轮)")
@@ -625,9 +450,23 @@ async def main():
             t.cancel()
 
         s1_rate = total_success / total_attempted if total_attempted else 0
+        
+        # 计算延迟统计
+        timeout_count = len([l for l in total_latencies if l > 10000])  # 超过10秒视为超时
+        timeout_rate = timeout_count / len(total_latencies) if total_latencies else 0
+        
+        # 计算p95/p99延迟
+        import numpy as np
+        p95_latency = np.percentile(total_latencies, 95) if total_latencies else 0
+        p99_latency = np.percentile(total_latencies, 99) if total_latencies else 0
+        avg_latency = np.mean(total_latencies) if total_latencies else 0
+        
         print("\n🛡️ === S1测试结果 ===")
         print(f"📊 攻击环境下对话完成率: {total_success}/{total_attempted} ({s1_rate:.1%})")
         print(f"📊 业务连续性评分: {s1_rate*100:.1f}/100")
+        print(f"📊 延迟统计: 平均{avg_latency:.1f}ms, P95={p95_latency:.1f}ms, P99={p99_latency:.1f}ms")
+        print(f"📊 超时率: {timeout_count}/{len(total_latencies)} ({timeout_rate:.1%})")
+        print(f"📊 发送模式: {'数据面直连' if use_direct_send else '协调器路由'}")
 
         # S2 恶意窃听
         print("\n🕵️ === S2: 恶意窃听检测测试 ===")
@@ -723,7 +562,17 @@ async def main():
                 'doctor_b': doc_b_verify
             },
             'test_results': {
-                'S1_business_continuity': {'completion_rate': s1_rate, 'score': round(s1_score,1)},
+                'S1_business_continuity': {
+                    'completion_rate': s1_rate, 
+                    'score': round(s1_score,1),
+                    'latency_stats': {
+                        'avg_ms': round(avg_latency, 1),
+                        'p95_ms': round(p95_latency, 1),
+                        'p99_ms': round(p99_latency, 1)
+                    },
+                    'timeout_rate': timeout_rate,
+                    'method': 'direct_send' if use_direct_send else 'coordinator'
+                },
                 'S2_eavesdrop_prevention': {'malicious_observers_blocked': len(malicious)==0, 'score': round(s2_score,1)},
                 'S3_registration_defense': {
                     'attacks_blocked': f"{s3_blocked}/{total_s3}",

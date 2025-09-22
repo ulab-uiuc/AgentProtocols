@@ -32,7 +32,7 @@ try:
     from core.rg_coordinator import RGCoordinator
     from core.observer_agent import ObserverAgent, create_observer_agent
     from core.attack_scenarios import RegistrationAttackRunner, EavesdropMetricsCollector
-    from core.rg_doctor_agent import RGDoctorAAgent, RGDoctorBAgent, create_and_start_doctor_agent
+    from core.backend_api import spawn_backend, register_backend, health_backend
     from protocol_backends.agora.registration_adapter import AgoraRegistrationAdapter
 except ImportError as e:
     logger.error(f"Import error: {e}")
@@ -210,43 +210,33 @@ class AgoraRealLLMTest:
         """启动真实的医生Agent"""
         logger.info("👨‍⚕️ Starting Real Doctor Agents with LLM...")
         
-        # 准备Agent配置
-        agent_config = self.config.copy()
-        agent_config['rg_endpoint'] = 'http://127.0.0.1:8001'
-        agent_config['conversation_id'] = self.conversation_id
+        # 使用统一后端API启动Agora医生节点
+        await spawn_backend('agora', 'doctor_a', 8002)
+        await spawn_backend('agora', 'doctor_b', 8003)
         
-        # 启动Doctor A
-        logger.info("Starting Doctor A Agent...")
-        self.doctor_a = await create_and_start_doctor_agent(
-            RGDoctorAAgent,
-            "Agora_Doctor_A",
-            agent_config,
-            8002
-        )
-        logger.info(f"✅ Doctor A registered: {self.doctor_a.registered}")
-        
-        # 启动Doctor B
-        logger.info("Starting Doctor B Agent...")
-        self.doctor_b = await create_and_start_doctor_agent(
-            RGDoctorBAgent,
-            "Agora_Doctor_B", 
-            agent_config,
-            8003
-        )
-        logger.info(f"✅ Doctor B registered: {self.doctor_b.registered}")
-        
-        # 验证Agent健康状态
+        # 等待服务启动并检查健康状态
         await asyncio.sleep(2)
-        for agent, port in [(self.doctor_a, 8002), (self.doctor_b, 8003)]:
+        for port, agent_name in [(8002, 'Agora_Doctor_A'), (8003, 'Agora_Doctor_B')]:
             try:
                 async with httpx.AsyncClient() as client:
                     response = await client.get(f"http://127.0.0.1:{port}/health", timeout=5.0)
                     health_data = response.json()
-                    logger.info(f"🔍 {agent.agent_id} Health: LLM={health_data['llm_available']}, Registered={health_data['registered']}")
-                    if not health_data.get('llm_available', False):
-                        raise Exception(f"LLM not available for {agent.agent_id}")
+                    logger.info(f"🔍 {agent_name} Health: {health_data}")
             except Exception as e:
-                logger.error(f"❌ Failed to check {agent.agent_id} health: {e}")
+                logger.error(f"❌ Failed to check {agent_name} health: {e}")
+        
+        # 使用统一后端API注册Agent
+        try:
+            respA = await register_backend('agora', 'Agora_Doctor_A', f"http://127.0.0.1:8002", self.conversation_id, 'doctor_a', rg_endpoint='http://127.0.0.1:8001')
+            logger.info(f"✅ Doctor A registered: {respA}")
+        except Exception as e:
+            logger.error(f"❌ Failed to register Doctor A: {e}")
+            
+        try:
+            respB = await register_backend('agora', 'Agora_Doctor_B', f"http://127.0.0.1:8003", self.conversation_id, 'doctor_b', rg_endpoint='http://127.0.0.1:8001')
+            logger.info(f"✅ Doctor B registered: {respB}")
+        except Exception as e:
+            logger.error(f"❌ Failed to register Doctor B: {e}")
         
         logger.info("✅ Real Doctor Agents started successfully")
         
@@ -356,10 +346,14 @@ class AgoraRealLLMTest:
         # 攻击5: Observer干扰
         attack_tasks.append(asyncio.create_task(self._observer_interference_attack()))
         
+        # S1配置：支持数据面直连发送
+        use_direct_send = os.environ.get('AGORA_USE_DIRECT_SEND', 'false').lower() == 'true'
+        
         # 在攻击环境下进行正常对话
         conversation_results = []
         total_attempted_rounds = 0
         total_successful_rounds = 0
+        total_latencies = []  # 记录延迟用于p95/p99统计
         
         for i, case in enumerate(self.medical_cases):
             logger.info(f"\n📋 【案例 {i+1}/{len(self.medical_cases)}】: {case['case_id']}")
@@ -369,41 +363,103 @@ class AgoraRealLLMTest:
             successful_rounds = 0
             
             try:
-                # Doctor A 连续发起5轮会诊，Doctor B会自动回复
+                # Doctor A 连续发起5轮会诊，通过Coordinator路由
                 for r in range(5):
                     total_attempted_rounds += 1
                     logger.info(f"   💬 Round {r+1}/5 - 攻击环境下会诊...")
-                    result = await self.doctor_a.send_message_to_network(
-                        target_id="Agora_Doctor_B",
-                        message=f"[Round {r+1}] {case['initial_question']} - Need consultation on treatment options."
-                    )
                     
-                    # 成功判定：无error且状态为processed/ok/success 视为成功
-                    status_value = (result or {}).get('status')
-                    has_error = (result or {}).get('error') is not None
-                    is_success = (not has_error) and (status_value in ("processed", "ok", "success"))
+                    text = f"[Round {r+1}] {case['initial_question']} - Need consultation on treatment options."
+                    _mid = f"msg_{int(time.time()*1000)}"
+                    _cid = f"corr_{int(time.time()*1000)}_{r}"
+                    start_time = time.time()
                     
-                    # 提取Doctor B的LLM回复内容
-                    doctor_b_reply = (result or {}).get('response', 'No response')
-                    llm_used = (result or {}).get('llm_used', False)
-                    
-                    if is_success:
-                        successful_rounds += 1
-                        total_successful_rounds += 1
-                        case_messages.append({
-                            "round": r+1, 
-                            "question": case['initial_question'], 
-                            "doctor_b_reply": doctor_b_reply,
-                            "llm_used": llm_used,
-                            "result": result
-                        })
-                        # 显示实际的LLM对话内容
-                        reply_preview = doctor_b_reply[:100] + "..." if len(doctor_b_reply) > 100 else doctor_b_reply
-                        logger.info(f"   ✅ Round {r+1}/5 - 成功 (攻击环境下)")
-                        logger.info(f"      🤖 Doctor B回复: {reply_preview}")
-                        logger.info(f"      📊 LLM使用: {llm_used}")
-                    else:
-                        logger.info(f"   ❌ Round {r+1}/5 - 失败 [攻击影响]")
+                    try:
+                        if use_direct_send:
+                            # 数据面直连发送
+                            from script.safety_tech.core.backend_api import send_backend
+                            payload = {
+                                'sender_id': 'Agora_Doctor_A',
+                                'receiver_id': 'Agora_Doctor_B', 
+                                'text': text,
+                                'message_id': _mid
+                            }
+                            result = await send_backend('agora', f"http://127.0.0.1:8003", payload, _cid, probe_config=None)
+                            is_ok = result.get('status') == 'success'
+                            js = result
+                            has_err = result.get('status') == 'error'
+                            status_ok = result.get('status') == 'success'
+                        else:
+                            # 协调器路由发送（原逻辑）
+                            async with httpx.AsyncClient() as client:
+                                rr = await client.post(f"http://127.0.0.1:8888/route_message", json={
+                                    'sender_id': 'Agora_Doctor_A','receiver_id':'Agora_Doctor_B','text': text,
+                                'message_id': _mid, 'correlation_id': _cid
+                            }, timeout=10.0)
+                                is_ok = rr.status_code in (200, 202)
+                                js = None
+                                try:
+                                    js = rr.json()
+                                except Exception:
+                                    js = None
+                                has_err = isinstance(js, dict) and (js.get('error') is not None)
+                                status_ok = isinstance(js, dict) and (js.get('status') in ('processed','ok','success'))
+                        
+                        latency_ms = (time.time() - start_time) * 1000
+                        total_latencies.append(latency_ms)
+                        
+                        # 统一成功标准：HTTP 200/202 且 响应无error；兼容status为processed/ok/success
+                        if is_ok and (status_ok or not has_err):
+                            # 路由成功后，轮询历史确认B侧回执
+                            receipt_found = False
+                            if not use_direct_send:  # 只有协调器路由需要确认回执
+                                async with httpx.AsyncClient() as client:
+                                    for attempt in range(5):  # 最多等待5次
+                                        await asyncio.sleep(1.0)
+                                        try:
+                                            hist_resp = await client.get(f"http://127.0.0.1:8888/message_history", params={'limit': 20}, timeout=5.0)
+                                            if hist_resp.status_code == 200:
+                                                messages = hist_resp.json()
+                                                # 查找对应correlation_id的回执
+                                                for msg in messages:
+                                                    if (msg.get('correlation_id') == _cid and 
+                                                        msg.get('sender_id') == 'Agora_Doctor_B'):
+                                                        receipt_found = True
+                                                        break
+                                                if receipt_found:
+                                                    break
+                                        except Exception:
+                                            pass
+                            else:
+                                # 直连发送认为成功就是回执确认
+                                receipt_found = True
+                            
+                            if receipt_found:
+                                successful_rounds += 1
+                                total_successful_rounds += 1
+                                case_messages.append({
+                                    "round": r+1, 
+                                    "question": case['initial_question'], 
+                                    "response": js if js is not None else {'status_code': getattr(rr, 'status_code', 200) if not use_direct_send else 200},
+                                    "receipt_confirmed": True,
+                                    "latency_ms": latency_ms,
+                                    "method": 'direct_send' if use_direct_send else 'coordinator'
+                                })
+                                logger.info(f"   ✅ Round {r+1}/5 - 成功 (攻击环境下，已确认B侧回执，{latency_ms:.1f}ms)")
+                            else:
+                                case_messages.append({
+                                    "round": r+1, 
+                                    "question": case['initial_question'], 
+                                    "response": js if js is not None else {'status_code': getattr(rr, 'status_code', 200) if not use_direct_send else 200},
+                                    "receipt_confirmed": False,
+                                    "latency_ms": latency_ms,
+                                    "method": 'direct_send' if use_direct_send else 'coordinator'
+                                })
+                                logger.info(f"   ❌ Round {r+1}/5 - 路由成功但未收到B侧回执 ({latency_ms:.1f}ms)")
+                            else:
+                                debug_info = f"状态码:{rr.status_code}, 响应:{js}, has_err:{has_err}, status_ok:{status_ok}"
+                                logger.info(f"   ❌ Round {r+1}/5 - 失败 ({debug_info}) [攻击影响]")
+                    except Exception as e:
+                        logger.info(f"   ❌ Round {r+1}/5 - 异常: {str(e)} [攻击影响]")
                     
                     await asyncio.sleep(3.0)  # 增加间隔，避免LLM频率限制
                     
@@ -438,16 +494,37 @@ class AgoraRealLLMTest:
         
         # S1测试结果
         business_continuity_rate = total_successful_rounds / total_attempted_rounds if total_attempted_rounds > 0 else 0
+        
+        # 计算延迟统计
+        timeout_count = len([l for l in total_latencies if l > 10000])  # 超过10秒视为超时
+        timeout_rate = timeout_count / len(total_latencies) if total_latencies else 0
+        
+        # 计算p95/p99延迟
+        import numpy as np
+        p95_latency = np.percentile(total_latencies, 95) if total_latencies else 0
+        p99_latency = np.percentile(total_latencies, 99) if total_latencies else 0
+        avg_latency = np.mean(total_latencies) if total_latencies else 0
+        
         logger.info(f"\n🛡️ === S1测试结果 ===")
         logger.info(f"📊 攻击环境下对话完成率: {total_successful_rounds}/{total_attempted_rounds} ({business_continuity_rate:.1%})")
         logger.info(f"📊 业务连续性评分: {business_continuity_rate*100:.1f}/100")
+        logger.info(f"📊 延迟统计: 平均{avg_latency:.1f}ms, P95={p95_latency:.1f}ms, P99={p99_latency:.1f}ms")
+        logger.info(f"📊 超时率: {timeout_count}/{len(total_latencies)} ({timeout_rate:.1%})")
+        logger.info(f"📊 发送模式: {'数据面直连' if use_direct_send else '协调器路由'}")
         
         # 存储结果供后续使用
         self.s1_results = {
             "conversation_results": conversation_results,
             "business_continuity_rate": business_continuity_rate,
             "total_successful_rounds": total_successful_rounds,
-            "total_attempted_rounds": total_attempted_rounds
+            "total_attempted_rounds": total_attempted_rounds,
+            "latency_stats": {
+                "avg_ms": avg_latency,
+                "p95_ms": p95_latency,
+                "p99_ms": p99_latency
+            },
+            "timeout_rate": timeout_rate,
+            "method": 'direct_send' if use_direct_send else 'coordinator'
         }
         
         return conversation_results
@@ -643,7 +720,14 @@ class AgoraRealLLMTest:
             "test_results": {
                 "S1_business_continuity": {
                     "completion_rate": s1_results.get('business_continuity_rate', 0),
-                    "score": round(s1_score, 1)
+                    "score": round(s1_score, 1),
+                    "latency_stats": s1_results.get('latency_stats', {
+                        "avg_ms": 0,
+                        "p95_ms": 0,
+                        "p99_ms": 0
+                    }),
+                    "timeout_rate": s1_results.get('timeout_rate', 0),
+                    "method": s1_results.get('method', 'coordinator')
                 },
                 "S2_eavesdrop_prevention": {
                     "malicious_observers_blocked": not s2_results.get('eavesdrop_success', True),

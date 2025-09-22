@@ -117,14 +117,7 @@ class RegistrationGateway:
                 logger.error(f"Registration failed: {e}")
                 raise HTTPException(status_code=400, detail=str(e))
         
-        @self.app.post("/subscribe")
-        async def subscribe_observer(request: Dict[str, Any]):
-            """Observer订阅端点"""
-            try:
-                return await self._handle_subscribe(request)
-            except Exception as e:
-                logger.error(f"Subscription failed: {e}")
-                raise HTTPException(status_code=400, detail=str(e))
+        # Observer订阅端点已移除 - 新S2设计不需要Observer机制
         
         @self.app.get("/directory")
         async def get_directory(conversation_id: str):

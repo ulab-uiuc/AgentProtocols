@@ -15,7 +15,7 @@ from pathlib import Path
 try:
     from ...core.privacy_analyzer_base import PrivacyAnalyzerBase
 except ImportError:
-    from core.privacy_analyzer_base import PrivacyAnalyzerBase
+    from script.safety_tech.core.privacy_analyzer_base import PrivacyAnalyzerBase
 
 
 class ANPPrivacyAnalyzer(PrivacyAnalyzerBase):
