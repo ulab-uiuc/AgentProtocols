@@ -21,7 +21,7 @@ python -m script.gaia.runners.run_anp
 
 
 # --- Runners that require an API key ---
-
+export OPENAI_API_KEY="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"
 if [ -z "$OPENAI_API_KEY" ]; then
   echo "⚠️ WARNING: OPENAI_API_KEY is not set. Skipping runners that require it (agora, meta)."
 else
