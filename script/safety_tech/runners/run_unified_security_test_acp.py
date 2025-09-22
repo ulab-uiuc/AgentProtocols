@@ -338,6 +338,8 @@ if __name__ == "__main__":
         
         # S1配置：测试模式选择
         s1_test_mode = os.environ.get('ACP_S1_TEST_MODE', 'standard')  # light/standard/stress/protocol_optimized
+        # 跳过S1的开关：ACP_DISABLE_S1=true 或 模式为 skip/none/off
+        skip_s1 = os.environ.get('ACP_DISABLE_S1', 'false').lower() == 'true' or s1_test_mode.lower() in ('skip', 'none', 'off')
         
         # S2配置：保密性探针开关
         enable_s2_probes = os.environ.get('ACP_ENABLE_S2_PROBES', 'false').lower() == 'true'
@@ -502,15 +504,19 @@ if __name__ == "__main__":
         monitor_task = asyncio.create_task(monitor_coordinator())
         
         try:
-            # 运行S1业务连续性测试矩阵
-            s1_results = await s1_tester.run_full_test_matrix(
-                send_func=acp_send_function,
-                sender_id='ACP_Doctor_A',
-                receiver_id='ACP_Doctor_B',
-                rg_port=rg_port,
-                coord_port=coord_port,
-                obs_port=obs_port
-            )
+            if skip_s1:
+                print("⏭️ 跳过S1业务连续性测试（按配置）")
+                s1_results = []
+            else:
+                # 运行S1业务连续性测试矩阵
+                s1_results = await s1_tester.run_full_test_matrix(
+                    send_func=acp_send_function,
+                    sender_id='ACP_Doctor_A',
+                    receiver_id='ACP_Doctor_B',
+                    rg_port=rg_port,
+                    coord_port=coord_port,
+                    obs_port=obs_port
+                )
         finally:
             # 停止监控任务
             monitor_task.cancel()
@@ -519,8 +525,46 @@ if __name__ == "__main__":
             except asyncio.CancelledError:
                 pass
         
-        # 生成S1综合报告
-        s1_report = s1_tester.generate_comprehensive_report()
+        # 生成S1综合报告（或占位报告以便后续流程与打印不出错）
+        if skip_s1:
+            s1_report = {
+                'protocol': 'acp',
+                'test_summary': {
+                    'total_combinations_tested': 0,
+                    'total_requests': 0,
+                    'total_successful': 0,
+                    'total_failed': 0,
+                    'total_timeout': 0,
+                    'overall_completion_rate': 0.0,
+                    'overall_timeout_rate': 0.0
+                },
+                'latency_analysis': {
+                    'avg_ms': 0.0,
+                    'p50_ms': 0.0,
+                    'p95_ms': 0.0,
+                    'p99_ms': 0.0
+                },
+                'dimensional_analysis': {
+                    'by_concurrent_level': {},
+                    'by_rps_pattern': {},
+                    'by_message_type': {}
+                },
+                'performance_extremes': {
+                    'best_combination': {
+                        'config': {},
+                        'completion_rate': 0.0,
+                        'avg_latency_ms': 0.0
+                    },
+                    'worst_combination': {
+                        'config': {},
+                        'completion_rate': 0.0,
+                        'avg_latency_ms': 0.0
+                    }
+                },
+                'detailed_results': []
+            }
+        else:
+            s1_report = s1_tester.generate_comprehensive_report()
         
         print(f"\n🛡️ === S1业务连续性测试结果 ===")
         print(f"📊 总体完成率: {s1_report['test_summary']['overall_completion_rate']:.1%}")
