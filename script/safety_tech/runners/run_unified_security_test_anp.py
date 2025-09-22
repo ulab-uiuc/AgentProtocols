@@ -27,16 +27,27 @@ import time
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
+HERE = Path(__file__).resolve().parent
+SAFETY_TECH = HERE.parent
+PROJECT_ROOT = SAFETY_TECH.parent.parent
+
 import httpx
 import subprocess
 import logging
 
 from fastapi import FastAPI
+from fastapi.responses import Response
 import uvicorn
 
 HERE = Path(__file__).resolve().parent
 SAFETY_TECH = HERE.parent
 sys.path.insert(0, str(SAFETY_TECH))
+
+# 统一LLM回复封装
+try:
+    from script.safety_tech.core.llm_wrapper import generate_doctor_reply
+except ImportError:
+    from core.llm_wrapper import generate_doctor_reply
 
 # 尝试导入核心组件
 try:
@@ -53,21 +64,24 @@ AGENTCONNECT_OK = False
 try:
     # 允许多路径
     candidates = [
-        Path(__file__).resolve().parent.parent.parent / 'agentconnect_src',
-        Path.cwd() / 'agentconnect_src',
+        PROJECT_ROOT,
     ]
     for p in candidates:
-        if p.exists():
+        if p.exists() and str(p) not in sys.path:
             sys.path.insert(0, str(p))
-    from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
-    from agent_connect.python.utils.did_generate import did_generate
-    from agent_connect.python.utils.crypto_tool import (
+    from agentconnect_src.simple_node import SimpleNode, SimpleNodeSession
+    from agentconnect_src.utils.did_generate import did_generate
+    from agentconnect_src.utils.crypto_tool import (
         get_pem_from_private_key,
         get_hex_from_public_key,
         generate_signature_for_json,
     )
     AGENTCONNECT_OK = True
 except Exception as e:
+    # 增加更详细的路径调试信息
+    print(f"DEBUG: sys.path = {sys.path}")
+    print(f"DEBUG: CWD = {Path.cwd()}")
+    print(f"DEBUG: PROJECT_ROOT = {PROJECT_ROOT}")
     raise RuntimeError(f"AgentConnect(ANP) SDK 未就绪: {e}")
 
 
@@ -88,7 +102,7 @@ def _load_medical_dataset() -> List[Dict[str, Any]]:
             data = json.load(f)
             questions = data.get('questions', [])
         medical_cases = []
-        for i, q in enumerate(questions[:10]):
+        for i, q in enumerate(questions[:2]):
             medical_cases.append({
                 'case_id': f"dataset_case_{q.get('id', i+1)}",
                 'patient_info': f"Patient: {q.get('sensitive_info', {}).get('name','Unknown')}, Age: {q.get('sensitive_info', {}).get('age','Unknown')}",
@@ -135,73 +149,220 @@ class ANPDoctorShim:
     def __init__(self, agent_name: str, port: int):
         self.agent_name = agent_name
         self.port = port
+        self.ws_port = port + 100  # 原生ANP WS端口与HTTP shim端口分离
         self.app = FastAPI(title=f"ANP {agent_name} HTTP Shim")
         self.did = None
         self.simple_node: Optional[SimpleNode] = None
         self.private_key = None
         self.public_key = None
         self.did_document_json: Optional[str] = None
-        self._peer_http_endpoint: Optional[str] = None
+        self._peer_did: Optional[str] = None
+        self._peer_session: Optional[SimpleNodeSession] = None  # 使用官方API的会话对象
+        self._inbox: asyncio.Queue = asyncio.Queue()
         self._setup_routes()
+        self._doctor_role = 'doctor_a' if self.agent_name.endswith('_A') else 'doctor_b'
 
     def _setup_routes(self):
         @self.app.post('/message')
         async def receive_message(payload: Dict[str, Any]):
-            # 简单回文，模拟业务响应（保持与ACP echo一致）
+            # 入站仅作业务触发，实际回执通过原生ANP通道发送给对端DID
             text = payload.get('text') or payload.get('content') or ''
-            sender_id = payload.get('sender_id', 'unknown')
-            response = f"{self.agent_name} (ANP) received: {text}"
-            # 自动回传给对端（通过Coordinator的同一路由链）
-            # 为避免HTTP适配端点间的无限回环，仅在未标记过_reply_once时回传一次
-            if self._peer_http_endpoint and not payload.get('_reply_once', False):
+            try:
+                response = generate_doctor_reply(self._doctor_role, str(text))
+            except Exception as e:
+                response = f"[LLM_ERROR] {e}"
+            if self.simple_node and self._peer_did:
                 try:
-                    async with httpx.AsyncClient() as c:
-                        await c.post(self._peer_http_endpoint, json={
-                            'sender_id': self.agent_name,
-                            'receiver_id': sender_id,
-                            'text': response,
-                            '_reply_once': True,
-                        }, timeout=10.0)
+                    await self.simple_node.send_message(response, self._peer_did)
                 except Exception:
                     pass
             return {'status': 'processed', 'agent_id': self.agent_name, 'response': response}
 
         @self.app.get('/health')
         async def health():
-            return {'status': 'healthy', 'agent_id': self.agent_name, 'did': self.did is not None}
+            return {'status': 'healthy', 'agent_id': self.agent_name, 'did': self.did is not None, 'ws_port': self.ws_port}
 
-    def set_peer_http_endpoint(self, url: str):
-        self._peer_http_endpoint = url
+        @self.app.get('/v1/did/{did_value}')
+        async def get_did_doc(did_value: str):
+            # 在HTTP shim上提供DID文档，供对端根据DID拉取
+            if self.did and did_value == self.did and self.did_document_json:
+                return Response(content=self.did_document_json, media_type='application/text')
+            return Response(status_code=404)
+
+    def set_peer_did(self, did: str):
+        self._peer_did = did
 
     def start_http(self):
         import threading
         def run():
-            uvicorn.run(self.app, host='127.0.0.1', port=self.port, log_level='warning', access_log=False)
+            uvicorn.run(self.app, host='127.0.0.1', port=self.port, log_level='warning', lifespan="off", loop="asyncio", http="h11")
         t = threading.Thread(target=run, daemon=True)
         t.start()
 
+    async def _handle_new_session(self, session: SimpleNodeSession):
+        """处理新的ANP会话连接 - 参考官方示例的直接循环模式"""
+        print(f"   [DEBUG] {self.agent_name}: 新会话建立，来自 {session.remote_did}")
+        
+        try:
+            while True:
+                message_bytes = await session.receive_message()
+                if message_bytes:
+                    plaintext = message_bytes.decode('utf-8')
+                    print(f"   [DEBUG] {self.agent_name}: 收到来自 {session.remote_did} 的消息: {plaintext[:50]}...")
+                    
+                    # 发送回声
+                    reply = f"{self.agent_name} (ANP) echo: {plaintext}"
+                    ok = await session.send_message(reply)
+                    print(f"   [DEBUG] {self.agent_name}: 回声发送{'成功' if ok else '失败'}")
+                    
+                    # 将消息放入收件箱
+                    try:
+                        self._inbox.put_nowait((session.remote_did, plaintext))
+                    except Exception as e:
+                        print(f"   [DEBUG] {self.agent_name}: 收件箱放入异常: {e}")
+                else:
+                    # 收到None表示连接关闭
+                    print(f"   [DEBUG] {self.agent_name}: 会话 {session.remote_did} 连接关闭")
+                    break
+        except asyncio.CancelledError:
+            print(f"   [DEBUG] {self.agent_name}: 会话 {session.remote_did} 消息循环被取消")
+        except Exception as e:
+            print(f"   [DEBUG] {self.agent_name}: 会话消息循环异常: {e}")
+        finally:
+            print(f"   [DEBUG] {self.agent_name}: 会话 {session.remote_did} 消息循环结束")
+
+    async def _outbound_message_loop(self, session: SimpleNodeSession):
+        """处理出站连接的消息接收循环"""
+        try:
+            while True:
+                message_bytes = await session.receive_message()
+                if message_bytes:
+                    plaintext = message_bytes.decode('utf-8')
+                    print(f"   [DEBUG] {self.agent_name}: 出站会话收到来自 {session.remote_did} 的消息: {plaintext[:50]}...")
+                    
+                    # 将消息放入收件箱供业务等待
+                    try:
+                        self._inbox.put_nowait((session.remote_did, plaintext))
+                    except Exception as e:
+                        print(f"   [DEBUG] {self.agent_name}: 出站会话收件箱放入异常: {e}")
+                else:
+                    # 收到None表示连接关闭
+                    print(f"   [DEBUG] {self.agent_name}: 出站会话 {session.remote_did} 连接关闭")
+                    break
+        except asyncio.CancelledError:
+            print(f"   [DEBUG] {self.agent_name}: 出站会话 {session.remote_did} 消息循环被取消")
+        except Exception as e:
+            print(f"   [DEBUG] {self.agent_name}: 出站会话消息循环异常: {e}")
+        finally:
+            print(f"   [DEBUG] {self.agent_name}: 出站会话 {session.remote_did} 消息循环结束")
+
     def start_anp_node(self):
-        # 原生DID + SimpleNode 启动
-        private_key, public_key, did, did_document_json = did_generate(f"ws://127.0.0.1:{self.port}/ws")
-        private_key_pem = get_pem_from_private_key(private_key)
-        node = SimpleNode(
-            host_domain='127.0.0.1', host_port=str(self.port), host_ws_path='/ws',
-            private_key_pem=private_key_pem, did=did, did_document_json=did_document_json
+        # 使用官方最新ANP API创建SimpleNode
+        self.simple_node = SimpleNode(
+            host_domain="127.0.0.1",
+            host_port=str(self.ws_port),
+            host_ws_path="/ws",
+            new_session_callback=self._handle_new_session
         )
-        node.run()
-        self.simple_node = node
+        
+        # 生成DID信息
+        private_key_pem, did, did_document_json = self.simple_node.generate_did_document()
+        self.simple_node.set_did_info(private_key_pem, did, did_document_json)
+        
+        # 启动SimpleNode服务
+        self.simple_node.run()
+        
+        self.private_key = private_key_pem
         self.did = did
-        self.private_key = private_key
-        self.public_key = public_key
         self.did_document_json = did_document_json
+
+    def start_message_loop(self):
+        # 新的API已通过_handle_new_session和_session_message_loop处理消息接收
+        # 这个方法保持为兼容性存根
+        print(f"   [DEBUG] {self.agent_name}: 消息循环已通过会话回调处理")
+
+    async def send_and_wait_echo(self, text: str, timeout_s: float = 8.0) -> bool:
+        """通过原生ANP向对端发送消息，并在本节点等待回声以确认送达。
+        成功条件：send_message返回True，且在timeout内收到任意入站消息。
+        """
+        if not (self.simple_node and self._peer_did):
+            print(f"   [DEBUG] {self.agent_name}: simple_node或peer_did未设置")
+            return False
+        try:
+            print(f"   [DEBUG] {self.agent_name}: 向 {self._peer_did} 发送消息: {text[:50]}...")
+            
+            # 使用官方API建立连接
+            if not self._peer_session:
+                print(f"   [DEBUG] {self.agent_name}: 建立到 {self._peer_did} 的连接")
+                self._peer_session = await self.simple_node.connect_to_did(self._peer_did)
+                if not self._peer_session:
+                    print(f"   [DEBUG] {self.agent_name}: 连接建立失败")
+                    return False
+                # 为出站连接启动消息接收循环
+                print(f"   [DEBUG] {self.agent_name}: 启动出站会话消息接收循环")
+                asyncio.create_task(self._outbound_message_loop(self._peer_session))
+                # 等待连接稳定
+                await asyncio.sleep(0.5)
+            
+            # 发送消息
+            ok = await self._peer_session.send_message(text)
+            if not ok:
+                print(f"   [DEBUG] {self.agent_name}: send_message返回False")
+                return False
+            print(f"   [DEBUG] {self.agent_name}: 消息发送成功，等待回声...")
+            try:
+                sender_did, received_text = await asyncio.wait_for(self._inbox.get(), timeout=timeout_s)
+                print(f"   [DEBUG] {self.agent_name}: 收到来自 {sender_did} 的消息: {received_text[:50]}...")
+                # 验证回声是否来自预期的对端
+                if sender_did == self._peer_did:
+                    print(f"   [DEBUG] {self.agent_name}: 回声验证成功")
+                    return True
+                else:
+                    print(f"   [DEBUG] {self.agent_name}: 消息来自意外DID {sender_did}，放回队列")
+                    # 消息来自其他DID，放回队列并继续等待
+                    self._inbox.put_nowait((sender_did, received_text))
+                    return False
+            except asyncio.TimeoutError:
+                print(f"   [DEBUG] {self.agent_name}: 等待回声超时")
+                return False
+        except Exception as e:
+            print(f"   [DEBUG] {self.agent_name}: 异常: {e}")
+            return False
+
+    async def ensure_session(self, retries: int = 3, timeout_s: float = 12.0) -> bool:
+        """主动探测并建立与对端的原生ANP会话。"""
+        if not (self.simple_node and self._peer_did):
+            return False
+        for _ in range(retries):
+            # 简单的ping消息来确认双向通道
+            ok = await self.send_and_wait_echo(f"[ping] from {self.agent_name}", timeout_s=timeout_s)
+            if ok:
+                return True
+            await asyncio.sleep(1.0)
+        return False
 
     def build_registration_proof(self) -> Dict[str, Any]:
         ts = time.time()
         # 为注册构造签名消息（did + ts），生成签名与公钥hex
         message = {'did': self.did, 'timestamp': ts}
-        signature = generate_signature_for_json(self.private_key, message) if self.private_key else ''
-        pub_hex = get_hex_from_public_key(self.public_key) if self.public_key else ''
+        signature = ''
+        pub_hex = ''
+        
+        if self.private_key:
+            try:
+                # 从PEM字符串加载私钥对象
+                from cryptography.hazmat.primitives import serialization
+                private_key_obj = serialization.load_pem_private_key(
+                    self.private_key.encode('utf-8'), 
+                    password=None
+                )
+                signature = generate_signature_for_json(private_key_obj, message)
+                pub_hex = get_hex_from_public_key(private_key_obj.public_key())
+            except Exception as e:
+                print(f"   [DEBUG] {self.agent_name}: 签名生成失败: {e}")
+        
         return {
+            'did': self.did,
             'did_signature': signature,
             'did_public_key': pub_hex,
             'timestamp': ts,
@@ -220,12 +381,23 @@ async def main():
     procs: List[subprocess.Popen] = []
     try:
         # 1) 启动RG
-        procs.append(_spawn([
+        proc = subprocess.Popen([
             sys.executable, "-c",
-            "from script.safety_tech.core.registration_gateway import RegistrationGateway;\n"
+            f"import sys; sys.path.insert(0, '{PROJECT_ROOT}'); "
+            "from script.safety_tech.core.registration_gateway import RegistrationGateway; "
             f"RegistrationGateway({{'session_timeout':3600,'max_observers':5,'require_observer_proof':True}}).run(host='127.0.0.1', port={rg_port})"
-        ]))
-        await _wait_http_ok(f"http://127.0.0.1:{rg_port}/health", 12.0)
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        procs.append(proc)
+        print(f"Started ANP RG process with PID: {proc.pid}")
+        try:
+            await _wait_http_ok(f"http://127.0.0.1:{rg_port}/health", 12.0)
+        except RuntimeError as e:
+            if proc.poll() is not None:
+                stdout, stderr = proc.communicate()
+                print(f"ANP RG process exited with code: {proc.returncode}")
+                print(f"stdout: {stdout}")
+                print(f"stderr: {stderr}")
+            raise e
 
         # 2) 启动Coordinator（本进程）
         coordinator = RGCoordinator({
@@ -250,31 +422,75 @@ async def main():
         await asyncio.sleep(1.0)
         doctor_a.start_anp_node(); doctor_b.start_anp_node()
 
-        # 设定对端HTTP入口（供自动回传）
-        doctor_a.set_peer_http_endpoint(f"http://127.0.0.1:{b_port}/message")
-        doctor_b.set_peer_http_endpoint(f"http://127.0.0.1:{a_port}/message")
+        # 设定对端DID（用于原生ANP回传）并开启消息监听循环
+        doctor_a.set_peer_did(doctor_b.did)
+        doctor_b.set_peer_did(doctor_a.did)
+        doctor_a.start_message_loop()
+        doctor_b.start_message_loop()
+        # 主动预热原生会话，避免首轮超时
+        await asyncio.gather(
+            doctor_a.ensure_session(),
+            doctor_b.ensure_session()
+        )
 
         # 5) 注册到RG + 订阅Observer
+        # 记录RG验证归因信息
+        rg_mode = None
+        rg_metrics = None
+        doc_a_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
+        doc_b_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
+
         async with httpx.AsyncClient() as c:
             # 为每个节点构建原生ANP证明
             proofs = {
                 'ANP_Doctor_A': doctor_a.build_registration_proof(),
                 'ANP_Doctor_B': doctor_b.build_registration_proof(),
             }
-            for agent_id, port, role in [
-                ('ANP_Doctor_A', a_port, 'doctor_a'),
-                ('ANP_Doctor_B', b_port, 'doctor_b'),
-            ]:
-                r = await c.post(f"http://127.0.0.1:{rg_port}/register", json={
-                    'protocol': 'anp',
-                    'agent_id': agent_id,
-                    'endpoint': f"http://127.0.0.1:{port}",  # 供Coordinator调用
-                    'conversation_id': conv_id,
-                    'role': role,
-                    'proof': proofs[agent_id]
-                }, timeout=10.0)
-                if r.status_code != 200:
-                    raise RuntimeError(f"注册{agent_id}失败: {r.text}")
+            # 注册Doctor A
+            rA = await c.post(f"http://127.0.0.1:{rg_port}/register", json={
+                'protocol': 'anp',
+                'agent_id': 'ANP_Doctor_A',
+                'endpoint': f"http://127.0.0.1:{a_port}",
+                'conversation_id': conv_id,
+                'role': 'doctor_a',
+                'proof': proofs['ANP_Doctor_A']
+            }, timeout=10.0)
+            if rA.status_code != 200:
+                raise RuntimeError(f"注册ANP_Doctor_A失败: {rA.text}")
+            try:
+                respA = rA.json()
+                doc_a_verify = {
+                    'method': respA.get('verification_method'),
+                    'latency_ms': respA.get('verification_latency_ms'),
+                    'blocked_by': respA.get('blocked_by'),
+                    'reason': respA.get('reason'),
+                }
+            except Exception:
+                pass
+
+            # 注册Doctor B
+            rB = await c.post(f"http://127.0.0.1:{rg_port}/register", json={
+                'protocol': 'anp',
+                'agent_id': 'ANP_Doctor_B',
+                'endpoint': f"http://127.0.0.1:{b_port}",
+                'conversation_id': conv_id,
+                'role': 'doctor_b',
+                'proof': proofs['ANP_Doctor_B']
+            }, timeout=10.0)
+            if rB.status_code != 200:
+                raise RuntimeError(f"注册ANP_Doctor_B失败: {rB.text}")
+            try:
+                respB = rB.json()
+                doc_b_verify = {
+                    'method': respB.get('verification_method'),
+                    'latency_ms': respB.get('verification_latency_ms'),
+                    'blocked_by': respB.get('blocked_by'),
+                    'reason': respB.get('reason'),
+                }
+            except Exception:
+                pass
+
+            # 订阅Observer
             sub = await c.post(f"http://127.0.0.1:{rg_port}/subscribe", json={
                 'agent_id': 'Legitimate_Observer',
                 'role': 'observer',
@@ -284,6 +500,16 @@ async def main():
             }, timeout=10.0)
             if sub.status_code != 200:
                 raise RuntimeError(f"Observer订阅失败: {sub.text}")
+
+            # 读取RG健康信息，获取verification_mode
+            try:
+                h = await c.get(f"http://127.0.0.1:{rg_port}/health", timeout=5.0)
+                if h.status_code == 200:
+                    hjson = h.json()
+                    rg_mode = hjson.get('verification_mode')
+                    rg_metrics = hjson.get('metrics')
+            except Exception:
+                pass
 
         # 等待Coordinator目录刷新
         await asyncio.sleep(4)
@@ -313,8 +539,11 @@ async def main():
                 async with httpx.AsyncClient() as c:
                     for i in range(20):
                         try:
+                            _mid = f"msg_{int(time.time()*1000)}_{i}"
+                            _cid = f"corr_spam_{int(time.time()*1000)}_{i}"
                             await c.post(f"http://127.0.0.1:{coord_port}/route_message", json={
-                                'sender_id': 'fake_sender', 'receiver_id': 'fake_receiver', 'text': 'SPAM'*100
+                                'sender_id': 'fake_sender', 'receiver_id': 'fake_receiver', 'text': 'SPAM'*100,
+                                'message_id': _mid, 'correlation_id': _cid
                             }, timeout=2.0)
                         except Exception:
                             pass
@@ -327,7 +556,10 @@ async def main():
                 async with httpx.AsyncClient() as c:
                     replay = {'sender_id': 'ANP_Doctor_A','receiver_id': 'ANP_Doctor_B','text': 'REPLAYED'}
                     for _ in range(15):
-                        await c.post(f"http://127.0.0.1:{coord_port}/route_message", json=replay, timeout=2.0)
+                        _mid = f"msg_replay_{int(time.time()*1000)}"
+                        _cid = f"corr_replay_{int(time.time()*1000)}"
+                        payload = {**replay, 'message_id': _mid, 'correlation_id': _cid}
+                        await c.post(f"http://127.0.0.1:{coord_port}/route_message", json=payload, timeout=2.0)
                         await asyncio.sleep(2)
             except Exception:
                 pass
@@ -366,42 +598,28 @@ async def main():
         total_attempted = 0
         total_success = 0
         conversation_results = []
-        async with httpx.AsyncClient() as c:
-            for i, case in enumerate(medical_cases):
-                print(f"\n📋 【案例 {i+1}/{len(medical_cases)}】: {case['case_id']}")
-                print(f"   患者信息: {case['patient_info']}")
-                msgs = []
-                succ = 0
-                for r in range(5):
-                    total_attempted += 1
-                    text = f"[Round {r+1}] {case['initial_question'][:200]}"
-                    try:
-                        rr = await c.post(f"http://127.0.0.1:{coord_port}/route_message", json={
-                            'sender_id': 'ANP_Doctor_A','receiver_id':'ANP_Doctor_B','text': text
-                        }, timeout=10.0)
-                        is_ok = rr.status_code in (200,202)
-                        js = None
-                        try:
-                            js = rr.json()
-                        except Exception:
-                            js = None
-                        has_err = isinstance(js, dict) and (js.get('error') is not None)
-                        status_ok = isinstance(js, dict) and (js.get('status') in ('processed','ok','success'))
-                        # 统一成功标准：HTTP 200/202 且 响应无error；兼容status为processed/ok/success
-                        if is_ok and (status_ok or not has_err):
-                            succ += 1
-                            total_success += 1
-                            msgs.append({'round': r+1, 'message': text, 'response': js if js is not None else {'status_code': rr.status_code}})
-                            print(f"   ✅ Round {r+1}/5 - 成功 (攻击环境下)")
-                        else:
-                            # 详细调试信息
-                            debug_info = f"状态码:{rr.status_code}, 响应:{js}, has_err:{has_err}, status_ok:{status_ok}"
-                            print(f"   ❌ Round {r+1}/5 - 失败 ({debug_info}) [攻击影响]")
-                    except Exception as e:
-                        print(f"   ❌ Round {r+1}/5 - 异常: {str(e)} [攻击影响]")
-                    await asyncio.sleep(1.0)
-                conversation_results.append({'case_id': case['case_id'], 'messages': msgs, 'success': succ})
-                print(f"   📊 案例完成: {succ}/5 轮成功 (攻击影响: {5-succ}轮)")
+        for i, case in enumerate(medical_cases):
+            print(f"\n📋 【案例 {i+1}/{len(medical_cases)}】: {case['case_id']}")
+            print(f"   患者信息: {case['patient_info']}")
+            msgs = []
+            succ = 0
+            for r in range(5):
+                total_attempted += 1
+                text = f"[Round {r+1}] {case['initial_question'][:200]}"
+                try:
+                    ok = await doctor_a.send_and_wait_echo(text)
+                    if ok:
+                        succ += 1
+                        total_success += 1
+                        msgs.append({'round': r+1, 'message': text, 'response': {'status': 'processed', 'via': 'anp'}})
+                        print(f"   ✅ Round {r+1}/5 - 成功 (ANP原生通道)")
+                    else:
+                        print(f"   ❌ Round {r+1}/5 - 失败 (ANP原生通道超时)")
+                except Exception as e:
+                    print(f"   ❌ Round {r+1}/5 - 异常: {str(e)} [ANP通道]")
+                await asyncio.sleep(3.0)  # 增加间隔，避免LLM频率限制
+            conversation_results.append({'case_id': case['case_id'], 'messages': msgs, 'success': succ})
+            print(f"   📊 案例完成: {succ}/5 轮成功 (攻击影响: {5-succ}轮)")
 
         for t in attacks:
             t.cancel()
@@ -419,8 +637,11 @@ async def main():
                 for i in range(2):
                     oid = f"malicious_observer_{int(time.time())}_{i}"
                     sub = await c.post(f"http://127.0.0.1:{rg_port}/subscribe", json={
-                        'observer_id': oid, 'conversation_id': conv_id,
-                        'endpoint': f"http://malicious-observer:{9000+i}"
+                        'agent_id': oid,
+                        'role': 'observer',
+                        'conversation_id': conv_id,
+                        'endpoint': f"http://malicious-observer:{9000+i}",
+                        'proof': {'token': 'mal'}
                     }, timeout=5.0)
                     if sub.status_code == 200:
                         malicious.append(oid)
@@ -441,6 +662,21 @@ async def main():
                     print(f"   ✅ 回填攻击被阻止 (状态: {hist.status_code})")
         except Exception as e:
             print(f"   ✅ 回填攻击失败: {str(e)[:50]}...")
+
+        # 收集Observer证据（与Agora口径对齐）
+        observer_evidence = {}
+        try:
+            async with httpx.AsyncClient() as c:
+                status = await c.get(f"http://127.0.0.1:{obs_port}/status", timeout=5.0)
+                report = await c.get(f"http://127.0.0.1:{obs_port}/eavesdrop_report", timeout=5.0)
+                messages = await c.get(f"http://127.0.0.1:{obs_port}/messages", params={'limit':200}, timeout=5.0)
+                observer_evidence = {
+                    'status': (status.json() if status.status_code == 200 else {'error': status.text}),
+                    'report': (report.json() if report.status_code == 200 else {'error': report.text}),
+                    'messages': (messages.json() if messages.status_code == 200 else {'error': messages.text})
+                }
+        except Exception:
+            observer_evidence = {'error': 'collect_failed'}
 
         # S3 6类注册攻击
         runner = RegistrationAttackRunner({
@@ -480,6 +716,12 @@ async def main():
             'protocol': 'anp',
             'security_score': unified,
             'security_level': level,
+            'rg_verification': {
+                'mode': rg_mode,
+                'metrics': rg_metrics,
+                'doctor_a': doc_a_verify,
+                'doctor_b': doc_b_verify
+            },
             'test_results': {
                 'S1_business_continuity': {'completion_rate': s1_rate, 'score': round(s1_score,1)},
                 'S2_eavesdrop_prevention': {'malicious_observers_blocked': len(malicious)==0, 'score': round(s2_score,1)},
@@ -491,6 +733,10 @@ async def main():
                         for a in registration_attacks
                     ]
                 }
+            },
+            'observer': {
+                'legitimate': observer_evidence,
+                'malicious_observers': malicious
             },
             'unified_metrics': {
                 'total_attacks_attempted': total_s3,

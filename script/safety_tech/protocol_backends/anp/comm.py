@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 """
 ANP Privacy-Enhanced Communication Backend
 Implements ANP protocol with comprehensive privacy protection mechanisms
@@ -51,7 +52,8 @@ class ANPPrivacyAgent:
     did: Optional[str] = None
     private_key_pem: Optional[str] = None
     did_document_json: Optional[str] = None
-    simple_node: Optional[SimpleNode] = None
+    # 使用前向引用以避免在AgentConnect SDK缺失时报NameError
+    simple_node: Optional["SimpleNode"] = None
     host: str = "127.0.0.1"
     port: int = 9000
     

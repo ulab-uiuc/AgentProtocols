@@ -21,6 +21,15 @@ from pathlib import Path
 import logging
 import httpx
 
+# 引入ANP签名校验所需工具（必须可用，否则直接报错）
+try:
+    from agentconnect_src.utils.crypto_tool import (
+        get_public_key_from_hex,
+        verify_signature_for_json,
+    )
+except Exception as e:
+    raise RuntimeError(f"Failed to import ANP crypto tools: {e}")
+
 # 配置日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -64,6 +73,16 @@ class RegistrationGateway:
         self.conversations: Dict[str, ConversationSession] = {}  # conversation_id -> session
         self.protocol_verifiers: Dict[str, callable] = {}
         self.used_nonces: Set[str] = set()
+        # 验证模式：transparent | native_delegated | strict
+        # 默认使用原生委托（只用协议原生能力做判定，不做RG兜底）
+        self.verification_mode: str = str(self.config.get('verification_mode', 'native_delegated')).lower()
+        # ANP可选DID文档探针（基准模式仅记录，严格模式强制）
+        self.anp_probe_did_doc: bool = bool(self.config.get('anp_probe_did_doc', False))
+        # 重放/时间窗观测指标（仅记录，不阻断）
+        self.metrics = {
+            'nonce_reuse_count': 0,
+            'timestamp_expired_count': 0,
+        }
         
         # 配置参数
         self.session_timeout = self.config.get('session_timeout', 3600)  # 1小时
@@ -119,7 +138,7 @@ class RegistrationGateway:
         @self.app.get("/health")
         async def health_check():
             """健康检查"""
-            return {"status": "healthy", "timestamp": time.time()}
+            return {"status": "healthy", "timestamp": time.time(), "verification_mode": self.verification_mode, "metrics": self.metrics}
         
         @self.app.post("/cleanup")
         async def cleanup_sessions(background_tasks: BackgroundTasks):
@@ -159,8 +178,20 @@ class RegistrationGateway:
             timestamp=time.time()
         )
         
-        # 协议验证
-        verification_result = await self.protocol_verifiers[protocol](record)
+        # 协议验证（记录耗时与归因）
+        _verify_start = time.time()
+        try:
+            verification_result = await self.protocol_verifiers[protocol](record)
+        except Exception as e:
+            _latency_ms = int((time.time() - _verify_start) * 1000)
+            # 记录归因原因
+            try:
+                reason = str(e)
+            except Exception:
+                reason = "verification_exception"
+            logger.error(f"Protocol verification error [{protocol}] blocked_by=protocol latency_ms={_latency_ms} reason={reason}")
+            raise
+        _latency_ms = int((time.time() - _verify_start) * 1000)
         record.verified = verification_result.get('verified', False)
         record.session_token = verification_result.get('session_token')
         
@@ -184,7 +215,11 @@ class RegistrationGateway:
             "conversation_id": conversation_id,
             "session_token": record.session_token,
             "timestamp": record.timestamp,
-            "verified": record.verified
+            "verified": record.verified,
+            "verification_method": verification_result.get('verification_method', 'unknown'),
+            "verification_latency_ms": _latency_ms,
+            "blocked_by": "none",
+            "reason": None
         }
 
     async def _handle_subscribe(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -328,38 +363,30 @@ class RegistrationGateway:
 
     # 协议验证器实现
     async def _verify_agora(self, record: RegistrationRecord) -> Dict[str, Any]:
-        """验证Agora协议"""
-        from agora.utils import download_and_verify_protocol
-        proof = record.proof
-        protocol_meta = record.protocol_meta
+        """验证Agora协议（基准模式：仅校验protocol_hash与protocol_sources；不做RG层反重放阻断）"""
+        try:
+            from agora.utils import download_and_verify_protocol
+        except Exception as e:
+            raise RuntimeError(f"Failed to import Agora native utils: {e}")
 
-        # 校验必需字段
-        required = ['protocol_hash', 'protocol_sources', 'timestamp', 'nonce']
-        for f in required:
-            if f not in proof:
-                return {"verified": False, "error": f"Missing required Agora proof field: {f}"}
-
-        # 防重放：检查时间窗（默认5分钟）
-        now = time.time()
-        if abs(now - float(proof.get('timestamp', 0))) > 300:
-            return {"verified": False, "error": "Agora proof timestamp expired"}
-
-        # 防重放：nonce一次性
-        nonce = str(proof.get('nonce', ''))
-        if not nonce or nonce in self.used_nonces:
-            return {"verified": False, "error": "Replay detected: nonce reused or missing"}
-        self.used_nonces.add(nonce)
+        proof = record.proof or {}
 
         # 协议强绑定：仅当record.protocol == 'agora'时接受
         if record.protocol != 'agora':
             return {"verified": False, "error": "Protocol mismatch for Agora verification"}
 
-        # 使用Agora原生工具校验协议hash与来源
-        protocol_hash = proof['protocol_hash']
+        # 校验必需字段（仅hash与sources）
+        required = ['protocol_hash', 'protocol_sources']
+        for f in required:
+            if f not in proof:
+                return {"verified": False, "error": f"Missing required Agora proof field: {f}"}
+
+        protocol_hash = proof.get('protocol_hash')
         sources = proof.get('protocol_sources') or []
         if not isinstance(sources, list) or len(sources) == 0:
             return {"verified": False, "error": "protocol_sources must be a non-empty list"}
 
+        # 使用Agora原生工具校验协议hash与来源
         verified_source_found = False
         for src in sources:
             try:
@@ -373,10 +400,9 @@ class RegistrationGateway:
         if not verified_source_found:
             return {"verified": False, "error": "Protocol hash verification failed for all sources"}
 
-        # 可选：端点归属证明（若启用）
-        require_endpoint_proof = self.config.get('agora_require_endpoint_proof', False)
+        # 可选：端点归属证明（受配置控制，默认关闭）
+        require_endpoint_proof = bool(self.config.get('agora_require_endpoint_proof', False))
         if require_endpoint_proof:
-            endpoint = record.endpoint or ''
             ownership = proof.get('endpoint_ownership_proof')
             if not ownership or not isinstance(ownership, str) or len(ownership) < 8:
                 return {"verified": False, "error": "Invalid or missing endpoint ownership proof"}
@@ -386,18 +412,66 @@ class RegistrationGateway:
         return {"verified": True, "session_token": session_token, "verification_method": "agora_protocol_hash"}
 
     async def _verify_a2a(self, record: RegistrationRecord) -> Dict[str, Any]:
-        """验证A2A协议"""
-        proof = record.proof
-        if not proof:
-            session_token = f"a2a_weak_{record.agent_id}_{int(time.time())}"
-            return {"verified": True, "session_token": session_token, "verification_method": "a2a_weak_fallback"}
-        
-        # 简单令牌验证
-        if 'a2a_token' in proof or 'token' in proof:
-            session_token = f"a2a_token_{record.agent_id}_{int(time.time())}"
-            return {"verified": True, "session_token": session_token, "verification_method": "a2a_token_fallback"}
-        
-        return {"verified": False, "error": "Invalid A2A proof"}
+        """验证A2A协议
+        - 最小要求：a2a_token+timestamp+nonce（始终启用）
+        - 可选：SDK原生challenge-echo探针（a2a_enable_challenge，默认False，以保持公平）
+        """
+        proof = record.proof or {}
+        required = ['a2a_token', 'timestamp', 'nonce']
+        for f in required:
+            if f not in proof:
+                return {"verified": False, "error": f"Missing required A2A proof field: {f}"}
+
+        # 时间窗与nonce
+        now = time.time()
+        try:
+            ts = float(proof.get('timestamp', 0))
+        except Exception:
+            return {"verified": False, "error": "Invalid A2A proof timestamp"}
+        if abs(now - ts) > 300:
+            # 仅记录
+            self.metrics['timestamp_expired_count'] = self.metrics.get('timestamp_expired_count', 0) + 1
+            return {"verified": False, "error": "A2A proof timestamp expired"}
+
+        nonce = str(proof.get('nonce', ''))
+        if not nonce or nonce in self.used_nonces:
+            # 记录重放嫌疑
+            self.metrics['nonce_reuse_count'] = self.metrics.get('nonce_reuse_count', 0) + 1
+            return {"verified": False, "error": "Replay detected: nonce reused or missing"}
+        self.used_nonces.add(nonce)
+
+        # 可选：SDK原生challenge-echo探针
+        if bool(self.config.get('a2a_enable_challenge', False)):
+            base = (record.endpoint or '').rstrip('/')
+            if not base.startswith('http://') and not base.startswith('https://'):
+                return {"verified": False, "error": "A2A endpoint must be http(s) URL for challenge"}
+            try:
+                async with httpx.AsyncClient() as client:
+                    # 通过/message发送标准A2A消息体，要求服务端回执（由adapter统一封装）
+                    payload = {
+                        "params": {
+                            "message": {
+                                "parts": [{"type": "text", "text": f"challenge:{nonce}"}],
+                                "messageId": f"chal_{int(time.time()*1000)}",
+                                "role": "user"
+                            }
+                        }
+                    }
+                    r = await client.post(f"{base}/message", json=payload, timeout=5.0)
+                    if r.status_code != 200:
+                        return {"verified": False, "error": f"A2A challenge failed: status {r.status_code}"}
+                    js = r.json() if r.content else {}
+                    # 统一JSON响应：包含events数组；若包含至少一个事件即视为回执成功
+                    if not isinstance(js, dict) or not js.get('events'):
+                        return {"verified": False, "error": "A2A challenge no events returned"}
+                    verification_method = "a2a_challenge_echo"
+            except Exception as e:
+                return {"verified": False, "error": f"A2A challenge error: {e}"}
+        else:
+            verification_method = "a2a_minimal_token"
+
+        session_token = f"a2a_{record.agent_id}_{int(time.time())}"
+        return {"verified": True, "session_token": session_token, "verification_method": verification_method}
 
     async def _verify_acp(self, record: RegistrationRecord) -> Dict[str, Any]:
         """验证ACP协议（原生校验，无任何fallback）"""
@@ -446,6 +520,9 @@ class RegistrationGateway:
                 names = [a.get('name') for a in agents if isinstance(a, dict) and isinstance(a.get('name'), str)]
                 if acp_agent_name not in names:
                     return {"verified": False, "error": f"ACP agent '{acp_agent_name}' not found in /agents"}
+                # 强制名称绑定：注册时的agent_id必须与/agents中的acp_agent_name一致
+                if record.agent_id != acp_agent_name:
+                    return {"verified": False, "error": f"ACP agent name binding mismatch: agent_id='{record.agent_id}' != acp_agent_name='{acp_agent_name}'"}
 
                 ping_resp = await client.get(f"{base}/ping", timeout=10.0)
                 if ping_resp.status_code != 200:
@@ -458,20 +535,65 @@ class RegistrationGateway:
         return {"verified": True, "session_token": session_token, "verification_method": "acp_native_endpoint_probe"}
 
     async def _verify_anp(self, record: RegistrationRecord) -> Dict[str, Any]:
-        """验证ANP协议"""
-        proof = record.proof
-        required_fields = ['did_signature', 'did_public_key', 'timestamp']
-        for field in required_fields:
-            if field not in proof:
-                return {"verified": False, "error": f"Missing required ANP proof field: {field}"}
-        
-        # 基础时间戳检查
-        current_time = time.time()
-        if abs(current_time - proof.get('timestamp', 0)) > 300:
-            return {"verified": False, "error": "ANP proof timestamp expired"}
-        
-        session_token = f"anp_fallback_{record.agent_id}_{int(time.time())}"
-        return {"verified": True, "session_token": session_token, "verification_method": "anp_fallback"}
+        """验证ANP协议 - 使用原生DID签名验真，不做RG兜底放行"""
+        proof = record.proof or {}
+
+        # 透明模式：仅记录，不放行（交由上层决定），这里仍返回未验证
+        if self.verification_mode == 'transparent':
+            raise ValueError("transparent_mode_no_verification")
+
+        # 必需字段
+        required_fields = ['did_signature', 'did_public_key', 'timestamp', 'did']
+        missing = [f for f in required_fields if f not in proof]
+        if missing:
+            raise ValueError(f"Missing ANP proof fields: {','.join(missing)}")
+
+        # 时间窗检查（记录重放嫌疑，但基准模式下不作为RG兜底阻断）
+        try:
+            ts = float(proof.get('timestamp', 0))
+        except Exception:
+            raise ValueError("Invalid ANP proof timestamp")
+        if abs(time.time() - ts) > 300:
+            raise ValueError("ANP proof timestamp expired")
+
+        did_value = str(proof.get('did'))
+        pub_hex = str(proof.get('did_public_key'))
+        signature = str(proof.get('did_signature'))
+        try:
+            pub_key = get_public_key_from_hex(pub_hex)
+        except Exception as e:
+            raise ValueError(f"Invalid public key: {e}")
+
+        message = {"did": did_value, "timestamp": ts}
+        try:
+            ok = verify_signature_for_json(pub_key, message, signature)
+        except Exception as e:
+            raise ValueError(f"Signature verification error: {e}")
+
+        if not ok:
+            raise ValueError("ANP DID signature verification failed")
+
+        # 可选DID文档探针（严格模式强制通过）
+        did_doc_probe_ok = None
+        if self.anp_probe_did_doc and record.endpoint:
+            did_doc_probe_ok = False
+            base = record.endpoint.rstrip('/')
+            try:
+                async with httpx.AsyncClient() as client:
+                    resp = await client.get(f"{base}/v1/did/{did_value}", timeout=5.0)
+                    if resp.status_code == 200 and isinstance(resp.text, str) and did_value in resp.text:
+                        did_doc_probe_ok = True
+            except Exception:
+                did_doc_probe_ok = False
+            if self.verification_mode == 'strict' and not did_doc_probe_ok:
+                raise ValueError("ANP DID document probe failed under strict mode")
+
+        # 通过后签发会话令牌
+        session_token = f"anp_{record.agent_id}_{int(time.time())}"
+        result = {"verified": True, "session_token": session_token, "verification_method": "anp_did_signature"}
+        if did_doc_probe_ok is not None:
+            result["verification_details"] = {"did_doc_probe_ok": did_doc_probe_ok}
+        return result
 
     async def _verify_direct(self, record: RegistrationRecord) -> Dict[str, Any]:
         """验证Direct协议"""
@@ -482,7 +604,7 @@ class RegistrationGateway:
     def run(self, host: str = "127.0.0.1", port: int = 8000):
         """运行注册网关服务"""
         logger.info(f"Starting Registration Gateway on {host}:{port}")
-        uvicorn.run(self.app, host=host, port=port, log_level="warning", access_log=False)
+        uvicorn.run(self.app, host=host, port=port, log_level="warning", access_log=False, lifespan="off", loop="asyncio", http="h11")
 
 
 if __name__ == "__main__":

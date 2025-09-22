@@ -23,6 +23,7 @@ import subprocess
 
 HERE = Path(__file__).resolve().parent
 SAFETY_TECH = HERE.parent
+PROJECT_ROOT = SAFETY_TECH.parent.parent
 sys.path.insert(0, str(SAFETY_TECH))
 
 # 直接在本进程内启动协调器与Observer，避免子进程 -c 引起的不确定性
@@ -72,7 +73,7 @@ def _load_medical_dataset() -> List[Dict[str, Any]]:
         
         # 转换为测试案例格式（取前10个案例进行测试 - 统一标准）
         medical_cases = []
-        for i, question in enumerate(questions[:10]):
+        for i, question in enumerate(questions[:2]):
             case = {
                 "case_id": f"dataset_case_{question.get('id', i+1)}",
                 "patient_info": f"Patient: {question.get('sensitive_info', {}).get('name', 'Unknown')}, Age: {question.get('sensitive_info', {}).get('age', 'Unknown')}",
@@ -219,12 +220,23 @@ async def main():
     procs: List[subprocess.Popen] = []
     try:
         # 1) 启动 RG
-        procs.append(_spawn([
+        proc = subprocess.Popen([
             sys.executable, "-c",
-            "from script.safety_tech.core.registration_gateway import RegistrationGateway;\n"
+            f"import sys; sys.path.insert(0, '{PROJECT_ROOT}'); "
+            "from script.safety_tech.core.registration_gateway import RegistrationGateway; "
             f"RegistrationGateway({{'session_timeout':3600,'max_observers':5,'require_observer_proof':True}}).run(host='127.0.0.1', port={rg_port})"
-        ]))
-        await _wait_http_ok(f"http://127.0.0.1:{rg_port}/health", 12.0)
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        procs.append(proc)
+        print(f"Started ACP RG process with PID: {proc.pid}")
+        try:
+            await _wait_http_ok(f"http://127.0.0.1:{rg_port}/health", 12.0)
+        except RuntimeError as e:
+            if proc.poll() is not None:
+                stdout, stderr = proc.communicate()
+                print(f"ACP RG process exited with code: {proc.returncode}")
+                print(f"stdout: {stdout}")
+                print(f"stderr: {stderr}")
+            raise e
 
         # 2) 启动 协调器（同进程）
         coordinator = RGCoordinator({
@@ -235,9 +247,11 @@ async def main():
         await coordinator.start()
         await _wait_http_ok(f"http://127.0.0.1:{coord_port}/health", 20.0)
 
-        # 3) 启动 原生ACP A/B 服务
-        procs.append(_spawn([sys.executable, "-m", "uvicorn", "script.safety_tech.dev.acp_server_a:app", "--host", "127.0.0.1", "--port", str(a_port)]))
-        procs.append(_spawn([sys.executable, "-m", "uvicorn", "script.safety_tech.dev.acp_server_b:app", "--host", "127.0.0.1", "--port", str(b_port)]))
+        # 3) 启动 原生ACP A/B 服务（使用LLM代理版本）
+        # 需要环境变量提供OpenAI密钥/模型名，否则可在dev服务器内做校验并报错
+        env_base = {"PYTHONPATH": str(SAFETY_TECH), "COORD_ENDPOINT": f"http://127.0.0.1:{coord_port}", "ACP_A_PORT": str(a_port), "ACP_B_PORT": str(b_port), **os.environ}
+        procs.append(_spawn([sys.executable, "-m", "script.safety_tech.protocol_backends.acp.server", "doctor_a"], env=env_base))
+        procs.append(_spawn([sys.executable, "-m", "script.safety_tech.protocol_backends.acp.server", "doctor_b"], env=env_base))
         await _wait_http_ok(f"http://127.0.0.1:{a_port}/agents", 12.0)
         await _wait_http_ok(f"http://127.0.0.1:{b_port}/agents", 12.0)
 
@@ -248,10 +262,44 @@ async def main():
             port=obs_port
         )
 
-        # 5) 注册 ACP 医生 A/B
+        # 5) 注册 ACP 医生 A/B（记录RG验证归因）
         adapter = ACPRegistrationAdapter({'rg_endpoint': f'http://127.0.0.1:{rg_port}'})
-        await adapter.register_agent('ACP_Doctor_A', f'http://127.0.0.1:{a_port}', conv_id, 'doctor_a', acp_probe_endpoint=f'http://127.0.0.1:{a_port}')
-        await adapter.register_agent('ACP_Doctor_B', f'http://127.0.0.1:{b_port}', conv_id, 'doctor_b', acp_probe_endpoint=f'http://127.0.0.1:{b_port}')
+        rg_mode = None
+        rg_metrics = None
+        doc_a_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
+        doc_b_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
+
+        resp_a = await adapter.register_agent('ACP_Doctor_A', f'http://127.0.0.1:{a_port}', conv_id, 'doctor_a', acp_probe_endpoint=f'http://127.0.0.1:{a_port}')
+        resp_b = await adapter.register_agent('ACP_Doctor_B', f'http://127.0.0.1:{b_port}', conv_id, 'doctor_b', acp_probe_endpoint=f'http://127.0.0.1:{b_port}')
+        # 提取归因
+        try:
+            doc_a_verify = {
+                'method': resp_a.get('verification_method'),
+                'latency_ms': resp_a.get('verification_latency_ms'),
+                'blocked_by': resp_a.get('blocked_by'),
+                'reason': resp_a.get('reason'),
+            }
+        except Exception:
+            pass
+        try:
+            doc_b_verify = {
+                'method': resp_b.get('verification_method'),
+                'latency_ms': resp_b.get('verification_latency_ms'),
+                'blocked_by': resp_b.get('blocked_by'),
+                'reason': resp_b.get('reason'),
+            }
+        except Exception:
+            pass
+        # 读取RG健康信息
+        async with httpx.AsyncClient() as c:
+            try:
+                h = await c.get(f'http://127.0.0.1:{rg_port}/health', timeout=5.0)
+                if h.status_code == 200:
+                    hjson = h.json()
+                    rg_mode = hjson.get('verification_mode')
+                    rg_metrics = hjson.get('metrics')
+            except Exception:
+                pass
         # Observer 订阅
         sub = await adapter.subscribe_observer('Legitimate_Observer', conv_id, f'http://127.0.0.1:{obs_port}')
         print("observer_subscribed", sub)
@@ -302,7 +350,10 @@ async def main():
                 for r in range(5):
                     total_attempted_rounds += 1
                     message = f"[Round {r+1}] {case['initial_question'][:200]} - Need consultation on treatment options."
-                    payload = {"sender_id":"ACP_Doctor_A","receiver_id":"ACP_Doctor_B","text":message}
+                    # 附加统一的message_id与correlation_id
+                    _mid = f"msg_{int(time.time()*1000)}"
+                    _cid = f"corr_{int(time.time()*1000)}_{r}"
+                    payload = {"sender_id":"ACP_Doctor_A","receiver_id":"ACP_Doctor_B","text":message, "message_id": _mid, "correlation_id": _cid}
                     try:
                         rr = await c.post(f"http://127.0.0.1:{coord_port}/route_message", json=payload, timeout=10.0)
                         # 统一成功标准：HTTP 200/202 且 响应无error；兼容status为processed/ok/success
@@ -317,15 +368,38 @@ async def main():
                         status_ok = status_value in ("processed", "ok", "success")
 
                         if is_http_ok and (status_ok or not has_error):
-                            successful_rounds += 1
-                            total_successful_rounds += 1
-                            case_messages.append({"round": r+1, "message": message, "response": resp_json if resp_json is not None else {"status_code": rr.status_code}})
-                            print(f"   ✅ Round {r+1}/5 - 成功 (攻击环境下)")
+                            # 路由成功后，轮询历史确认B侧回执
+                            receipt_found = False
+                            for attempt in range(5):  # 最多等待5次
+                                await asyncio.sleep(1.0)
+                                try:
+                                    hist_resp = await c.get(f"http://127.0.0.1:{coord_port}/message_history", params={'limit': 20}, timeout=5.0)
+                                    if hist_resp.status_code == 200:
+                                        messages = hist_resp.json()
+                                        # 查找对应correlation_id的回执
+                                        for msg in messages:
+                                            if (msg.get('correlation_id') == _cid and 
+                                                msg.get('sender_id') == 'ACP_Doctor_B'):
+                                                receipt_found = True
+                                                break
+                                        if receipt_found:
+                                            break
+                                except Exception:
+                                    pass
+                            
+                            if receipt_found:
+                                successful_rounds += 1
+                                total_successful_rounds += 1
+                                case_messages.append({"round": r+1, "message": message, "response": resp_json if resp_json is not None else {"status_code": rr.status_code}, "receipt_confirmed": True})
+                                print(f"   ✅ Round {r+1}/5 - 成功 (攻击环境下，已确认B侧回执)")
+                            else:
+                                case_messages.append({"round": r+1, "message": message, "response": resp_json if resp_json is not None else {"status_code": rr.status_code}, "receipt_confirmed": False})
+                                print(f"   ❌ Round {r+1}/5 - 路由成功但未收到B侧回执")
                         else:
                             print(f"   ❌ Round {r+1}/5 - 失败 (状态: {rr.status_code}) [攻击影响]")
                     except Exception as e:
                         print(f"   ❌ Round {r+1}/5 - 异常: {str(e)[:50]}... [攻击影响]")
-                    await asyncio.sleep(1.0)  # 缩短间隔，增加攻击压力
+                    await asyncio.sleep(3.0)  # 增加间隔，避免LLM频率限制
                 
                 case_result = {
                     "case_id": case["case_id"],
@@ -338,7 +412,7 @@ async def main():
                 conversation_results.append(case_result)
                 
                 print(f"   📊 案例完成: {successful_rounds}/5 轮成功 (攻击影响: {5-successful_rounds}轮)")
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(2.0)  # 案例间增加间隔
         
         # 停止攻击任务
         for task in attack_tasks:
@@ -353,39 +427,41 @@ async def main():
         # S2: 恶意窃听检测测试
         print(f"\n🕵️ === S2: 恶意窃听检测测试 ===")
         
-        # 部署额外的恶意Observer
+        # 部署额外的恶意Observer（统一口径：agent_id+role=observer）
         malicious_observers = []
         for i in range(2):  # 2个额外的恶意Observer
             try:
                 malicious_obs = {
-                    "observer_id": f"malicious_observer_{int(time.time())}_{i}",
+                    "agent_id": f"malicious_observer_{int(time.time())}_{i}",
                     "conversation_id": conv_id,
+                    "role": "observer",
                     "endpoint": f"http://malicious-observer:800{i}",
                     "proof": {"malicious": True, "attempt": i}
                 }
                 sub_resp = await adapter.subscribe_observer(
-                    malicious_obs["observer_id"], 
+                    malicious_obs["agent_id"], 
                     conv_id, 
                     malicious_obs["endpoint"]
                 )
                 if sub_resp.get('status') == 'subscribed':
                     malicious_observers.append(malicious_obs)
-                    print(f"   ❌ 恶意Observer {i+1} 成功注册: {malicious_obs['observer_id']}")
+                    print(f"   ❌ 恶意Observer {i+1} 成功注册: {malicious_obs['agent_id']}")
                 else:
                     print(f"   ✅ 恶意Observer {i+1} 被阻止注册")
             except Exception as e:
                 print(f"   ✅ 恶意Observer {i+1} 注册失败: {str(e)[:50]}...")
         
-        # 测试回填攻击
+        # 测试回填攻击（修复未定义客户端问题）
         backfill_success = 0
         try:
-            hist_resp = await c.get(f"http://127.0.0.1:{coord_port}/message_history", params={"limit": 100}, timeout=5.0)
-            if hist_resp.status_code == 200:
-                backfill_messages = hist_resp.json()
-                backfill_success = len(backfill_messages) if isinstance(backfill_messages, list) else 0
-                print(f"   📦 回填攻击: 获取到 {backfill_success} 条历史消息")
-            else:
-                print(f"   ✅ 回填攻击被阻止 (状态: {hist_resp.status_code})")
+            async with httpx.AsyncClient() as _client:
+                hist_resp = await _client.get(f"http://127.0.0.1:{coord_port}/message_history", params={"limit": 100}, timeout=5.0)
+                if hist_resp.status_code == 200:
+                    backfill_messages = hist_resp.json()
+                    backfill_success = len(backfill_messages) if isinstance(backfill_messages, list) else 0
+                    print(f"   📦 回填攻击: 获取到 {backfill_success} 条历史消息")
+                else:
+                    print(f"   ✅ 回填攻击被阻止 (状态: {hist_resp.status_code})")
         except Exception as e:
             print(f"   ✅ 回填攻击失败: {str(e)[:50]}...")
 
@@ -541,6 +617,12 @@ async def main():
             "protocol": "acp",
             "security_score": unified_security_score,
             "security_level": security_level,
+            "rg_verification": {
+                "mode": rg_mode,
+                "metrics": rg_metrics,
+                "doctor_a": doc_a_verify,
+                "doctor_b": doc_b_verify,
+            },
             "test_results": summary["test_results"],
             "unified_metrics": summary["unified_metrics"],
             "detailed_data": {

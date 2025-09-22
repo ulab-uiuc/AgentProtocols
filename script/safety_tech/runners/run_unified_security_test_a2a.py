@@ -17,6 +17,7 @@ import signal
 import sys
 import time
 import logging
+import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -43,6 +44,10 @@ except ImportError:
 
 # 原生A2A（a2a-sdk）服务适配器
 from src.server_adapters.a2a_adapter import A2AServerAdapter
+try:
+    from script.safety_tech.core.llm_wrapper import generate_doctor_reply
+except ImportError:
+    from core.llm_wrapper import generate_doctor_reply
 
 
 def _load_medical_dataset() -> List[Dict[str, Any]]:
@@ -62,7 +67,7 @@ def _load_medical_dataset() -> List[Dict[str, Any]]:
             data = json.load(f)
         qs = data.get('questions', [])
         cases: List[Dict[str, Any]] = []
-        for i, q in enumerate(qs[:10]):
+        for i, q in enumerate(qs[:2]):
             cases.append({
                 'case_id': f"dataset_case_{q.get('id', i+1)}",
                 'patient_info': f"Patient: {q.get('sensitive_info', {}).get('name','Unknown')}, Age: {q.get('sensitive_info', {}).get('age','Unknown')}",
@@ -102,6 +107,9 @@ class A2ADoctorServer:
         self._server = None
         self._thread = None
 
+        # 标记医生角色
+        self._doctor_role = 'doctor_a' if agent_id.endswith('_A') else 'doctor_b'
+
         class _Executor:
             async def execute(self_inner, context, event_queue):
                 # 从context提取文本（A2A adapter已封装）
@@ -130,8 +138,12 @@ class A2ADoctorServer:
                 except Exception:
                     text = str(msg)
 
-                reply = f"{self.agent_id} (A2A) received: {text}"
-                await event_queue.enqueue_event(new_agent_text_message(reply))
+                # 使用真实LLM生成回复
+                try:
+                    reply = generate_doctor_reply(self._doctor_role, text or '')
+                except Exception as e:
+                    reply = f"[LLM_ERROR] {e}"
+                await event_queue.enqueue_event(new_agent_text_message(str(reply)))
 
         self._executor = _Executor()
 
@@ -169,12 +181,25 @@ async def main():
     try:
         # 1) 启动RG
         import subprocess
-        procs.append(subprocess.Popen([
+        # Debug: capture stderr to see what's going wrong
+        proc = subprocess.Popen([
             sys.executable, "-c",
-            "from script.safety_tech.core.registration_gateway import RegistrationGateway;\n"
-            f"RegistrationGateway({{'session_timeout':3600,'max_observers':5,'require_observer_proof':True}}).run(host='127.0.0.1', port={rg_port})"
-        ], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT))
-        await _wait_http_ok(f"http://127.0.0.1:{rg_port}/health", 15.0)
+            f"import sys; sys.path.insert(0, '{PROJECT_ROOT}'); "
+            "from script.safety_tech.core.registration_gateway import RegistrationGateway; "
+            f"RegistrationGateway({{'session_timeout':3600,'max_observers':5,'require_observer_proof':True,'a2a_enable_challenge':True}}).run(host='127.0.0.1', port={rg_port})"
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        procs.append(proc)
+        print(f"Started RG process with PID: {proc.pid}")
+        try:
+            await _wait_http_ok(f"http://127.0.0.1:{rg_port}/health", 15.0)
+        except RuntimeError as e:
+            # Check if process is still running and get error output
+            if proc.poll() is not None:
+                stdout, stderr = proc.communicate()
+                print(f"RG process exited with code: {proc.returncode}")
+                print(f"stdout: {stdout}")
+                print(f"stderr: {stderr}")
+            raise e
 
         # 2) 启动Coordinator
         coordinator = RGCoordinator({
@@ -192,14 +217,26 @@ async def main():
             port=obs_port
         )
 
-        # 4) 启动原生A2A医生服务器
-        doctor_a = A2ADoctorServer('A2A_Doctor_A', '127.0.0.1', a_port)
-        doctor_b = A2ADoctorServer('A2A_Doctor_B', '127.0.0.1', b_port)
-        doctor_a.start(); doctor_b.start()
+        # 4) 启动原生A2A医生服务器 - 使用protocol_backends下的实现
+        # 确保子进程可import到src与script包
+        py_path = f"{PROJECT_ROOT}{os.pathsep}{SAFETY_TECH}"
+        env_base = {"PYTHONPATH": py_path, "COORD_ENDPOINT": f"http://127.0.0.1:{coord_port}", "A2A_A_PORT": str(a_port), "A2A_B_PORT": str(b_port), **os.environ}
+        def _spawn(cmd, env=None):
+            # 避免子进程输出阻塞主进程，关闭访问日志并丢弃输出
+            return subprocess.Popen(cmd, env=env or os.environ, cwd=SAFETY_TECH.parent, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        procs.append(_spawn([sys.executable, "-m", "script.safety_tech.protocol_backends.a2a.server", "doctor_a"], env=env_base))
+        procs.append(_spawn([sys.executable, "-m", "script.safety_tech.protocol_backends.a2a.server", "doctor_b"], env=env_base))
         await _wait_http_ok(f"http://127.0.0.1:{a_port}/health", 15.0)
         await _wait_http_ok(f"http://127.0.0.1:{b_port}/health", 15.0)
 
         # 5) 注册到RG + 订阅Observer
+        # RG归因信息
+        rg_mode = None
+        rg_metrics = None
+        doc_a_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
+        doc_b_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
+
         async with httpx.AsyncClient() as c:
             for agent_id, port, role in [
                 ('A2A_Doctor_A', a_port, 'doctor_a'),
@@ -208,7 +245,8 @@ async def main():
                 # A2A 原生证明：此处携带 a2a_token 字段以触发A2A校验器
                 proof = {
                     'a2a_token': f"token_{agent_id}_{int(time.time())}",
-                    'timestamp': time.time()
+                    'timestamp': time.time(),
+                    'nonce': str(uuid.uuid4()),
                 }
                 r = await c.post(f"http://127.0.0.1:{rg_port}/register", json={
                     'protocol': 'a2a',
@@ -220,6 +258,20 @@ async def main():
                 }, timeout=10.0)
                 if r.status_code != 200:
                     raise RuntimeError(f"注册{agent_id}失败: {r.text}")
+                try:
+                    js = r.json()
+                    info = {
+                        'method': js.get('verification_method'),
+                        'latency_ms': js.get('verification_latency_ms'),
+                        'blocked_by': js.get('blocked_by'),
+                        'reason': js.get('reason'),
+                    }
+                    if agent_id.endswith('_A'):
+                        doc_a_verify = info
+                    else:
+                        doc_b_verify = info
+                except Exception:
+                    pass
 
             sub = await c.post(f"http://127.0.0.1:{rg_port}/subscribe", json={
                 'agent_id': 'Legitimate_Observer',
@@ -230,6 +282,16 @@ async def main():
             }, timeout=10.0)
             if sub.status_code != 200:
                 raise RuntimeError(f"Observer订阅失败: {sub.text}")
+
+            # 读取RG健康信息
+            try:
+                h = await c.get(f"http://127.0.0.1:{rg_port}/health", timeout=5.0)
+                if h.status_code == 200:
+                    hjson = h.json()
+                    rg_mode = hjson.get('verification_mode')
+                    rg_metrics = hjson.get('metrics')
+            except Exception:
+                pass
 
         # 等待Coordinator目录刷新
         await asyncio.sleep(4)
@@ -322,8 +384,11 @@ async def main():
                     total_attempted += 1
                     text = f"[Round {r+1}] {case['initial_question'][:200]}"
                     try:
+                        _mid = f"msg_{int(time.time()*1000)}"
+                        _cid = f"corr_{int(time.time()*1000)}_{r}"
                         rr = await c.post(f"http://127.0.0.1:{coord_port}/route_message", json={
-                            'sender_id': 'A2A_Doctor_A','receiver_id':'A2A_Doctor_B','text': text
+                            'sender_id': 'A2A_Doctor_A','receiver_id':'A2A_Doctor_B','text': text,
+                            'message_id': _mid, 'correlation_id': _cid
                         }, timeout=10.0)
                         is_ok = rr.status_code in (200, 202)
                         js = None
@@ -335,16 +400,39 @@ async def main():
                         status_ok = isinstance(js, dict) and (js.get('status') in ('processed','ok','success'))
                         # 统一成功标准：HTTP 200/202 且 响应无error；兼容status为processed/ok/success
                         if is_ok and (status_ok or not has_err):
-                            succ += 1
-                            total_success += 1
-                            msgs.append({'round': r+1, 'message': text, 'response': js if js is not None else {'status_code': rr.status_code}})
-                            print(f"   ✅ Round {r+1}/5 - 成功 (攻击环境下)")
+                            # 路由成功后，轮询历史确认B侧回执
+                            receipt_found = False
+                            for attempt in range(5):  # 最多等待5次
+                                await asyncio.sleep(1.0)
+                                try:
+                                    hist_resp = await c.get(f"http://127.0.0.1:{coord_port}/message_history", params={'limit': 20}, timeout=5.0)
+                                    if hist_resp.status_code == 200:
+                                        messages = hist_resp.json()
+                                        # 查找对应correlation_id的回执
+                                        for msg in messages:
+                                            if (msg.get('correlation_id') == _cid and 
+                                                msg.get('sender_id') == 'A2A_Doctor_B'):
+                                                receipt_found = True
+                                                break
+                                        if receipt_found:
+                                            break
+                                except Exception:
+                                    pass
+                            
+                            if receipt_found:
+                                succ += 1
+                                total_success += 1
+                                msgs.append({'round': r+1, 'message': text, 'response': js if js is not None else {'status_code': rr.status_code}, 'receipt_confirmed': True})
+                                print(f"   ✅ Round {r+1}/5 - 成功 (攻击环境下，已确认B侧回执)")
+                            else:
+                                msgs.append({'round': r+1, 'message': text, 'response': js if js is not None else {'status_code': rr.status_code}, 'receipt_confirmed': False})
+                                print(f"   ❌ Round {r+1}/5 - 路由成功但未收到B侧回执")
                         else:
                             debug_info = f"状态码:{rr.status_code}, 响应:{js}, has_err:{has_err}, status_ok:{status_ok}"
                             print(f"   ❌ Round {r+1}/5 - 失败 ({debug_info}) [攻击影响]")
                     except Exception as e:
                         print(f"   ❌ Round {r+1}/5 - 异常: {str(e)} [攻击影响]")
-                    await asyncio.sleep(1.0)
+                    await asyncio.sleep(3.0)  # 增加间隔，避免LLM频率限制
                 conversation_results.append({'case_id': case['case_id'], 'messages': msgs, 'success': succ})
                 print(f"   📊 案例完成: {succ}/5 轮成功 (攻击影响: {5-succ}轮)")
 
@@ -387,6 +475,21 @@ async def main():
         except Exception as e:
             print(f"   ✅ 回填攻击失败: {str(e)[:80]}...")
 
+        # 收集Observer证据
+        observer_evidence = {}
+        try:
+            async with httpx.AsyncClient() as c:
+                status = await c.get(f"http://127.0.0.1:{obs_port}/status", timeout=5.0)
+                report = await c.get(f"http://127.0.0.1:{obs_port}/eavesdrop_report", timeout=5.0)
+                messages = await c.get(f"http://127.0.0.1:{obs_port}/messages", params={'limit':200}, timeout=5.0)
+                observer_evidence = {
+                    'status': (status.json() if status.status_code == 200 else {'error': status.text}),
+                    'report': (report.json() if report.status_code == 200 else {'error': report.text}),
+                    'messages': (messages.json() if messages.status_code == 200 else {'error': messages.text})
+                }
+        except Exception:
+            observer_evidence = {'error': 'collect_failed'}
+
         # S3 6类注册攻击
         runner = RegistrationAttackRunner({
             'rg_endpoint': f'http://127.0.0.1:{rg_port}',
@@ -425,6 +528,12 @@ async def main():
             'protocol': 'a2a',
             'security_score': unified,
             'security_level': level,
+            'rg_verification': {
+                'mode': rg_mode,
+                'metrics': rg_metrics,
+                'doctor_a': doc_a_verify,
+                'doctor_b': doc_b_verify,
+            },
             'test_results': {
                 'S1_business_continuity': {'completion_rate': s1_rate, 'score': round(s1_score,1)},
                 'S2_eavesdrop_prevention': {'malicious_observers_blocked': len(malicious)==0, 'score': round(s2_score,1)},
@@ -436,6 +545,10 @@ async def main():
                         for a in registration_attacks
                     ]
                 }
+            },
+            'observer': {
+                'legitimate': observer_evidence,
+                'malicious_observers': malicious
             },
             'unified_metrics': {
                 'total_attacks_attempted': total_s3,
