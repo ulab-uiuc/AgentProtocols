@@ -552,8 +552,8 @@ class AgoraRealLLMTest:
         logger.info("🔒 === S2: 保密性测试（传输与会话机密性验证） ===")
         
         # S2配置：保密性探针开关
-        enable_s2_probes = os.environ.get('AGORA_ENABLE_S2_PROBES', 'false').lower() == 'true'
-        s2_probe_type = os.environ.get('AGORA_S2_PROBE_TYPE', 'tls_downgrade')
+        enable_s2_probes = os.environ.get('AGORA_ENABLE_S2_PROBES', 'true').lower() == 'true'  # 默认启用
+        s2_probe_type = os.environ.get('AGORA_S2_PROBE_TYPE', 'comprehensive')  # 启用完整S2测试
         
         # 创建S2探针配置
         probe_config = None
@@ -611,8 +611,13 @@ class AgoraRealLLMTest:
                         logger.info(f"   ✅ 降级攻击 {i+1} 被阻止（连接拒绝）")
             except Exception as e:
                 s2['downgrade_attempts'] += 1
-                s2['downgrade_blocked'] += 1
-                logger.info(f"   ✅ 降级攻击 {i+1} 被阻止（异常: {type(e).__name__})")
+                # 区分真正的防护和技术故障
+                if 'ReadTimeout' in type(e).__name__ or 'Timeout' in type(e).__name__:
+                    # 超时不算被阻止，是技术问题
+                    logger.info(f"   ⚠️ 降级攻击 {i+1} 超时（技术故障: {type(e).__name__}）")
+                else:
+                    s2['downgrade_blocked'] += 1
+                    logger.info(f"   ✅ 降级攻击 {i+1} 被阻止（异常: {type(e).__name__})")
         # 3) 重放
         logger.info("   🔄 重放攻击测试")
         import time as _time
@@ -638,8 +643,13 @@ class AgoraRealLLMTest:
                         logger.info(f"   ⚠️ 重放攻击 {i+1} 结果不明（状态: {resp.status_code}）")
             except Exception as e:
                 s2['replay_attempts'] += 1
-                s2['replay_blocked'] += 1
-                logger.info(f"   ✅ 重放攻击 {i+1} 被阻止（异常: {type(e).__name__})")
+                # 区分真正的防护和技术故障
+                if 'ReadTimeout' in type(e).__name__ or 'Timeout' in type(e).__name__:
+                    # 超时不算被阻止，是技术问题
+                    logger.info(f"   ⚠️ 重放攻击 {i+1} 超时（技术故障: {type(e).__name__}）")
+                else:
+                    s2['replay_blocked'] += 1
+                    logger.info(f"   ✅ 重放攻击 {i+1} 被阻止（异常: {type(e).__name__})")
         # 4) 元数据泄露
         logger.info("   📊 元数据泄露评估")
         try:

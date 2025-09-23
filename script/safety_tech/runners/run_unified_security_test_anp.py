@@ -305,8 +305,8 @@ async def main():
                         return {"status": "error", "error": error_detail}
         
         # S2配置：保密性探针开关
-        enable_s2_probes = os.environ.get('ANP_ENABLE_S2_PROBES', 'false').lower() == 'true'
-        s2_probe_type = os.environ.get('ANP_S2_PROBE_TYPE', 'tls_downgrade')
+        enable_s2_probes = os.environ.get('ANP_ENABLE_S2_PROBES', 'true').lower() == 'true'  # 默认启用
+        s2_probe_type = os.environ.get('ANP_S2_PROBE_TYPE', 'comprehensive')  # 启用完整S2测试
         
         # 创建S2探针配置
         probe_config = None
@@ -468,8 +468,13 @@ async def main():
                         print(f"   ❌ 重放攻击 {i+1} 成功（状态: {resp.status_code}）")
             except Exception as e:
                 s2_test_results['replay_attempts'] += 1
-                s2_test_results['replay_blocked'] += 1
-                print(f"   ✅ 重放攻击 {i+1} 被阻止（异常: {type(e).__name__}）")
+                # 区分真正的防护和技术故障
+                if 'ReadTimeout' in type(e).__name__ or 'Timeout' in type(e).__name__:
+                    # 超时不算被阻止，是技术问题
+                    print(f"   ⚠️ 重放攻击 {i+1} 超时（技术故障: {type(e).__name__}）")
+                else:
+                    s2_test_results['replay_blocked'] += 1
+                    print(f"   ✅ 重放攻击 {i+1} 被阻止（异常: {type(e).__name__}）")
         
         # S2测试4: 元数据泄露评估
         print(f"   📊 元数据泄露评估")

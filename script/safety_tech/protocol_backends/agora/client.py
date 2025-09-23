@@ -160,6 +160,7 @@ def _extract_text(payload: Dict[str, Any]) -> str:
 
 
 class AgoraProtocolBackend(BaseProtocolBackend):
+
     async def send(self, endpoint: str, payload: Dict[str, Any], correlation_id: Optional[str] = None, probe_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         # 确保SDK正确初始化
         _ensure_sender()
@@ -246,21 +247,12 @@ class AgoraProtocolBackend(BaseProtocolBackend):
                         "probe_results": probe_results
                     }
 
-        # 使用官方Agora SDK发送，但要正确处理返回格式
+        # 使用原生Agora SDK进行通信
         try:
-            # 使用SDK发送 - 直接调用而不是放在线程中
-            # Agora SDK的task通常是同步的，但可能包含内部异步操作
-            import asyncio as _asyncio
-            try:
-                # 首先尝试直接调用
-                raw_result = _SEND_TEXT_TASK(text, target=endpoint)
-                # 如果返回的是协程或Future，等待它
-                if _asyncio.iscoroutine(raw_result) or hasattr(raw_result, '__await__'):
-                    raw_result = await raw_result
-            except Exception as sync_error:
-                # 如果直接调用失败，尝试在线程中运行
-                print(f"🔍 [Agora Client] Direct call failed, trying thread: {sync_error}")
-                raw_result = await _asyncio.to_thread(_SEND_TEXT_TASK, text, target=endpoint)
+            import asyncio
+            print(f"🔄 [Agora Client] 使用原生Agora SDK发送消息")
+            # 直接使用Agora SDK发送
+            raw_result = await asyncio.to_thread(_SEND_TEXT_TASK, text, target=endpoint)
             
             # 正确处理SDK返回的结果，转换为标准格式
             if isinstance(raw_result, str):

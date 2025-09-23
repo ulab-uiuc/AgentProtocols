@@ -2,8 +2,20 @@
   "protocols": {},
   "num_conversations": {
     "send_text": {
-      "http://127.0.0.1:9999": 1,
-      "http://127.0.0.1:8003": 1056
+      "http://127.0.0.1:9999": 2,
+      "http://127.0.0.1:8003": 1147,
+      "null": 1
+    },
+    "working_task": {
+      "null": 1
+    },
+    "empty_task": {
+      "null": 1
+    },
+    "network_task": {
+      "null": 1,
+      "http://127.0.0.1:8003": 1,
+      "http://localhost:9999": 1
     }
   }
 }
