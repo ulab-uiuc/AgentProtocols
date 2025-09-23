@@ -1,0 +1,39 @@
+================================================================================
+ProtoRouter Benchmark - Complete Justifications Export
+================================================================================
+
+Scenario: L1-Q1 (L1)
+Overall Result: ✅ CORRECT
+------------------------------------------------------------
+
+Module 1:
+  Result: ✅ CORRECT
+  LLM Choice: ANP
+  Ground Truth: ANP
+
+  LLM Justification:
+    The Doctor-Doctor Dialogue System requires strong identity verification and end-to-end encryption to prevent issues such as forged observer registration, forged doctor identity registration, and unauthorized message injection. ANP provides W3C DID-based identities and ECDHE-based end-to-end encryption, ensuring cross-organization trust and confidentiality. This is crucial for maintaining conversation order, context integrity, and supporting authorized audit and replay. While ANP may add integration complexity due to DID/keys lifecycle, its strong security features make it the best fit for this scenario, where identity assurance and information protection are paramount.
+
+  Ground Truth Justification:
+    ANP provides DID (Decentralized Identifier)-based identity and authorization with verifiable credentials and signatures, enabling resistance to forged registrations, unauthorized Observer subscriptions, historical backfill reads, and replay/tamper attempts.
+
+================================================================================
+
+Scenario: L1-Q2 (L1)
+Overall Result: ❌ INCORRECT
+------------------------------------------------------------
+
+Module 1:
+  Result: ❌ INCORRECT
+  LLM Choice: ACP
+  Ground Truth: A2A
+  ⚠️  A2A/ACP Confusion Detected
+
+  LLM Justification:
+    The Streaming-Queue System involves a centralized network with a Coordinator and multiple Workers, focusing on task dispatch and result collection. ACP is well-suited for structured, addressable operations with clear progress semantics, which aligns with the task dispatch and result collection process. Its REST-first model supports asynchronous communication and streaming, which can help manage high request/response latency spikes and maintain throughput under load. The simplicity and deployment flexibility of ACP make it ideal for this scenario, where the primary focus is on efficient communication behavior rather than complex multimodal interactions or strong identity management.
+
+  Ground Truth Justification:
+    A2A offers a short, lightweight communication path with minimal handshake, favoring speed in simple streaming-queue settings.
+
+================================================================================
+

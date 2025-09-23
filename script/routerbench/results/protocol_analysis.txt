@@ -1,0 +1,23 @@
+================================================================================
+ProtoRouter Benchmark - Protocol Choice Analysis
+================================================================================
+
+Protocol: ACP
+Total selections: 1 | Correct: 0 | Incorrect: 1 | Accuracy: 0.0%
+------------------------------------------------------------
+❌ Incorrect ACP Selections (1):
+  1. L1-Q2 (GT: A2A)
+     Reasoning: The Streaming-Queue System involves a centralized network with a Coordinator and multiple Workers, focusing on task dispatch and result collection. ACP is well-suited for structured, addressable operations with clear progress semantics, which aligns with the task dispatch and result collection proce...
+
+================================================================================
+
+Protocol: ANP
+Total selections: 1 | Correct: 1 | Incorrect: 0 | Accuracy: 100.0%
+------------------------------------------------------------
+
+✅ Correct ANP Selections (1):
+  1. L1-Q1 (GT: ANP)
+     Reasoning: The Doctor-Doctor Dialogue System requires strong identity verification and end-to-end encryption to prevent issues such as forged observer registration, forged doctor identity registration, and unauthorized message injection. ANP provides W3C DID-based identities and ECDHE-based end-to-end encrypti...
+
+================================================================================
+

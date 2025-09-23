@@ -1,0 +1,3151 @@
+[
+{
+    "id": "L1-Q1",
+    "description": "Single-module doctor-to-doctor dialogue system with two legitimate LLM agents (Doctor A and Doctor B) conducting multi-round consultations (e.g., 10 cases × 5 rounds per case).",
+    "modules_count": 1,
+    "module": [
+      {
+        "name": "Doctor-Doctor Dialogue System",
+        "agents": ["Doctor A", "Doctor B"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Doctor A initiates and advances consultation rounds according to case materials.",
+          "Doctor B responds per round and provides complementary reasoning.",
+          "Maintain conversation order and context integrity across rounds.",
+          "Support authorized audit and replay."
+        ],
+        "potential_issues": [
+          "Forged Observer registration or subscription attempts.",
+          "Forged doctor identity registration or message injection.",
+          "Historical message replay using stale nonce/timestamp.",
+          "Concurrent junk/probing traffic causing queue pressure or directory probing.",
+          "Unauthorized backfill reads of historical messages or scope expansion of listening.",
+          "Occasional network jitter causing retries or out-of-order delivery."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "ANP",
+        "justification": "ANP provides DID (Decentralized Identifier)-based identity and authorization with verifiable credentials and signatures, enabling resistance to forged registrations, unauthorized Observer subscriptions, historical backfill reads, and replay/tamper attempts.",
+        "behavioral_expectations": [
+          "Reject forged Observer registrations/subscriptions; maintain authorized Observer scope.",
+          "Reject forged doctor identity registrations and message injections; keep them out of the dialogue loop.",
+          "Deny unauthorized historical backfill reads; prevent leakage of prior dialogue content.",
+          "Detect and drop replayed messages with stale nonce/timestamp without breaking round progression.",
+          "Apply rate-limiting/isolations for junk/probing traffic while preserving dialogue progression.",
+          "Reconcile out-of-order/retried messages via ordering/idempotency so the dialogue completes as planned."
+        ]
+      }
+    }
+  },
+  {
+    "id": "L1-Q2",
+    "description": "Centralized five-agent streaming-queue network with one Coordinator and four Workers; tasks are simple and evaluation focuses on communication behavior.",
+    "modules_count": 1,
+    "module": [
+      {
+        "name": "Streaming-Queue System",
+        "agents": ["Coordinator", "Worker-1", "Worker-2", "Worker-3", "Worker-4"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Coordinator dispatches tasks and balances load across four Workers.",
+          "Workers process tasks and return results; Coordinator records completions.",
+          "Measure per-task response times and overall progression."
+        ],
+        "potential_issues": [
+          "High request/response latency spikes.",
+          "Reduced throughput under sustained load.",
+          "Slow task completion leading to longer makespan."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "A2A",
+        "justification": "A2A offers a short, lightweight communication path with minimal handshake, favoring speed in simple streaming-queue settings.",
+        "behavioral_expectations": [
+          "Sustain rapid request/response cycles with low median latency.",
+          "Maintain stable throughput under load.",
+          "Avoid prolonged makespan due to slow completions."
+        ]
+      }
+    }
+  },
+  {
+    "id": "L1-Q3",
+    "description": "Quorum-gated execution: a critical action must only proceed after reaching a quorum of approvals (e.g., 2-of-3), with strong ordering and auditable records.",
+    "modules_count": 1,
+    "module": [
+      {
+        "name": "Quorum-Gated Execution",
+        "agents": ["Approver-1", "Approver-2", "Approver-3", "Executor"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Collect votes from multiple approvers and enforce a quorum threshold before issuing an execution command.",
+          "Maintain strong ordering so the final decision reflects the actual sequence of approvals.",
+          "Produce an auditable trail recording who approved what and when."
+        ],
+        "potential_issues": [
+          "Out-of-order or missing approvals causing decision divergence.",
+          "Replay of old approvals leading to duplicate or unintended execution.",
+          "Network jitter creating split decisions or double-execution risks.",
+          "Insufficient auditability of the approval trail."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "Agora",
+        "justification": "Agora emphasizes a meta-protocol model with routine/consensus semantics and strong session discipline, making it suitable for quorum collection, ordering, and auditable coordination.",
+        "behavioral_expectations": [
+          "Enforce the quorum threshold before any execution is emitted.",
+          "Preserve approval ordering and prevent conflicting or double executions.",
+          "Reject replayed or expired approvals.",
+          "Emit an auditable, consistent record of the decision process."
+        ]
+      }
+    }
+  },
+  {
+    "id": "L1-Q4",
+    "description": "Low-latency broadcast from a single Publisher to multiple Subscribers; small updates must be pushed quickly and consistently.",
+    "modules_count": 1,
+    "module": [
+      {
+        "name": "Real-time Fan-out",
+        "agents": ["Publisher", "Subscriber-1", "Subscriber-2", "Subscriber-3", "Subscriber-4"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Publish frequent, small state updates.",
+          "Deliver updates to all subscribers with minimal delay.",
+          "Maintain a consistent update cadence across subscribers."
+        ],
+        "potential_issues": [
+          "Latency spikes during bursts.",
+          "Short-term throughput dips under bursty publish rates.",
+          "Slow consumers briefly delaying fan-out."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "A2A",
+        "justification": "A2A uses a lightweight path with minimal handshake overhead, making it suitable for fast fan-out of small, high-frequency updates.",
+        "behavioral_expectations": [
+          "Keep median and tail latencies low during bursts.",
+          "Maintain steady update cadence across all subscribers.",
+          "Avoid backlog accumulation caused by transient slow consumers."
+        ]
+      }
+    }
+  },
+  {
+    "id": "L1-Q5",
+    "description": "Compliance-grade audit logging between a Service and an Auditor; records require strong provenance, non-repudiation, and tamper-evidence.",
+    "modules_count": 1,
+    "module": [
+      {
+        "name": "Signed Audit Pipeline",
+        "agents": ["Service", "Auditor"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Transmit operation summaries as audit entries bound to verified identities.",
+          "Ensure entries are immutable and verifiable for compliance.",
+          "Support selective retrieval for audit queries."
+        ],
+        "potential_issues": [
+          "Unsigned or weakly-signed records lacking provenance.",
+          "Attempts to rewrite or inject historical entries.",
+          "Access by unverified or unauthorized auditors."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "ANP",
+        "justification": "ANP’s DID and verifiable-credential model provides strong identity binding and tamper-evident audit trails, enabling non-repudiation.",
+        "behavioral_expectations": [
+          "Sign every audit entry with verifiable identity binding.",
+          "Reject insertion or alteration of historical records.",
+          "Authorize read access only to verified auditors."
+        ]
+      }
+    }
+  },
+  {
+    "id": "L1-Q6",
+    "description": "Chunked artifact transfer with resume and integrity verification: a single-module Sender → Receiver workflow focused on REST-first upload state machine, backpressure, and idempotent retries.",
+    "modules_count": 1,
+    "module": [
+      {
+        "name": "Chunked Artifact Transfer",
+        "agents": ["Sender", "Receiver"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Initialize an upload session and obtain an upload_id and recommended chunk size.",
+          "Upload sequenced chunks using idempotent PUT/POST (upload_id + chunk_index/hash).",
+          "Resume from the last acknowledged offset after interruptions using Range/Content-Range.",
+          "Commit/merge and perform whole-file integrity verification with ETag/Digest.",
+          "Apply server-driven backpressure to avoid buffer overruns and timeouts."
+        ],
+        "potential_issues": [
+          "Out-of-order or lost chunks requiring retransmission and reordering.",
+          "Insufficient flow control causing sender overruns or excessive buffering.",
+          "Undetected corruption without Digest/ETag leading to integrity failures.",
+          "Inability to resume precisely from the last confirmed chunk.",
+          "Incorrect handling of HTTP status transitions (202/206/308/409/412/416)."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "ACP",
+        "justification": "ACP aligns with REST-first, resource-oriented transfer semantics: idempotent chunk PUT/POST, Range/Content-Range for resume, ETag/If-Match and Digest/Trailer for integrity, and explicit backpressure via standard HTTP behaviors.",
+        "behavioral_expectations": [
+          "Use idempotent chunk writes keyed by upload_id and chunk_index/hash.",
+          "Support precise resume from the last acknowledged offset with Range/Content-Range.",
+          "Detect and reject corrupted chunks using ETag/Digest; verify the final artifact on commit.",
+          "Expose backpressure (e.g., 429/503, delayed ACK) and prevent sender overruns.",
+          "Follow clear HTTP status transitions (202/206/308/409/412/416) throughout the upload lifecycle."
+        ]
+      }
+    }
+  },
+  {
+    "id": "L1-Q7",
+    "description": "Ephemeral micro-task request/response with minimal handshake and a single lightweight session; no REST resource modeling or manifest/negotiation is required.",
+    "modules_count": 1,
+    "module": [
+      {
+        "name": "Ephemeral Micro-Tasks",
+        "agents": ["Client", "Worker"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Issue very small requests and return results immediately.",
+          "Maintain a single lightweight, long-lived session with minimal per-message headers.",
+          "Keep median and tail latency low under short bursts without resource-oriented APIs."
+        ],
+        "potential_issues": [
+          "Per-message overhead inflating latency for tiny payloads.",
+          "Heavy session setup dominating completion time.",
+          "Burst-induced cadence drift on a lightweight session."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "A2A",
+        "justification": "A2A favors a short, lightweight link with minimal handshake and non-resource messages, aligning with one lightweight session and tiny request/response cycles.",
+        "behavioral_expectations": [
+          "Avoid resource-oriented endpoints or REST state machines.",
+          "Keep headers minimal and sustain quick turnarounds.",
+          "Hold steady cadence and low tail latency during bursts."
+        ]
+      }
+    }
+  },
+  {
+    "id": "L1-Q8",
+    "description": "Cross-organization record access where identities must be strongly verified and content must be end-to-end protected.",
+    "modules_count": 1,
+    "module": [
+      {
+        "name": "Secure Cross-Org Records",
+        "agents": ["Requester", "Records-Host"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Verify agent identities with tamper-resistant credentials.",
+          "Authorize scoped access to protected records.",
+          "Deliver records over end-to-end protected channels."
+        ],
+        "potential_issues": [
+          "Impersonation attempts or stolen tokens.",
+          "Unauthorized scope escalation for sensitive records.",
+          "Transport without end-to-end protection leaking content."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "ANP",
+        "justification": "ANP provides DID-based identity and end-to-end encrypted channels suited for cross-organization trust and privacy.",
+        "behavioral_expectations": [
+          "Bind requests to verifiable identities using DID/VC.",
+          "Enforce scoped authorization and deny over-broad access.",
+          "Ensure end-to-end confidentiality and integrity for records."
+        ]
+      }
+    }
+  },
+  {
+    "id": "L1-Q9",
+    "description": "Append-only telemetry ingestion: a Producer continuously sends medium-sized metrics batches to a Collector with stable throughput and backpressure.",
+    "modules_count": 1,
+    "module": [
+      {
+        "name": "Telemetry Ingestion",
+        "agents": ["Producer", "Collector"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Append metrics batches in a continuous stream.",
+          "Handle backpressure to keep queues bounded.",
+          "Provide acknowledgements and simple retry semantics."
+        ],
+        "potential_issues": [
+          "Throughput drops under sustained load.",
+          "Unbounded queue growth due to missing backpressure.",
+          "Retry storms and duplicated appends without idempotency."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "ACP",
+        "justification": "ACP’s REST-first framing and practical flow-control make it suitable for steady append-only streams with acknowledgements and backpressure.",
+        "behavioral_expectations": [
+          "Maintain a stable ingest rate with bounded queues.",
+          "Apply backpressure to prevent overload and timeouts.",
+          "Use idempotent appends to avoid duplicates on retry."
+        ]
+      }
+    }
+  },
+  {
+    "id": "L1-Q10",
+    "description": "Evolving schema negotiation between two heterogeneous Agents where the concrete exchange format must be locked by a protocol document.",
+    "modules_count": 1,
+    "module": [
+      {
+        "name": "Negotiated Schema Exchange",
+        "agents": ["Agent-A", "Agent-B"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Negotiate an exchange format documented as a protocol file.",
+          "Lock the session to a specific protocol hash (version).",
+          "Execute a multi-round exchange following the agreed routine."
+        ],
+        "potential_issues": [
+          "Version drift causing incompatible messages.",
+          "Ambiguous routines leading to divergent behavior.",
+          "Lack of audit trail for which protocol was executed."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "Agora",
+        "justification": "Agora’s meta-protocol model uses protocol documents and hashes to lock evolving formats and routines across heterogeneous agents.",
+        "behavioral_expectations": [
+          "Publish and select a concrete protocol document/hash.",
+          "Follow the agreed routine without divergence.",
+          "Record the selected protocol hash for auditability."
+        ]
+      }
+    }
+  },
+  {
+    "id": "L1-Q11",
+    "description": "Single-module consent token gateway: a client requests scoped access to protected records via a gateway fronting a records host.",
+    "modules_count": 1,
+    "module": [
+      {
+        "name": "Consent Token Gateway",
+        "agents": ["Client", "Records-Host"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Authenticate the client and issue a time-bound, scope-limited token for record access.",
+          "Verify the token when fetching protected fields from the records host.",
+          "Produce an audit receipt binding subject, scope, and response hash."
+        ],
+        "potential_issues": [
+          "Impersonation or stolen credentials attempting access.",
+          "Scope escalation beyond the granted consent.",
+          "Replay of expired or previously used tokens.",
+          "Content exposure on intermediate hops without confidentiality."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "ANP",
+        "justification": "ANP supports DID/VC-based identity, scoped authorization, and end-to-end protected channels suitable for consent/token workflows.",
+        "behavioral_expectations": [
+          "Bind tokens to verifiable identities and explicit consent scopes.",
+          "Enforce time-bound validity and deny replayed or tampered tokens.",
+          "Deliver over confidential channels and emit tamper-evident receipts."
+        ]
+      }
+    }
+  },
+  {
+    "id": "L1-Q12",
+    "description": "Single-module schema negotiation between two services to agree on a concrete log exchange format and routine.",
+    "modules_count": 1,
+    "module": [
+      {
+        "name": "Schema Negotiation",
+        "agents": ["Producer-Service", "Consumer-Service"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Publish a protocol document that defines fields, ordering, and error handling for log exchange.",
+          "Select and lock a specific version of the document and run a short validation exchange.",
+          "Record the chosen document/version for auditability."
+        ],
+        "potential_issues": [
+          "Version drift causing incompatible messages.",
+          "Ambiguous steps leading to divergent behavior.",
+          "Missing proof of which document/version was executed."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "Agora",
+        "justification": "Agora’s meta-protocol model uses a protocol document and hash to lock evolving formats/routines across heterogeneous services.",
+        "behavioral_expectations": [
+          "Select and bind to a concrete protocol document/hash before exchange.",
+          "Follow the routine without divergence and with clear step semantics.",
+          "Persist the chosen hash and validation records for audit."
+        ]
+      }
+    }
+  },  
+  {
+    "id": "L2-Q1",
+    "description": "Cross-organization records retrieval followed by real-time clinical fan-out; two interoperable modules complete secure fetch and rapid broadcast.",
+    "modules_count": 2,
+    "module": [
+      {
+        "name": "Cross-Org Records Gateway",
+        "agents": ["Requester", "Records-Host"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Fetch protected medical records across organizations under verified identities.",
+          "Authorize least-privilege scopes and deliver only necessary fields.",
+          "Preserve confidentiality and integrity across domains."
+        ],
+        "potential_issues": [
+          "Impersonation or stolen credentials.",
+          "Scope escalation to access unauthorized fields.",
+          "Content exposure on intermediate hops."
+        ]
+      },
+      {
+        "name": "Clinician Fan-out",
+        "agents": ["Publisher", "Subscriber-1", "Subscriber-2", "Subscriber-3", "Subscriber-4"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Broadcast small change notifications to clinician endpoints.",
+          "Maintain steady cadence and low latency for frequent updates.",
+          "Tolerate slow subscribers without stalling others."
+        ],
+        "potential_issues": [
+          "Latency spikes during bursts.",
+          "Backlog accumulation due to slow consumers.",
+          "Cadence drift under transient load."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "ANP",
+        "justification": "ANP provides DID/VC-based identity and end-to-end protected channels suited for cross-organization, privacy-sensitive record access.",
+        "behavioral_expectations": [
+          "Bind requests to verifiable identities and enforce scoped authorization.",
+          "Deliver records over end-to-end protected links.",
+          "Deny impersonation and unauthorized scope expansion."
+        ]
+      },
+      "2": {
+        "module_protocol": "A2A",
+        "justification": "A2A favors a lightweight, minimal-handshake path for small, high-frequency fan-out with steady cadence.",
+        "behavioral_expectations": [
+          "Keep median/tail latency low during bursts.",
+          "Avoid stalling on slow subscribers.",
+          "Maintain consistent update cadence."
+        ]
+      }
+    }
+  },
+  {
+    "id": "L2-Q2",
+    "description": "Large model artifact transfer followed by negotiated analysis routine; two independent systems interconnect to first deliver artifacts, then agree on an execution routine.",
+    "modules_count": 2,
+    "module": [
+      {
+        "name": "Model Artifact Transfer",
+        "agents": ["Sender", "Receiver"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Transmit a large artifact via chunking with resume and integrity checks.",
+          "Provide idempotent retries and server-driven backpressure.",
+          "Produce an auditable commit/merge result."
+        ],
+        "potential_issues": [
+          "Out-of-order/lost chunks, retry storms.",
+          "Buffer overruns without flow control.",
+          "Undetected corruption without ETag/Digest."
+        ]
+      },
+      {
+        "name": "Analysis Routine Negotiation",
+        "agents": ["Agent-A", "Agent-B"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Publish and select a protocol document describing the analysis routine.",
+          "Lock the session to a protocol hash and run a multi-round exchange.",
+          "Record which routine/version was executed for auditability."
+        ],
+        "potential_issues": [
+          "Version drift causing incompatibilities.",
+          "Ambiguous steps leading to divergent behavior.",
+          "Missing audit trail of the executed routine."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "ACP",
+        "justification": "ACP aligns with REST-first chunk transfer, idempotent POST/PUT, Range/ETag/Digest, and practical backpressure.",
+        "behavioral_expectations": [
+          "Use resource endpoints with clear status transitions.",
+          "Resume from last acknowledged offset; avoid duplicates on retry.",
+          "Verify integrity per chunk and on final commit."
+        ]
+      },
+      "2": {
+        "module_protocol": "Agora",
+        "justification": "Agora’s meta-protocol model uses protocol documents and hashes to lock evolving routines across heterogeneous agents.",
+        "behavioral_expectations": [
+          "Select and bind to a concrete protocol document/hash.",
+          "Execute the agreed routine without divergence.",
+          "Persist the selected hash for later audit."
+        ]
+      }
+    }
+  },
+  {
+    "id": "L2-Q3",
+    "description": "Quorum-gated authorization followed by bulk task dispatch and steady telemetry return.",
+    "modules_count": 2,
+    "module": [
+      {
+        "name": "Quorum Approval Gate",
+        "agents": ["Approver-1", "Approver-2", "Approver-3", "Controller"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Collect votes and enforce a quorum threshold (e.g., 2-of-3) before issuing an execution grant.",
+          "Maintain strong ordering and prevent double execution.",
+          "Produce an auditable decision trail."
+        ],
+        "potential_issues": [
+          "Out-of-order or replayed approvals.",
+          "Conflicting decisions under jitter.",
+          "Incomplete audit records."
+        ]
+      },
+      {
+        "name": "Task Dispatch & Telemetry",
+        "agents": ["Dispatcher", "Worker-1", "Worker-2", "Worker-3"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Dispatch tasks after authorization and collect results/telemetry.",
+          "Provide acknowledgements, idempotent reporting, and backpressure.",
+          "Maintain steady throughput with bounded queues."
+        ],
+        "potential_issues": [
+          "Unbounded queues without backpressure.",
+          "Duplicate reports on retry.",
+          "Throughput dips under sustained load."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "Agora",
+        "justification": "Agora allows the voting/ordering/threshold routine to be specified as a protocol document and locked via hash for reproducible audit.",
+        "behavioral_expectations": [
+          "Enforce quorum before any execution grant.",
+          "Preserve ordering and deny replayed approvals.",
+          "Record the protocol/routine selection for audit."
+        ]
+      },
+      "2": {
+        "module_protocol": "ACP",
+        "justification": "ACP provides resource endpoints, acknowledgements, idempotent POST/PUT, and rate limiting for steady dispatch and telemetry ingestion.",
+        "behavioral_expectations": [
+          "Keep queues bounded via server-driven backpressure.",
+          "Avoid duplicates with idempotent reports.",
+          "Sustain stable throughput under load."
+        ]
+      }
+    }
+  },
+  {
+    "id": "L2-Q4",
+    "description": "Latency-critical order placement followed by settlement requiring strong identity and confidentiality.",
+    "modules_count": 2,
+    "module": [
+      {
+        "name": "Order Match (Latency-Critical)",
+        "agents": ["Trader-Client", "Matcher"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Submit small, high-frequency orders and receive confirmations.",
+          "Favor minimal handshake and non-resource messages.",
+          "Maintain very low median/tail latency."
+        ],
+        "potential_issues": [
+          "Latency spikes during bursts.",
+          "Per-message overhead dominating short cycles.",
+          "Cadence drift under transient load."
+        ]
+      },
+      {
+        "name": "Settlement (Identity & Privacy)",
+        "agents": ["Payer", "Payee"],
+        "protocol_selection": {
+          "choices": ["A2A", "ANP", "ACP", "Agora"],
+          "select_exactly": 1
+        },
+        "tasks": [
+          "Settle matched orders across organizations with verifiable identities.",
+          "Enforce scoped authorization and non-repudiable records.",
+          "Deliver over end-to-end protected channels."
+        ],
+        "potential_issues": [
+          "Impersonation or record tampering.",
+          "Over-broad access scopes.",
+          "Content leakage across domains."
+        ]
+      }
+    ],
+    "ground_truth": {
+      "1": {
+        "module_protocol": "A2A",
+        "justification": "A2A’s lightweight link and minimal handshake fit small, high-frequency order flows with tight latency targets.",
+        "behavioral_expectations": [
+          "Keep per-message overhead minimal.",
+          "Hold low median/tail latency under bursts.",
+          "Avoid resource-oriented API overheads."
+        ]
+      },
+      "2": {
+        "module_protocol": "ANP",
+        "justification": "ANP offers DID/VC identities and end-to-end protection suitable for cross-organization settlement and privacy.",
+        "behavioral_expectations": [
+          "Bind settlements to verifiable identities.",
+          "Enforce scoped authorization and non-repudiation.",
+          "Protect content end-to-end across domains."
+        ]
+      }
+    }
+  },
+
+    {
+      "id": "L2-Q5",
+      "description": "Consent-driven cross-organization access followed by protocol-guided collaborative report drafting; two interoperable modules emphasizing identity/privacy and reproducible routine execution.",
+      "modules_count": 2,
+      "module": [
+        {
+          "name": "Consent & Identity Gateway",
+          "agents": ["Requester", "Consent-Host"],
+          "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+          },
+          "tasks": [
+            "Verify the requester's identity using verifiable credentials (VC) bound to a DID.",
+            "Capture explicit consent and mint a time-bound, scope-limited token tied to the DID.",
+            "Fetch only least-privilege fields and deliver them over an end-to-end protected channel.",
+            "Emit a tamper-evident access receipt (timestamp, subject DID, scope, hash of response) for audit.",
+            "Support token revocation and consent withdrawal; deny access when either is invalid."
+          ],
+          "potential_issues": [
+            "Impersonation attempts using stolen or forged credentials.",
+            "Scope escalation requests beyond the consented fields.",
+            "Clock skew causing premature expiry or unintended validity of time-bound tokens.",
+            "Token/VC revocation not propagated across organizations.",
+            "Content leakage on intermediate hops without end-to-end protection."
+          ]
+        },
+        {
+          "name": "Protocol-Guided Report Drafting",
+          "agents": ["Clinician-Agent", "Reviewer-Agent"],
+          "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+          },
+          "tasks": [
+            "Publish a concrete protocol document describing roles, steps, and tie-break rules of the drafting routine.",
+            "Lock the session to a specific protocol hash and exchange multi-round contributions accordingly.",
+            "Record which document/hash was executed and attach a decision/edits trail for audit.",
+            "Handle minor iteration (revise/accept/reject) as routine-defined states with clear transitions."
+          ],
+          "potential_issues": [
+            "Version/hash drift leading to divergent routines between participants.",
+            "Ambiguous steps or missing tie-break rules causing inconsistent outputs.",
+            "Failure to lock the routine by hash before execution (unspecified behavior).",
+            "Missing or incomplete audit trail of the executed routine and decisions."
+          ]
+        }
+      ],
+      "ground_truth": {
+        "1": {
+          "module_protocol": "ANP",
+          "justification": "ANP provides DID/VC-based identity, scoped authorization, and end-to-end protected channels aligned with consented, cross-organization access.",
+          "behavioral_expectations": [
+            "Bind requests to verifiable identities and explicit consent records.",
+            "Issue scope-limited, time-bound tokens and enforce revocation.",
+            "Deliver data over end-to-end protected links and produce tamper-evident receipts."
+          ]
+        },
+        "2": {
+          "module_protocol": "Agora",
+          "justification": "Agora locks a concrete drafting routine via a protocol document and hash, ensuring reproducibility and auditable multi-round collaboration.",
+          "behavioral_expectations": [
+            "Publish and select a protocol document and bind by hash.",
+            "Execute steps without divergence and according to tie-break rules.",
+            "Persist the selected hash and editing trail for audit."
+          ]
+        }
+      }
+    },
+    {
+      "id": "L2-Q6",
+      "description": "Secure referral handoff across organizations followed by a quorum-based acceptance routine; modules emphasize identity/privacy for transfer and auditable threshold decision-making.",
+      "modules_count": 2,
+      "module": [
+        {
+          "name": "Secure Referral Handoff",
+          "agents": ["Referrer", "Receiver-Org-Gateway"],
+          "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+          },
+          "tasks": [
+            "Exchange referral packets containing patient identifiers and minimal clinical data under verifiable identities.",
+            "Authorize least-privilege scopes specific to the receiving organization.",
+            "Protect the entire transfer end-to-end and log a verifiable receipt (hash of packet, sender/receiver DIDs, timestamp).",
+            "Reject replays of previously consumed referral packets."
+          ],
+          "potential_issues": [
+            "Impersonation of sender or receiver using stale or forged credentials.",
+            "Over-broad access scope leaking unnecessary details to the receiving org.",
+            "Tampering or replay of referral packets across federated boundaries.",
+            "Inconsistent revocation or consent status between domains."
+          ]
+        },
+        {
+          "name": "Quorum Acceptance Routine",
+          "agents": ["Approver-1", "Approver-2", "Approver-3", "Operator"],
+          "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+          },
+          "tasks": [
+            "Negotiate and lock a 2-of-3 acceptance routine via a protocol document.",
+            "Collect votes, enforce ordering, and emit a final acceptance event when the threshold is met.",
+            "Record the executed routine hash, vote timestamps, and decision trail for audit.",
+            "Reject replayed or out-of-order votes as defined by the routine."
+          ],
+          "potential_issues": [
+            "Out-of-order or replayed approvals causing double acceptance.",
+            "Ambiguous steps leading to inconsistent decisions across participants.",
+            "Missing routine/version audit trail or inability to prove which routine was followed."
+          ]
+        }
+      ],
+      "ground_truth": {
+        "1": {
+          "module_protocol": "ANP",
+          "justification": "ANP’s DID/VC identity and end-to-end channels address cross-organization security needs for sensitive referral transfers.",
+          "behavioral_expectations": [
+            "Verify both parties using DID/VC and enforce least-privilege scopes.",
+            "Protect content end-to-end and emit verifiable transfer receipts.",
+            "Detect and deny replayed or tampered referral packets."
+          ]
+        },
+        "2": {
+          "module_protocol": "Agora",
+          "justification": "Agora provides protocol-document-and-hash semantics to specify and lock quorum routines with auditable ordering and thresholds.",
+          "behavioral_expectations": [
+            "Publish and select the quorum routine; lock by hash before execution.",
+            "Prevent double acceptance and replays per routine rules.",
+            "Persist routine hash and decision records for auditability."
+          ]
+        }
+      }
+    },
+    {
+      "id": "L2-Q7",
+      "description": "Real-time alert push followed by resource-oriented archival ingestion; both modules emphasize web-native efficiency but with distinct link characteristics.",
+      "modules_count": 2,
+      "module": [
+        {
+          "name": "Low-Latency Alert Push",
+          "agents": ["Alert-Source", "Subscriber-1", "Subscriber-2"],
+          "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+          },
+          "tasks": [
+            "Push small, frequent alert messages over a single lightweight session with minimal handshake.",
+            "Maintain steady cadence and low tail latency; avoid blocking on slow subscribers.",
+            "Apply per-subscriber buffering or drop-late policy as needed to protect cadence."
+          ],
+          "potential_issues": [
+            "Latency spikes during bursts or head-of-line blocking from a slow subscriber.",
+            "Per-message overhead dominating completion time for tiny payloads.",
+            "Session churn or reconnects breaking cadence."
+          ]
+        },
+        {
+          "name": "Archival Batch Ingestion",
+          "agents": ["Batch-Producer", "Archive-Collector"],
+          "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+          },
+          "tasks": [
+            "Append medium-sized batches via resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT with idempotency keys to avoid duplicates.",
+            "Apply server-driven backpressure (e.g., 429/503, rate limiting) to keep queues bounded.",
+            "Rotate batches and expose clear status transitions for operational observability."
+          ],
+          "potential_issues": [
+            "Unbounded queues without proper backpressure.",
+            "Duplicate appends on retry without idempotency.",
+            "Throughput dips under sustained load without rate control."
+          ]
+        }
+      ],
+      "ground_truth": {
+        "1": {
+          "module_protocol": "A2A",
+          "justification": "A2A fits lightweight, minimal-handshake alert fan-out with steady cadence and low latency, avoiding resource/state-machine overheads.",
+          "behavioral_expectations": [
+            "Keep per-message headers minimal and maintain low median/tail latency.",
+            "Do not stall the session on slow subscribers; protect cadence.",
+            "Handle bursts without significant drift."
+          ]
+        },
+        "2": {
+          "module_protocol": "ACP",
+          "justification": "ACP aligns with resource-oriented batch ingestion, ACK/idempotent patterns, and server-driven backpressure for durable archival pipelines.",
+          "behavioral_expectations": [
+            "Expose resource endpoints with clear status codes and transitions.",
+            "Avoid duplicates via idempotent POST/PUT with idempotency keys.",
+            "Keep queues bounded via rate limiting and backpressure."
+          ]
+        }
+      }
+    },
+    {
+      "id": "L2-Q8",
+      "description": "Interactive micro-tool invocation followed by durable chunked log upload; split fast interaction from reliable transfer.",
+      "modules_count": 2,
+      "module": [
+        {
+          "name": "Interactive Micro-Tools",
+          "agents": ["Client", "Tool-Agent"],
+          "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+          },
+          "tasks": [
+            "Invoke tiny tools with rapid request/response cycles using a lightweight session.",
+            "Minimize per-call overhead; keep latency and jitter low under bursts.",
+            "Avoid resource/state-machine semantics for these micro-interactions."
+          ],
+          "potential_issues": [
+            "Handshake or headers dominating tiny calls.",
+            "Burst-induced spikes breaking quick turnaround.",
+            "Session churn causing cadence drift."
+          ]
+        },
+        {
+          "name": "Durable Log Upload",
+          "agents": ["Log-Producer", "Log-Store"],
+          "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+          },
+          "tasks": [
+            "Upload logs in chunked batches with resume from last acknowledged offset.",
+            "Use idempotent retries and integrity verification (e.g., ETag/Digest).",
+            "Apply server-driven backpressure/rate limiting to avoid buffer overruns and timeouts.",
+            "Expose clear status transitions and final commit for audit."
+          ],
+          "potential_issues": [
+            "Lost or out-of-order chunks without robust retry/reordering.",
+            "Silent corruption without integrity checks.",
+            "Buffer overruns without backpressure or rate control."
+          ]
+        }
+      ],
+      "ground_truth": {
+        "1": {
+          "module_protocol": "A2A",
+          "justification": "A2A suits minimal-handshake, small, interactive tool calls with fast turnaround and no resource-oriented APIs.",
+          "behavioral_expectations": [
+            "Avoid resource/state-machine overhead; keep sessions lightweight.",
+            "Hold low latency and jitter under brief bursts.",
+            "Sustain quick turnarounds without cadence drift."
+          ]
+        },
+        "2": {
+          "module_protocol": "ACP",
+          "justification": "ACP provides REST-first chunk transfer with idempotent retries, integrity checks, and practical backpressure for durable uploads.",
+          "behavioral_expectations": [
+            "Use chunked endpoints with clear status codes and transitions.",
+            "Resume precisely and avoid duplicates on retry.",
+            "Enforce integrity checks and backpressure under load."
+          ]
+        }
+      }
+    },
+    {
+        "id": "L2-Q9",
+        "description": "Dual privacy-first workflow: pathology image retrieval and consent-scoped cross-organization API call; both modules emphasize verifiable identity and end-to-end protection.",
+        "modules_count": 2,
+        "module": [
+        {
+            "name": "Pathology Image Pull",
+            "agents": ["Requester", "Image-Host"],
+            "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+            },
+            "tasks": [
+            "Retrieve pathology images under DID/VC-verifiable identities.",
+            "Return only least-privilege fields and produce a tamper-evident receipt (hash, DIDs, timestamp).",
+            "Deliver content over end-to-end protected channels across organizations."
+            ],
+            "potential_issues": [
+            "Impersonation or stolen credentials.",
+            "Scope escalation beyond least-privilege.",
+            "Replay/tampering of records across federated domains.",
+            "Revocation/consent withdrawal not propagated consistently."
+            ]
+        },
+        {
+            "name": "Consent-Scoped API Call",
+            "agents": ["Caller", "Target-Org-Gateway"],
+            "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+            },
+            "tasks": [
+            "Bind explicit consent to a time-bound, scope-limited token tied to the requester's DID.",
+            "Invoke a restricted API at the target org with end-to-end protection.",
+            "Support token/VC revocation and deny access after withdrawal."
+            ],
+            "potential_issues": [
+            "Clock skew causing token misvalidation.",
+            "Scope inflation beyond granted consent.",
+            "Content exposure on intermediate hops without E2E protection."
+            ]
+        }
+        ],
+        "ground_truth": {
+        "1": {
+            "module_protocol": "ANP",
+            "justification": "ANP provides DID/VC-based identity and end-to-end encrypted channels suitable for sensitive cross-organization retrieval with verifiable receipts.",
+            "behavioral_expectations": [
+            "Bind requests to verifiable identities and least-privilege scopes.",
+            "Emit tamper-evident receipts (hash, DIDs, timestamp).",
+            "Deny replayed or tampered pulls and enforce revocation."
+            ]
+        },
+        "2": {
+            "module_protocol": "ANP",
+            "justification": "ANP aligns with consent-scoped, time-bound authorization and E2E protection across organizations.",
+            "behavioral_expectations": [
+            "Issue scope-limited, time-bound tokens tied to DID/VC.",
+            "Enforce E2E confidentiality/integrity and deny scope escalation.",
+            "Honor revocation/withdrawal across domains."
+            ]
+        }
+        }
+    },
+    {
+        "id": "L2-Q10",
+        "description": "Dual protocol negotiation: upstream schema/routine lock-in and downstream quorum/arbitration execution; both modules rely on protocol document + hash for reproducible coordination.",
+        "modules_count": 2,
+        "module": [
+        {
+            "name": "Schema/Routine Negotiation",
+            "agents": ["Agent-A", "Agent-B"],
+            "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+            },
+            "tasks": [
+            "Publish a protocol document describing fields, steps, and exception handling.",
+            "Lock the session to a specific protocol hash and validate with examples.",
+            "Persist the selected document/hash for auditability."
+            ],
+            "potential_issues": [
+            "Version/hash drift causing incompatible messages.",
+            "Ambiguous steps leading to divergent behavior.",
+            "Execution started before hash lock-in."
+            ]
+        },
+        {
+            "name": "Quorum/Arbitration Execution",
+            "agents": ["Approver-1", "Approver-2", "Approver-3", "Coordinator"],
+            "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+            },
+            "tasks": [
+            "Execute a 2-of-3 voting/arbitration routine defined by the locked protocol document.",
+            "Enforce ordering, prevent double-execution, and emit a final decision.",
+            "Record routine hash, timestamps, and decision trail."
+            ],
+            "potential_issues": [
+            "Out-of-order/replayed approvals producing double decisions.",
+            "Tie-break ambiguity across participants.",
+            "Missing proof of which routine was executed."
+            ]
+        }
+        ],
+        "ground_truth": {
+        "1": {
+            "module_protocol": "Agora",
+            "justification": "Agora’s meta-protocol model uses protocol documents and hashes to lock evolving formats/routines across heterogeneous agents.",
+            "behavioral_expectations": [
+            "Publish/select a protocol document and bind by hash before exchange.",
+            "Follow steps without divergence and record the chosen hash.",
+            "Provide an auditable demonstration/validation log."
+            ]
+        },
+        "2": {
+            "module_protocol": "Agora",
+            "justification": "Agora allows specifying quorum routines with explicit ordering, replay rules, and a hash-locked version for auditability.",
+            "behavioral_expectations": [
+            "Enforce quorum thresholds and ordering semantics.",
+            "Reject replayed approvals and prevent double execution.",
+            "Persist routine hash and decision trail for audit."
+            ]
+        }
+        }
+    },
+    {
+        "id": "L2-Q11",
+        "description": "Dual low-latency links: market ticker fan-out and strategy feedback loop; both modules avoid REST resource modeling and favor a single lightweight session with minimal handshake.",
+        "modules_count": 2,
+        "module": [
+        {
+            "name": "Market Ticker Fan-out",
+            "agents": ["Ticker-Source", "Subscriber-1", "Subscriber-2", "Subscriber-3"],
+            "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+            },
+            "tasks": [
+            "Broadcast small, frequent updates over a single lightweight session.",
+            "Keep per-message headers minimal and maintain low median/tail latency.",
+            "Avoid stalling on slow subscribers (buffer or drop-late)."
+            ],
+            "potential_issues": [
+            "Latency spikes during bursts.",
+            "Per-message overhead dominating tiny updates.",
+            "Session churn causing cadence drift."
+            ]
+        },
+        {
+            "name": "Strategy Feedback Loop",
+            "agents": ["Strategy-Agent", "Matcher-Gateway"],
+            "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+            },
+            "tasks": [
+            "Return small strategy signals with quick acknowledgements.",
+            "Maintain rapid request/response cycles without resource-oriented APIs.",
+            "Sustain a steady cadence on a lightweight session."
+            ],
+            "potential_issues": [
+            "Handshake/header costs dominating short cycles.",
+            "Burst-induced tail latency spikes.",
+            "Cadence drift due to reconnects."
+            ]
+        }
+        ],
+        "ground_truth": {
+        "1": {
+            "module_protocol": "A2A",
+            "justification": "A2A matches minimal handshake, non-resource messages, and a single lightweight session for low-latency fan-out.",
+            "behavioral_expectations": [
+            "Avoid resource/state-machine overheads.",
+            "Protect cadence and keep tail latency low.",
+            "Do not block on slow consumers."
+            ]
+        },
+        "2": {
+            "module_protocol": "A2A",
+            "justification": "A2A suits tiny, high-frequency request/response cycles with minimal per-message headers.",
+            "behavioral_expectations": [
+            "Maintain rapid turnarounds under bursts.",
+            "Keep sessions lightweight; avoid REST modeling.",
+            "Hold steady cadence with quick acks."
+            ]
+        }
+        }
+    },
+    {
+        "id": "L2-Q12",
+        "description": "Dual engineering transfer: chunked artifact sync and batch archival ingestion; both modules are REST-first with idempotent endpoints, standard status codes, and server-driven backpressure.",
+        "modules_count": 2,
+        "module": [
+        {
+            "name": "Artifact Sync",
+            "agents": ["Sync-Sender", "Sync-Receiver"],
+            "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+            },
+            "tasks": [
+            "Use resource endpoints: init → chunk PUT/POST → status → commit.",
+            "Support resume with Range/Content-Range and integrity with ETag/Digest.",
+            "Apply server-driven backpressure (e.g., 429/503) and idempotent retries."
+            ],
+            "potential_issues": [
+            "Out-of-order/lost chunks and retry storms.",
+            "Silent corruption without integrity checks.",
+            "Queue blowups without backpressure/rate limiting."
+            ]
+        },
+        {
+            "name": "Batch Archival Ingest",
+            "agents": ["Batch-Producer", "Archive-Collector"],
+            "protocol_selection": {
+            "choices": ["A2A", "ANP", "ACP", "Agora"],
+            "select_exactly": 1
+            },
+            "tasks": [
+            "Append medium-sized batches via resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT with idempotency keys to avoid duplicates.",
+            "Expose clear status transitions and keep queues bounded via backpressure."
+            ],
+            "potential_issues": [
+            "Duplicate appends without idempotency under retries.",
+            "Unbounded queues in absence of rate control.",
+            "Throughput dips under sustained load."
+            ]
+        }
+        ],
+        "ground_truth": {
+        "1": {
+            "module_protocol": "ACP",
+            "justification": "ACP aligns with REST-first transfer, Range/ETag/Digest integrity, idempotent POST/PUT, and server-driven backpressure.",
+            "behavioral_expectations": [
+            "Follow clear status codes (e.g., 202/206/409/412/416/429/503).",
+            "Resume precisely from last acknowledged offset.",
+            "Reject corrupted chunks and sustain stable throughput."
+            ]
+        },
+        "2": {
+            "module_protocol": "ACP",
+            "justification": "ACP’s resource endpoints, acknowledgements, idempotency keys, and rate limiting match archival ingestion pipelines.",
+            "behavioral_expectations": [
+            "Expose resource endpoints with observable transitions.",
+            "Avoid duplicates via idempotent POST/PUT.",
+            "Keep queues bounded with backpressure/rate control."
+            ]
+        }
+        }
+    },
+    {
+        "id": "L3-Q1",
+        "description": "End-to-end clinical workflow: (1) cross-org consented data access, (2) real-time triage alert fan-out, (3) resource-oriented archival ingestion.",
+        "modules_count": 3,
+        "module": [
+        {
+            "name": "Consent & Data Access",
+            "agents": ["Requester", "Records-Host"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Verify identity via DID/VC and bind explicit consent to a time-bound, scope-limited token.",
+            "Retrieve least-privilege clinical fields over end-to-end protected channels.",
+            "Emit tamper-evident access receipts for audit."
+            ],
+            "potential_issues": ["Impersonation or stolen credentials.", "Scope escalation beyond consent.", "Lack of E2E protection leaking content across domains."]
+        },
+        {
+            "name": "Triage Alerts Fan-out",
+            "agents": ["Alert-Source", "Clinician-1", "Clinician-2", "Clinician-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Broadcast small, frequent triage alerts with minimal handshake over a single lightweight session.",
+            "Keep per-message headers minimal; avoid resource/state-machine semantics.",
+            "Protect cadence against slow subscribers (buffer or drop-late)."
+            ],
+            "potential_issues": ["Latency spikes during bursts.", "Session churn causing cadence drift.", "Head-of-line blocking by slow consumers."]
+        },
+        {
+            "name": "Archival Ingestion",
+            "agents": ["Archive-Producer", "Archive-Collector"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append batches via REST-first resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT and idempotency keys to avoid duplicates.",
+            "Apply server-driven backpressure (429/503) to keep queues bounded."
+            ],
+            "potential_issues": ["Unbounded queues without backpressure.", "Duplicate appends under retries without idempotency.", "Throughput dips under sustained load."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ANP", "justification": "ANP provides DID/VC-based identity, consent-scoped authorization, and end-to-end protection for cross-organization medical data.", "behavioral_expectations": ["Bind access to verifiable identities and explicit consent.", "Deliver over E2E-protected links and enforce scope/time bounds.", "Emit tamper-evident receipts and deny replays."] },
+        "2": { "module_protocol": "A2A", "justification": "A2A suits small, high-frequency alerts over a single lightweight session with minimal headers and no REST state machine.", "behavioral_expectations": ["Maintain low tail latency and steady cadence.", "Avoid blocking on slow subscribers.", "Keep per-message overhead minimal."] },
+        "3": { "module_protocol": "ACP", "justification": "ACP aligns with resource-oriented ingestion, idempotent POST/PUT, clear status codes, and server-driven backpressure.", "behavioral_expectations": ["Expose resource endpoints with observable transitions.", "Avoid duplicates via idempotency keys.", "Keep queues bounded with 429/503 rate limiting."] }
+        }
+    },
+    {
+        "id": "L3-Q2",
+        "description": "Model ops pipeline: (1) large artifact sync, (2) protocol-guided analysis routine negotiation, (3) low-latency strategy feedback.",
+        "modules_count": 3,
+        "module": [
+        {
+            "name": "Artifact Sync",
+            "agents": ["Model-Sender", "Model-Receiver"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Use REST-first endpoints: init → chunk PUT/POST → status → commit.",
+            "Resume with Range/Content-Range and verify with ETag/Digest.",
+            "Apply server-driven backpressure and idempotent retries."
+            ],
+            "potential_issues": ["Retry storms and duplicate chunks.", "Silent corruption without integrity checks.", "Queue blowups without backpressure."]
+        },
+        {
+            "name": "Routine Negotiation",
+            "agents": ["Ops-Agent", "Analysis-Agent"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Publish a protocol document describing the analysis routine.",
+            "Lock the session by protocol hash and validate steps with examples.",
+            "Persist the chosen document/hash for audit and reproducibility."
+            ],
+            "potential_issues": ["Version/hash drift causing incompatibilities.", "Ambiguous steps leading to divergent execution.", "Missing proof of which routine was executed."]
+        },
+        {
+            "name": "Strategy Feedback",
+            "agents": ["Strategy-Agent", "Controller"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Return small strategy signals with rapid request/response cycles.",
+            "Maintain a single lightweight session; avoid REST modeling.",
+            "Keep per-message headers minimal for low latency."
+            ],
+            "potential_issues": ["Handshake/header overhead dominating short cycles.", "Tail latency spikes under bursts.", "Cadence drift due to reconnects."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ACP", "justification": "ACP matches chunked transfer with Range/ETag/Digest, idempotent POST/PUT, and clear status transitions.", "behavioral_expectations": ["Follow 202/206/409/412/416/429/503 status patterns.", "Resume precisely and avoid duplicates.", "Reject corrupted chunks and sustain throughput."] },
+        "2": { "module_protocol": "Agora", "justification": "Agora’s protocol document + hash locks evolving routines across heterogeneous agents.", "behavioral_expectations": ["Bind the session to the selected protocol hash.", "Execute steps without divergence.", "Record the hash and validation logs for audit."] },
+        "3": { "module_protocol": "A2A", "justification": "A2A favors minimal handshake, non-resource messages, and a lightweight session for tiny, frequent signals.", "behavioral_expectations": ["Maintain rapid turnarounds and low tail latency.", "Avoid resource/state-machine overheads.", "Keep headers minimal under bursts."] }
+        }
+    },
+    {
+        "id": "L3-Q3",
+        "description": "Cross-org case workflow: (1) secure intake with DID/VC, (2) quorum-based approval routine, (3) REST-first evidence archiving.",
+        "modules_count": 3,
+        "module": [
+        {
+            "name": "Secure Intake",
+            "agents": ["Intake-Gateway", "External-Provider"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Authenticate parties with DID/VC and bind explicit consent.",
+            "Deliver least-privilege payloads over end-to-end protected channels.",
+            "Emit verifiable receipts for intake audits."
+            ],
+            "potential_issues": ["Impersonation or token theft.", "Scope inflation beyond consent.", "Replay/tampering across domains."]
+        },
+        {
+            "name": "Quorum Approval",
+            "agents": ["Approver-1", "Approver-2", "Approver-3", "Coordinator"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Define a 2-of-3 approval routine via a protocol document.",
+            "Lock the session by hash; enforce ordering and anti-replay.",
+            "Emit a final decision and persist the routine hash and vote trail."
+            ],
+            "potential_issues": ["Double execution from replayed approvals.", "Tie-break ambiguity causing divergence.", "Missing proof of which routine was executed."]
+        },
+        {
+            "name": "Evidence Archiving",
+            "agents": ["Case-Service", "Archive-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append evidence bundles via resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT and idempotency keys.",
+            "Apply server-driven backpressure; expose clear status transitions."
+            ],
+            "potential_issues": ["Duplicate appends on retry without idempotency.", "Unbounded queues without rate control.", "Throughput dips under sustained load."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ANP", "justification": "ANP’s DID/VC identity and E2E protection fit secure cross-organization intake with verifiable receipts.", "behavioral_expectations": ["Bind intake to verifiable identities and consent.", "Protect content end-to-end and deny scope escalation.", "Emit tamper-evident receipts; detect replays."] },
+        "2": { "module_protocol": "Agora", "justification": "Agora locks the quorum routine via protocol document + hash, enabling ordering, anti-replay, and auditability.", "behavioral_expectations": ["Enforce quorum thresholds and ordering.", "Reject replays; prevent double execution.", "Persist routine hash and vote/decision trail."] },
+        "3": { "module_protocol": "ACP", "justification": "ACP supports resource endpoints, idempotent append, and server-driven backpressure for durable archiving.", "behavioral_expectations": ["Avoid duplicates via idempotent POST/PUT.", "Keep queues bounded with 429/503 and rate limiting.", "Expose observable status transitions."] }
+        }
+    },
+    {
+        "id": "L3-Q4",
+        "description": "Trading loop: (1) market data fan-out, (2) strategy signal intake resource pipeline, (3) settlement with strong identity and confidentiality.",
+        "modules_count": 3,
+        "module": [
+        {
+            "name": "Market Data Fan-out",
+            "agents": ["Market-Source", "Sub-1", "Sub-2", "Sub-3", "Sub-4"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Broadcast tiny, high-frequency market updates over a single lightweight session.",
+            "Avoid resource-oriented APIs and keep per-message headers minimal.",
+            "Protect cadence under bursts and slow subscribers."
+            ],
+            "potential_issues": ["Latency spikes and cadence drift.", "Session churn causing jitter.", "Head-of-line blocking."]
+        },
+        {
+            "name": "Strategy Intake Pipeline",
+            "agents": ["Strategy-Emitter", "Intake-Service"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Ingest medium-sized strategy batches via REST-first resource endpoints.",
+            "Use acknowledgements and idempotent POST/PUT with idempotency keys.",
+            "Apply server-driven backpressure to keep queues bounded."
+            ],
+            "potential_issues": ["Duplicate batches without idempotency.", "Unbounded queues in absence of rate limiting.", "Throughput dips under sustained load."]
+        },
+        {
+            "name": "Settlement",
+            "agents": ["Payer", "Payee", "Clearing-Gateway"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Settle matched orders across organizations with verifiable identities.",
+            "Enforce scoped authorization and non-repudiation.",
+            "Protect content with end-to-end confidentiality and integrity."
+            ],
+            "potential_issues": ["Impersonation or record tampering.", "Over-broad scopes leaking sensitive data.", "Content exposure across domains."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "A2A", "justification": "A2A fits tiny, high-frequency fan-out with minimal handshake and non-resource messages.", "behavioral_expectations": ["Maintain low tail latency and steady cadence.", "Avoid resource/state-machine overheads.", "Do not stall on slow subscribers."] },
+        "2": { "module_protocol": "ACP", "justification": "ACP’s resource endpoints, idempotent POST/PUT, and backpressure match a durable intake pipeline.", "behavioral_expectations": ["Use idempotency keys to avoid duplicates.", "Keep queues bounded via 429/503 and rate limits.", "Expose observable status transitions."] },
+        "3": { "module_protocol": "ANP", "justification": "ANP provides DID/VC identities and end-to-end protection suitable for cross-organization settlement with non-repudiation.", "behavioral_expectations": ["Bind settlements to verifiable identities and scoped authorization.", "Ensure end-to-end confidentiality and integrity.", "Deny impersonation and tampering attempts."] }
+        }
+    },
+    {
+        "id": "L3-Q5",
+        "description": "Research-compliant workflow: (1) de-identified cross-org data access, (2) real-time cohort alert fan-out, (3) resource-oriented research archival ingestion.",
+        "modules_count": 3,
+        "module": [
+        {
+            "name": "De-identified Data Access",
+            "agents": ["Researcher", "Data-Host"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Access de-identified records under DID/VC-verifiable identities with explicit consent.",
+            "Deliver least-privilege fields over end-to-end protected channels.",
+            "Emit tamper-evident access receipts (hash, DIDs, timestamp)."
+            ],
+            "potential_issues": ["Impersonation or scope escalation.", "Content leakage without E2E protection.", "Replay or inconsistent revocation across domains."]
+        },
+        {
+            "name": "Cohort Alerts Fan-out",
+            "agents": ["Alert-Source", "Subscriber-1", "Subscriber-2"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Broadcast small, frequent cohort alerts over a single lightweight session.",
+            "Avoid resource-oriented APIs; keep headers minimal for low tail latency.",
+            "Protect cadence against slow subscribers (buffer or drop-late)."
+            ],
+            "potential_issues": ["Latency spikes during bursts.", "Session churn causing cadence drift.", "Head-of-line blocking by slow consumers."]
+        },
+        {
+            "name": "Research Archival Ingestion",
+            "agents": ["Archive-Producer", "Archive-Collector"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append batches via REST-first resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT and idempotency keys to avoid duplicates.",
+            "Apply server-driven backpressure (429/503) to keep queues bounded."
+            ],
+            "potential_issues": ["Duplicate appends on retry.", "Unbounded queues without rate control.", "Throughput dips under sustained load."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ANP", "justification": "ANP provides DID/VC identity, consent-scoped authorization, and end-to-end protection for compliant cross-organization access.", "behavioral_expectations": ["Bind to verifiable identities and explicit consent.", "Deliver over E2E-protected links.", "Emit tamper-evident receipts; deny replays."] },
+        "2": { "module_protocol": "A2A", "justification": "A2A suits small, high-frequency alerts with minimal handshake and non-resource messages for low tail latency.", "behavioral_expectations": ["Keep headers minimal; avoid REST state machines.", "Protect cadence under bursts.", "Do not stall on slow subscribers."] },
+        "3": { "module_protocol": "ACP", "justification": "ACP aligns with resource-oriented ingestion, idempotent POST/PUT, clear status codes, and server-driven backpressure.", "behavioral_expectations": ["Expose resource endpoints with observable transitions.", "Avoid duplicates via idempotency keys.", "Keep queues bounded with 429/503."] }
+        }
+    },
+    {
+        "id": "L3-Q6",
+        "description": "Supply-chain collaboration: (1) secure vendor onboarding, (2) protocol-guided contract negotiation, (3) REST-first logistics batch ingestion.",
+        "modules_count": 3,
+        "module": [
+        {
+            "name": "Secure Vendor Onboarding",
+            "agents": ["Vendor", "Onboarding-Gateway"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Verify vendor with DID/VC and transfer proofs over end-to-end protected channels.",
+            "Issue scope/time-bound authorization and emit verifiable receipts.",
+            "Detect replay and propagate revocation consistently."
+            ],
+            "potential_issues": ["Impersonation or forged credentials.", "Scope inflation beyond authorization.", "Cross-domain replay or revocation drift."]
+        },
+        {
+            "name": "Contract Negotiation",
+            "agents": ["Buyer-Agent", "Seller-Agent"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Publish a protocol document for clauses and routine (revise/accept/reject).",
+            "Lock the session to a protocol hash and record decisions for audit.",
+            "Ensure reproducibility across heterogeneous systems."
+            ],
+            "potential_issues": ["Version/hash drift causing inconsistency.", "Ambiguous tie-break rules.", "Missing proof of the executed routine."]
+        },
+        {
+            "name": "Logistics Batch Ingest",
+            "agents": ["Logistics-Producer", "Logistics-Collector"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append status batches via resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT with idempotency keys.",
+            "Apply server-driven backpressure to keep queues bounded."
+            ],
+            "potential_issues": ["Duplicates on retry without idempotency.", "Unbounded queues without rate limiting.", "Throughput dips under sustained load."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ANP", "justification": "ANP offers DID/VC and E2E protection for secure cross-organization onboarding with tamper-evident receipts.", "behavioral_expectations": ["Verify identities via DID/VC.", "Enforce scope/time bounds and emit receipts.", "Deny replays and propagate revocation."] },
+        "2": { "module_protocol": "Agora", "justification": "Agora locks contract routines via protocol document + hash for reproducible, auditable negotiation.", "behavioral_expectations": ["Select and bind by hash.", "Follow steps without divergence.", "Record decisions and the chosen hash."] },
+        "3": { "module_protocol": "ACP", "justification": "ACP’s resource endpoints, idempotency, and backpressure match durable batch ingestion.", "behavioral_expectations": ["Expose clear status transitions.", "Avoid duplicates with idempotency keys.", "Keep queues bounded via 429/503."] }
+        }
+    },
+    {
+        "id": "L3-Q7",
+        "description": "Emergency response: (1) low-latency dispatch alerts, (2) chunked field evidence upload, (3) cross-agency confidential sharing.",
+        "modules_count": 3,
+        "module": [
+        {
+            "name": "Dispatch Alerts",
+            "agents": ["Dispatch", "Unit-1", "Unit-2", "Unit-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Broadcast tiny, frequent alerts over a single lightweight session.",
+            "Avoid resource-oriented APIs; keep headers minimal for low latency.",
+            "Do not stall on slow subscribers."
+            ],
+            "potential_issues": ["Tail latency spikes during bursts.", "Session churn and cadence drift.", "Head-of-line blocking."]
+        },
+        {
+            "name": "Field Evidence Upload",
+            "agents": ["Field-Agent", "Evidence-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Upload photo/video via chunked endpoints with resume (Range/Content-Range).",
+            "Verify integrity per chunk (ETag/Digest) and use idempotent retries.",
+            "Apply server-driven backpressure to prevent buffer overruns."
+            ],
+            "potential_issues": ["Lost/out-of-order chunks.", "Silent corruption without checks.", "Queue blowups without backpressure."]
+        },
+        {
+            "name": "Cross-Agency Confidential Share",
+            "agents": ["Agency-A", "Agency-B"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Share sensitive summaries and coordinates under DID/VC.",
+            "Protect the channel end-to-end with confidentiality and integrity.",
+            "Emit verifiable transfer receipts."
+            ],
+            "potential_issues": ["Impersonation or token theft.", "Content exposure on intermediate hops.", "Replay across domains."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "A2A", "justification": "A2A matches minimal-handshake fan-out with non-resource messages and low tail latency.", "behavioral_expectations": ["Keep headers minimal; avoid REST.", "Protect cadence under bursts.", "Do not stall on slow subscribers."] },
+        "2": { "module_protocol": "ACP", "justification": "ACP aligns with chunked transfer, Range/ETag/Digest integrity, idempotent retries, and backpressure.", "behavioral_expectations": ["Resume precisely; avoid duplicates.", "Reject corrupted chunks.", "Expose clear status transitions."] },
+        "3": { "module_protocol": "ANP", "justification": "ANP provides DID/VC identity and E2E protection for cross-agency confidential exchanges.", "behavioral_expectations": ["Bind to verifiable identities.", "Ensure E2E confidentiality/integrity.", "Emit tamper-evident receipts; deny replays."] }
+        }
+    },
+    {
+        "id": "L3-Q8",
+        "description": "Education platform: (1) protected student records, (2) live Q&A chat, (3) assignment batch ingestion.",
+        "modules_count": 3,
+        "module": [
+        {
+            "name": "Protected Student Records",
+            "agents": ["Advisor", "Records-Host"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Verify identities via DID/VC and enforce least-privilege scopes.",
+            "Deliver records over end-to-end protected channels.",
+            "Emit verifiable access receipts."
+            ],
+            "potential_issues": ["Impersonation or stolen credentials.", "Scope inflation.", "Content leakage across domains."]
+        },
+        {
+            "name": "Live Q&A Chat",
+            "agents": ["Instructor", "Students"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Exchange tiny messages over a single lightweight session.",
+            "Avoid resource/state-machine semantics; keep headers minimal.",
+            "Maintain low median/tail latency during bursts."
+            ],
+            "potential_issues": ["Overhead dominating tiny messages.", "Burst-induced tail spikes.", "Cadence drift on reconnects."]
+        },
+        {
+            "name": "Assignment Batch Ingest",
+            "agents": ["Grader", "Submission-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append submissions via resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT with idempotency keys and apply backpressure.",
+            "Expose observable status transitions for operations."
+            ],
+            "potential_issues": ["Duplicate writes on retry.", "Unbounded queues.", "Throughput dips under sustained load."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ANP", "justification": "ANP fits privacy-sensitive records with DID/VC and end-to-end protection.", "behavioral_expectations": ["Bind to verifiable identities and scopes.", "Deliver over E2E-protected links.", "Emit tamper-evident receipts."] },
+        "2": { "module_protocol": "A2A", "justification": "A2A favors minimal-handshake, non-resource messages for low-latency classroom chat.", "behavioral_expectations": ["Keep headers minimal; avoid REST.", "Maintain low tail latency.", "Sustain a lightweight session under bursts."] },
+        "3": { "module_protocol": "ACP", "justification": "ACP provides resource endpoints, idempotency, and backpressure for batch ingestion.", "behavioral_expectations": ["Use idempotency keys.", "Keep queues bounded via 429/503.", "Expose status transitions."] }
+        }
+    },
+    {
+        "id": "L3-Q9",
+        "description": "Fintech risk pipeline: (1) strong KYC verification, (2) protocol-locked risk routine, (3) non-repudiable audit logging.",
+        "modules_count": 3,
+        "module": [
+        {
+            "name": "KYC Verification",
+            "agents": ["Client", "KYC-Gateway"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Verify identities via DID/VC and protect KYC packets end-to-end.",
+            "Issue scope/time-bound authorization and emit receipts.",
+            "Reject replayed or tampered packets."
+            ],
+            "potential_issues": ["Impersonation or token theft.", "Scope inflation.", "Cross-domain replay or leakage."]
+        },
+        {
+            "name": "Risk Routine Negotiation",
+            "agents": ["Risk-Engine", "Policy-Agent"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Define a risk evaluation routine via protocol document.",
+            "Lock the session by hash; record versions and validation runs.",
+            "Ensure reproducibility across systems."
+            ],
+            "potential_issues": ["Version/hash drift.", "Ambiguous steps.", "Missing proof of executed routine."]
+        },
+        {
+            "name": "Non-repudiable Audit Log",
+            "agents": ["Service", "Audit-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Emit signed audit events bound to verifiable identities.",
+            "Deliver logs over end-to-end protected channels with receipts.",
+            "Deny insertion or alteration of historical records."
+            ],
+            "potential_issues": ["Unsigned or weakly signed records.", "Tampering or replay attempts.", "Unauthorized access to logs."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ANP", "justification": "ANP provides DID/VC and E2E protection suitable for cross-organization KYC.", "behavioral_expectations": ["Verify identities and enforce scopes.", "Protect packets end-to-end.", "Emit tamper-evident receipts; deny replays."] },
+        "2": { "module_protocol": "Agora", "justification": "Agora locks risk routines via protocol document + hash for auditability and reproducibility.", "behavioral_expectations": ["Bind by hash before execution.", "Follow steps without divergence.", "Record versions and validations."] },
+        "3": { "module_protocol": "ANP", "justification": "ANP’s DID/VC and E2E channels support non-repudiation and integrity of audit logs.", "behavioral_expectations": ["Bind events to verifiable identities.", "Ensure E2E confidentiality/integrity.", "Reject alterations and replays."] }
+        }
+    },
+    {
+        "id": "L3-Q10",
+        "description": "Media platform: (1) live caption fan-out, (2) large video chunk upload, (3) content policy arbitration.",
+        "modules_count": 3,
+        "module": [
+        {
+            "name": "Live Caption Fan-out",
+            "agents": ["Caption-Source", "Viewer-1", "Viewer-2", "Viewer-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Broadcast tiny caption updates over a lightweight session with minimal headers.",
+            "Avoid resource/state-machine semantics to keep latency low.",
+            "Tolerate slow consumers without stalling others."
+            ],
+            "potential_issues": ["Tail latency spikes.", "Cadence drift on reconnects.", "Head-of-line blocking."]
+        },
+        {
+            "name": "Video Chunk Upload",
+            "agents": ["Uploader", "Media-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Upload large videos via chunked endpoints with resume and integrity checks (Range/ETag/Digest).",
+            "Use idempotent retries and apply server-driven backpressure.",
+            "Expose clear status transitions and final commit."
+            ],
+            "potential_issues": ["Lost/out-of-order chunks.", "Silent corruption without integrity.", "Queue blowups without backpressure."]
+        },
+        {
+            "name": "Content Policy Arbitration",
+            "agents": ["Moderator-1", "Moderator-2", "Coordinator"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Define and lock an arbitration routine via protocol document + hash.",
+            "Collect votes, enforce ordering, and produce a final decision.",
+            "Record routine hash and decision trail for audit."
+            ],
+            "potential_issues": ["Double execution via replays.", "Ambiguous rules causing divergence.", "Missing audit proof of executed routine."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "A2A", "justification": "A2A matches minimal-handshake fan-out for tiny, frequent captions with low tail latency.", "behavioral_expectations": ["Avoid REST/state machines.", "Keep headers minimal.", "Protect cadence under bursts."] },
+        "2": { "module_protocol": "ACP", "justification": "ACP aligns with chunked upload, Range/ETag/Digest, idempotent retries, and backpressure.", "behavioral_expectations": ["Resume precisely; avoid duplicates.", "Reject corrupted chunks.", "Expose clear status codes."] },
+        "3": { "module_protocol": "Agora", "justification": "Agora locks policy arbitration via protocol document + hash with auditability.", "behavioral_expectations": ["Bind by hash before voting.", "Enforce ordering and anti-replay.", "Persist hash and decision trail."] }
+        }
+    },
+    {
+        "id": "L3-Q11",
+        "description": "Smart city loop: (1) sensor telemetry ingestion, (2) low-latency control commands, (3) governance voting routine.",
+        "modules_count": 3,
+        "module": [
+        {
+            "name": "Sensor Telemetry Ingest",
+            "agents": ["Sensor-Hub", "Ingest-Service"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append telemetry batches via REST-first resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT and backpressure (429/503) to keep queues bounded.",
+            "Expose observable status transitions for operations."
+            ],
+            "potential_issues": ["Duplicate appends under retries.", "Unbounded queues without rate control.", "Throughput dips under sustained load."]
+        },
+        {
+            "name": "Low-latency Control Commands",
+            "agents": ["Control-Center", "Actuator-1", "Actuator-2"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Send tiny control messages over a single lightweight session with minimal handshake.",
+            "Avoid resource/state-machine semantics to reduce latency.",
+            "Maintain steady cadence and low tail latency."
+            ],
+            "potential_issues": ["Overhead dominating tiny messages.", "Tail spikes under bursts.", "Cadence drift on reconnects."]
+        },
+        {
+            "name": "Governance Voting",
+            "agents": ["Rep-1", "Rep-2", "Rep-3", "Coordinator"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Define a voting routine via protocol document and lock by hash.",
+            "Collect votes, enforce ordering, and produce a final decision.",
+            "Record routine hash and decision trail."
+            ],
+            "potential_issues": ["Replay causing double decisions.", "Ambiguous tie-break rules.", "Missing audit proof of executed routine."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ACP", "justification": "ACP provides resource endpoints, idempotent append, and backpressure for durable telemetry ingestion.", "behavioral_expectations": ["Use idempotency keys; avoid duplicates.", "Keep queues bounded via 429/503.", "Expose status transitions."] },
+        "2": { "module_protocol": "A2A", "justification": "A2A fits minimal-handshake, non-resource control messages for low latency.", "behavioral_expectations": ["Avoid REST/state machines.", "Keep headers minimal.", "Maintain steady cadence."] },
+        "3": { "module_protocol": "Agora", "justification": "Agora locks governance voting routines via protocol document + hash.",
+            "behavioral_expectations": ["Bind by hash before voting.", "Enforce ordering and anti-replay.", "Persist hash and decision trail."] }
+        }
+    },
+    {
+        "id": "L3-Q12",
+        "description": "Multi-lab collaboration: (1) dataset sync, (2) experiment protocol lock-in, (3) confidential results exchange.",
+        "modules_count": 3,
+        "module": [
+        {
+            "name": "Dataset Sync",
+            "agents": ["Lab-A", "Lab-B"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Transfer large datasets via chunked endpoints with resume (Range/Content-Range).",
+            "Verify integrity with ETag/Digest and use idempotent retries.",
+            "Apply server-driven backpressure to sustain throughput."
+            ],
+            "potential_issues": ["Lost/out-of-order chunks.", "Silent corruption without integrity.", "Queue blowups without backpressure."]
+        },
+        {
+            "name": "Experiment Protocol Lock-in",
+            "agents": ["PI-Agent", "Ops-Agent"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Publish an experiment protocol document and lock by hash.",
+            "Validate steps with examples; record the chosen hash.",
+            "Ensure reproducibility across labs."
+            ],
+            "potential_issues": ["Version/hash drift.", "Ambiguous steps causing divergence.", "Missing proof of executed protocol."]
+        },
+        {
+            "name": "Confidential Results Exchange",
+            "agents": ["Lab-A", "Lab-B"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Exchange results under DID/VC with end-to-end confidentiality and integrity.",
+            "Emit verifiable transfer receipts mapping result hashes to DIDs.",
+            "Reject replay or tampering attempts."
+            ],
+            "potential_issues": ["Impersonation or token theft.", "Content exposure across domains.", "Replay attacks."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ACP", "justification": "ACP matches chunked transfer with Range/ETag/Digest, idempotent retries, and backpressure for large datasets.", "behavioral_expectations": ["Resume precisely; avoid duplicates.", "Reject corrupted chunks.", "Expose clear status transitions."] },
+        "2": { "module_protocol": "Agora", "justification": "Agora locks experiment routines via protocol document + hash for reproducibility.", "behavioral_expectations": ["Bind by hash before execution.", "Follow steps without divergence.", "Record the chosen hash and validations."] },
+        "3": { "module_protocol": "ANP", "justification": "ANP provides DID/VC identities and end-to-end protection for confidential result exchanges.", "behavioral_expectations": ["Bind to verifiable identities and scopes.", "Ensure E2E confidentiality/integrity.", "Emit tamper-evident receipts; deny replays."] }
+        }
+    },
+
+    {
+        "id": "L4-Q1",
+        "description": "Hospital integrated flow: (1) consented EHR access, (2) OR realtime alerts, (3) imaging chunk upload, (4) protocol-locked case conference routine.",
+        "modules_count": 4,
+        "module": [
+        {
+            "name": "Consent & EHR Access",
+            "agents": ["Requester", "EHR-Host"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Verify identities via DID/VC and bind explicit consent to a time-bound, scope-limited token.",
+            "Retrieve least-privilege fields over end-to-end protected channels.",
+            "Emit tamper-evident access receipts (hash, DIDs, timestamp)."
+            ],
+            "potential_issues": [
+            "Impersonation or stolen credentials.",
+            "Scope escalation beyond consent.",
+            "Content leakage without E2E protection."
+            ]
+        },
+        {
+            "name": "OR Realtime Alerts",
+            "agents": ["OR-Event-Source", "Clinician-1", "Clinician-2"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Broadcast tiny, frequent alerts over a single lightweight session with minimal handshake.",
+            "Avoid resource/state-machine semantics to keep latency low.",
+            "Do not stall on slow subscribers (buffer or drop-late)."
+            ],
+            "potential_issues": [
+            "Tail latency spikes during bursts.",
+            "Session churn causing cadence drift.",
+            "Head-of-line blocking."
+            ]
+        },
+        {
+            "name": "Imaging Chunk Upload",
+            "agents": ["Imaging-Uploader", "PACS-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Upload large images via REST-first chunked endpoints with resume (Range/Content-Range).",
+            "Verify integrity with ETag/Digest; use idempotent retries.",
+            "Apply server-driven backpressure (429/503) and expose clear status transitions."
+            ],
+            "potential_issues": [
+            "Lost/out-of-order chunks without robust retry.",
+            "Silent corruption without integrity checks.",
+            "Queue blowups without backpressure."
+            ]
+        },
+        {
+            "name": "Case Conference Routine",
+            "agents": ["Doctor-A", "Doctor-B", "Coordinator"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Publish a protocol document for the conference agenda (rounds, scoring, arbitration).",
+            "Lock the session by protocol hash and execute multi-round steps.",
+            "Record routine hash and decisions for auditability."
+            ],
+            "potential_issues": [
+            "Version/hash drift causing divergent agendas.",
+            "Ambiguous steps leading to inconsistent outcomes.",
+            "Missing proof of which routine was executed."
+            ]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ANP", "justification": "DID/VC identities, consent-scoped authorization, and E2E protection fit cross-organization EHR access.", "behavioral_expectations": ["Bind access to verifiable identities and explicit consent.", "Deliver over E2E-protected links.", "Emit tamper-evident receipts; deny replays."] },
+        "2": { "module_protocol": "A2A", "justification": "Minimal-handshake, non-resource fan-out matches low-latency OR alerts.", "behavioral_expectations": ["Keep headers minimal; avoid REST state machines.", "Maintain steady cadence and low tail latency.", "Do not stall on slow subscribers."] },
+        "3": { "module_protocol": "ACP", "justification": "REST-first chunk transfer with Range/ETag/Digest, idempotent retries, and backpressure suits imaging uploads.", "behavioral_expectations": ["Resume precisely and avoid duplicates.", "Reject corrupted chunks.", "Expose clear status codes and transitions."] },
+        "4": { "module_protocol": "Agora", "justification": "Protocol document + hash locks multi-round conference routines for reproducibility and audit.", "behavioral_expectations": ["Bind by hash before execution.", "Follow steps without divergence.", "Persist hash and decision trail."] }
+        }
+    },
+    {
+        "id": "L4-Q2",
+        "description": "E-commerce loop: (1) cart/promo fan-out, (2) order archival ingestion, (3) fraud routine negotiation, (4) cross-organization settlement.",
+        "modules_count": 4,
+        "module": [
+        {
+            "name": "Cart/Promo Fan-out",
+            "agents": ["Event-Source", "Client-1", "Client-2", "Client-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Push tiny, frequent cart/promo updates over a lightweight session.",
+            "Avoid resource-oriented APIs; keep per-message headers minimal.",
+            "Maintain low tail latency under bursts."
+            ],
+            "potential_issues": ["Tail spikes during bursts.", "Cadence drift on reconnects.", "Head-of-line blocking by slow consumers."]
+        },
+        {
+            "name": "Order Archival Ingest",
+            "agents": ["Order-Service", "Archive-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append orders via resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT with idempotency keys.",
+            "Apply server-driven backpressure (429/503) to keep queues bounded."
+            ],
+            "potential_issues": ["Duplicate orders on retry without idempotency.", "Unbounded queues without rate limiting.", "Throughput dips under sustained load."]
+        },
+        {
+            "name": "Fraud Routine Negotiation",
+            "agents": ["Risk-Agent", "Policy-Agent"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Publish a protocol document describing scoring steps and thresholds.",
+            "Lock the session by protocol hash and validate with examples.",
+            "Persist the chosen document/hash and decision logs."
+            ],
+            "potential_issues": ["Version/hash drift causing inconsistency.", "Ambiguous steps leading to divergent decisions.", "Missing proof of executed routine."]
+        },
+        {
+            "name": "Settlement",
+            "agents": ["Merchant", "Acquirer", "Clearing-Gateway"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Settle orders across organizations under DID/VC-verifiable identities.",
+            "Enforce scoped authorization and non-repudiable records.",
+            "Deliver over end-to-end protected channels."
+            ],
+            "potential_issues": ["Impersonation or tampering.", "Over-broad scopes leaking data.", "Content exposure across domains."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "A2A", "justification": "A2A favors minimal-handshake, non-resource fan-out for tiny, frequent updates.", "behavioral_expectations": ["Keep headers minimal; avoid REST state machines.", "Maintain steady cadence and low tail latency.", "Do not stall on slow consumers."] },
+        "2": { "module_protocol": "ACP", "justification": "Resource endpoints, idempotent POST/PUT, and backpressure match durable order ingestion.", "behavioral_expectations": ["Use idempotency keys to avoid duplicates.", "Keep queues bounded via 429/503.", "Expose status transitions."] },
+        "3": { "module_protocol": "Agora", "justification": "Protocol document + hash locks fraud scoring routines for reproducibility and audit.", "behavioral_expectations": ["Bind by hash before execution.", "Follow steps without divergence.", "Record validations and decisions."] },
+        "4": { "module_protocol": "ANP", "justification": "DID/VC identities and E2E channels suit cross-organization settlement with non-repudiation.", "behavioral_expectations": ["Bind settlements to verifiable identities.", "Ensure E2E confidentiality/integrity.", "Deny impersonation and tampering."] }
+        }
+    },
+    {
+        "id": "L4-Q3",
+        "description": "V2X collaboration: (1) fleet telemetry ingest, (2) low-latency control, (3) route/right-of-way negotiation, (4) cross-fleet confidential sharing.",
+        "modules_count": 4,
+        "module": [
+        {
+            "name": "Fleet Telemetry Ingest",
+            "agents": ["Vehicle-Gateway", "Ingest-Service"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append telemetry batches via REST-first resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT and rate limiting to keep queues bounded.",
+            "Expose observable status transitions."
+            ],
+            "potential_issues": ["Duplicate appends without idempotency.", "Unbounded queues without backpressure.", "Throughput dips under sustained load."]
+        },
+        {
+            "name": "Control Low-latency",
+            "agents": ["Control-Center", "Actuator-1", "Actuator-2"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Send tiny control messages over a single lightweight session with minimal handshake.",
+            "Avoid resource/state-machine semantics to reduce latency.",
+            "Maintain steady cadence and low tail latency."
+            ],
+            "potential_issues": ["Overhead dominating tiny messages.", "Tail spikes under bursts.", "Cadence drift on reconnects."]
+        },
+        {
+            "name": "Route/Right-of-Way Negotiation",
+            "agents": ["Vehicle-A", "Vehicle-B", "Coordinator"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Publish a protocol document describing negotiation steps and conflict resolution.",
+            "Lock the session by hash and exchange multi-round proposals.",
+            "Record routine hash and decisions for audit."
+            ],
+            "potential_issues": ["Version/hash drift causing inconsistent decisions.", "Ambiguous tie-break rules.", "Missing proof of executed routine."]
+        },
+        {
+            "name": "Cross-Fleet Confidential Share",
+            "agents": ["Fleet-A", "Fleet-B"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Share sensitive summaries and coordinates under DID/VC-verifiable identities.",
+            "Protect the channel end-to-end with confidentiality and integrity.",
+            "Emit verifiable transfer receipts."
+            ],
+            "potential_issues": ["Impersonation or token theft.", "Content exposure on intermediate hops.", "Replay across domains."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ACP", "justification": "ACP fits resource-oriented telemetry ingestion with idempotency and rate-limited backpressure.", "behavioral_expectations": ["Use idempotency keys.", "Keep queues bounded via 429/503.", "Expose status transitions."] },
+        "2": { "module_protocol": "A2A", "justification": "A2A matches minimal-handshake, non-resource control messages for low latency.", "behavioral_expectations": ["Keep headers minimal; avoid REST.", "Maintain steady cadence and low tail latency.", "Handle bursts without drift."] },
+        "3": { "module_protocol": "Agora", "justification": "Protocol document + hash locks multi-round route/ROW negotiation for reproducibility.", "behavioral_expectations": ["Bind by hash before proposals.", "Follow steps without divergence.", "Persist hash and decision trail."] },
+        "4": { "module_protocol": "ANP", "justification": "DID/VC identities and E2E channels protect cross-fleet confidential exchanges.", "behavioral_expectations": ["Bind to verifiable identities.", "Ensure E2E confidentiality/integrity.", "Emit tamper-evident receipts; deny replays."] }
+        }
+    },
+    {
+        "id": "L4-Q4",
+        "description": "Research data platform (ACP×3 + A2A×1): (1) dataset sync, (2) results batch ingest, (3) ops telemetry pipeline, (4) live lab notices.",
+        "modules_count": 4,
+        "module": [
+        {
+            "name": "Dataset Sync",
+            "agents": ["Lab-Source", "Data-Lake"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Transfer large datasets via chunked endpoints with resume (Range/Content-Range).",
+            "Verify integrity with ETag/Digest; use idempotent retries.",
+            "Apply server-driven backpressure and expose status transitions."
+            ],
+            "potential_issues": ["Lost/out-of-order chunks.", "Silent corruption without integrity.", "Queue blowups without backpressure."]
+        },
+        {
+            "name": "Results Batch Ingest",
+            "agents": ["Results-Service", "Warehouse"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append result batches via resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT with idempotency keys.",
+            "Apply rate limiting (429/503) to keep queues bounded."
+            ],
+            "potential_issues": ["Duplicate batches on retry.", "Unbounded queues.", "Throughput dips under sustained load."]
+        },
+        {
+            "name": "Ops Telemetry Pipeline",
+            "agents": ["Agent-Node", "Ops-Collector"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append append-only telemetry via resource endpoints with acknowledgements.",
+            "Use idempotent writes and backpressure to stabilize throughput.",
+            "Expose observable status transitions."
+            ],
+            "potential_issues": ["Retry storms and duplicates.", "Unbounded queues without rate control.", "Throughput variability without backpressure."]
+        },
+        {
+            "name": "Live Lab Notices",
+            "agents": ["Lab-Controller", "Researcher-1", "Researcher-2"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Broadcast tiny, frequent notices over a single lightweight session.",
+            "Avoid resource/state-machine semantics; keep headers minimal.",
+            "Maintain steady cadence and low tail latency."
+            ],
+            "potential_issues": ["Tail spikes during bursts.", "Session churn causing cadence drift.", "Head-of-line blocking."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ACP", "justification": "ACP matches chunked transfer with Range/ETag/Digest, idempotent retries, and backpressure for large datasets.", "behavioral_expectations": ["Resume precisely and avoid duplicates.", "Reject corrupted chunks.", "Expose clear status codes."] },
+        "2": { "module_protocol": "ACP", "justification": "Resource endpoints, idempotency, and 429/503 backpressure fit durable batch ingestion.", "behavioral_expectations": ["Use idempotency keys to avoid duplicates.", "Keep queues bounded via rate limits.", "Expose status transitions."] },
+        "3": { "module_protocol": "ACP", "justification": "REST-first append with acknowledgements and backpressure stabilizes telemetry pipelines.", "behavioral_expectations": ["Maintain steady ingest rate.", "Bound queues with server-driven backpressure.", "Avoid duplicates via idempotent writes."] },
+        "4": { "module_protocol": "A2A", "justification": "A2A suits minimal-handshake, non-resource fan-out for live notices with low tail latency.", "behavioral_expectations": ["Keep headers minimal; avoid REST.", "Maintain cadence under bursts.", "Do not stall on slow subscribers."] }
+        }
+    },
+    {
+        "id": "L4-Q5",
+        "description": "Data governance platform: (1) PII access with strong identity, (2) realtime policy alert fan-out, (3) catalog batch ingestion, (4) audit/arbitration routine lock-in.",
+        "modules_count": 4,
+        "module": [
+        {
+            "name": "PII Access",
+            "agents": ["Analyst", "Governed-Data-Host"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Access PII under DID/VC-verifiable identities with explicit consent.",
+            "Enforce least-privilege scopes and end-to-end protection.",
+            "Emit tamper-evident access receipts (hash, DIDs, timestamp)."
+            ],
+            "potential_issues": ["Impersonation or stolen credentials.", "Scope escalation beyond consent.", "Leakage without E2E protection."]
+        },
+        {
+            "name": "Policy Alert Fan-out",
+            "agents": ["Policy-Service", "Subscriber-1", "Subscriber-2", "Subscriber-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Broadcast tiny, frequent alerts over a single lightweight session.",
+            "Avoid resource/state-machine semantics; keep headers minimal.",
+            "Protect cadence under bursts; do not stall on slow subscribers."
+            ],
+            "potential_issues": ["Tail latency spikes.", "Cadence drift on reconnects.", "Head-of-line blocking."]
+        },
+        {
+            "name": "Catalog Batch Ingest",
+            "agents": ["Catalog-Producer", "Catalog-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append entries via REST-first resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT with idempotency keys.",
+            "Apply server-driven backpressure (429/503) to keep queues bounded."
+            ],
+            "potential_issues": ["Duplicate appends on retry.", "Unbounded queues without rate control.", "Throughput dips under sustained load."]
+        },
+        {
+            "name": "Audit/Arbitration Routine",
+            "agents": ["Auditor", "Coordinator", "Stakeholder"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Publish a protocol document for dispute resolution and audit steps.",
+            "Lock the session by protocol hash; execute multi-round routine.",
+            "Record routine hash and decision trail for auditability."
+            ],
+            "potential_issues": ["Version/hash drift causing divergence.", "Ambiguous steps or tie-break rules.", "Missing proof of executed routine."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ANP", "justification": "DID/VC identities, consent-scoped authorization, and E2E protection fit PII access.", "behavioral_expectations": ["Bind to verifiable identities and explicit consent.", "Deliver over E2E-protected links.", "Emit tamper-evident receipts; deny replays."] },
+        "2": { "module_protocol": "A2A", "justification": "Minimal-handshake, non-resource fan-out suits tiny, frequent alerts with low tail latency.", "behavioral_expectations": ["Keep headers minimal; avoid REST.", "Maintain cadence under bursts.", "Do not stall on slow subscribers."] },
+        "3": { "module_protocol": "ACP", "justification": "Resource endpoints, idempotent POST/PUT, and 429/503 backpressure match durable batch ingestion.", "behavioral_expectations": ["Use idempotency keys.", "Keep queues bounded.", "Expose status transitions."] },
+        "4": { "module_protocol": "Agora", "justification": "Protocol document + hash locks arbitration routines for reproducibility and audit.", "behavioral_expectations": ["Bind by hash before execution.", "Follow steps without divergence.", "Persist hash and decision trail."] }
+        }
+    },
+    {
+        "id": "L4-Q6",
+        "description": "Streaming commerce: (1) promo/inventory fan-out, (2) order intake, (3) shipment batch ingest, (4) customer micro-session.",
+        "modules_count": 4,
+        "module": [
+        {
+            "name": "Promo/Inventory Fan-out",
+            "agents": ["Event-Source", "Client-1", "Client-2", "Client-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Push tiny, frequent updates over a single lightweight session.",
+            "Avoid resource-oriented APIs; keep per-message headers minimal.",
+            "Maintain low tail latency under bursts."
+            ],
+            "potential_issues": ["Tail spikes during bursts.", "Cadence drift on reconnects.", "Head-of-line blocking."]
+        },
+        {
+            "name": "Order Intake",
+            "agents": ["Checkout", "Orders-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append orders via REST-first resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT with idempotency keys.",
+            "Apply server-driven backpressure (429/503) to keep queues bounded."
+            ],
+            "potential_issues": ["Duplicate orders on retry.", "Unbounded queues without rate control.", "Throughput dips under sustained load."]
+        },
+        {
+            "name": "Shipment Batch Ingest",
+            "agents": ["Fulfillment", "Logistics-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append shipment updates via resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT; expose clear status transitions.",
+            "Rate limit to keep queues bounded."
+            ],
+            "potential_issues": ["Duplicate appends on retry.", "Queue blowups without backpressure.", "Inconsistent status handling."]
+        },
+        {
+            "name": "Customer Micro-Session",
+            "agents": ["Customer", "Agent-Assist"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Exchange tiny messages with quick turnarounds on a lightweight session.",
+            "Avoid REST/state machines; keep headers minimal.",
+            "Maintain steady cadence under short bursts."
+            ],
+            "potential_issues": ["Overhead dominating tiny messages.", "Tail latency spikes.", "Cadence drift on reconnects."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "A2A", "justification": "A2A fits minimal-handshake fan-out of tiny, frequent updates.", "behavioral_expectations": ["Keep headers minimal; avoid REST.", "Hold low tail latency.", "Do not stall on slow clients."] },
+        "2": { "module_protocol": "ACP", "justification": "ACP’s resource endpoints, idempotency, and backpressure suit order intake.", "behavioral_expectations": ["Use idempotency keys.", "Keep queues bounded via 429/503.", "Expose status transitions."] },
+        "3": { "module_protocol": "ACP", "justification": "Durable batch ingestion matches ACP’s REST-first, idempotent POST/PUT, and rate limiting.", "behavioral_expectations": ["Avoid duplicates.", "Rate limit/backpressure queues.", "Provide observable states."] },
+        "4": { "module_protocol": "A2A", "justification": "A2A suits micro interactive sessions with minimal overhead.", "behavioral_expectations": ["Avoid resource APIs.", "Keep latency/jitter low.", "Maintain cadence under bursts."] }
+        }
+    },
+    {
+        "id": "L4-Q7",
+        "description": "Clinical research: (1) consented data pull, (2) live study updates, (3) lab note archival, (4) signed non-repudiable results.",
+        "modules_count": 4,
+        "module": [
+        {
+            "name": "Consented Data Pull",
+            "agents": ["Researcher", "Records-Host"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Verify identities via DID/VC; bind explicit consent to scope/time-bound tokens.",
+            "Deliver least-privilege fields over E2E-protected links.",
+            "Emit tamper-evident access receipts."
+            ],
+            "potential_issues": ["Impersonation.", "Scope escalation.", "Leakage without E2E."]
+        },
+        {
+            "name": "Live Study Updates",
+            "agents": ["Study-Service", "PI", "Coordinator"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Broadcast tiny updates on a single lightweight session.",
+            "Avoid REST/state machines; keep headers minimal.",
+            "Protect cadence under bursts."
+            ],
+            "potential_issues": ["Tail spikes.", "Cadence drift.", "Head-of-line blocking."]
+        },
+        {
+            "name": "Lab Note Archival",
+            "agents": ["Lab-App", "Archive-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append notes via REST-first resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT; apply rate limiting/backpressure.",
+            "Expose clear status transitions."
+            ],
+            "potential_issues": ["Duplicates on retry.", "Unbounded queues.", "Throughput dips."]
+        },
+        {
+            "name": "Signed Results",
+            "agents": ["Lab", "Repository"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Bind results to DID/VC identities with signatures.",
+            "Exchange over end-to-end protected channels.",
+            "Emit verifiable receipts mapping hashes to DIDs."
+            ],
+            "potential_issues": ["Unsigned/weakly signed results.", "Tampering or replay.", "Unauthorized access."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ANP", "justification": "ANP provides DID/VC identities and E2E protection for consented data pulls.", "behavioral_expectations": ["Verify identities and consent.", "Deliver E2E.", "Emit tamper-evident receipts."] },
+        "2": { "module_protocol": "A2A", "justification": "A2A suits tiny, frequent updates with minimal handshake.", "behavioral_expectations": ["Avoid REST.", "Keep headers minimal.", "Maintain cadence."] },
+        "3": { "module_protocol": "ACP", "justification": "ACP fits resource-oriented archival with idempotency and backpressure.", "behavioral_expectations": ["Use idempotency keys.", "Keep queues bounded.", "Expose status transitions."] },
+        "4": { "module_protocol": "ANP", "justification": "ANP supports signed, non-repudiable exchanges over E2E channels.", "behavioral_expectations": ["Bind to DIDs.", "Ensure E2E integrity/confidentiality.", "Record verifiable receipts."] }
+        }
+    },
+    {
+        "id": "L4-Q8",
+        "description": "Multiplayer gaming backend: (1) match status fan-out, (2) runtime telemetry ingest, (3) patch chunk upload, (4) anti-cheat key exchange.",
+        "modules_count": 4,
+        "module": [
+        {
+            "name": "Match Status Fan-out",
+            "agents": ["Matchmaker", "Player-1", "Player-2", "Player-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Broadcast tiny status updates on a lightweight session.",
+            "Avoid resource APIs; keep headers minimal.",
+            "Protect cadence under bursts."
+            ],
+            "potential_issues": ["Tail spikes.", "Session churn.", "Slow consumers."]
+        },
+        {
+            "name": "Runtime Telemetry Ingest",
+            "agents": ["Game-Node", "Telemetry-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append telemetry via resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT; apply backpressure.",
+            "Expose observable status transitions."
+            ],
+            "potential_issues": ["Duplicates on retry.", "Unbounded queues.", "Throughput dips."]
+        },
+        {
+            "name": "Patch Chunk Upload",
+            "agents": ["Patch-Uploader", "Patch-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Upload patches via chunked endpoints with resume (Range/Content-Range).",
+            "Verify integrity with ETag/Digest; use idempotent retries.",
+            "Apply server-driven backpressure to prevent overruns."
+            ],
+            "potential_issues": ["Lost/out-of-order chunks.", "Silent corruption.", "Queue blowups."]
+        },
+        {
+            "name": "Anti-cheat Key Exchange",
+            "agents": ["Client", "Security-Gateway"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Exchange keys under DID/VC identities.",
+            "Protect channels end-to-end with confidentiality and integrity.",
+            "Emit verifiable receipts."
+            ],
+            "potential_issues": ["Impersonation.", "Leakage across domains.", "Replay attacks."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "A2A", "justification": "A2A matches minimal-handshake, non-resource fan-out for low-latency status.", "behavioral_expectations": ["Keep headers minimal.", "Avoid REST state machines.", "Maintain cadence."] },
+        "2": { "module_protocol": "ACP", "justification": "ACP fits resource-oriented telemetry ingestion with idempotency and backpressure.", "behavioral_expectations": ["Use idempotency keys.", "Bound queues via 429/503.", "Expose status transitions."] },
+        "3": { "module_protocol": "ACP", "justification": "Chunked upload with Range/ETag/Digest and idempotent retries matches ACP.", "behavioral_expectations": ["Resume precisely.", "Reject corrupted chunks.", "Apply backpressure."] },
+        "4": { "module_protocol": "ANP", "justification": "ANP provides DID/VC and E2E protection for secure key exchanges.", "behavioral_expectations": ["Bind to verifiable identities.", "Ensure E2E integrity/confidentiality.", "Emit receipts; deny replays."] }
+        }
+    },
+    {
+        "id": "L4-Q9",
+        "description": "Public service flow: (1) citizen intake, (2) quorum process, (3) archival, (4) notifications; all four distinct.",
+        "modules_count": 4,
+        "module": [
+        {
+            "name": "Citizen Intake",
+            "agents": ["Citizen", "Service-Gateway"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Authenticate with DID/VC and capture consent.",
+            "Deliver least-privilege payload over E2E links.",
+            "Emit verifiable receipts."
+            ],
+            "potential_issues": ["Impersonation.", "Scope inflation.", "Leakage without E2E."]
+        },
+        {
+            "name": "Quorum Process",
+            "agents": ["Officer-1", "Officer-2", "Officer-3", "Coordinator"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Define and lock a 2-of-3 routine via protocol document + hash.",
+            "Collect votes; enforce ordering and anti-replay.",
+            "Persist routine hash and decision trail."
+            ],
+            "potential_issues": ["Double decisions via replays.", "Ambiguous tie-break rules.", "Missing audit proof."]
+        },
+        {
+            "name": "Archival",
+            "agents": ["Case-Service", "Archive-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append records via resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT; apply backpressure.",
+            "Expose status transitions for operations."
+            ],
+            "potential_issues": ["Duplicates on retry.", "Unbounded queues.", "Throughput dips."]
+        },
+        {
+            "name": "Notifications",
+            "agents": ["Notifier", "Subscriber-1", "Subscriber-2", "Subscriber-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Broadcast tiny updates over a lightweight session.",
+            "Avoid REST/state machines; keep headers minimal.",
+            "Maintain low tail latency."
+            ],
+            "potential_issues": ["Tail spikes.", "Cadence drift.", "Head-of-line blocking."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ANP", "justification": "DID/VC identities and E2E channels fit citizen intake.", "behavioral_expectations": ["Verify identities and consent.", "Deliver over E2E.", "Emit receipts; deny replays."] },
+        "2": { "module_protocol": "Agora", "justification": "Protocol document + hash locks quorum routines for auditability.", "behavioral_expectations": ["Bind by hash.", "Enforce ordering/anti-replay.", "Persist decision trail."] },
+        "3": { "module_protocol": "ACP", "justification": "ACP suits resource-oriented archival with idempotency/backpressure.", "behavioral_expectations": ["Use idempotency keys.", "Keep queues bounded.", "Expose status transitions."] },
+        "4": { "module_protocol": "A2A", "justification": "A2A suits minimal-handshake, non-resource notifications with low latency.", "behavioral_expectations": ["Keep headers minimal.", "Avoid REST.", "Maintain cadence."] }
+        }
+    },
+    {
+        "id": "L4-Q10",
+        "description": "Industrial IoT: (1) sensor ingest, (2) control dispatch, (3) firmware OTA chunk, (4) inter-plant confidential share.",
+        "modules_count": 4,
+        "module": [
+        {
+            "name": "Sensor Ingest",
+            "agents": ["Sensor-Gateway", "Ingest-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append telemetry via resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT; apply backpressure (429/503).",
+            "Expose observable status transitions."
+            ],
+            "potential_issues": ["Duplicates on retry.", "Unbounded queues.", "Throughput dips."]
+        },
+        {
+            "name": "Control Dispatch",
+            "agents": ["Control-Center", "Actuator-1", "Actuator-2", "Actuator-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Send tiny control messages over a single lightweight session.",
+            "Avoid resource/state-machine semantics for low latency.",
+            "Maintain steady cadence and low tail latency."
+            ],
+            "potential_issues": ["Overhead dominating tiny messages.", "Tail spikes.", "Cadence drift on reconnects."]
+        },
+        {
+            "name": "Firmware OTA Chunk",
+            "agents": ["OTA-Service", "Device-Fleet"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Upload firmware via chunked endpoints with resume (Range/Content-Range).",
+            "Verify integrity with ETag/Digest; use idempotent retries.",
+            "Apply server-driven backpressure and expose status codes."
+            ],
+            "potential_issues": ["Lost/out-of-order chunks.", "Silent corruption.", "Queue blowups without backpressure."]
+        },
+        {
+            "name": "Inter-plant Confidential Share",
+            "agents": ["Plant-A", "Plant-B"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Exchange sensitive summaries under DID/VC.",
+            "Protect the link end-to-end for confidentiality and integrity.",
+            "Emit verifiable transfer receipts."
+            ],
+            "potential_issues": ["Impersonation.", "Leakage across domains.", "Replay attempts."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ACP", "justification": "ACP fits resource-oriented ingestion with idempotency and backpressure.", "behavioral_expectations": ["Use idempotency keys.", "Keep queues bounded.", "Expose status transitions."] },
+        "2": { "module_protocol": "A2A", "justification": "A2A fits minimal-handshake control messages for low latency.", "behavioral_expectations": ["Avoid REST/state machines.", "Keep headers minimal.", "Maintain cadence."] },
+        "3": { "module_protocol": "ACP", "justification": "Chunked OTA with Range/ETag/Digest and idempotent retries matches ACP.", "behavioral_expectations": ["Resume precisely.", "Reject corrupted chunks.", "Apply backpressure."] },
+        "4": { "module_protocol": "ANP", "justification": "ANP provides DID/VC identities and E2E protection for inter-plant confidential exchange.", "behavioral_expectations": ["Bind to verifiable identities.", "Ensure E2E integrity/confidentiality.", "Emit receipts; deny replays."] }
+        }
+    },
+    {
+        "id": "L4-Q11",
+        "description": "Media pipeline: (1) live captions, (2) video chunk upload, (3) content archival, (4) policy arbitration.",
+        "modules_count": 4,
+        "module": [
+        {
+            "name": "Live Captions",
+            "agents": ["Captioner", "Viewer-1", "Viewer-2", "Viewer-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Broadcast tiny captions over a lightweight session with minimal headers.",
+            "Avoid resource/state-machine semantics to keep latency low.",
+            "Tolerate slow consumers without stalling others."
+            ],
+            "potential_issues": ["Tail spikes.", "Cadence drift on reconnects.", "Head-of-line blocking."]
+        },
+        {
+            "name": "Video Chunk Upload",
+            "agents": ["Uploader", "Media-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Upload large videos via chunked endpoints with resume and integrity checks.",
+            "Use idempotent retries; apply server-driven backpressure.",
+            "Expose clear status transitions and final commit."
+            ],
+            "potential_issues": ["Lost/out-of-order chunks.", "Silent corruption.", "Queue blowups."]
+        },
+        {
+            "name": "Content Archival",
+            "agents": ["Media-Service", "Archive-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append content bundles via resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT; expose observable states.",
+            "Apply rate limiting/backpressure to keep queues bounded."
+            ],
+            "potential_issues": ["Duplicate appends on retry.", "Unbounded queues.", "Throughput dips."]
+        },
+        {
+            "name": "Policy Arbitration",
+            "agents": ["Moderator-1", "Moderator-2", "Coordinator"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Define an arbitration routine via protocol document and lock by hash.",
+            "Collect votes; enforce ordering and anti-replay.",
+            "Record routine hash and decision trail for audit."
+            ],
+            "potential_issues": ["Double execution via replays.", "Ambiguous rules.", "Missing audit proof."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "A2A", "justification": "A2A matches minimal-handshake caption fan-out with low latency.", "behavioral_expectations": ["Avoid REST.", "Keep headers minimal.", "Maintain cadence."] },
+        "2": { "module_protocol": "ACP", "justification": "ACP fits chunked upload with resume, integrity, and backpressure.", "behavioral_expectations": ["Resume precisely.", "Reject corrupt chunks.", "Expose status codes."] },
+        "3": { "module_protocol": "ACP", "justification": "Resource endpoints, idempotency, and backpressure suit archival pipelines.", "behavioral_expectations": ["Use idempotency keys.", "Keep queues bounded.", "Provide observable transitions."] },
+        "4": { "module_protocol": "Agora", "justification": "Protocol document + hash locks arbitration for reproducibility and audit.", "behavioral_expectations": ["Bind by hash.", "Enforce ordering/anti-replay.", "Persist decision trail."] }
+        }
+    },
+    {
+        "id": "L4-Q12",
+        "description": "Finance analytics loop: (1) market broadcast, (2) ETL batch ingest, (3) strategy feedback, (4) settlement.",
+        "modules_count": 4,
+        "module": [
+        {
+            "name": "Market Broadcast",
+            "agents": ["Ticker", "Sub-1", "Sub-2", "Sub-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Broadcast tiny, high-frequency ticks over a lightweight session.",
+            "Avoid resource APIs; keep headers minimal for low tail latency.",
+            "Protect cadence under bursts."
+            ],
+            "potential_issues": ["Tail spikes.", "Cadence drift.", "Slow subscribers."]
+        },
+        {
+            "name": "ETL Batch Ingest",
+            "agents": ["ETL-Producer", "Warehouse"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append batches via resource endpoints with acknowledgements.",
+            "Use idempotent POST/PUT; apply backpressure.",
+            "Expose status transitions for operations."
+            ],
+            "potential_issues": ["Duplicates on retry.", "Unbounded queues.", "Throughput dips under sustained load."]
+        },
+        {
+            "name": "Strategy Feedback",
+            "agents": ["Strategy-Node", "Controller"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Return tiny strategy signals with quick turnarounds on a lightweight session.",
+            "Avoid REST/state machines; keep headers minimal.",
+            "Maintain low median/tail latency."
+            ],
+            "potential_issues": ["Overhead dominating tiny calls.", "Tail spikes during bursts.", "Cadence drift on reconnects."]
+        },
+        {
+            "name": "Settlement",
+            "agents": ["Payer", "Payee", "Clearing-Gateway"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Settle across organizations with DID/VC-verifiable identities.",
+            "Enforce scoped authorization and non-repudiation.",
+            "Deliver over end-to-end protected channels."
+            ],
+            "potential_issues": ["Impersonation or tampering.", "Over-broad scopes.", "Content exposure across domains."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "A2A", "justification": "A2A fits minimal-handshake, non-resource broadcast with low tail latency.", "behavioral_expectations": ["Keep headers minimal; avoid REST.", "Maintain cadence.", "Handle bursts gracefully."] },
+        "2": { "module_protocol": "ACP", "justification": "ACP supports resource endpoints, idempotency, and backpressure for ETL ingestion.", "behavioral_expectations": ["Use idempotency keys.", "Keep queues bounded via 429/503.", "Expose status transitions."] },
+        "3": { "module_protocol": "A2A", "justification": "A2A suits tiny, frequent feedback signals on a lightweight session.", "behavioral_expectations": ["Avoid REST/state machines.", "Keep latency/jitter low.", "Maintain steady cadence."] },
+        "4": { "module_protocol": "ANP", "justification": "ANP provides DID/VC identities and E2E protection for settlement.", "behavioral_expectations": ["Bind to verifiable identities.", "Ensure E2E confidentiality/integrity.", "Deny impersonation/tampering."] }
+        }
+    },
+
+    {
+        "id": "L5-Q1",
+        "description": "An enterprise data mesh flow with five stages: cross-organization inbound access, change notifications, large dataset transfer, warehouse ingestion, and governance review.",
+        "modules_count": 5,
+        "module": [
+        {
+            "name": "Consented Inbound",
+            "agents": ["Requester", "Data-Host"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Verify identities and capture explicit consent tied to time-bound, scope-limited tokens.",
+            "Retrieve least-privilege fields over protected channels.",
+            "Emit tamper-evident access receipts."
+            ],
+            "potential_issues": ["Impersonation or stolen credentials.", "Scope escalation beyond consent.", "Content exposure across domains."]
+        },
+        {
+            "name": "Product-Change Notifications",
+            "agents": ["Catalog-Service", "Consumer-1", "Consumer-2", "Consumer-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Send small, frequent change notices to multiple consumers.",
+            "Maintain steady cadence with low median/tail latency.",
+            "Isolate slow recipients to avoid stalling others."
+            ],
+            "potential_issues": ["Burst-induced latency spikes.", "Cadence drift due to reconnects.", "Backlog buildup from slow consumers."]
+        },
+        {
+            "name": "Massive Dataset Transfer",
+            "agents": ["Lake-Producer", "Lake-Receiver"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Transfer large artifacts in chunks with resume capability.",
+            "Provide integrity verification per chunk and at final commit.",
+            "Support idempotent retries and flow control."
+            ],
+            "potential_issues": ["Out-of-order/lost chunks.", "Silent corruption without integrity checks.", "Queue blowups without backpressure."]
+        },
+        {
+            "name": "Warehouse Batch Ingestion",
+            "agents": ["ETL-Job", "Warehouse"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append batches with acknowledgements and observable status.",
+            "Use idempotent writes to avoid duplicates on retry.",
+            "Apply rate limiting/backpressure to keep queues bounded."
+            ],
+            "potential_issues": ["Duplicate appends on retry.", "Unbounded queues without rate control.", "Throughput dips under sustained load."]
+        },
+        {
+            "name": "Governance Review",
+            "agents": ["Steward", "Coordinator", "Reviewer"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Publish a concrete review routine describing checks and exceptions.",
+            "Bind the session to a specific routine version and execute multi-round checks.",
+            "Record chosen version and decision trail for audit."
+            ],
+            "potential_issues": ["Version drift causing inconsistency.", "Ambiguous steps leading to divergent outcomes.", "Missing proof of executed routine."]
+        }
+        ],
+        "ground_truth": {
+        "1": {
+            "module_protocol": "ANP",
+            "justification": "DID/VC identity, consent-scoped authorization, and end-to-end protection fit cross-organization inbound access.",
+            "behavioral_expectations": ["Verify identities and consent.", "Deliver over protected links.", "Emit tamper-evident receipts; deny replays."]
+        },
+        "2": {
+            "module_protocol": "A2A",
+            "justification": "Lightweight, minimal-handshake messaging suits frequent small change notifications with tight latency goals.",
+            "behavioral_expectations": ["Keep headers minimal.", "Maintain cadence under bursts.", "Avoid stalling on slow recipients."]
+        },
+        "3": {
+            "module_protocol": "ACP",
+            "justification": "Chunked transfer with resume/integrity and server-side flow control aligns with large dataset movement.",
+            "behavioral_expectations": ["Resume precisely and avoid duplicates.", "Reject corrupted chunks.", "Apply backpressure for stability."]
+        },
+        "4": {
+            "module_protocol": "ACP",
+            "justification": "Resource-oriented batch ingestion benefits from idempotent writes, status codes, and backpressure.",
+            "behavioral_expectations": ["Use idempotency keys.", "Keep queues bounded.", "Expose observable transitions."]
+        },
+        "5": {
+            "module_protocol": "Agora",
+            "justification": "A protocol document + hash can lock a multi-round governance routine for reproducibility and audit.",
+            "behavioral_expectations": ["Bind by version/hash before execution.", "Follow steps without divergence.", "Persist decision trail."]
+        }
+        }
+    },
+    {
+        "id": "L5-Q2",
+        "description": "A high-frequency trading risk loop with five stages: market broadcast, micro order intake, ETL archival, audit logging, and dispute resolution.",
+        "modules_count": 5,
+        "module": [
+        {
+            "name": "Market Broadcast",
+            "agents": ["Ticker", "Sub-1", "Sub-2", "Sub-3", "Sub-4"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Distribute tiny, frequent updates with quick turnarounds.",
+            "Keep per-message overhead minimal to protect latency.",
+            "Avoid blocking on slow subscribers."
+            ],
+            "potential_issues": ["Tail latency spikes during bursts.", "Cadence drift on reconnects.", "Head-of-line blocking."]
+        },
+        {
+            "name": "Micro Orders",
+            "agents": ["Client", "Order-Gateway"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Accept small request/response cycles with minimal overhead.",
+            "Maintain steady cadence during short bursts.",
+            "Provide quick acknowledgements."
+            ],
+            "potential_issues": ["Handshake/header costs dominate short cycles.", "Latency spikes under bursts.", "Session churn causing jitter."]
+        },
+        {
+            "name": "ETL Archival",
+            "agents": ["ETL-Producer", "Archive-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append batches with acknowledgements and observable status.",
+            "Use idempotent writes to avoid duplicates on retry.",
+            "Apply backpressure/rate limiting to keep queues bounded."
+            ],
+            "potential_issues": ["Duplicates on retry.", "Unbounded queues.", "Throughput variability without flow control."]
+        },
+        {
+            "name": "Audit Logging",
+            "agents": ["Service", "Audit-Repo"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Bind events to verifiable identities with signatures.",
+            "Deliver logs over protected channels with receipts.",
+            "Deny insertion/alteration of historical entries."
+            ],
+            "potential_issues": ["Unsigned or weakly signed events.", "Tampering or replay.", "Unauthorized access."]
+        },
+        {
+            "name": "Dispute Resolution",
+            "agents": ["Risk-Desk", "Compliance", "Coordinator"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Define a concrete resolution routine and select a specific version.",
+            "Execute multi-round steps and record decisions.",
+            "Keep an auditable log of the chosen routine."
+            ],
+            "potential_issues": ["Version drift causing inconsistency.", "Ambiguous steps or tie-breaks.", "Missing proof of executed routine."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "A2A", "justification": "Minimal-handshake, non-resource messages suit tiny high-frequency market updates.", "behavioral_expectations": ["Keep headers minimal.", "Protect cadence and tail latency.", "Avoid stalls on slow subscribers."] },
+        "2": { "module_protocol": "A2A", "justification": "Lightweight request/response cycles align with micro order intake latency targets.", "behavioral_expectations": ["Minimize overhead.", "Provide quick acks.", "Maintain cadence under bursts."] },
+        "3": { "module_protocol": "ACP", "justification": "Batch append benefits from idempotent writes, status codes, and server-driven backpressure.", "behavioral_expectations": ["Use idempotency keys.", "Keep queues bounded.", "Expose status transitions."] },
+        "4": { "module_protocol": "ANP", "justification": "Verifiable identities and protected channels support non-repudiable audit logs.", "behavioral_expectations": ["Bind events to identities.", "Ensure E2E integrity/confidentiality.", "Emit verifiable receipts; deny replays."] },
+        "5": { "module_protocol": "Agora", "justification": "A protocol document + hash can lock a dispute routine for reproducibility and audit.", "behavioral_expectations": ["Bind by version/hash.", "Follow steps without divergence.", "Persist decision trail."] }
+        }
+    },
+    {
+        "id": "L5-Q3",
+        "description": "A large-scale media pipeline with five stages: live interaction, chunked upload, batch ingestion, CDN logs, and confidential rights exchange.",
+        "modules_count": 5,
+        "module": [
+        {
+            "name": "Live Interaction",
+            "agents": ["Live-Service", "Viewer-1", "Viewer-2", "Viewer-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Exchange tiny messages with quick turnarounds.",
+            "Keep message headers minimal to protect latency.",
+            "Avoid stalling on slow consumers."
+            ],
+            "potential_issues": ["Tail spikes during bursts.", "Cadence drift on reconnects.", "Head-of-line blocking."]
+        },
+        {
+            "name": "Video Chunk Upload",
+            "agents": ["Uploader", "Media-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Upload large videos in chunks with resume support.",
+            "Verify integrity per chunk and at commit; retry idempotently.",
+            "Apply server-driven backpressure."
+            ],
+            "potential_issues": ["Lost/out-of-order chunks.", "Undetected corruption.", "Queue blowups without flow control."]
+        },
+        {
+            "name": "Transcode/Thumbnail Ingest",
+            "agents": ["Media-Worker", "Archive-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append medium-sized batches with acknowledgements.",
+            "Use idempotent writes; expose observable status.",
+            "Rate limit to keep queues bounded."
+            ],
+            "potential_issues": ["Duplicate appends on retry.", "Unbounded queues.", "Throughput dips under sustained load."]
+        },
+        {
+            "name": "CDN Logs Intake",
+            "agents": ["CDN-Exporter", "Billing-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Ingest append-only logs with acknowledgements.",
+            "Apply backpressure and idempotent appends.",
+            "Offer observable status transitions."
+            ],
+            "potential_issues": ["Retry storms and duplicates.", "Queue blowups without backpressure.", "Latency variability under load."]
+        },
+        {
+            "name": "Rights Exchange",
+            "agents": ["Platform", "Rights-Holder"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Exchange takedown/ownership directives with verifiable identities.",
+            "Protect content and directives over confidential channels.",
+            "Emit receipts mapping directive hashes to identities."
+            ],
+            "potential_issues": ["Impersonation or token theft.", "Content exposure across domains.", "Replay or tampering attempts."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "A2A", "justification": "Tiny, frequent interactions benefit from minimal-handshake messaging for low tail latency.", "behavioral_expectations": ["Keep headers minimal.", "Maintain cadence under bursts.", "Avoid stalls from slow consumers."] },
+        "2": { "module_protocol": "ACP", "justification": "Chunked upload with resume and integrity checks aligns with resource-oriented transfer and backpressure.", "behavioral_expectations": ["Resume precisely; avoid duplicates.", "Reject corrupted chunks.", "Apply server-driven flow control."] },
+        "3": { "module_protocol": "ACP", "justification": "Batch ingestion favors idempotent writes, status codes, and bounded queues.", "behavioral_expectations": ["Use idempotency keys.", "Expose status transitions.", "Rate limit to stability."] },
+        "4": { "module_protocol": "ACP", "justification": "Append-only log intake benefits from idempotent appends and backpressure.", "behavioral_expectations": ["Avoid duplicates on retry.", "Keep queues bounded.", "Provide observable states."] },
+        "5": { "module_protocol": "ANP", "justification": "DID/VC identities and protected channels support confidential rights directives and receipts.", "behavioral_expectations": ["Bind directives to identities.", "Ensure confidentiality/integrity.", "Emit verifiable receipts; deny replays."] }
+        }
+    },
+    {
+        "id": "L5-Q4",
+        "description": "An end-to-end emergency workflow with five stages: field telemetry, command dispatch, evidence transfer, inter-agency exchange, and quorum approval.",
+        "modules_count": 5,
+        "module": [
+        {
+            "name": "Field Telemetry",
+            "agents": ["Edge-Unit", "Ops-Ingest"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Append batches from the field with acknowledgements.",
+            "Use idempotent writes and backpressure to stabilize throughput.",
+            "Expose observable status transitions."
+            ],
+            "potential_issues": ["Duplicates on retry.", "Unbounded queues without rate control.", "Throughput dips under sustained load."]
+        },
+        {
+            "name": "Command Dispatch",
+            "agents": ["Command-Center", "Responder-1", "Responder-2", "Responder-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Send tiny commands with minimal overhead and quick acknowledgements.",
+            "Maintain low latency and steady cadence during bursts.",
+            "Avoid blocking on slow recipients."
+            ],
+            "potential_issues": ["Per-message overhead dominating short cycles.", "Tail latency spikes.", "Cadence drift on reconnects."]
+        },
+        {
+            "name": "Evidence Transfer",
+            "agents": ["Field-Agent", "Evidence-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Upload photos/videos in chunks with resume capability.",
+            "Verify integrity and support idempotent retries.",
+            "Apply flow control to prevent buffer overruns."
+            ],
+            "potential_issues": ["Lost/out-of-order chunks.", "Undetected corruption.", "Queue blowups without backpressure."]
+        },
+        {
+            "name": "Inter-agency Exchange",
+            "agents": ["Agency-A", "Agency-B"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Share sensitive summaries and coordinates with verifiable identities.",
+            "Protect content over confidential channels.",
+            "Produce verifiable transfer receipts."
+            ],
+            "potential_issues": ["Impersonation or token theft.", "Exposure across domains.", "Replay attempts."]
+        },
+        {
+            "name": "Quorum Approval",
+            "agents": ["Approver-1", "Approver-2", "Approver-3", "Coordinator"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": [
+            "Define a threshold routine, bind to a specific version, and execute multi-round voting.",
+            "Enforce ordering and anti-replay semantics.",
+            "Record routine version and decision trail for audit."
+            ],
+            "potential_issues": ["Double decisions via replays.", "Ambiguous tie-break rules.", "Missing proof of executed routine."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ACP", "justification": "Batch telemetry intake benefits from idempotent writes, observable status, and backpressure.", "behavioral_expectations": ["Use idempotency keys.", "Bound queues via rate limits.", "Expose status transitions."] },
+        "2": { "module_protocol": "A2A", "justification": "Minimal-handshake messaging suits tiny commands with tight latency goals.", "behavioral_expectations": ["Keep headers minimal.", "Maintain cadence under bursts.", "Avoid stalling on slow recipients."] },
+        "3": { "module_protocol": "ACP", "justification": "Chunked evidence transfer with resume/integrity aligns with resource-oriented flow control.", "behavioral_expectations": ["Resume precisely; avoid duplicates.", "Reject corrupted chunks.", "Apply backpressure."] },
+        "4": { "module_protocol": "ANP", "justification": "Verifiable identities and protected channels fit confidential inter-agency exchanges.", "behavioral_expectations": ["Bind to identities.", "Ensure confidentiality/integrity.", "Emit receipts; deny replays."] },
+        "5": { "module_protocol": "Agora", "justification": "A versioned routine document supports reproducible quorum voting with auditability.", "behavioral_expectations": ["Bind by version before voting.", "Enforce ordering and anti-replay.", "Persist decision trail."] }
+        }
+    }, 
+
+    {
+        "id": "L5-Q5",
+        "description": "A cross-cloud data orchestration flow with five stages: inbound access, health notifications, artifact distribution, metric ingestion, and change review.",
+        "modules_count": 5,
+        "module": [
+        {
+            "name": "Inbound Access",
+            "agents": ["Requester", "Cloud-Host"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Verify identities and consent; issue time-bound, scope-limited tokens.", "Retrieve least-privilege fields over protected channels.", "Emit tamper-evident access receipts."],
+            "potential_issues": ["Impersonation or stolen credentials.", "Scope escalation beyond consent.", "Content exposure across domains."]
+        },
+        {
+            "name": "Health Notifications",
+            "agents": ["Health-Source", "Consumer-1", "Consumer-2", "Consumer-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Send small, frequent heartbeats/health signals to multiple consumers.", "Maintain steady cadence and low latency.", "Isolate slow recipients to avoid stalling others."],
+            "potential_issues": ["Burst-induced latency spikes.", "Cadence drift due to reconnects.", "Backlog buildup from slow consumers."]
+        },
+        {
+            "name": "Image/Artifact Distribution",
+            "agents": ["Registry", "Node-Fleet"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Distribute large artifacts in chunks with resume.", "Provide integrity verification per chunk and at final commit.", "Support idempotent retries and server-driven flow control."],
+            "potential_issues": ["Out-of-order/lost chunks.", "Undetected corruption without strong checks.", "Queue blowups without backpressure."]
+        },
+        {
+            "name": "Metric Ingestion",
+            "agents": ["Metric-Producer", "Metric-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Append batches with acknowledgements and observable status.", "Use idempotent writes to avoid duplicates on retry.", "Apply backpressure to keep queues bounded."],
+            "potential_issues": ["Duplicates on retry.", "Unbounded queues.", "Throughput variability without rate limits."]
+        },
+        {
+            "name": "Change Review",
+            "agents": ["Owner", "Coordinator", "Reviewer"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Publish a concrete routine for change review and exceptions.", "Bind the session to a specific version and execute multi-round checks.", "Record chosen version and decision trail for audit."],
+            "potential_issues": ["Version drift causing inconsistency.", "Ambiguous steps leading to divergent outcomes.", "Missing proof of executed routine."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ANP", "justification": "DID/VC identity and protected channels align with cross-organization inbound access.", "behavioral_expectations": ["Verify identities and consent.", "Deliver over confidential links.", "Emit tamper-evident receipts; deny replays."] },
+        "2": { "module_protocol": "A2A", "justification": "Lightweight, minimal-handshake messaging suits frequent small health signals with tight latency.", "behavioral_expectations": ["Keep headers minimal.", "Maintain cadence under bursts.", "Avoid stalling on slow consumers."] },
+        "3": { "module_protocol": "ACP", "justification": "Chunked transfer with resume/integrity and server-side flow control fits artifact distribution.", "behavioral_expectations": ["Resume precisely; avoid duplicates.", "Reject corrupted chunks.", "Apply backpressure for stability."] },
+        "4": { "module_protocol": "ACP", "justification": "Batch ingestion benefits from idempotent writes, status codes, and bounded queues.", "behavioral_expectations": ["Use idempotency keys.", "Keep queues bounded.", "Expose observable transitions."] },
+        "5": { "module_protocol": "Agora", "justification": "A versioned protocol document locks multi-round review for reproducibility and audit.", "behavioral_expectations": ["Bind by version/hash.", "Follow steps without divergence.", "Persist decision trail."] }
+        }
+    },
+    {
+        "id": "L5-Q6",
+        "description": "A collaborative research flow with five stages: protected inbound access, live interaction, dataset transfer, results ingestion, and confidential results exchange.",
+        "modules_count": 5,
+        "module": [
+        {
+            "name": "Protected Inbound",
+            "agents": ["Researcher", "Records-Host"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Verify identities and consent; enforce least-privilege scopes.", "Use protected channels for sensitive records.", "Emit verifiable access receipts."],
+            "potential_issues": ["Impersonation or token theft.", "Scope inflation.", "Leakage across domains."]
+        },
+        {
+            "name": "Live Interaction",
+            "agents": ["Instructor", "Participants"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Exchange tiny messages with quick turnarounds on a lightweight session.", "Keep per-message overhead minimal.", "Avoid stalling due to slow participants."],
+            "potential_issues": ["Tail spikes during bursts.", "Cadence drift on reconnects.", "Head-of-line blocking."]
+        },
+        {
+            "name": "Dataset Transfer",
+            "agents": ["Lab-A", "Lab-B"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Transfer large datasets in chunks with resume.", "Verify integrity with strong checks; retry idempotently.", "Apply server-driven flow control."],
+            "potential_issues": ["Lost/out-of-order chunks.", "Undetected corruption.", "Queue blowups without backpressure."]
+        },
+        {
+            "name": "Results Ingestion",
+            "agents": ["Pipeline", "Archive-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Append batches via resource endpoints with acknowledgements.", "Use idempotent writes and rate limiting.", "Expose status transitions for operations."],
+            "potential_issues": ["Duplicates on retry.", "Unbounded queues.", "Throughput dips under sustained load."]
+        },
+        {
+            "name": "Confidential Exchange",
+            "agents": ["Lab-A", "Lab-B"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Exchange results under verifiable identities over confidential channels.", "Bind result hashes to identities and emit receipts.", "Deny replay and tampering attempts."],
+            "potential_issues": ["Impersonation.", "Exposure across domains.", "Replay attacks."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ANP", "justification": "DID/VC and E2E protection suit sensitive inbound access.", "behavioral_expectations": ["Verify identities and scopes.", "Ensure confidentiality/integrity.", "Emit receipts; deny replays."] },
+        "2": { "module_protocol": "A2A", "justification": "Minimal-handshake, non-resource interaction protects latency and cadence.", "behavioral_expectations": ["Keep headers minimal.", "Maintain cadence under bursts.", "Avoid blocking on slow participants."] },
+        "3": { "module_protocol": "ACP", "justification": "Chunked transfer with resume/integrity and flow control fits dataset sync.", "behavioral_expectations": ["Resume precisely.", "Reject corrupted chunks.", "Apply backpressure."] },
+        "4": { "module_protocol": "ACP", "justification": "Resource-oriented batch ingestion with idempotency and backpressure keeps pipelines stable.", "behavioral_expectations": ["Use idempotency keys.", "Bound queues via rate limits.", "Expose status states."] },
+        "5": { "module_protocol": "ANP", "justification": "Confidential result exchange benefits from verifiable identities and protected channels.", "behavioral_expectations": ["Bind hashes to identities.", "Ensure E2E confidentiality.", "Emit verifiable receipts."] }
+        }
+    },
+    {
+        "id": "L5-Q7",
+        "description": "An emergency broadcast loop with five stages: dispatch broadcast, command acknowledgements, evidence transfer, archival ingestion, and dispute routine.",
+        "modules_count": 5,
+        "module": [
+        {
+            "name": "Dispatch Broadcast",
+            "agents": ["Dispatch", "Unit-1", "Unit-2", "Unit-3", "Unit-4"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Broadcast tiny updates with quick turnarounds on a lightweight session.", "Keep headers minimal and protect cadence.", "Avoid blocking due to slow recipients."],
+            "potential_issues": ["Tail spikes during bursts.", "Cadence drift on reconnects.", "Head-of-line blocking."]
+        },
+        {
+            "name": "Command Acks",
+            "agents": ["Responder", "Command-Center"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Return small acknowledgements rapidly without resource state machines.", "Minimize per-message overhead.", "Maintain steady cadence under bursts."],
+            "potential_issues": ["Overhead dominating tiny messages.", "Latency jitter.", "Session churn."]
+        },
+        {
+            "name": "Evidence Transfer",
+            "agents": ["Field-Agent", "Evidence-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Upload media in chunks with resume.", "Verify integrity and retry idempotently.", "Apply server-driven flow control."],
+            "potential_issues": ["Lost/out-of-order chunks.", "Undetected corruption.", "Queue blowups without backpressure."]
+        },
+        {
+            "name": "Archival Ingestion",
+            "agents": ["Ops-Service", "Archive-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Append records via resource endpoints with acknowledgements.", "Use idempotent writes; keep queues bounded via rate limits.", "Expose observable status transitions."],
+            "potential_issues": ["Duplicates on retry.", "Unbounded queues.", "Throughput dips under load."]
+        },
+        {
+            "name": "Dispute Routine",
+            "agents": ["Officer-1", "Officer-2", "Coordinator"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Select a concrete routine version and execute multi-round steps.", "Enforce ordering and anti-replay semantics.", "Record routine version and decision trail for audit."],
+            "potential_issues": ["Double decisions via replays.", "Ambiguous tie-break rules.", "Missing audit proof."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "A2A", "justification": "Minimal-handshake broadcast suits tiny, frequent dispatch updates.", "behavioral_expectations": ["Keep headers minimal.", "Protect cadence.", "Avoid stalls on slow recipients."] },
+        "2": { "module_protocol": "A2A", "justification": "Lightweight acknowledgements align with rapid request/response cycles.", "behavioral_expectations": ["Minimize overhead.", "Maintain cadence under bursts.", "Keep latency low."] },
+        "3": { "module_protocol": "ACP", "justification": "Chunked transfer with integrity checks and flow control fits evidence uploads.", "behavioral_expectations": ["Resume precisely.", "Reject corrupted chunks.", "Apply backpressure."] },
+        "4": { "module_protocol": "ACP", "justification": "Resource-oriented batch ingestion with idempotency and rate limits stabilizes archives.", "behavioral_expectations": ["Use idempotency keys.", "Bound queues.", "Expose status codes."] },
+        "5": { "module_protocol": "Agora", "justification": "A versioned routine document supports reproducible dispute handling.", "behavioral_expectations": ["Bind by version/hash.", "Enforce ordering/anti-replay.", "Persist decision trail."] }
+        }
+    },
+    {
+        "id": "L5-Q8",
+        "description": "A cross-border settlement flow with five stages: KYC inbound, invoice ingestion, confidential settlement, negotiation routine, and reconciliation logs.",
+        "modules_count": 5,
+        "module": [
+        {
+            "name": "KYC Inbound",
+            "agents": ["Client", "KYC-Gateway"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Verify identities; bind consent and scopes.", "Protect transfers over confidential channels.", "Emit verifiable receipts; deny replays."],
+            "potential_issues": ["Impersonation or forged credentials.", "Scope inflation.", "Exposure across domains."]
+        },
+        {
+            "name": "Invoice Ingestion",
+            "agents": ["Merchant", "Invoice-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Append invoices via resource endpoints with acknowledgements.", "Use idempotent POST/PUT and apply rate limits.", "Expose observable status transitions."],
+            "potential_issues": ["Duplicates on retry.", "Unbounded queues.", "Throughput dips under sustained load."]
+        },
+        {
+            "name": "Confidential Settlement",
+            "agents": ["Payer", "Payee", "Clearing-Gateway"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Settle across organizations under verifiable identities.", "Ensure end-to-end confidentiality and integrity.", "Record non-repudiable receipts."],
+            "potential_issues": ["Tampering or impersonation.", "Exposure across domains.", "Replay attempts."]
+        },
+        {
+            "name": "Negotiation Routine",
+            "agents": ["Ops-Desk", "Compliance", "Coordinator"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Define a routine document with steps and thresholds.", "Bind the session to a version and execute.", "Record version and decisions for auditability."],
+            "potential_issues": ["Version drift causing inconsistency.", "Ambiguous steps.", "Missing audit trail."]
+        },
+        {
+            "name": "Reconciliation Logs",
+            "agents": ["Settlement-Service", "Audit-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Append logs with acknowledgements and idempotent writes.", "Apply rate limiting/backpressure to avoid overruns.", "Expose status transitions for operations."],
+            "potential_issues": ["Retry storms and duplicates.", "Unbounded queues.", "Latency variability without flow control."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ANP", "justification": "Verifiable identities and protected channels fit KYC inbound.", "behavioral_expectations": ["Verify DIDs/VCs.", "Ensure E2E protection.", "Emit receipts; deny replays."] },
+        "2": { "module_protocol": "ACP", "justification": "Resource endpoints, idempotency, and rate limits match batch invoice ingestion.", "behavioral_expectations": ["Use idempotency keys.", "Keep queues bounded.", "Expose status transitions."] },
+        "3": { "module_protocol": "ANP", "justification": "Confidential settlement requires E2E security and non-repudiation.", "behavioral_expectations": ["Bind settlements to identities.", "Protect content end-to-end.", "Record verifiable receipts."] },
+        "4": { "module_protocol": "Agora", "justification": "A versioned protocol document supports reproducible negotiation.", "behavioral_expectations": ["Bind by version.", "Follow steps without divergence.", "Persist decision trail."] },
+        "5": { "module_protocol": "ACP", "justification": "Append-only logs benefit from idempotent writes and backpressure.", "behavioral_expectations": ["Avoid duplicates.", "Bound queues via rate limits.", "Expose observable states."] }
+        }
+    },
+    {
+        "id": "L5-Q9",
+        "description": "An autonomous fleet flow with five stages: status broadcast, control feedback, map updates, ops telemetry, and confidential sharing.",
+        "modules_count": 5,
+        "module": [
+        {
+            "name": "Status Broadcast",
+            "agents": ["Fleet-Core", "Car-1", "Car-2", "Car-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Send tiny, frequent status updates with quick turnarounds.", "Maintain a lightweight session and low tail latency.", "Avoid blocking on slow receivers."],
+            "potential_issues": ["Tail spikes during bursts.", "Cadence drift.", "Head-of-line blocking."]
+        },
+        {
+            "name": "Control Feedback",
+            "agents": ["Car", "Control-Core"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Return micro control signals rapidly without resource state machines.", "Keep per-message overhead minimal.", "Sustain quick acknowledgements."],
+            "potential_issues": ["Overhead dominating tiny messages.", "Latency jitters.", "Session churn."]
+        },
+        {
+            "name": "Map Update Transfer",
+            "agents": ["Map-Service", "Car-Fleet"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Transfer map tiles in chunks with resume capability.", "Verify integrity per chunk and on commit; retry idempotently.", "Apply server-driven backpressure with clear status transitions."],
+            "potential_issues": ["Lost/out-of-order chunks.", "Undetected corruption.", "Queue blowups without backpressure."]
+        },
+        {
+            "name": "Ops Telemetry",
+            "agents": ["Vehicle", "Telemetry-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Append telemetry batches with acknowledgements.", "Use idempotent writes and rate limiting to keep queues bounded.", "Expose observable status transitions."],
+            "potential_issues": ["Duplicates on retry.", "Unbounded queues.", "Throughput dips under sustained load."]
+        },
+        {
+            "name": "Confidential Sharing",
+            "agents": ["Fleet-A", "Fleet-B"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Share sensitive summaries under verifiable identities.", "Protect channels end-to-end with confidentiality and integrity.", "Emit verifiable receipts."],
+            "potential_issues": ["Impersonation.", "Exposure across domains.", "Replay attempts."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "A2A", "justification": "Minimal-handshake status broadcast fits tiny, frequent updates.", "behavioral_expectations": ["Keep headers minimal.", "Maintain cadence.", "Avoid stalls on slow receivers."] },
+        "2": { "module_protocol": "A2A", "justification": "Lightweight control feedback suits micro request/response cycles.", "behavioral_expectations": ["Minimize overhead.", "Provide quick acks.", "Hold low latency."] },
+        "3": { "module_protocol": "ACP", "justification": "Chunked map transfer with resume/integrity and backpressure fits resource-oriented flows.", "behavioral_expectations": ["Resume precisely.", "Reject corrupted chunks.", "Expose status codes."] },
+        "4": { "module_protocol": "ACP", "justification": "Batch telemetry ingestion with idempotency and rate limits stabilizes pipelines.", "behavioral_expectations": ["Use idempotency keys.", "Bound queues.", "Expose transitions."] },
+        "5": { "module_protocol": "ANP", "justification": "Confidential cross-fleet sharing requires verifiable identities and protected channels.", "behavioral_expectations": ["Bind to DIDs/VCs.", "Ensure E2E protection.", "Emit receipts; deny replays."] }
+        }
+    },
+    {
+        "id": "L5-Q10",
+        "description": "A media platform flow with five stages: live overlays, video transfer, asset ingestion, billing logs, and policy routine.",
+        "modules_count": 5,
+        "module": [
+        {
+            "name": "Live Overlays",
+            "agents": ["Overlay-Service", "Viewer-1", "Viewer-2"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Send tiny overlay updates with quick turnarounds.", "Keep per-message headers minimal to protect latency.", "Avoid stalling on slow viewers."],
+            "potential_issues": ["Tail spikes during bursts.", "Cadence drift on reconnects.", "Head-of-line blocking."]
+        },
+        {
+            "name": "Video Transfer",
+            "agents": ["Uploader", "Media-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Upload large videos in chunks with resume and integrity.", "Retry idempotently and expose clear status transitions.", "Apply server-driven backpressure."],
+            "potential_issues": ["Lost/out-of-order chunks.", "Undetected corruption.", "Queue blowups without backpressure."]
+        },
+        {
+            "name": "Asset Ingestion",
+            "agents": ["Worker", "Archive-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Append asset batches via resource endpoints with acknowledgements.", "Use idempotent writes; keep queues bounded.", "Expose observable status transitions."],
+            "potential_issues": ["Duplicates on retry.", "Unbounded queues.", "Throughput dips."]
+        },
+        {
+            "name": "Billing Logs",
+            "agents": ["CDN-Exporter", "Billing-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Ingest append-only logs with acknowledgements.", "Apply idempotent appends and rate limits.", "Provide observable states."],
+            "potential_issues": ["Retry storms and duplicates.", "Queue blowups without limits.", "Latency variability under load."]
+        },
+        {
+            "name": "Policy Routine",
+            "agents": ["Moderator-1", "Moderator-2", "Coordinator"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Define a routine document and bind to a specific version.", "Execute multi-round steps and record decisions.", "Keep an auditable log of the executed version."],
+            "potential_issues": ["Version drift causing inconsistency.", "Ambiguous steps.", "Missing audit proof."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "A2A", "justification": "Minimal-handshake overlays suit tiny, frequent updates with low latency.", "behavioral_expectations": ["Keep headers minimal.", "Maintain cadence under bursts.", "Avoid stalls."] },
+        "2": { "module_protocol": "ACP", "justification": "Chunked transfer with resume/integrity and backpressure fits large video uploads.", "behavioral_expectations": ["Resume precisely.", "Reject corrupted chunks.", "Expose clear status codes."] },
+        "3": { "module_protocol": "ACP", "justification": "Batch asset ingestion benefits from idempotency and bounded queues.", "behavioral_expectations": ["Use idempotency keys.", "Keep queues bounded.", "Expose transitions."] },
+        "4": { "module_protocol": "ACP", "justification": "Append-only billing logs align with idempotent appends and rate-limited pipelines.", "behavioral_expectations": ["Avoid duplicates.", "Bound queues.", "Provide observable states."] },
+        "5": { "module_protocol": "Agora", "justification": "A versioned document locks the policy routine for reproducibility and audit.", "behavioral_expectations": ["Bind by version.", "Follow steps without divergence.", "Persist decision trail."] }
+        }
+    },
+    {
+        "id": "L5-Q11",
+        "description": "A smart grid flow with five stages: telemetry ingestion, alarm broadcast, firmware OTA, confidential coordination, and quorum approval.",
+        "modules_count": 5,
+        "module": [
+        {
+            "name": "Telemetry Ingestion",
+            "agents": ["Substation", "Ingest-Service"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Append metric batches with acknowledgements and observable status.", "Use idempotent writes; apply rate limits for bounded queues.", "Ensure stability under sustained load."],
+            "potential_issues": ["Duplicates on retry.", "Unbounded queues.", "Throughput dips."]
+        },
+        {
+            "name": "Alarm Broadcast",
+            "agents": ["Grid-Core", "Ops-1", "Ops-2", "Ops-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Broadcast small alarms with quick turnarounds.", "Maintain a lightweight session and low tail latency.", "Avoid head-of-line blocking on slow recipients."],
+            "potential_issues": ["Tail spikes during bursts.", "Cadence drift.", "Session churn."]
+        },
+        {
+            "name": "Firmware OTA",
+            "agents": ["OTA-Service", "Device-Fleet"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Transfer firmware in chunks with resume capability.", "Verify integrity and retry idempotently.", "Apply server-driven backpressure with clear status transitions."],
+            "potential_issues": ["Lost/out-of-order chunks.", "Undetected corruption.", "Queue blowups without backpressure."]
+        },
+        {
+            "name": "Confidential Coordination",
+            "agents": ["Operator-A", "Operator-B"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Share sensitive summaries and plans under verifiable identities.", "Protect channels end-to-end for confidentiality and integrity.", "Emit verifiable receipts."],
+            "potential_issues": ["Impersonation.", "Exposure across domains.", "Replay attempts."]
+        },
+        {
+            "name": "Quorum Approval",
+            "agents": ["Rep-1", "Rep-2", "Rep-3", "Coordinator"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Select a threshold routine version and execute voting.", "Enforce ordering and anti-replay.", "Record version and decision trail for audit."],
+            "potential_issues": ["Double decisions via replays.", "Ambiguous tie-break rules.", "Missing audit proof."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ACP", "justification": "Resource-oriented batch ingestion with idempotency and rate limits stabilizes telemetry.", "behavioral_expectations": ["Use idempotency keys.", "Bound queues.", "Expose status transitions."] },
+        "2": { "module_protocol": "A2A", "justification": "Minimal-handshake broadcast suits low-latency alarms.", "behavioral_expectations": ["Keep headers minimal.", "Maintain cadence.", "Avoid stalls."] },
+        "3": { "module_protocol": "ACP", "justification": "Chunked OTA with resume/integrity and backpressure fits resource flows.", "behavioral_expectations": ["Resume precisely.", "Reject corrupted chunks.", "Apply backpressure."] },
+        "4": { "module_protocol": "ANP", "justification": "Confidential coordination requires verifiable identities and protected channels.", "behavioral_expectations": ["Bind to identities.", "Ensure E2E protection.", "Emit receipts; deny replays."] },
+        "5": { "module_protocol": "Agora", "justification": "A versioned document locks quorum procedures for auditability.", "behavioral_expectations": ["Bind by version.", "Enforce ordering/anti-replay.", "Persist decisions."] }
+        }
+    },
+    {
+        "id": "L5-Q12",
+        "description": "A large SaaS flow with five stages: tenant inbound, change broadcast, artifact transfer, health/telemetry ingestion, and compliance audit.",
+        "modules_count": 5,
+        "module": [
+        {
+            "name": "Tenant Inbound",
+            "agents": ["Tenant", "SaaS-Gateway"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Verify identities and consent; enforce least-privilege scopes.", "Deliver over confidential channels.", "Emit verifiable receipts."],
+            "potential_issues": ["Impersonation or token theft.", "Scope inflation.", "Exposure across domains."]
+        },
+        {
+            "name": "Change Broadcast",
+            "agents": ["Event-Hub", "Service-1", "Service-2", "Service-3"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Send small, frequent change notices with quick turnarounds.", "Maintain steady cadence and low latency.", "Avoid stalling on slow recipients."],
+            "potential_issues": ["Tail spikes during bursts.", "Cadence drift on reconnects.", "Head-of-line blocking."]
+        },
+        {
+            "name": "Artifact Transfer",
+            "agents": ["Build-Registry", "Runtime-Fleet"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Distribute artifacts in chunks with resume and integrity checks.", "Retry idempotently and expose clear status transitions.", "Apply server-driven backpressure."],
+            "potential_issues": ["Lost/out-of-order chunks.", "Undetected corruption.", "Queue blowups without flow control."]
+        },
+        {
+            "name": "Health/Telemetry",
+            "agents": ["Node", "Ops-Store"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Append batches via resource endpoints with acknowledgements.", "Use idempotent writes and rate limits.", "Expose status transitions for operations."],
+            "potential_issues": ["Duplicates on retry.", "Unbounded queues.", "Throughput dips under sustained load."]
+        },
+        {
+            "name": "Compliance Audit",
+            "agents": ["Service", "Audit-Repo"],
+            "protocol_selection": { "choices": ["A2A", "ANP", "ACP", "Agora"], "select_exactly": 1 },
+            "tasks": ["Bind events to verifiable identities with signatures.", "Deliver over protected channels with receipts.", "Deny insertion/alteration of historical entries."],
+            "potential_issues": ["Unsigned or weakly signed events.", "Tampering or replay.", "Unauthorized access."]
+        }
+        ],
+        "ground_truth": {
+        "1": { "module_protocol": "ANP", "justification": "DID/VC and E2E protection suit tenant inbound and consent/scopes.", "behavioral_expectations": ["Verify identities/scopes.", "Ensure confidentiality/integrity.", "Emit receipts; deny replays."] },
+        "2": { "module_protocol": "A2A", "justification": "Minimal-handshake broadcast suits small, frequent change notices.", "behavioral_expectations": ["Keep headers minimal.", "Maintain cadence.", "Avoid stalls."] },
+        "3": { "module_protocol": "ACP", "justification": "Chunked transfer with resume/integrity and backpressure fits artifact delivery.", "behavioral_expectations": ["Resume precisely.", "Reject corrupted chunks.", "Expose clear status codes."] },
+        "4": { "module_protocol": "ACP", "justification": "Batch telemetry ingestion benefits from idempotency and bounded queues.", "behavioral_expectations": ["Use idempotency keys.", "Bound queues via rate limits.", "Expose transitions."] },
+        "5": { "module_protocol": "ANP", "justification": "Non-repudiable audit logs align with verifiable identities and protected channels.", "behavioral_expectations": ["Bind events to identities.", "Ensure E2E integrity/confidentiality.", "Emit verifiable receipts."] }
+        }
+    }
+]

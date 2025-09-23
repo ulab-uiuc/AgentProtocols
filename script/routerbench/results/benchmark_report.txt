@@ -1,0 +1,73 @@
+============================================================
+ProtoRouter Benchmark Evaluation Report
+============================================================
+
+📊 Overall Statistics:
+  Total scenarios: 60
+  Correct scenarios: 32
+  Overall scenario accuracy: 53.33%
+  Total modules: 180
+  Correct modules: 138
+  Individual module accuracy: 76.67%
+  A2A/ACP confusion count: 23
+
+📈 Statistics by Difficulty:
+  L1:
+    Scenario accuracy: 66.67% (8/12)
+    Module accuracy: 66.67% (8/12)
+  L2:
+    Scenario accuracy: 50.00% (6/12)
+    Module accuracy: 66.67% (16/24)
+  L3:
+    Scenario accuracy: 58.33% (7/12)
+    Module accuracy: 86.11% (31/36)
+  L4:
+    Scenario accuracy: 50.00% (6/12)
+    Module accuracy: 85.42% (41/48)
+  L5:
+    Scenario accuracy: 41.67% (5/12)
+    Module accuracy: 70.00% (42/60)
+
+🔄 Protocol Confusion Matrix:
+  Actual\Pred      A2A     ACP   Agora     ANP
+  A2A               15      13      17       0
+  ACP               10      52       0       0
+  Agora              0       0      28       2
+  ANP                0       0       0      43
+
+❌ Error Analysis:
+  A2A → Agora: 17 times
+    Example - L1-Q7 Module 1:
+      LLM: The scenario involves ephemeral micro-task request/response with minimal handshake and a single lightweight session, which aligns well with Agora's strengths. Agora is designed for lightweight, negoti...
+      GT:  A2A favors a short, lightweight link with minimal handshake and non-resource messages, aligning with one lightweight session and tiny request/response cycles....
+
+    Example - L2-Q8 Module 1:
+      LLM: Agora is selected for the Interactive Micro-Tools module due to its lightweight and negotiation-friendly nature, which is ideal for rapid request/response cycles with minimal overhead. The protocol's ...
+      GT:  A2A suits minimal-handshake, small, interactive tool calls with fast turnaround and no resource-oriented APIs....
+
+  A2A → ACP: 13 times
+    Example - L1-Q2 Module 1:
+      LLM: The Streaming-Queue System requires a protocol that supports structured, addressable operations with clear progress semantics and repeatable handling at scale. ACP is well-suited for this scenario due...
+      GT:  A2A offers a short, lightweight communication path with minimal handshake, favoring speed in simple streaming-queue settings....
+
+    Example - L1-Q4 Module 1:
+      LLM: The scenario requires low-latency broadcast from a single Publisher to multiple Subscribers, with a focus on pushing small updates quickly and consistently. ACP is well-suited for structured, addressa...
+      GT:  A2A uses a lightweight path with minimal handshake overhead, making it suitable for fast fan-out of small, high-frequency updates....
+
+  ACP → A2A: 10 times
+    Example - L2-Q3 Module 2:
+      LLM: The Task Dispatch & Telemetry module requires a protocol that supports multimodal messages, task lifecycle management, and steady telemetry return. A2A's strengths in handling complex workflows, multi...
+      GT:  ACP provides resource endpoints, acknowledgements, idempotent POST/PUT, and rate limiting for steady dispatch and telemetry ingestion....
+
+    Example - L2-Q7 Module 2:
+      LLM: The Archival Batch Ingestion module involves appending medium-sized batches with acknowledgements and requires idempotent operations with backpressure management. A2A's support for complex workflows, ...
+      GT:  ACP aligns with resource-oriented batch ingestion, ACK/idempotent patterns, and server-driven backpressure for durable archival pipelines....
+
+  Agora → ANP: 2 times
+    Example - L1-Q3 Module 1:
+      LLM: The ANP protocol is best suited for the Quorum-Gated Execution module due to its strong emphasis on identity, end-to-end encryption, and cross-organization trust. The scenario requires maintaining str...
+      GT:  Agora emphasizes a meta-protocol model with routine/consensus semantics and strong session discipline, making it suitable for quorum collection, ordering, and auditable coordination....
+
+    Example - L2-Q10 Module 2:
+      LLM: The Quorum/Arbitration Execution module involves executing a voting/arbitration routine with multiple agents, requiring strong identity, end-to-end privacy, and cross-organization trust. ANP is well-s...
+      GT:  Agora allows specifying quorum routines with explicit ordering, replay rules, and a hash-locked version for auditability....
