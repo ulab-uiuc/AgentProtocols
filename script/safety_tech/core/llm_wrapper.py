@@ -364,6 +364,14 @@ def generate_doctor_reply(role: str, text: str, model_config: dict | None = None
     Returns:
         str reply content
     """
+    # 限制输入文本长度以防止上下文溢出
+    # 粗略估算：1 token ≈ 4 characters，128K tokens ≈ 512K characters
+    # 保留一些空间给system prompt和响应，限制为400K characters
+    max_chars = 400000
+    if text and len(text) > max_chars:
+        text = text[:max_chars] + "...[truncated due to length limit]"
+        print(f"🔄 [LLM] Input text truncated from {len(text)} to {max_chars} characters")
+    
     # 使用统一的LLM调用接口
     context = _build_doctor_context(role)
     messages = [{"role": "user", "content": text or ""}]
