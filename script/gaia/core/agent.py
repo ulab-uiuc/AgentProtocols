@@ -207,7 +207,12 @@ class ToolCallAgent(ReActAgent):
                 assistant_msg = Message.from_tool_calls(content=content, tool_calls=converted_tool_calls)
             else:
                 assistant_msg = Message.assistant_message(content)
+            # Append to both transient messages and persistent memory so network logs capture LLM assistant outputs
             self.messages.append(assistant_msg)
+            try:
+                self.memory.add_message(assistant_msg)
+            except Exception:
+                pass
 
             if self.tool_choices == ToolChoice.REQUIRED and not self.tool_calls:
                 return True  # Will be handled in act()
@@ -268,6 +273,11 @@ class ToolCallAgent(ReActAgent):
                 base64_image=self._current_base64_image,
             )
             self.messages.append(tool_msg)
+            try:
+                # Persist tool responses to memory as well so they appear in step-based logs
+                self.memory.add_message(tool_msg)
+            except Exception:
+                pass
             results.append(result)
 
         return "\n\n".join(results)

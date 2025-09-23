@@ -1,6 +1,6 @@
 # Agora protocol configuration for Gaia multi-agent framework
 protocol: "Agora"
-mode: "normal"
+mode: "debug"
 
 # Runtime configuration
 runtime:
@@ -16,8 +16,8 @@ framework:
 network:
   host: "127.0.0.1"
   port_range:
-    start: 9000
-    end: 9100
+    start: 10000
+    end: 10100
   timeout_seconds: 60
   max_connections: 10
 

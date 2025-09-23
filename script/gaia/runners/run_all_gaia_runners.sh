@@ -7,13 +7,13 @@ echo "🚀 Starting all GAIA protocol runners..."
 
 # --- Runners that don't require an API key ---
 
-echo "---"
-echo "1. Running A2A Protocol Runner..."
-python -m script.gaia.runners.run_a2a
+# echo "---"
+# echo "1. Running A2A Protocol Runner..."
+# python -m script.gaia.runners.run_a2a
 
-echo "---"
-echo "2. Running ACP Protocol Runner..."
-python -m script.gaia.runners.run_acp
+# echo "---"
+# echo "2. Running ACP Protocol Runner..."
+# python -m script.gaia.runners.run_acp
 
 echo "---"
 echo "3. Running ANP Protocol Runner..."

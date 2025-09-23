@@ -86,15 +86,29 @@ class RunnerBase(abc.ABC):
         """
         default_output = GAIA_ROOT / 'workspaces' / self.protocol_name / f'gaia_{self.protocol_name}_results.json'
         cfg_output = runtime_config.get('output_file')
+
+        def _append_mode_suffix(p: Path) -> Path:
+            """If runner is in debug/mm mode, append _{mode} before file suffix."""
+            try:
+                mode = getattr(self, 'mode', None)
+            except Exception:
+                mode = None
+            if mode in ('debug', 'mm'):
+                stem = p.stem
+                suffix = p.suffix
+                new_name = f"{stem}_{mode}{suffix}"
+                return p.with_name(new_name)
+            return p
+
         if cfg_output:
             cfg_path = Path(cfg_output)
             if cfg_path.is_absolute():
-                return str(cfg_path)
+                return str(_append_mode_suffix(cfg_path))
             first_part = cfg_path.parts[0] if cfg_path.parts else ''
             if first_part == 'workspaces':
-                return str(GAIA_ROOT / cfg_path)  # 避免重复 workspaces/workspaces
-            return str(GAIA_ROOT / 'workspaces' / self.protocol_name / cfg_path)
-        return str(default_output)
+                return str(_append_mode_suffix(GAIA_ROOT / cfg_path))  # 避免重复 workspaces/workspaces
+            return str(_append_mode_suffix(GAIA_ROOT / 'workspaces' / self.protocol_name / cfg_path))
+        return str(_append_mode_suffix(default_output))
 
     def _setup_task_workspace(self, task_id: str, task: Dict[str, Any]) -> Path:
         """

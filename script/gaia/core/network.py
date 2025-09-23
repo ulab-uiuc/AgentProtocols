@@ -443,8 +443,30 @@ class MeshNetwork(ABC):
             logs_dir.mkdir(parents=True, exist_ok=True)
             
             # Save network memory with step-based structure
+            # Helper to safely serialize messages and truncate very large contents
+            def _safe_msg_dict(msg):
+                d = msg.to_dict()
+                content = d.get('content')
+                try:
+                    if content is None:
+                        pass
+                    else:
+                        # If content looks binary-ish or is extremely large, replace with placeholder
+                        if isinstance(content, (bytes, bytearray)):
+                            d['content'] = "<BINARY_PAYLOAD - omitted; saved to workspace file if needed>"
+                        else:
+                            s = str(content)
+                            if len(s) > 2000:
+                                # Truncate long contents but keep a preview
+                                d['content'] = s[:2000] + "...<truncated>"
+                            else:
+                                d['content'] = s
+                except Exception:
+                    d['content'] = "<UNSERIALIZABLE_CONTENT>"
+                return d
+
             network_log = {
-                "network_memory": [msg.to_dict() for step_exec in self.network_memory.step_executions.values() if step_exec.messages for msg in step_exec.messages],
+                "network_memory": [(_safe_msg_dict(msg)) for step_exec in self.network_memory.step_executions.values() if step_exec.messages for msg in step_exec.messages],
                 "workflow_progress": self.network_memory.get_workflow_progress(),
                 "step_executions": {},
                 "timestamp": time.time()
@@ -460,7 +482,7 @@ class MeshNetwork(ABC):
                     "start_time": step_exec.start_time,
                     "end_time": step_exec.end_time,
                     "duration": step_exec.duration(),
-                    "messages": [msg.to_dict() for msg in step_exec.messages],
+                    "messages": [_safe_msg_dict(msg) for msg in step_exec.messages],
                     "error_message": step_exec.error_message
                 }
             

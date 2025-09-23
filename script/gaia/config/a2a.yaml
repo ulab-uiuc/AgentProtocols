@@ -1,6 +1,6 @@
 # A2A protocol configuration for Gaia multi-agent framework
 protocol: "a2a"
-mode: "normal"
+mode: "debug"
 
 # Runtime configuration
 runtime:
@@ -16,8 +16,8 @@ framework:
 network:
   host: "127.0.0.1"
   port_range:
-    start: 9000
-    end: 9500  # Expanded port range for multiple tasks
+    start: 9500
+    end: 10500  # Expanded port range for multiple tasks
   timeout_seconds: 60
   max_connections: 10
 
