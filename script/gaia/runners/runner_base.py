@@ -785,7 +785,7 @@ class RunnerBase(abc.ABC):
         if self.mode == "debug":
             # Debug mode: limit to 1 task
             if isinstance(tasks, list) and tasks:
-                tasks = tasks[:3]
+                tasks = tasks[:1]
             else:
                 print(f"[WARN] Debug 模式下任务结构异常，tasks 类型: {type(tasks).__name__}")
                 tasks = [] if tasks is None else ([tasks] if isinstance(tasks, dict) else [])

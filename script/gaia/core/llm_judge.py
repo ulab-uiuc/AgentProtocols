@@ -108,10 +108,10 @@ Your primary focus for the `quality_score` is the agent's methodology and the qu
   - Inter-agent communication is clear, complete, and correct. Tools are used correctly and efficiently. Intermediate results are validated and shared appropriately.
 
 - **Score 4 (Good):**
-  - The final answer is correct, but communication may have minor inefficiencies or small omissions.
+  - The final answer is correct, but the process was sub-optimal or the reasoning is not solid in a minor way.
 
 - **Score 3 (Fair / Good Process):**
-  - Solid reasoning and reasonable communication, but a late error or omission causes the final answer to be incorrect.
+  - Solid reasoning and reasonable communication,  but the final answer is incorrect due to either a late-stage reasoning error or an unrecoverable tool failure.
 
 - **Score 2 (Poor):**
   - Communication is incomplete or incorrect, tools are misused, or agents fail to share necessary details.
