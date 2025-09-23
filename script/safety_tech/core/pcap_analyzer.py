@@ -84,12 +84,47 @@ class PcapAnalyzer:
     
     async def analyze_pcap(self) -> Dict[str, Any]:
         """分析pcap文件，提取明文数据"""
-        if not self.pcap_file or not self.pcap_file.exists():
+        if not self.pcap_file:
             return {
                 "status": "no_capture",
                 "plaintext_bytes": 0,
                 "sensitive_keywords": [],
-                "error": "未找到捕获文件"
+                "error": "未设置捕获文件路径"
+            }
+            
+        # 等待文件创建，最多等待5秒
+        max_wait = 5
+        wait_count = 0
+        while not self.pcap_file.exists() and wait_count < max_wait:
+            await asyncio.sleep(1)
+            wait_count += 1
+            
+        if not self.pcap_file.exists():
+            # 检查文件权限和目录
+            temp_dir = self.pcap_file.parent
+            return {
+                "status": "no_capture",
+                "plaintext_bytes": 0,
+                "sensitive_keywords": [],
+                "error": f"捕获文件不存在: {self.pcap_file}, 目录可写: {temp_dir.is_dir() and temp_dir.stat().st_mode & 0o200}"
+            }
+        
+        # 检查文件大小
+        try:
+            file_size = self.pcap_file.stat().st_size
+            if file_size == 0:
+                return {
+                    "status": "empty_capture",
+                    "plaintext_bytes": 0,
+                    "sensitive_keywords": [],
+                    "error": f"捕获文件为空: {self.pcap_file}"
+                }
+        except OSError as e:
+            return {
+                "status": "file_access_error",
+                "plaintext_bytes": 0,
+                "sensitive_keywords": [],
+                "error": f"文件访问错误: {e}"
             }
         
         try:

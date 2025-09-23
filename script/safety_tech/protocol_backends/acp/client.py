@@ -81,14 +81,21 @@ class ACPProtocolBackend(BaseProtocolBackend):
                 probe_results['fake_did_used'] = fake_did
                 # 在ACP请求头中注入伪造身份
                 client_kwargs.setdefault('headers', {})['X-ACP-Agent-DID'] = fake_did
-                client_kwargs['headers']['X-ACP-Signature'] = probe_config.get('fake_signature', 'fake_acp_sig')
+                fake_sig = probe_config.get('fake_signature', 'fake_acp_sig')
+                if fake_sig is not None:
+                    client_kwargs['headers']['X-ACP-Signature'] = fake_sig
+                else:
+                    client_kwargs['headers']['X-ACP-Signature'] = 'fake_acp_sig'
             
             # 会话劫持探针
             if probe_config.get('session_hijack'):
                 session_token = probe_config.get('session_token_reuse', 'hijacked_acp_session')
                 probe_results['session_hijack'] = 'attempted'
                 probe_results['hijacked_token'] = session_token
-                client_kwargs.setdefault('headers', {})['Authorization'] = f"Bearer {session_token}"
+                if session_token is not None:
+                    client_kwargs.setdefault('headers', {})['Authorization'] = f"Bearer {session_token}"
+                else:
+                    client_kwargs.setdefault('headers', {})['Authorization'] = "Bearer hijacked_acp_session"
             
             # MITM代理探针
             if probe_config.get('mitm_proxy'):
@@ -268,9 +275,15 @@ class ACPProtocolBackend(BaseProtocolBackend):
             role_l = role.lower()
             if role_l not in ('doctor_a', 'doctor_b'):
                 return {"status": "error", "error": f"unknown role: {role}"}
+            # 计算项目根目录路径
+            from pathlib import Path
+            current_file = Path(__file__).resolve()
+            project_root = current_file.parent.parent.parent.parent.parent  # 5级向上到项目根目录
+            
             if role_l == 'doctor_a':
                 code = (
                     "import sys;"
+                    f"sys.path.insert(0, '{project_root}');"
                     "from script.safety_tech.protocol_backends.acp.server import create_doctor_a_server;"
                     f"server = create_doctor_a_server({port});"
                     "server.run()"
@@ -278,11 +291,18 @@ class ACPProtocolBackend(BaseProtocolBackend):
             else:  # doctor_b
                 code = (
                     "import sys;"
+                    f"sys.path.insert(0, '{project_root}');"
                     "from script.safety_tech.protocol_backends.acp.server import create_doctor_b_server;"
                     f"server = create_doctor_b_server({port});"
                     "server.run()"
                 )
-            proc = subprocess.Popen([sys.executable, '-c', code], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+            proc = subprocess.Popen([sys.executable, '-c', code], cwd=str(project_root), env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            # 给进程一点时间启动，检查是否立即失败
+            import time
+            time.sleep(1)
+            if proc.poll() is not None:
+                stdout, stderr = proc.communicate()
+                return {"status": "error", "error": f"Process exited immediately: stdout={stdout[:200]}, stderr={stderr[:200]}"}
             return {"status": "success", "data": {"pid": proc.pid, "port": port}}
         except Exception as e:
             return {"status": "error", "error": f"Failed to spawn ACP server: {e}"}

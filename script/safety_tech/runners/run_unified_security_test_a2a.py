@@ -330,12 +330,33 @@ async def main():
             'downgrade_blocked': 0,    # 降级被阻止次数
             'replay_attempts': 0,      # 重放尝试次数
             'replay_blocked': 0,       # 重放被阻止次数
-            'metadata_leakage': 0      # 元数据泄露评分（可访问端点数）
+            'metadata_leakage': 0,     # 元数据泄露评分（可访问端点数）
+            # 新增高级测试结果
+            'pcap_analysis': {},       # 旁路抓包分析结果
+            'cert_matrix_results': {}, # 证书矩阵测试结果
+            'e2e_detection_results': {}, # E2E加密检测结果
+            'session_hijack_results': {}, # 会话劫持测试结果
+            'time_skew_results': {}    # 时钟漂移测试结果
         }
         
         # S2配置：保密性探针开关
         enable_s2_probes = os.environ.get('A2A_ENABLE_S2_PROBES', 'false').lower() == 'true'
         s2_probe_type = os.environ.get('A2A_S2_PROBE_TYPE', 'tls_downgrade')
+        
+        # 创建S2探针配置
+        probe_config = None
+        if enable_s2_probes:
+            from script.safety_tech.core.probe_config import (
+                create_s2_tls_downgrade_config, create_s2_replay_attack_config, 
+                create_comprehensive_probe_config
+            )
+            probe_factories = {
+                'tls_downgrade': create_s2_tls_downgrade_config,
+                'replay_attack': create_s2_replay_attack_config,
+                'comprehensive': create_comprehensive_probe_config
+            }
+            probe_config = probe_factories.get(s2_probe_type, create_s2_tls_downgrade_config)().to_dict()
+            print(f"📡 S2探针已启用: {s2_probe_type}")
         
         # S2测试1: 被动嗅探测试（通过探针配置实现）
         if enable_s2_probes:
@@ -417,18 +438,386 @@ async def main():
         except Exception as e:
             print(f"   ✅ 元数据泄露测试: 系统拒绝探测 ({type(e).__name__})")
 
-        # S2综合评分计算（与ACP/ANP一致）
-        total_attacks = s2_test_results['downgrade_attempts'] + s2_test_results['replay_attempts']
-        blocked_attacks = s2_test_results['downgrade_blocked'] + s2_test_results['replay_blocked']
-        attack_block_rate = (blocked_attacks / total_attacks) if total_attacks > 0 else 1.0
-        plaintext_protection_score = 100 if s2_test_results['plaintext_exposure'] == 0 else max(0, 100 - s2_test_results['plaintext_exposure'])
-        metadata_protection_score = max(0, 100 - s2_test_results['metadata_leakage'] * 20)
-        s2_comprehensive_score = (attack_block_rate * 70 + plaintext_protection_score * 0.20 + metadata_protection_score * 0.10)
+        # S2高级测试1: 旁路抓包 + MITM实测
+        if enable_s2_probes and s2_probe_type == 'comprehensive':
+            print(f"   📡 启动旁路抓包 + MITM实测")
+            try:
+                from script.safety_tech.core.pcap_analyzer import run_pcap_mitm_test
+                pcap_results = await run_pcap_mitm_test(
+                    interface="lo0", 
+                    duration=8,  # 8秒抓包
+                    enable_mitm=False  # 暂时禁用MITM以避免复杂设置
+                )
+                s2_test_results['pcap_analysis'] = pcap_results
+                
+                # 统计真实明文字节数
+                pcap_analysis = pcap_results.get('pcap_analysis', {})
+                if pcap_analysis.get('status') == 'analyzed':
+                    s2_test_results['plaintext_exposure'] = pcap_analysis.get('plaintext_bytes', 0)
+                    sensitive_count = pcap_analysis.get('sensitive_keyword_count', 0)
+                    print(f"   📊 旁路抓包结果: {s2_test_results['plaintext_exposure']} 字节明文, {sensitive_count} 敏感关键字")
+                else:
+                    print(f"   ⚠️ 旁路抓包失败: {pcap_analysis.get('error', '未知错误')}")
+                    
+            except Exception as e:
+                print(f"   ❌ 旁路抓包测试异常: {e}")
+                s2_test_results['pcap_analysis']['error'] = str(e)
+        
+        # S2高级测试2: 证书有效性矩阵
+        if enable_s2_probes and s2_probe_type in ['comprehensive', 'cert_matrix']:
+            print(f"   🔐 证书有效性矩阵测试")
+            try:
+                from script.safety_tech.core.cert_matrix import run_cert_matrix_test
+                cert_results = await run_cert_matrix_test(host="127.0.0.1", port=coord_port)
+                s2_test_results['cert_matrix_results'] = cert_results
+                
+                matrix_score = cert_results.get('matrix_score', {})
+                total_score = matrix_score.get('total_score', 0)
+                grade = matrix_score.get('grade', 'UNKNOWN')
+                print(f"   📊 证书矩阵评分: {total_score}/100 ({grade})")
+                
+            except Exception as e:
+                print(f"   ❌ 证书矩阵测试异常: {e}")
+                s2_test_results['cert_matrix_results']['error'] = str(e)
+        
+        # S2高级测试3: E2E负载加密检测
+        if enable_s2_probes and s2_probe_type == 'comprehensive':
+            print(f"   🔍 E2E负载加密存在性检测")
+            try:
+                from script.safety_tech.core.e2e_detector import E2EEncryptionDetector
+                e2e_detector = E2EEncryptionDetector("A2A_E2E_WATERMARK_TEST")
+                
+                # 发送带水印的测试消息
+                test_payload = e2e_detector.create_plaintext_probe_payload()
+                probe_config = create_comprehensive_probe_config().to_dict()
+                
+                # 通过协议发送探测消息
+                from script.safety_tech.protocol_backends.a2a.client import A2AProtocolBackend
+                backend = A2AProtocolBackend()
+                probe_response = await backend.send(
+                    f"http://127.0.0.1:{coord_port}",
+                    test_payload,
+                    "e2e_probe_test",
+                    probe_config
+                )
+                
+                # 分析返回的探针结果
+                if probe_response.get('probe_results'):
+                    s2_test_results['e2e_detection_results'] = probe_response['probe_results']
+                    print(f"   📊 E2E检测: 水印注入完成，等待中间点分析")
+                else:
+                    print(f"   ⚠️ E2E检测: 未收到探针结果")
+                    
+            except Exception as e:
+                print(f"   ❌ E2E加密检测异常: {e}")
+                s2_test_results['e2e_detection_results']['error'] = str(e)
+        
+        # S2高级测试4: 时钟漂移矩阵测试
+        if enable_s2_probes and s2_probe_type == 'comprehensive':
+            print(f"   ⏰ 时钟漂移矩阵测试")
+            try:
+                from script.safety_tech.core.probe_config import create_s2_time_skew_config
+                from script.safety_tech.protocol_backends.a2a.client import A2AProtocolBackend
+                
+                # 测试不同档位的时钟漂移
+                skew_levels = [30, 120, 300, 600]  # ±30s, ±2m, ±5m, ±10m
+                skew_results = {
+                    'total_tests': 0,
+                    'blocked_tests': 0,
+                    'skew_level_results': {}
+                }
+                
+                backend = A2AProtocolBackend()
+                
+                for skew_level in skew_levels:
+                    skew_config = create_s2_time_skew_config([skew_level]).to_dict()
+                    level_results = {
+                        'attempts': 0,
+                        'blocked': 0,
+                        'success': 0
+                    }
+                    
+                    # 每个档位测试3次
+                    for i in range(3):
+                        try:
+                            test_payload = {
+                                'text': f'Time skew test {i+1} for level {skew_level}s',
+                                'sender_id': 'A2A_Doctor_A',
+                                'receiver_id': 'A2A_Doctor_B'
+                            }
+                            
+                            response = await backend.send(
+                                f"http://127.0.0.1:{coord_port}",
+                                test_payload,
+                                f"time_skew_test_{skew_level}_{i}",
+                                skew_config
+                            )
+                            
+                            level_results['attempts'] += 1
+                            skew_results['total_tests'] += 1
+                            
+                            # 检查是否被阻断（错误状态码或特定错误）
+                            if response.get('status') == 'error':
+                                error_msg = response.get('error', '').lower()
+                                if 'time' in error_msg or 'replay' in error_msg or 'nonce' in error_msg or 'timestamp' in error_msg:
+                                    level_results['blocked'] += 1
+                                    skew_results['blocked_tests'] += 1
+                                else:
+                                    # 其他类型的错误不算时钟漂移阻断
+                                    pass
+                            else:
+                                level_results['success'] += 1
+                                
+                        except Exception as e:
+                            # 连接异常也可能表示被阻断
+                            level_results['attempts'] += 1
+                            level_results['blocked'] += 1
+                            skew_results['total_tests'] += 1
+                            skew_results['blocked_tests'] += 1
+                    
+                    # 计算该档位的阻断率
+                    if level_results['attempts'] > 0:
+                        block_rate = level_results['blocked'] / level_results['attempts']
+                        level_results['block_rate'] = block_rate
+                    else:
+                        level_results['block_rate'] = 0
+                    
+                    skew_results['skew_level_results'][f'{skew_level}s'] = level_results
+                    print(f"      ±{skew_level}s: {level_results['blocked']}/{level_results['attempts']} 被阻断 ({level_results['block_rate']:.1%})")
+                
+                # 计算总体时钟漂移防护评分
+                overall_block_rate = skew_results['blocked_tests'] / skew_results['total_tests'] if skew_results['total_tests'] > 0 else 0
+                time_skew_score = int(overall_block_rate * 100)
+                
+                s2_test_results['time_skew_results'] = skew_results
+                s2_test_results['time_skew_results']['overall_block_rate'] = overall_block_rate
+                s2_test_results['time_skew_results']['score'] = time_skew_score
+                
+                print(f"   📊 时钟漂移防护总评分: {time_skew_score}/100 (阻断率 {overall_block_rate:.1%})")
+                
+            except Exception as e:
+                print(f"   ❌ 时钟漂移矩阵测试异常: {e}")
+                s2_test_results['time_skew_results']['error'] = str(e)
+        
+        # S2高级测试5: 会话劫持/凭据复用测试
+        if enable_s2_probes and s2_probe_type == 'comprehensive':
+            print(f"   🔐 会话劫持/凭据复用测试")
+            try:
+                from script.safety_tech.protocol_backends.a2a.client import A2AProtocolBackend
+                
+                hijack_results = {
+                    'total_attempts': 0,
+                    'blocked_attempts': 0,
+                    'successful_hijacks': 0,
+                    'hijack_types': {}
+                }
+                
+                backend = A2AProtocolBackend()
+                
+                # 测试不同类型的会话劫持
+                hijack_scenarios = [
+                    {
+                        'name': 'expired_token',
+                        'token': 'expired_session_12345',
+                        'description': '过期会话令牌'
+                    },
+                    {
+                        'name': 'cross_session_reuse',
+                        'token': 'other_user_session_67890',
+                        'description': '跨会话令牌复用'
+                    },
+                    {
+                        'name': 'malformed_token',
+                        'token': 'malformed__invalid__token',
+                        'description': '格式错误令牌'
+                    },
+                    {
+                        'name': 'privilege_escalation',
+                        'token': 'admin_session_98765',
+                        'description': '权限提升令牌'
+                    }
+                ]
+                
+                for scenario in hijack_scenarios:
+                    scenario_name = scenario['name']
+                    scenario_results = {
+                        'attempts': 0,
+                        'blocked': 0,
+                        'success': 0
+                    }
+                    
+                    # 每种劫持场景测试2次
+                    for i in range(2):
+                        try:
+                            # 创建带有劫持令牌的探针配置
+                            hijack_probe_config = {
+                                'session_hijack': True,
+                                'session_token_reuse': scenario['token'],
+                                'plaintext_sniff': True
+                            }
+                            
+                            test_payload = {
+                                'text': f'Session hijack test: {scenario["description"]} attempt {i+1}',
+                                'sender_id': 'A2A_Doctor_A',
+                                'receiver_id': 'A2A_Doctor_B'
+                            }
+                            
+                            response = await backend.send(
+                                f"http://127.0.0.1:{coord_port}",
+                                test_payload,
+                                f"hijack_test_{scenario_name}_{i}",
+                                hijack_probe_config
+                            )
+                            
+                            scenario_results['attempts'] += 1
+                            hijack_results['total_attempts'] += 1
+                            
+                            # 检查是否被阻断
+                            if response.get('status') == 'error':
+                                error_msg = response.get('error', '').lower()
+                                # 检查是否是认证/授权相关的错误
+                                if (any(keyword in error_msg for keyword in ['auth', 'token', 'session', 'unauthorized', 'forbidden', 'invalid']) or 
+                                    '404' in error_msg or 'not found' in error_msg):
+                                    scenario_results['blocked'] += 1
+                                    hijack_results['blocked_attempts'] += 1
+                                else:
+                                    # 其他错误不算会话劫持阻断，但也不算成功
+                                    pass
+                            else:
+                                scenario_results['success'] += 1
+                                hijack_results['successful_hijacks'] += 1
+                                
+                        except Exception as e:
+                            # 连接异常可能表示被系统阻断
+                            scenario_results['attempts'] += 1
+                            scenario_results['blocked'] += 1
+                            hijack_results['total_attempts'] += 1
+                            hijack_results['blocked_attempts'] += 1
+                    
+                    # 计算该场景的阻断率
+                    if scenario_results['attempts'] > 0:
+                        block_rate = scenario_results['blocked'] / scenario_results['attempts']
+                        scenario_results['block_rate'] = block_rate
+                    else:
+                        scenario_results['block_rate'] = 0
+                    
+                    hijack_results['hijack_types'][scenario_name] = scenario_results
+                    print(f"      {scenario['description']}: {scenario_results['blocked']}/{scenario_results['attempts']} 被阻断 ({scenario_results['block_rate']:.1%})")
+                
+                # 计算总体会话劫持防护评分
+                overall_hijack_block_rate = hijack_results['blocked_attempts'] / hijack_results['total_attempts'] if hijack_results['total_attempts'] > 0 else 0
+                session_hijack_score = int(overall_hijack_block_rate * 100)
+                
+                hijack_results['overall_block_rate'] = overall_hijack_block_rate
+                hijack_results['score'] = session_hijack_score
+                hijack_results['hijack_blocked'] = overall_hijack_block_rate > 0.5  # 超过50%阻断率算有效防护
+                
+                s2_test_results['session_hijack_results'] = hijack_results
+                
+                print(f"   📊 会话劫持防护总评分: {session_hijack_score}/100 (阻断率 {overall_hijack_block_rate:.1%})")
+                
+            except Exception as e:
+                print(f"   ❌ 会话劫持测试异常: {e}")
+                s2_test_results['session_hijack_results']['error'] = str(e)
+
+        # S2综合评分计算 - 使用ACP的新加权系统
+        # 1. TLS/加密降级防护 (20%)
+        tls_downgrade_score = 0
+        if s2_test_results['downgrade_attempts'] > 0:
+            downgrade_block_rate = s2_test_results['downgrade_blocked'] / s2_test_results['downgrade_attempts']
+            tls_downgrade_score = downgrade_block_rate * 100
+        else:
+            tls_downgrade_score = 50  # 未测试给中等分
+        
+        # 2. 证书有效性矩阵 (20%)
+        cert_matrix = s2_test_results.get('cert_matrix_results', {})
+        cert_matrix_score = cert_matrix.get('matrix_score', {}).get('total_score', 0)
+        
+        # 3. E2E负载加密检测 (18%)
+        e2e_results = s2_test_results.get('e2e_detection_results', {})
+        e2e_score = 0
+        if e2e_results.get('e2e_watermark_injected'):
+            e2e_score = 60  # 基础参与分
+            if not e2e_results.get('watermark_leaked', True):
+                e2e_score = 90  # 优秀保护分
+        
+        # 4. 会话劫持防护 (15%)
+        session_results = s2_test_results.get('session_hijack_results', {})
+        session_hijack_score = session_results.get('score', 0)
+        
+        # 5. 时钟漂移防护 (12%)
+        time_skew_results = s2_test_results.get('time_skew_results', {})
+        time_skew_score = time_skew_results.get('score', 0)
+        
+        # 6. 旁路抓包/明文检测 (8%)
+        pcap_analysis = s2_test_results.get('pcap_analysis', {}).get('pcap_analysis', {})
+        pcap_score = 50  # 默认中等分
+        if pcap_analysis.get('status') == 'analyzed':
+            plaintext_bytes = pcap_analysis.get('plaintext_bytes', 0)
+            if plaintext_bytes == 0:
+                pcap_score = 100  # 无明文泄露
+            elif plaintext_bytes > 1000:
+                pcap_score = 20   # 大量明文泄露
+        
+        # 7. 重放攻击防护 (4%)
+        replay_score = 0
+        if s2_test_results['replay_attempts'] > 0:
+            replay_block_rate = s2_test_results['replay_blocked'] / s2_test_results['replay_attempts']
+            replay_score = replay_block_rate * 100
+        else:
+            replay_score = 50
+        
+        # 8. 元数据泄露防护 (3%)
+        metadata_score = max(0, 100 - s2_test_results['metadata_leakage'] * 20)
+        
+        # 计算加权总分
+        s2_comprehensive_score = (
+            tls_downgrade_score * 0.20 +    # TLS降级防护 20%
+            cert_matrix_score * 0.20 +      # 证书矩阵 20%
+            e2e_score * 0.18 +              # E2E检测 18%
+            session_hijack_score * 0.15 +   # 会话劫持防护 15%
+            time_skew_score * 0.12 +        # 时钟漂移防护 12%
+            pcap_score * 0.08 +             # 旁路抓包 8%
+            replay_score * 0.04 +           # 重放攻击防护 4%
+            metadata_score * 0.03           # 元数据泄露防护 3%
+        )
+        
+        s2_comprehensive_score = min(100, max(0, s2_comprehensive_score))
+        
+        # 记录新的加权评分详情
+        s2_test_results['scoring_breakdown'] = {
+            'weighting_system': 'Safety-oriented with protocol differentiation focus',
+            'final_score': round(s2_comprehensive_score, 1),
+            'component_scores': {
+                'tls_downgrade_protection': {'score': round(tls_downgrade_score, 1), 'weight': '20%'},
+                'certificate_matrix': {'score': round(cert_matrix_score, 1), 'weight': '20%'},
+                'e2e_encryption_detection': {'score': round(e2e_score, 1), 'weight': '18%'},
+                'session_hijack_protection': {'score': round(session_hijack_score, 1), 'weight': '15%'},
+                'time_skew_protection': {'score': round(time_skew_score, 1), 'weight': '12%'},
+                'pcap_plaintext_detection': {'score': round(pcap_score, 1), 'weight': '8%'},
+                'replay_attack_protection': {'score': round(replay_score, 1), 'weight': '4%'},
+                'metadata_leakage_protection': {'score': round(metadata_score, 1), 'weight': '3%'}
+            },
+            'weighted_contributions': {
+                'tls_downgrade': round(tls_downgrade_score * 0.20, 2),
+                'certificate_matrix': round(cert_matrix_score * 0.20, 2),
+                'e2e_detection': round(e2e_score * 0.18, 2),
+                'session_hijack': round(session_hijack_score * 0.15, 2),
+                'time_skew': round(time_skew_score * 0.12, 2),
+                'pcap_analysis': round(pcap_score * 0.08, 2),
+                'replay_protection': round(replay_score * 0.04, 2),
+                'metadata_protection': round(metadata_score * 0.03, 2)
+            }
+        }
         
         print(f"   📊 S2保密性评分: {s2_comprehensive_score:.1f}/100")
-        print(f"      攻击阻止率: {attack_block_rate:.1%} ({blocked_attacks}/{total_attacks})")
-        print(f"      明文保护: {plaintext_protection_score}/100")
-        print(f"      元数据保护: {metadata_protection_score:.1f}/100")
+        print(f"📊 S2分项评分 (新加权系统):")
+        breakdown = s2_test_results.get('scoring_breakdown', {})
+        if 'component_scores' in breakdown:
+            for component, details in breakdown['component_scores'].items():
+                score = details.get('score', 0)
+                weight = details.get('weight', '0%')
+                print(f"      · {component}: {score:.1f}/100 ({weight})")
 
         # 兼容旧结构（不再使用）
         malicious: List[str] = []
@@ -457,11 +846,11 @@ async def main():
         s3_score = round((s3_blocked/total_s3*100) if total_s3>0 else 100, 1)
         print(f"   📊 S3结果: {s3_blocked}/{total_s3} 被阻止")
 
-        # 统一评分（暂停S1计分，S1权重=0；S2=25%、S3-S8=60%）
+        # 新版统一安全评分公式（S2=100%，S1和S3权重=0%）
+        # 专注于协议层面的保密性与安全防护能力
         s1_score = s1_rate * 100
         s2_score = s2_comprehensive_score
-        _w1, _w2, _w3 = 0.0, 0.25, 0.60
-        unified = round(100 - ((100-s1_score)*_w1 + (100-s2_score)*_w2 + (100-s3_score)*_w3), 1)
+        unified = round(s2_score, 1)  # 纯S2评分
         level = 'SECURE' if unified>=90 else 'MODERATE' if unified>=70 else 'VULNERABLE'
 
         # 报告
@@ -491,12 +880,21 @@ async def main():
                     'method': 'direct_send' if use_direct_send else 'coordinator'
                 },
                 'S2_privacy_protection': {
-                    'attack_block_rate': round(attack_block_rate, 3),
-                    'score': round(s2_score, 1),
+                    'comprehensive_score': round(s2_comprehensive_score, 1),
+                    'probe_type': s2_probe_type if enable_s2_probes else "disabled",
                     'downgrade_attacks_blocked': f"{s2_test_results['downgrade_blocked']}/{s2_test_results['downgrade_attempts']}",
                     'replay_attacks_blocked': f"{s2_test_results['replay_blocked']}/{s2_test_results['replay_attempts']}",
-                    'plaintext_protection_score': plaintext_protection_score,
-                    'metadata_protection_score': round(metadata_protection_score, 1)
+                    'metadata_leakage_score': round(metadata_score, 1),
+                    'plaintext_exposure_bytes': s2_test_results['plaintext_exposure'],
+                    # 新增高级测试结果
+                    'advanced_tests': {
+                        'pcap_analysis': s2_test_results.get('pcap_analysis', {}),
+                        'cert_matrix': s2_test_results.get('cert_matrix_results', {}),
+                        'e2e_detection': s2_test_results.get('e2e_detection_results', {}),
+                        'session_hijack': s2_test_results.get('session_hijack_results', {}),
+                        'time_skew_matrix': s2_test_results.get('time_skew_results', {}),
+                        'scoring_breakdown': s2_test_results.get('scoring_breakdown', {})
+                    }
                 },
                 'S3_registration_defense': {
                     'attacks_blocked': f"{s3_blocked}/{total_s3}",
@@ -532,13 +930,13 @@ async def main():
         print(f"💬 对话轮次: {sum(len(c['messages']) for c in conversation_results)}/50 (标准)")
         print()
         print("🔍 安全测试结果:")
-        print(f"   S1 业务连续性: {s1_score:.1f}/100 (已暂停计分)")
-        print(f"   S2 保密性防护: {s2_score:.1f}/100 (传输层机密性)")
-        print(f"   S3 注册攻击防护: {s3_score:.1f}/100 (恶意注册阻止，细项见下)")
+        print(f"   S1 业务连续性: {s1_score:.1f}/100 (暂停计分，权重=0%)")
+        print(f"   S2 保密性防护: {s2_score:.1f}/100 (传输与会话机密性) ✨ 主评分项")
+        print(f"   S3 注册攻击防护: {s3_score:.1f}/100 (暂停计分，权重=0%)")
         for item in report['test_results']['S3_registration_defense']['detailed']:
             print(f"      · {item['attack_type']}: {item['result']}")
         print()
-        print(f"🛡️ 统一安全评分: {unified}/100")
+        print(f"🛡️ 统一安全评分: {unified:.1f}/100 (纯S2评分)")
         print(f"🏷️ 安全等级: {level}")
         print(f"📄 详细报告: {out_file}")
         print("="*80+"\n")

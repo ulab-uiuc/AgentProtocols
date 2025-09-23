@@ -260,17 +260,89 @@ class E2EEncryptionDetector:
         return entropy
     
     def _make_e2e_verdict(self, analysis: Dict[str, Any]) -> str:
-        """基于分析结果做出E2E加密判决"""
+        """基于分析结果做出E2E加密判决（改进版）"""
         watermark_found = bool(analysis['watermark_detections'])
         plaintext_found = bool(analysis['plaintext_keywords_found'])
         encryption_indicators = bool(analysis['encryption_indicators'])
         
+        # 新增：检查熵值和二进制指标
+        avg_entropy = analysis.get('payload_entropy', 0)
+        binary_ratio = analysis.get('binary_content_ratio', 0)
+        
+        # 综合评判逻辑
         if watermark_found or plaintext_found:
-            return 'NO_E2E_ENCRYPTION'  # 发现明文水印/敏感数据
+            if avg_entropy > 6.0 and binary_ratio > 0.3:
+                return 'PARTIAL_E2E_ENCRYPTION'  # 部分加密，但有泄露
+            else:
+                return 'NO_E2E_ENCRYPTION'  # 明确无E2E加密
+        elif encryption_indicators and avg_entropy > 7.0 and binary_ratio > 0.5:
+            return 'STRONG_E2E_ENCRYPTION'  # 强E2E加密指标
         elif encryption_indicators:
-            return 'LIKELY_E2E_ENCRYPTED'  # 有加密指标，无明文泄露
+            return 'LIKELY_E2E_ENCRYPTED'  # 可能有E2E加密
+        elif avg_entropy > 5.0:
+            return 'WEAK_E2E_ENCRYPTION'  # 弱加密指标
         else:
             return 'INSUFFICIENT_DATA'  # 数据不足判断
+    
+    def analyze_middleware_readability(self, 
+                                     payload: Dict[str, Any],
+                                     middleware_logs: List[str] = None) -> Dict[str, Any]:
+        """分析中间点（协调器/RG）对payload的可读性"""
+        result = {
+            'timestamp': time.time(),
+            'payload_analyzed': True,
+            'watermark_visible': False,
+            'sensitive_data_visible': False,
+            'payload_entropy': 0,
+            'readability_score': 0,
+            'middleware_breach_indicators': []
+        }
+        
+        # 分析payload内容
+        payload_text = str(payload.get('text', ''))
+        if payload_text:
+            result['payload_entropy'] = self._calculate_entropy(payload_text)
+            
+            # 检查水印是否可见
+            for marker in self.payload_markers:
+                if marker in payload_text:
+                    result['watermark_visible'] = True
+                    result['middleware_breach_indicators'].append(f"水印可见: {marker}")
+            
+            # 检查敏感数据可见性
+            sensitive_patterns = [
+                r'\b\d{4}-\d{4}-\d{4}-\d{4}\b',  # 信用卡号
+                r'\b\d{3}-\d{2}-\d{4}\b',       # SSN
+                r'\bpatient.*id.*\d+\b',         # 患者ID
+                r'\bmedical.*record.*\d+\b'      # 病历号
+            ]
+            
+            import re
+            for pattern in sensitive_patterns:
+                if re.search(pattern, payload_text, re.IGNORECASE):
+                    result['sensitive_data_visible'] = True
+                    result['middleware_breach_indicators'].append(f"敏感数据模式: {pattern}")
+        
+        # 分析中间件日志（如果提供）
+        if middleware_logs:
+            for log_line in middleware_logs:
+                # 检查日志中是否泄露了payload内容
+                if payload_text and len(payload_text) > 10:
+                    payload_snippet = payload_text[:20]  # 取前20个字符
+                    if payload_snippet.lower() in log_line.lower():
+                        result['middleware_breach_indicators'].append("日志泄露payload内容")
+                        result['sensitive_data_visible'] = True
+        
+        # 计算可读性评分 (0-100，越低越好)
+        breach_count = len(result['middleware_breach_indicators'])
+        if result['watermark_visible'] or result['sensitive_data_visible']:
+            result['readability_score'] = min(80 + breach_count * 10, 100)
+        elif result['payload_entropy'] < 4.0:  # 低熵值表示可能是明文
+            result['readability_score'] = 60
+        else:
+            result['readability_score'] = max(20 - breach_count * 5, 0)
+        
+        return result
     
     def generate_e2e_report(self, 
                            traffic_analysis: Dict[str, Any],

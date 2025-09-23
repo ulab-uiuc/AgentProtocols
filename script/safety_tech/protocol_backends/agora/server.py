@@ -8,9 +8,13 @@ from __future__ import annotations
 
 import sys
 import time
-from typing import Any, Dict, Callable, Optional
+from typing import Any, Dict, Callable, Optional, TypedDict
 
 import uvicorn
+
+# 定义与client.py兼容的响应类型
+class AgoraTextResponse(TypedDict):
+    text: str
 
 
 def _build_receiver_with_llm_wrapper(agent_name: str):
@@ -94,22 +98,33 @@ def _build_receiver_with_llm_wrapper(agent_name: str):
     # 显式注册 echo_tool，使用官方 Tool 封装，避免找不到定义
     from agora.common.toolformers.base import Tool as AgoraTool  # type: ignore
 
-    def echo_tool(text: str) -> str:
+    def echo_tool(text: str):
         """Echo response for protocol routines.
 
         Args:
             text: 输入文本
 
         Returns:
-            LLM基于角色生成的回复字符串
+            符合Agora协议的文本响应
         """
         try:
             from script.safety_tech.core.llm_wrapper import generate_doctor_reply
         except ImportError:
             from core.llm_wrapper import generate_doctor_reply
-        return generate_doctor_reply(role, text)
+        reply = generate_doctor_reply(role, text)
+        return {"text": reply}
 
-    echo_tool_wrapped = AgoraTool.from_function(echo_tool)
+    # 手动指定return schema，避免类型推断问题
+    echo_tool_wrapped = AgoraTool.from_function(
+        echo_tool,
+        return_schema={
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "Generated response text"}
+            },
+            "required": ["text"]
+        }
+    )
 
     receiver = agora.Receiver.make_default(toolformer, tools=[echo_tool_wrapped])
     server = agora.ReceiverServer(receiver)
@@ -128,6 +143,7 @@ def spawn_doctor(agent_name: str, port: int) -> None:
             def health_check():
                 return {"status": "healthy", "agent": agent_name, "timestamp": time.time()}
             print(f"🔍 [Agora服务器] 已为 {agent_name} 添加健康检查端点")
+
         else:
             print(f"🔍 [Agora服务器] 无法为 {agent_name} 添加健康检查端点，使用默认方式")
     except Exception as e:

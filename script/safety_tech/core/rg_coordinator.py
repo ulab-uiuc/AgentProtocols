@@ -168,6 +168,10 @@ class RGCoordinator:
         """启动协调器"""
         self.running = True
         
+        # 立即执行一次参与者刷新，确保启动时有参与者信息
+        logger.info("Starting initial participant refresh...")
+        await self._refresh_participants()
+        
         # 启动目录轮询任务
         asyncio.create_task(self._directory_polling_loop())
         
@@ -180,7 +184,11 @@ class RGCoordinator:
         server_thread.start()
         await asyncio.sleep(2)  # 等待服务器启动
         
+        # 再次刷新参与者，确保服务器启动后有最新信息
+        await self._refresh_participants()
+        
         logger.info(f"RG Coordinator started for conversation {self.conversation_id} on port {self.port}")
+        logger.info(f"Initial participants loaded: {list(self.participants.keys())}")
     
     async def stop(self):
         """停止协调器"""
@@ -250,9 +258,16 @@ class RGCoordinator:
     
     async def route_message(self, sender_id: str, receiver_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         """路由消息"""
-        # 验证发送者
+        # 验证发送者 - 如果参与者信息为空，尝试强制刷新一次
+        if not self.participants:
+            logger.warning("No participants loaded, forcing directory refresh...")
+            await self._refresh_participants()
+            await asyncio.sleep(0.5)  # 给RG一点时间处理
+        
         if sender_id not in self.participants:
-            raise ValueError(f"Sender {sender_id} not registered in conversation")
+            # 提供详细的调试信息
+            participant_list = list(self.participants.keys()) if self.participants else "No participants loaded"
+            raise ValueError(f"Sender {sender_id} not registered in conversation {self.conversation_id}. Available participants: {participant_list}")
         
         sender = self.participants[sender_id]
         

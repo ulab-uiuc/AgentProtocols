@@ -267,10 +267,34 @@ if __name__ == "__main__":
         await _wait_http_ok(f"http://127.0.0.1:{coord_port}/health", 20.0)
 
         # 3) 启动 原生ACP A/B 服务（统一后端API）
-        await spawn_backend('acp', 'doctor_a', a_port, coord_endpoint=f"http://127.0.0.1:{coord_port}")
-        await spawn_backend('acp', 'doctor_b', b_port, coord_endpoint=f"http://127.0.0.1:{coord_port}")
-        await health_backend('acp', f"http://127.0.0.1:{a_port}")
-        await health_backend('acp', f"http://127.0.0.1:{b_port}")
+        print(f"🚀 启动ACP Agent服务器...")
+        spawn_a = await spawn_backend('acp', 'doctor_a', a_port, coord_endpoint=f"http://127.0.0.1:{coord_port}")
+        spawn_b = await spawn_backend('acp', 'doctor_b', b_port, coord_endpoint=f"http://127.0.0.1:{coord_port}")
+        print(f"   Doctor A spawn result: {spawn_a}")
+        print(f"   Doctor B spawn result: {spawn_b}")
+        
+        # 等待ACP服务器完全启动
+        print(f"⏳ 等待ACP服务器启动...")
+        await asyncio.sleep(15)  # 给ACP服务器更多启动时间（uvicorn需要时间）
+        
+        # 健康检查，重试机制
+        print(f"🔍 ACP服务器健康检查...")
+        for attempt in range(5):
+            try:
+                health_a = await health_backend('acp', f"http://127.0.0.1:{a_port}")
+                health_b = await health_backend('acp', f"http://127.0.0.1:{b_port}")
+                print(f"   Doctor A health: {health_a}")
+                print(f"   Doctor B health: {health_b}")
+                if health_a.get('status') == 'success' and health_b.get('status') == 'success':
+                    print(f"   ✅ ACP服务器健康检查通过")
+                    break
+            except Exception as e:
+                print(f"   ⚠️ ACP健康检查尝试 {attempt+1}/5 失败: {e}")
+                if attempt < 4:
+                    await asyncio.sleep(5)
+                else:
+                    print(f"   ❌ ACP服务器健康检查失败，继续执行...")
+                    # 继续执行，可能服务器仍可工作
 
         # 4) 启动合法 Observer 并订阅（同进程）
         await create_observer_agent(

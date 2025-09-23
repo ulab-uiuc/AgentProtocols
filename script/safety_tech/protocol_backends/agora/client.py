@@ -123,21 +123,30 @@ def _ensure_sender() -> None:
     )
 
     # 按照官方文档，不指定返回类型，让SDK自动处理（参考: https://agoraprotocol.org/docs/getting-started）
-    @sender.task()
-    def send_text(text: str):
-        """
-        Send text to a remote Agora Receiver and get response.
-        
-        Args:
-            text: The text message to send to the remote agent
-        
-        Returns:
-            Response from the remote agent (type handled automatically by SDK).
-        """
-        pass  # 函数体为空，由Agora SDK自动处理通信逻辑
+    try:
+        @sender.task()
+        def send_text(text: str, target: str = None):
+            """
+            Send text to a remote Agora Receiver and get response.
+            
+            Args:
+                text: The text message to send to the remote agent
+                target: Target endpoint (optional, for compatibility)
+            
+            Returns:
+                Response from the remote agent (type handled automatically by SDK).
+            """
+            pass  # 函数体为空，由Agora SDK自动处理通信逻辑
 
-    _SENDER = sender
-    _SEND_TEXT_TASK = send_text
+        print(f"🔍 [Agora Client] Task created successfully: {type(send_text)}")
+        
+        # 全局变量已在函数开头声明
+        _SENDER = sender
+        _SEND_TEXT_TASK = send_text
+        print(f"🔍 [Agora Client] Global variables set: _SENDER={type(_SENDER)}, _SEND_TEXT_TASK={type(_SEND_TEXT_TASK)}")
+    except Exception as e:
+        print(f"❌ [Agora Client] Task creation failed: {type(e).__name__}: {e}")
+        raise RuntimeError(f"无法创建 Agora 发送任务: {type(e).__name__}: {e}")
 
 
 def _extract_text(payload: Dict[str, Any]) -> str:
@@ -239,9 +248,19 @@ class AgoraProtocolBackend(BaseProtocolBackend):
 
         # 使用官方Agora SDK发送，但要正确处理返回格式
         try:
+            # 使用SDK发送 - 直接调用而不是放在线程中
+            # Agora SDK的task通常是同步的，但可能包含内部异步操作
             import asyncio as _asyncio
-            # 使用SDK发送
-            raw_result = await _asyncio.to_thread(_SEND_TEXT_TASK, text, target=endpoint)
+            try:
+                # 首先尝试直接调用
+                raw_result = _SEND_TEXT_TASK(text, target=endpoint)
+                # 如果返回的是协程或Future，等待它
+                if _asyncio.iscoroutine(raw_result) or hasattr(raw_result, '__await__'):
+                    raw_result = await raw_result
+            except Exception as sync_error:
+                # 如果直接调用失败，尝试在线程中运行
+                print(f"🔍 [Agora Client] Direct call failed, trying thread: {sync_error}")
+                raw_result = await _asyncio.to_thread(_SEND_TEXT_TASK, text, target=endpoint)
             
             # 正确处理SDK返回的结果，转换为标准格式
             if isinstance(raw_result, str):
@@ -282,10 +301,38 @@ class AgoraProtocolBackend(BaseProtocolBackend):
         # 使用我们新增的原生 ReceiverServer 启动
         try:
             import subprocess, sys, os
+            from pathlib import Path
+            
+            # 设置工作目录为项目根目录
+            current_file = Path(__file__).resolve()
+            project_root = current_file.parent.parent.parent.parent.parent  # 5级向上
+            
             env = os.environ.copy()
             env['AGORA_AGENT_NAME'] = f"Agora_Doctor_A" if role.lower() == 'doctor_a' else "Agora_Doctor_B"
             env['AGORA_PORT'] = str(port)
-            proc = subprocess.Popen([sys.executable, '-m', 'script.safety_tech.protocol_backends.agora.server'], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+            
+            # 捕获stderr用于调试
+            proc = subprocess.Popen(
+                [sys.executable, '-m', 'script.safety_tech.protocol_backends.agora.server'], 
+                env=env,
+                cwd=str(project_root),
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            # 检查进程是否立即退出（表示启动失败）
+            try:
+                stdout, stderr = proc.communicate(timeout=1.0)
+                if proc.returncode != 0:
+                    return {
+                        "status": "error", 
+                        "error": f"Agora server启动失败，退出码: {proc.returncode}, stderr: {stderr}, stdout: {stdout}"
+                    }
+            except subprocess.TimeoutExpired:
+                # 进程没有立即退出，说明启动成功
+                pass
+            
             return {"status": "success", "data": {"pid": proc.pid, "port": port}}
         except Exception as e:
             return {"status": "error", "error": f"Failed to spawn Agora server: {e}"}

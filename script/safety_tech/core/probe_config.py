@@ -210,6 +210,7 @@ def create_comprehensive_probe_config() -> ProbeConfig:
         mitm_proxy=False,  # MITM需要额外基础设施，默认关闭
         did_spoofing=True,
         fake_did="did:fake:comprehensive_test",
+        fake_signature="fake_comprehensive_signature",
         # 新增高级探针
         pcap_capture=True,  # 启用旁路抓包
         cert_validity_matrix=True,  # 启用证书矩阵测试

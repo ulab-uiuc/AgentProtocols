@@ -335,7 +335,7 @@ def _read_env_model_config() -> dict:
     # NVIDIA LLaMA配置 - 统一默认值
     api_key = _os.environ.get('NVIDIA_API_KEY', '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')
     base_url = _os.environ.get('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1')
-    model_name = _os.environ.get('NVIDIA_MODEL', 'meta/llama-3.1-8b-instruct')
+    model_name = _os.environ.get('NVIDIA_MODEL', 'meta/llama-3.3-70b-instruct')
     temperature = float(_os.environ.get('NVIDIA_TEMPERATURE', '0.3'))
     
     print(f"[LLM-CONFIG] Using NVIDIA LLaMA: {model_name}")
