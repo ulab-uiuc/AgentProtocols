@@ -189,7 +189,7 @@ class Core:
                         model=self._local_model_id,
                         messages=truncated_messages,
                         tools=tools,
-                        tool_choice="auto",
+                        tool_choice="required",
                         temperature=self.config["model"]["temperature"],
                         n=1,
                     )

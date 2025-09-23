@@ -1,0 +1,79 @@
+============================================================
+ProtoRouter Benchmark Evaluation Report
+============================================================
+
+📊 Overall Statistics:
+  Total scenarios: 60
+  Correct scenarios: 33
+  Overall scenario accuracy: 55.00%
+  Total modules: 180
+  Correct modules: 138
+  Individual module accuracy: 76.67%
+  A2A/ACP confusion count: 21
+
+📈 Statistics by Difficulty:
+  L1:
+    Scenario accuracy: 75.00% (9/12)
+    Module accuracy: 75.00% (9/12)
+  L2:
+    Scenario accuracy: 58.33% (7/12)
+    Module accuracy: 75.00% (18/24)
+  L3:
+    Scenario accuracy: 66.67% (8/12)
+    Module accuracy: 88.89% (32/36)
+  L4:
+    Scenario accuracy: 41.67% (5/12)
+    Module accuracy: 81.25% (39/48)
+  L5:
+    Scenario accuracy: 33.33% (4/12)
+    Module accuracy: 66.67% (40/60)
+
+🔄 Protocol Confusion Matrix:
+  Actual\Pred      A2A     ACP   Agora     ANP
+  A2A               15      12      17       0
+  ACP                9      51       0       0
+  Agora              0       0      30       0
+  ANP                0       0       0      42
+
+❌ Error Analysis:
+  A2A → Agora: 17 times
+    Example - L1-Q7 Module 1:
+      LLM: The scenario involves ephemeral micro-task request/response with minimal handshake and a single lightweight session. Agora, as a minimal 'meta' protocol, is well-suited for lightweight, negotiation-fr...
+      GT:  A2A favors a short, lightweight link with minimal handshake and non-resource messages, aligning with one lightweight session and tiny request/response cycles....
+
+    Example - L2-Q8 Module 1:
+      LLM: Agora is selected for the Interactive Micro-Tools module due to its lightweight and negotiation-friendly nature, which is ideal for rapid request/response cycles with minimal overhead. The protocol's ...
+      GT:  A2A suits minimal-handshake, small, interactive tool calls with fast turnaround and no resource-oriented APIs....
+
+  A2A → ACP: 12 times
+    Example - L1-Q2 Module 1:
+      LLM: The Streaming-Queue System involves a centralized coordinator and multiple workers, focusing on structured task dispatch and result collection. ACP is well-suited for this scenario due to its REST-fir...
+      GT:  A2A offers a short, lightweight communication path with minimal handshake, favoring speed in simple streaming-queue settings....
+
+    Example - L1-Q4 Module 1:
+      LLM: The scenario requires low-latency broadcast from a single Publisher to multiple Subscribers, with a focus on frequent, small state updates and minimal delay. ACP is well-suited for structured, address...
+      GT:  A2A uses a lightweight path with minimal handshake overhead, making it suitable for fast fan-out of small, high-frequency updates....
+
+  ACP → A2A: 9 times
+    Example - L2-Q3 Module 2:
+      LLM: The Task Dispatch & Telemetry module requires a protocol that can handle task dispatch, telemetry collection, and maintain steady throughput with bounded queues. A2A's support for long-running tasks, ...
+      GT:  ACP provides resource endpoints, acknowledgements, idempotent POST/PUT, and rate limiting for steady dispatch and telemetry ingestion....
+
+    Example - L4-Q10 Module 3:
+      LLM: The Firmware OTA Chunk module involves uploading firmware via chunked endpoints with resume capabilities, requiring robust task/artifact lifecycle management. A2A's support for long-running tasks, mul...
+      GT:  Chunked OTA with Range/ETag/Digest and idempotent retries matches ACP....
+
+  ACP → : 2 times
+    Example - L5-Q9 Module 3:
+      GT:  Chunked map transfer with resume/integrity and backpressure fits resource-oriented flows....
+
+    Example - L5-Q9 Module 4:
+      GT:  Batch telemetry ingestion with idempotency and rate limits stabilizes pipelines....
+
+  A2A → : 1 times
+    Example - L5-Q9 Module 2:
+      GT:  Lightweight control feedback suits micro request/response cycles....
+
+  ANP → : 1 times
+    Example - L5-Q9 Module 5:
+      GT:  Confidential cross-fleet sharing requires verifiable identities and protected channels....
