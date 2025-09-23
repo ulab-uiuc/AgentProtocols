@@ -1147,10 +1147,10 @@ class AgoraRealLLMTest:
 async def main():
     """主函数"""
     import os as _os
-    # 强制NVIDIA LLaMA 3.2 1B (OpenAI兼容接口)
+    # 强制NVIDIA LLaMA 8B (OpenAI兼容接口) - 统一使用8B模型
     _os.environ["OPENAI_BASE_URL"] = "https://integrate.api.nvidia.com/v1"
     _os.environ["OPENAI_API_KEY"] = "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"
-    _os.environ["OPENAI_MODEL"] = "meta/llama-3.2-1b-instruct"
+    _os.environ["OPENAI_MODEL"] = "meta/llama-3.1-8b-instruct"
     # 允许通过环境变量覆盖配置文件路径
     _override = _os.environ.get("SAFETY_TECH_CONFIG")
     config_file = Path(_override) if _override else (SAFETY_TECH / "configs" / "config_agora.yaml")

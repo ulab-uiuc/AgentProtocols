@@ -34,6 +34,9 @@ class ACPProtocolBackend(BaseProtocolBackend):
         probe_results = {}
         client_kwargs = {}
         
+        # 导入必要的模块
+        import time
+        
         # 处理探针配置
         if probe_config:
             # TLS降级探针
@@ -96,6 +99,90 @@ class ACPProtocolBackend(BaseProtocolBackend):
                     'http://': proxy_endpoint,
                     'https://': proxy_endpoint
                 }
+            
+            # E2E负载加密检测探针（新增）
+            if probe_config.get('e2e_payload_detection'):
+                from script.safety_tech.core.e2e_detector import E2EEncryptionDetector
+                e2e_detector = E2EEncryptionDetector(probe_config.get('e2e_watermark', 'S2_E2E_WATERMARK'))
+                
+                # 修改原始payload注入水印
+                original_payload = {"text": text, "sender_id": "acp_probe", "receiver_id": "acp_target"}
+                modified_payload = e2e_detector.inject_watermark_payload(original_payload)
+                text = modified_payload.get('text', text)
+                
+                # 创建明文探测payload
+                if probe_config.get('e2e_probe_payload'):
+                    probe_payload = e2e_detector.create_plaintext_probe_payload()
+                    text += f" [PROBE_PAYLOAD: {probe_payload['probe_markers']['credit_card']}]"
+                
+                probe_results['e2e_watermark_injected'] = True
+                probe_results['e2e_detector_active'] = True
+            
+            # 证书有效性矩阵探针（新增）
+            if probe_config.get('cert_validity_matrix'):
+                probe_results['cert_matrix_active'] = True
+                
+                # 过期证书测试
+                if probe_config.get('cert_expired'):
+                    import ssl
+                    ssl_context = ssl.create_default_context()
+                    ssl_context.check_hostname = False
+                    ssl_context.verify_mode = ssl.CERT_NONE
+                    client_kwargs['verify'] = ssl_context
+                    probe_results['cert_expired_test'] = 'attempted'
+                
+                # 自签名证书测试
+                if probe_config.get('cert_self_signed'):
+                    # 强制严格验证模式测试自签名拒绝
+                    if 'verify' not in client_kwargs:
+                        client_kwargs['verify'] = True  # 严格验证
+                    probe_results['cert_self_signed_test'] = 'attempted'
+                
+                # 主机名不匹配测试
+                if probe_config.get('cert_invalid_hostname'):
+                    probe_results['cert_hostname_test'] = 'attempted'
+                    # 这里可以修改目标主机名来测试不匹配
+            
+            # 时钟漂移矩阵探针（增强版）
+            if probe_config.get('time_skew_matrix'):
+                import random
+                skew_levels = probe_config.get('time_skew_levels', [30, 120, 300, 600])
+                probe_results['time_skew_matrix_active'] = True
+                probe_results['skew_levels_tested'] = skew_levels
+                
+                # 随机选择一个漂移档位进行测试
+                if skew_levels:
+                    selected_skew = random.choice(skew_levels)
+                    # 随机选择正负漂移
+                    skew_direction = random.choice([-1, 1])
+                    actual_skew = selected_skew * skew_direction
+                    old_timestamp = time.time() + actual_skew
+                    
+                    # 增强的时间戳注入
+                    nonce_id = f"skew_{abs(actual_skew)}_{int(time.time())}"
+                    text = f"[TIME_SKEW:{old_timestamp}][NONCE:{nonce_id}] {text}"
+                    
+                    probe_results['time_skew_applied'] = actual_skew
+                    probe_results['skew_direction'] = 'future' if actual_skew > 0 else 'past'
+                    probe_results['skew_nonce'] = nonce_id
+                
+                # 窗口测试：注入重复/乱序标记
+                if probe_config.get('time_skew_window_test'):
+                    window_markers = [
+                        f"[WINDOW_REPEAT:{int(time.time())}]",
+                        f"[WINDOW_DISORDER:{random.randint(1000, 9999)}]",
+                        f"[WINDOW_DUPLICATE:MSG_{random.randint(100, 999)}]"
+                    ]
+                    selected_marker = random.choice(window_markers)
+                    text = f"{selected_marker} {text}"
+                    probe_results['window_test_marker'] = selected_marker
+            
+            # 旁路抓包探针（新增）
+            if probe_config.get('pcap_capture'):
+                probe_results['pcap_capture_enabled'] = True
+                probe_results['pcap_interface'] = probe_config.get('pcap_interface', 'lo0')
+                probe_results['pcap_duration'] = probe_config.get('pcap_duration_seconds', 10)
+                # 实际的pcap捕获将在更高层的runner中启动
 
         req = {
             "input": {

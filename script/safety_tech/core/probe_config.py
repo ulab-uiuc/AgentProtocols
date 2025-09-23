@@ -33,6 +33,14 @@ class ProbeConfig:
     mitm_proxy: bool = False
     mitm_proxy_endpoint: Optional[str] = None  # 代理端点
     mitm_cert_replacement: bool = False  # 证书替换测试
+    mitm_transparent_mode: bool = False  # 透明代理模式
+    mitm_root_ca_path: Optional[str] = None  # 测试根CA证书路径
+    
+    # 旁路抓包探针（新增）
+    pcap_capture: bool = False
+    pcap_interface: str = "lo0"  # 抓包网卡接口
+    pcap_filter: Optional[str] = None  # BPF过滤器
+    pcap_duration_seconds: int = 10  # 抓包持续时间
     
     # 会话劫持探针
     session_hijack: bool = False
@@ -42,6 +50,26 @@ class ProbeConfig:
     did_spoofing: bool = False
     fake_did: Optional[str] = None  # 伪造的DID
     fake_signature: Optional[str] = None  # 伪造的签名
+    
+    # 证书有效性矩阵探针（新增）
+    cert_validity_matrix: bool = False
+    cert_expired: bool = False  # 过期证书测试
+    cert_invalid_hostname: bool = False  # 主机名不匹配测试
+    cert_self_signed: bool = False  # 自签名证书测试
+    cert_chain_incomplete: bool = False  # 证书链不完整测试
+    cert_revoked: bool = False  # 撤销证书测试（OCSP/CRL）
+    cert_weak_cipher: bool = False  # 弱加密套件测试
+    cert_pinning_bypass: bool = False  # 证书固定绕过测试
+    
+    # E2E负载加密检测探针（新增）
+    e2e_payload_detection: bool = False
+    e2e_watermark: Optional[str] = None  # 水印标记
+    e2e_probe_payload: bool = False  # 探测payload可读性
+    
+    # 时钟漂移矩阵探针（新增）
+    time_skew_matrix: bool = False
+    time_skew_levels: Optional[list] = None  # 漂移档位列表，如[30, 120, 300, 600]秒
+    time_skew_window_test: bool = False  # 窗口内外重复测试
     
     # 网络层扰动（S1扩展）
     network_jitter_ms: Optional[int] = None  # 网络抖动
@@ -111,6 +139,63 @@ def create_s1_network_disturbance_config() -> ProbeConfig:
     )
 
 
+def create_s2_pcap_mitm_config(interface: str = "lo0", duration: int = 10) -> ProbeConfig:
+    """创建旁路抓包+MITM测试配置（优先级1）"""
+    return ProbeConfig(
+        pcap_capture=True,
+        pcap_interface=interface,
+        pcap_duration_seconds=duration,
+        pcap_filter="tcp port 8001 or tcp port 8888 or tcp port 9102 or tcp port 9103",
+        mitm_transparent_mode=True,
+        mitm_cert_replacement=True,
+        plaintext_sniff=True,
+        sniff_keywords=["password", "token", "patient", "medical", "diagnosis"]
+    )
+
+
+def create_s2_cert_matrix_config() -> ProbeConfig:
+    """创建证书有效性矩阵测试配置（优先级2）"""
+    return ProbeConfig(
+        cert_validity_matrix=True,
+        cert_expired=True,
+        cert_invalid_hostname=True, 
+        cert_self_signed=True,
+        cert_chain_incomplete=True,
+        cert_revoked=True,
+        cert_weak_cipher=True,
+        cert_pinning_bypass=True,
+        tls_downgrade=True,
+        tls_version_downgrade="1.0"
+    )
+
+
+def create_s2_e2e_detection_config(watermark: str = "S2_E2E_WATERMARK") -> ProbeConfig:
+    """创建E2E负载加密检测配置（优先级3）"""
+    return ProbeConfig(
+        e2e_payload_detection=True,
+        e2e_watermark=watermark,
+        e2e_probe_payload=True,
+        plaintext_sniff=True,
+        sniff_keywords=[watermark, "PLAINTEXT_MARKER", "SENSITIVE_DATA"]
+    )
+
+
+def create_s2_time_skew_config(levels: list = None) -> ProbeConfig:
+    """创建时钟漂移矩阵测试配置（优先级4）"""
+    if levels is None:
+        levels = [30, 120, 300, 600]  # ±30s, ±2m, ±5m, ±10m
+    
+    import time
+    return ProbeConfig(
+        time_skew_matrix=True,
+        time_skew_levels=levels,
+        time_skew_window_test=True,
+        replay_attack=True,
+        replay_nonce="skew_test",
+        replay_timestamp=time.time() - levels[0]  # 使用第一个漂移档位
+    )
+
+
 def create_comprehensive_probe_config() -> ProbeConfig:
     """创建综合探针配置（用于全面S2测试）"""
     import time
@@ -124,5 +209,16 @@ def create_comprehensive_probe_config() -> ProbeConfig:
         sniff_keywords=["password", "token", "patient", "medical", "diagnosis"],
         mitm_proxy=False,  # MITM需要额外基础设施，默认关闭
         did_spoofing=True,
-        fake_did="did:fake:comprehensive_test"
+        fake_did="did:fake:comprehensive_test",
+        # 新增高级探针
+        pcap_capture=True,  # 启用旁路抓包
+        cert_validity_matrix=True,  # 启用证书矩阵测试
+        cert_expired=True,
+        cert_invalid_hostname=True,
+        cert_self_signed=True,
+        e2e_payload_detection=True,  # 启用E2E检测
+        e2e_watermark="S2_E2E_WATERMARK_TEST",
+        time_skew_matrix=True,  # 启用时钟漂移矩阵
+        time_skew_levels=[30, 120, 300, 600],  # ±30s, ±2m, ±5m, ±10m
+        session_hijack=True  # 启用会话劫持测试
     )
