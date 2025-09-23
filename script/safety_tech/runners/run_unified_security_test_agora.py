@@ -51,6 +51,11 @@ class AgoraRealLLMTest:
         except Exception:
             pass
         
+        # 端口配置
+        self.rg_port = 8001
+        self.coord_port = 8888
+        self.obs_port = 8004
+        
         # 组件实例
         self.rg: Optional[RegistrationGateway] = None
         self.coordinator: Optional[RGCoordinator] = None
@@ -275,227 +280,204 @@ class AgoraRealLLMTest:
             logger.warning(f"Backfill request failed: {e}")
     
     async def conduct_s1_concurrent_attack_conversations(self):
-        """S1: 并发攻击下对话稳定性测试（默认跳过实际执行）"""
-        logger.info("🛡️ === S1: 并发攻击下对话稳定性测试 ===")
-        # 暂停S1实际执行：默认跳过，除非显式开启
+        """S1: 业务连续性测试（新架构）"""
+        logger.info("🛡️ === S1: 业务连续性测试（新架构） ===")
+        
+        # S1测试模式配置
         import os as _os
-        _skip = _os.environ.get('AGORA_DISABLE_S1', 'true').lower() == 'true' or \
-                _os.environ.get('AGORA_S1_TEST_MODE', 'skip').lower() in ('skip','none','off')
-        if _skip:
-            logger.info("⏭️ 跳过S1业务连续性测试（按配置）")
-            self.s1_results = {
-                "conversation_results": [],
-                "business_continuity_rate": 0.0,
-                "total_successful_rounds": 0,
-                "total_attempted_rounds": 0,
-                "latency_stats": {"avg_ms": 0.0, "p95_ms": 0.0, "p99_ms": 0.0},
-                "timeout_rate": 0.0,
-                "method": 'coordinator'
-            }
-            return []
-        logger.info(f"📊 标准测试规模: {len(self.medical_cases)}案例×5轮 = {len(self.medical_cases)*5}条对话")
+        s1_test_mode = _os.environ.get('AGORA_S1_TEST_MODE', 'light').lower()
+        _skip = s1_test_mode in ('skip', 'none', 'off')
         
-        # 启动并发攻击任务
-        attack_tasks = []
-        logger.info("⚔️ 启动5种并发攻击...")
-        
-        # 攻击1: 恶意Agent尝试注册
-        attack_tasks.append(asyncio.create_task(self._malicious_registration_attack()))
-        
-        # 攻击2: 垃圾消息攻击  
-        attack_tasks.append(asyncio.create_task(self._spam_message_attack()))
-        
-        # 攻击3: 重放攻击干扰
-        attack_tasks.append(asyncio.create_task(self._replay_interference_attack()))
-        
-        # 攻击4: DoS攻击
-        attack_tasks.append(asyncio.create_task(self._dos_attack()))
-        
-        # 攻击5: Observer干扰
-        attack_tasks.append(asyncio.create_task(self._observer_interference_attack()))
-        
-        # S1配置：支持数据面直连发送
-        use_direct_send = os.environ.get('AGORA_USE_DIRECT_SEND', 'false').lower() == 'true'
-        
-        # 在攻击环境下进行正常对话
-        conversation_results = []
-        total_attempted_rounds = 0
-        total_successful_rounds = 0
-        total_latencies = []  # 记录延迟用于p95/p99统计
-        
-        for i, case in enumerate(self.medical_cases):
-            logger.info(f"\n📋 【案例 {i+1}/{len(self.medical_cases)}】: {case['case_id']}")
-            logger.info(f"   患者信息: {case['patient_info']}")
+        if not _skip:
+            # 创建S1业务连续性测试器
+            from script.safety_tech.core.s1_config_factory import create_s1_tester
             
-            case_messages = []
-            successful_rounds = 0
+            if s1_test_mode == 'protocol_optimized':
+                s1_tester = create_s1_tester('agora', 'protocol_optimized')
+            else:
+                s1_tester = create_s1_tester('agora', s1_test_mode)
             
-            try:
-                # Doctor A 连续发起5轮会诊，通过Coordinator路由
-                for r in range(5):
-                    total_attempted_rounds += 1
-                    logger.info(f"   💬 Round {r+1}/5 - 攻击环境下会诊...")
-                    
-                    text = f"[Round {r+1}] {case['initial_question']} - Need consultation on treatment options."
-                    _mid = f"msg_{int(time.time()*1000)}"
-                    _cid = f"corr_{int(time.time()*1000)}_{r}"
-                    start_time = time.time()
-                    
+            logger.info(f"📊 S1测试模式: {s1_test_mode}")
+            logger.info(f"📊 负载矩阵: {len(s1_tester.load_config.concurrent_levels)} × "
+                      f"{len(s1_tester.load_config.rps_patterns)} × "
+                      f"{len(s1_tester.load_config.message_types)} = "
+                      f"{len(s1_tester.load_config.concurrent_levels) * len(s1_tester.load_config.rps_patterns) * len(s1_tester.load_config.message_types)} 种组合")
+            
+            # 定义Agora发送函数
+            import httpx as _httpx
+            import asyncio as _asyncio
+            
+            async def agora_send_function(payload):
+                """Agora协议发送函数"""
+                correlation_id = payload.get('correlation_id', 'unknown')
+                async with _httpx.AsyncClient() as client:
                     try:
-                        if use_direct_send:
-                            # 数据面直连发送
-                            from script.safety_tech.core.backend_api import send_backend
-                            payload = {
-                                'sender_id': 'Agora_Doctor_A',
-                                'receiver_id': 'Agora_Doctor_B', 
-                                'text': text,
-                                'message_id': _mid
-                            }
-                            result = await send_backend('agora', f"http://127.0.0.1:8003", payload, _cid, probe_config=None)
-                            is_ok = result.get('status') == 'success'
-                            js = result
-                            has_err = result.get('status') == 'error'
-                            status_ok = result.get('status') == 'success'
-                        else:
-                            # 协调器路由发送（原逻辑）
-                            async with httpx.AsyncClient() as client:
-                                rr = await client.post(f"http://127.0.0.1:8888/route_message", json={
-                                    'sender_id': 'Agora_Doctor_A','receiver_id':'Agora_Doctor_B','text': text,
-                                'message_id': _mid, 'correlation_id': _cid
-                            }, timeout=10.0)
-                                is_ok = rr.status_code in (200, 202)
-                                js = None
-                                try:
-                                    js = rr.json()
-                                except Exception:
-                                    js = None
-                                has_err = isinstance(js, dict) and (js.get('error') is not None)
-                                status_ok = isinstance(js, dict) and (js.get('status') in ('processed','ok','success'))
+                        # 通过协调器路由发送
+                        response = await client.post(f"http://127.0.0.1:{self.coord_port}/route_message", 
+                                                   json=payload, timeout=30.0)
                         
-                        latency_ms = (time.time() - start_time) * 1000
-                        total_latencies.append(latency_ms)
-                        
-                        # 统一成功标准：HTTP 200/202 且 响应无error；兼容status为processed/ok/success
-                        if is_ok and (status_ok or not has_err):
-                            # 路由成功后，轮询历史确认B侧回执
-                            receipt_found = False
-                            if not use_direct_send:  # 只有协调器路由需要确认回执
-                                async with httpx.AsyncClient() as client:
-                                    for attempt in range(5):  # 最多等待5次
-                                        await asyncio.sleep(1.0)
-                                        try:
-                                            hist_resp = await client.get(f"http://127.0.0.1:8888/message_history", params={'limit': 20}, timeout=5.0)
-                                            if hist_resp.status_code == 200:
-                                                messages = hist_resp.json()
-                                                # 查找对应correlation_id的回执
-                                                for msg in messages:
-                                                    if (msg.get('correlation_id') == _cid and 
-                                                        msg.get('sender_id') == 'Agora_Doctor_B'):
-                                                        receipt_found = True
-                                                        break
-                                                if receipt_found:
-                                                    break
-                                        except Exception:
-                                            pass
-                            else:
-                                # 直连发送认为成功就是回执确认
-                                receipt_found = True
-                            
-                            if receipt_found:
-                                successful_rounds += 1
-                                total_successful_rounds += 1
-                                case_messages.append({
-                                    "round": r+1, 
-                                    "question": case['initial_question'], 
-                                    "response": js if js is not None else {'status_code': getattr(rr, 'status_code', 200) if not use_direct_send else 200},
-                                    "receipt_confirmed": True,
-                                    "latency_ms": latency_ms,
-                                    "method": 'direct_send' if use_direct_send else 'coordinator'
-                                })
-                                logger.info(f"   ✅ Round {r+1}/5 - 成功 (攻击环境下，已确认B侧回执，{latency_ms:.1f}ms)")
-                            else:
-                                case_messages.append({
-                                    "round": r+1, 
-                                    "question": case['initial_question'], 
-                                    "response": js if js is not None else {'status_code': getattr(rr, 'status_code', 200) if not use_direct_send else 200},
-                                    "receipt_confirmed": False,
-                                    "latency_ms": latency_ms,
-                                    "method": 'direct_send' if use_direct_send else 'coordinator'
-                                })
-                                logger.info(f"   ❌ Round {r+1}/5 - 路由成功但未收到B侧回执 ({latency_ms:.1f}ms)")
+                        if response.status_code in (200, 202):
+                            try:
+                                resp_data = response.json()
+                                if resp_data.get('status') in ['success', 'ok', 'processed']:
+                                    return {"status": "success", "data": resp_data}
+                                else:
+                                    return resp_data
+                            except Exception:
+                                return {"status": "success", "message": "Request processed"}
                         else:
-                            debug_info = f"状态码:{rr.status_code}, 响应:{js}, has_err:{has_err}, status_ok:{status_ok}"
-                            logger.info(f"   ❌ Round {r+1}/5 - 失败 ({debug_info}) [攻击影响]")
+                            try:
+                                error_detail = response.json()
+                                return {"status": "error", "error": error_detail.get('detail', f"HTTP {response.status_code}")}
+                            except:
+                                return {"status": "error", "error": f"HTTP {response.status_code}"}
+                                
                     except Exception as e:
-                        logger.info(f"   ❌ Round {r+1}/5 - 异常: {str(e)} [攻击影响]")
+                        import traceback
+                        error_detail = f"{type(e).__name__}: {str(e)}"
+                        return {"status": "error", "error": error_detail}
+            
+            # S1测试前协调器状态检查
+            logger.info("🔍 S1测试前协调器状态检查:")
+            coord_participants_ready = False
+            try:
+                import httpx
+                async with httpx.AsyncClient() as client:
+                    # 检查协调器健康状态
+                    health_resp = await client.get(f"http://127.0.0.1:{self.coord_port}/health", timeout=5.0)
+                    logger.info(f"  协调器健康状态: {health_resp.status_code}")
                     
-                    await asyncio.sleep(3.0)  # 增加间隔，避免LLM频率限制
-                    
-                    case_result = {
-                        "case_id": case["case_id"],
-                        "case_info": case,
-                        "messages": case_messages,
-                        "total_rounds": len(case_messages),
-                        "success_rate": f"{successful_rounds}/5",
-                        "attack_impact": 5 - successful_rounds
-                    }
-                    conversation_results.append(case_result)
-                    
-                logger.info(f"   📊 案例完成: {successful_rounds}/5 轮成功 (攻击影响: {5-successful_rounds}轮)")
-                await asyncio.sleep(2.0)  # 案例间增加间隔
+                    if health_resp.status_code == 200:
+                        logger.info("  ✅ 协调器进程运行正常")
+                        
+                        # 测试协调器路由功能
+                        test_payload = {
+                            'sender_id': 'Agora_Doctor_A',
+                            'receiver_id': 'Agora_Doctor_B', 
+                            'text': 'Test message for coordinator',
+                            'correlation_id': 'test_coord_123'
+                        }
+                        
+                        route_resp = await client.post(f"http://127.0.0.1:{self.coord_port}/route_message", 
+                                                     json=test_payload, timeout=5.0)
+                        if route_resp.status_code == 200:
+                            logger.info("  ✅ 协调器路由功能正常，参与者信息已加载")
+                            coord_participants_ready = True
+                        else:
+                            logger.info(f"  ❌ 协调器路由测试失败: {route_resp.status_code}")
+                            try:
+                                error_detail = route_resp.json()
+                                logger.info(f"  ❌ 错误详情: {error_detail}")
+                            except:
+                                pass
+                                
+                        # 检查RG目录信息  
+                        rg_directory = await client.get(f"http://127.0.0.1:{self.rg_port}/directory", 
+                                                      params={"conversation_id": self.conversation_id}, timeout=5.0)
+                        if rg_directory.status_code == 200:
+                            rg_data = rg_directory.json()
+                            logger.info(f"  📋 RG目录: {rg_data['total_participants']} 个参与者")
+                            for p in rg_data['participants'][:2]:
+                                logger.info(f"      - {p['agent_id']}: {p['role']}")
+                        else:
+                            logger.info(f"  ⚠️ RG目录查询失败: {rg_directory.status_code}")
+                            
+            except Exception as e:
+                logger.info(f"  ❌ 协调器状态检查失败: {e}")
+                coord_participants_ready = False
+            
+            # 如果协调器参与者信息未就绪，等待更长时间
+            if not coord_participants_ready:
+                logger.info(f"  ⚠️ 协调器参与者信息未就绪，等待协调器轮询更新...")
+                await asyncio.sleep(15)  # 等待协调器轮询RG目录（增加到15秒）
+                # 再次尝试路由测试
+                try:
+                    async with httpx.AsyncClient() as client:
+                        route_test = await client.post(f"http://127.0.0.1:{self.coord_port}/route_message", 
+                                                     json=test_payload, timeout=5.0)
+                        if route_test.status_code == 200:
+                            logger.info(f"  ✅ 延迟后协调器路由功能恢复正常")
+                            coord_participants_ready = True
+                        else:
+                            logger.info(f"  ❌ 协调器路由仍然失败，S1测试可能受影响")
+                            try:
+                                error_detail = route_test.json()
+                                logger.info(f"  ❌ 错误详情: {error_detail}")
+                            except:
+                                pass
+                except Exception as e2:
+                    logger.info(f"  ❌ 延迟检查也失败: {e2}")
+                
+            if not coord_participants_ready:
+                logger.info(f"  ⚠️ 警告：协调器可能存在问题，S1测试结果可能不准确")
+
+            # 运行新版S1业务连续性测试
+            try:
+                logger.info(f"🚀 即将开始S1业务连续性测试，发送函数类型: {type(agora_send_function)}")
+                logger.info(f"🚀 测试参数: sender=Agora_Doctor_A, receiver=Agora_Doctor_B")
+                logger.info(f"🚀 端口配置: rg_port={self.rg_port}, coord_port={self.coord_port}, obs_port={self.obs_port}")
+                
+                # 运行S1业务连续性测试矩阵
+                s1_results = await s1_tester.run_full_test_matrix(
+                    send_func=agora_send_function,
+                    sender_id='Agora_Doctor_A',
+                    receiver_id='Agora_Doctor_B',
+                    rg_port=self.rg_port,
+                    coord_port=self.coord_port,
+                    obs_port=self.obs_port
+                )
                 
             except Exception as e:
-                logger.error(f"   ❌ Case {case['case_id']} failed: {e}")
-                conversation_results.append({
-                    "case_id": case['case_id'],
-                    "case_info": case,
-                    "messages": [],
-                    "total_rounds": 0,
-                    "success_rate": "0/5",
-                    "attack_impact": 5,
-                    "error": str(e)
-                })
+                logger.error(f"❌ S1测试执行失败: {e}")
+                import traceback
+                logger.error(f"详细错误: {traceback.format_exc()}")
+                s1_results = []
+        # 处理S1测试结果
+        if _skip:
+            logger.info("⏭️ 跳过S1业务连续性测试（按配置）")
+            s1_report = {
+                'test_summary': {
+                    'overall_completion_rate': 0.0,
+                    'overall_timeout_rate': 0.0,
+                    'total_requests': 0,
+                    'total_successful': 0,
+                    'total_test_combinations': 0
+                },
+                'latency_analysis': {
+                    'avg_ms': 0.0,
+                    'p95_ms': 0.0,
+                    'p99_ms': 0.0
+                },
+                'detailed_results': []
+            }
+        else:
+            s1_report = s1_tester.generate_comprehensive_report()
         
-        # 停止攻击任务
-        for task in attack_tasks:
-            task.cancel()
+        logger.info(f"\n🛡️ === S1业务连续性测试结果 ===")
+        logger.info(f"📊 总体完成率: {s1_report['test_summary']['overall_completion_rate']:.1%}")
+        logger.info(f"📊 总体超时率: {s1_report['test_summary']['overall_timeout_rate']:.1%}")
+        logger.info(f"📊 延迟统计: 平均{s1_report['latency_analysis']['avg_ms']:.1f}ms, "
+                  f"P50={s1_report['latency_analysis'].get('p50_ms', 0):.1f}ms, "
+                  f"P95={s1_report['latency_analysis']['p95_ms']:.1f}ms, "
+                  f"P99={s1_report['latency_analysis']['p99_ms']:.1f}ms")
         
-        # S1测试结果
-        business_continuity_rate = total_successful_rounds / total_attempted_rounds if total_attempted_rounds > 0 else 0
-        
-        # 计算延迟统计
-        timeout_count = len([l for l in total_latencies if l > 10000])  # 超过10秒视为超时
-        timeout_rate = timeout_count / len(total_latencies) if total_latencies else 0
-        
-        # 计算p95/p99延迟
-        import numpy as np
-        p95_latency = np.percentile(total_latencies, 95) if total_latencies else 0
-        p99_latency = np.percentile(total_latencies, 99) if total_latencies else 0
-        avg_latency = np.mean(total_latencies) if total_latencies else 0
-        
-        logger.info(f"\n🛡️ === S1测试结果 ===")
-        logger.info(f"📊 攻击环境下对话完成率: {total_successful_rounds}/{total_attempted_rounds} ({business_continuity_rate:.1%})")
-        logger.info(f"📊 业务连续性评分: {business_continuity_rate*100:.1f}/100")
-        logger.info(f"📊 延迟统计: 平均{avg_latency:.1f}ms, P95={p95_latency:.1f}ms, P99={p99_latency:.1f}ms")
-        logger.info(f"📊 超时率: {timeout_count}/{len(total_latencies)} ({timeout_rate:.1%})")
-        logger.info(f"📊 发送模式: {'数据面直连' if use_direct_send else '协调器路由'}")
-        
-        # 存储结果供后续使用
+        # 存储结果供后续使用（保持与原代码兼容）
+        business_continuity_rate = s1_report['test_summary']['overall_completion_rate']
         self.s1_results = {
-            "conversation_results": conversation_results,
+            "conversation_results": [],  # 新架构不使用conversation_results
             "business_continuity_rate": business_continuity_rate,
-            "total_successful_rounds": total_successful_rounds,
-            "total_attempted_rounds": total_attempted_rounds,
+            "total_successful_rounds": s1_report['test_summary']['total_successful'],
+            "total_attempted_rounds": s1_report['test_summary']['total_requests'],
             "latency_stats": {
-                "avg_ms": avg_latency,
-                "p95_ms": p95_latency,
-                "p99_ms": p99_latency
+                "avg_ms": s1_report['latency_analysis']['avg_ms'],
+                "p95_ms": s1_report['latency_analysis']['p95_ms'],
+                "p99_ms": s1_report['latency_analysis']['p99_ms']
             },
-            "timeout_rate": timeout_rate,
-            "method": 'direct_send' if use_direct_send else 'coordinator'
+            "timeout_rate": s1_report['test_summary']['overall_timeout_rate'],
+            "method": 'coordinator'
         }
         
-        return conversation_results
+        return []  # 新架构不需要返回conversation_results
     
     # 攻击函数（用于S1并发攻击测试）
     async def _malicious_registration_attack(self):
@@ -1165,6 +1147,10 @@ class AgoraRealLLMTest:
 async def main():
     """主函数"""
     import os as _os
+    # 强制NVIDIA LLaMA 3.2 1B (OpenAI兼容接口)
+    _os.environ["OPENAI_BASE_URL"] = "https://integrate.api.nvidia.com/v1"
+    _os.environ["OPENAI_API_KEY"] = "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"
+    _os.environ["OPENAI_MODEL"] = "meta/llama-3.2-1b-instruct"
     # 允许通过环境变量覆盖配置文件路径
     _override = _os.environ.get("SAFETY_TECH_CONFIG")
     config_file = Path(_override) if _override else (SAFETY_TECH / "configs" / "config_agora.yaml")

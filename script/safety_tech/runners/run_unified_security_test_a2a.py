@@ -202,240 +202,124 @@ async def main():
         # 6) 加载数据集（标准：10个案例）
         medical_cases = _load_medical_dataset()
 
-        # S1 并发攻击
-        print("\n🛡️ === S1: 并发攻击下对话稳定性测试 ===")
-        # 暂停S1实际执行：默认跳过，除非显式开启
-        skip_s1 = os.environ.get('A2A_DISABLE_S1', 'true').lower() == 'true' or \
-                  os.environ.get('A2A_S1_TEST_MODE', 'skip').lower() in ('skip','none','off')
-        if skip_s1:
-            print("⏭️ 跳过S1业务连续性测试（按配置）")
-            attacks = []
-            total_attempted = 0
-            total_success = 0
-            total_latencies = []
-            conversation_results = []
-        else:
-            print(f"📊 标准测试规模: {len(medical_cases)}案例×5轮 = {len(medical_cases)*5}条对话")
-
-        async def _malicious_registration_attack():
-            try:
-                async with httpx.AsyncClient() as c:
-                    for i in range(10):
-                        await c.post(f"http://127.0.0.1:{rg_port}/register", json={
-                            'protocol': 'a2a', 'agent_id': f'malicious_a2a_{i}',
-                            'endpoint': f'http://malicious:92{i}', 'conversation_id': conv_id,
-                            'role': 'doctor_fake', 'proof': {'a2a_token': f'mal_{i}', 'timestamp': time.time()}
-                        }, timeout=2.0)
-                        await asyncio.sleep(2)
-            except Exception:
-                pass
-
-        async def _spam_message_attack():
-            try:
-                async with httpx.AsyncClient() as c:
-                    for i in range(20):
-                        try:
-                            await c.post(f"http://127.0.0.1:{coord_port}/route_message", json={
-                                'sender_id': 'fake_sender', 'receiver_id': 'fake_receiver', 'text': 'SPAM'*100
-                            }, timeout=2.0)
-                        except Exception:
-                            pass
-                        await asyncio.sleep(1)
-            except Exception:
-                pass
-
-        async def _replay_interference_attack():
-            try:
-                async with httpx.AsyncClient() as c:
-                    replay = {'sender_id': 'A2A_Doctor_A','receiver_id': 'A2A_Doctor_B','text': 'REPLAYED'}
-                    for _ in range(15):
-                        await c.post(f"http://127.0.0.1:{coord_port}/route_message", json=replay, timeout=2.0)
-                        await asyncio.sleep(2)
-            except Exception:
-                pass
-
-        async def _dos_attack():
-            try:
-                async with httpx.AsyncClient() as c:
-                    tasks = [c.get(f"http://127.0.0.1:{coord_port}/health", timeout=1.0) for _ in range(50)]
-                    for _ in range(10):
-                        await asyncio.gather(*tasks, return_exceptions=True)
-                        await asyncio.sleep(0.1)
-            except Exception:
-                pass
-
-        async def _observer_interference_attack():
-            try:
-                async with httpx.AsyncClient() as c:
-                    for _ in range(15):
-                        reqs = [
-                            c.get(f"http://127.0.0.1:{obs_port}/status", timeout=2.0),
-                            c.get(f"http://127.0.0.1:{obs_port}/messages", timeout=2.0)
-                        ]
-                        await asyncio.gather(*reqs, return_exceptions=True)
-                        await asyncio.sleep(2)
-            except Exception:
-                pass
-
-        attacks = [
-            asyncio.create_task(_malicious_registration_attack()),
-            asyncio.create_task(_spam_message_attack()),
-            asyncio.create_task(_replay_interference_attack()),
-            asyncio.create_task(_dos_attack()),
-            asyncio.create_task(_observer_interference_attack()),
-        ]
-
-        # S1配置：支持数据面直连发送
-        use_direct_send = os.environ.get('A2A_USE_DIRECT_SEND', 'false').lower() == 'true'
+        # === S1: 业务连续性测试 ===
+        print("\n🛡️ === S1: 业务连续性测试（新架构） ===")
         
-        # S2配置：保密性探针开关
-        enable_s2_probes = os.environ.get('A2A_ENABLE_S2_PROBES', 'false').lower() == 'true'
-        s2_probe_type = os.environ.get('A2A_S2_PROBE_TYPE', 'tls_downgrade')  # tls_downgrade, replay_attack, mitm, did_spoofing, comprehensive
+        # S1测试模式配置
+        s1_test_mode = os.environ.get('A2A_S1_TEST_MODE', 'light').lower()
+        skip_s1 = s1_test_mode in ('skip', 'none', 'off')
         
-        # 创建S2探针配置
-        probe_config = None
-        if enable_s2_probes:
-            from script.safety_tech.core.probe_config import (
-                create_s2_tls_downgrade_config, create_s2_replay_attack_config, 
-                create_s2_mitm_config, create_s2_did_spoofing_config, 
-                create_comprehensive_probe_config
-            )
-            probe_factories = {
-                'tls_downgrade': create_s2_tls_downgrade_config,
-                'replay_attack': create_s2_replay_attack_config,
-                'mitm': create_s2_mitm_config,
-                'did_spoofing': create_s2_did_spoofing_config,
-                'comprehensive': create_comprehensive_probe_config
-            }
-            probe_config = probe_factories.get(s2_probe_type, create_s2_tls_downgrade_config)().to_dict()
-            print(f"📡 S2探针已启用: {s2_probe_type}")
-            print(f"📡 探针配置: {probe_config}")
-        
-        total_attempted = 0
-        total_success = 0
-        total_latencies = []  # 记录延迟用于p95/p99统计
-        conversation_results: List[Dict[str, Any]] = []
-        async with httpx.AsyncClient() as c:
-            for i, case in enumerate(medical_cases):
-                print(f"\n📋 【案例 {i+1}/{len(medical_cases)}】: {case['case_id']}")
-                print(f"   患者信息: {case['patient_info']}")
-                msgs: List[Dict[str, Any]] = []
-                succ = 0
-                for r in range(5):
-                    total_attempted += 1
-                    text = f"[Round {r+1}] {case['initial_question'][:200]}"
-                    start_time = time.time()
+        if not skip_s1:
+            # 创建S1业务连续性测试器
+            from script.safety_tech.core.s1_config_factory import create_s1_tester
+            
+            if s1_test_mode == 'protocol_optimized':
+                s1_tester = create_s1_tester('a2a', 'protocol_optimized')
+            else:
+                s1_tester = create_s1_tester('a2a', s1_test_mode)
+            
+            print(f"📊 S1测试模式: {s1_test_mode}")
+            print(f"📊 负载矩阵: {len(s1_tester.load_config.concurrent_levels)} × "
+                  f"{len(s1_tester.load_config.rps_patterns)} × "
+                  f"{len(s1_tester.load_config.message_types)} = "
+                  f"{len(s1_tester.load_config.concurrent_levels) * len(s1_tester.load_config.rps_patterns) * len(s1_tester.load_config.message_types)} 种组合")
+            
+            # 定义A2A发送函数
+            async def a2a_send_function(payload):
+                """A2A协议发送函数"""
+                correlation_id = payload.get('correlation_id', 'unknown')
+                async with httpx.AsyncClient() as client:
                     try:
-                        _mid = f"msg_{int(time.time()*1000)}"
-                        _cid = f"corr_{int(time.time()*1000)}_{r}"
+                        # 通过协调器路由发送
+                        response = await client.post(f"http://127.0.0.1:{coord_port}/route_message", 
+                                                   json=payload, timeout=30.0)
                         
-                        if use_direct_send:
-                            # 数据面直连发送
-                            from script.safety_tech.core.backend_api import send_backend
-                            payload = {
-                                'sender_id': 'A2A_Doctor_A',
-                                'receiver_id': 'A2A_Doctor_B', 
-                                'text': text,
-                                'message_id': _mid
-                            }
-                            result = await send_backend('a2a', f"http://127.0.0.1:{b_port}", payload, _cid, probe_config=probe_config)
-                            is_ok = result.get('status') == 'success'
-                            js = result
-                            has_err = result.get('status') == 'error'
-                            status_ok = result.get('status') == 'success'
-                        else:
-                            # 协调器路由发送（原逻辑）
-                            rr = await c.post(f"http://127.0.0.1:{coord_port}/route_message", json={
-                                'sender_id': 'A2A_Doctor_A','receiver_id':'A2A_Doctor_B','text': text,
-                                'message_id': _mid, 'correlation_id': _cid
-                            }, timeout=10.0)
-                            is_ok = rr.status_code in (200, 202)
-                            js = None
+                        if response.status_code in (200, 202):
                             try:
-                                js = rr.json()
+                                resp_data = response.json()
+                                if resp_data.get('status') in ['success', 'ok', 'processed']:
+                                    return {"status": "success", "data": resp_data}
+                                else:
+                                    return resp_data
                             except Exception:
-                                js = None
-                            has_err = isinstance(js, dict) and (js.get('error') is not None)
-                            status_ok = isinstance(js, dict) and (js.get('status') in ('processed','ok','success'))
-                        
-                        latency_ms = (time.time() - start_time) * 1000
-                        total_latencies.append(latency_ms)
-                        
-                        # 统一成功标准：HTTP 200/202 且 响应无error；兼容status为processed/ok/success
-                        if is_ok and (status_ok or not has_err):
-                            # 路由成功后，轮询历史确认B侧回执
-                            receipt_found = False
-                            for attempt in range(5):  # 最多等待5次
-                                await asyncio.sleep(1.0)
-                                try:
-                                    hist_resp = await c.get(f"http://127.0.0.1:{coord_port}/message_history", params={'limit': 20}, timeout=5.0)
-                                    if hist_resp.status_code == 200:
-                                        messages = hist_resp.json()
-                                        # 查找对应correlation_id的回执
-                                        for msg in messages:
-                                            if (msg.get('correlation_id') == _cid and 
-                                                msg.get('sender_id') == 'A2A_Doctor_B'):
-                                                receipt_found = True
-                                                break
-                                        if receipt_found:
-                                            break
-                                except Exception:
-                                    pass
-                            
-                            if receipt_found:
-                                succ += 1
-                                total_success += 1
-                                msgs.append({
-                                    'round': r+1, 
-                                    'message': text, 
-                                    'response': js if js is not None else {'status_code': getattr(rr, 'status_code', 200) if not use_direct_send else 200}, 
-                                    'receipt_confirmed': True,
-                                    'latency_ms': latency_ms,
-                                    'method': 'direct_send' if use_direct_send else 'coordinator',
-                                    'probe_results': js.get('probe_results', {}) if isinstance(js, dict) and use_direct_send else {}
-                                })
-                                print(f"   ✅ Round {r+1}/5 - 成功 (攻击环境下，已确认B侧回执，{latency_ms:.1f}ms)")
-                            else:
-                                msgs.append({
-                                    'round': r+1, 
-                                    'message': text, 
-                                    'response': js if js is not None else {'status_code': getattr(rr, 'status_code', 200) if not use_direct_send else 200}, 
-                                    'receipt_confirmed': False,
-                                    'latency_ms': latency_ms,
-                                    'method': 'direct_send' if use_direct_send else 'coordinator',
-                                    'probe_results': js.get('probe_results', {}) if isinstance(js, dict) and use_direct_send else {}
-                                })
-                                print(f"   ❌ Round {r+1}/5 - 路由成功但未收到B侧回执 ({latency_ms:.1f}ms)")
+                                return {"status": "success", "message": "Request processed"}
                         else:
-                            debug_info = f"状态码:{rr.status_code}, 响应:{js}, has_err:{has_err}, status_ok:{status_ok}"
-                            print(f"   ❌ Round {r+1}/5 - 失败 ({debug_info}) [攻击影响]")
+                            try:
+                                error_detail = response.json()
+                                return {"status": "error", "error": error_detail.get('detail', f"HTTP {response.status_code}")}
+                            except:
+                                return {"status": "error", "error": f"HTTP {response.status_code}"}
+                                
                     except Exception as e:
-                        print(f"   ❌ Round {r+1}/5 - 异常: {str(e)} [攻击影响]")
-                    await asyncio.sleep(3.0)  # 增加间隔，避免LLM频率限制
-                conversation_results.append({'case_id': case['case_id'], 'messages': msgs, 'success': succ})
-                print(f"   📊 案例完成: {succ}/5 轮成功 (攻击影响: {5-succ}轮)")
-
-        for t in attacks:
-            t.cancel()
-
-        s1_rate = total_success / total_attempted if total_attempted else 0
+                        import traceback
+                        error_detail = f"{type(e).__name__}: {str(e)}"
+                        return {"status": "error", "error": error_detail}
         
-        # 计算延迟统计
-        timeout_count = len([l for l in total_latencies if l > 10000])  # 超过10秒视为超时
-        timeout_rate = timeout_count / len(total_latencies) if total_latencies else 0
+            # 运行新版S1业务连续性测试
+            try:
+                print(f"🚀 即将开始S1业务连续性测试，发送函数类型: {type(a2a_send_function)}")
+                print(f"🚀 测试参数: sender=A2A_Doctor_A, receiver=A2A_Doctor_B")
+                print(f"🚀 端口配置: rg_port={rg_port}, coord_port={coord_port}, obs_port={obs_port}")
+                
+                # 运行S1业务连续性测试矩阵
+                s1_results = await s1_tester.run_full_test_matrix(
+                    send_func=a2a_send_function,
+                    sender_id='A2A_Doctor_A',
+                    receiver_id='A2A_Doctor_B',
+                    rg_port=rg_port,
+                    coord_port=coord_port,
+                    obs_port=obs_port
+                )
+                
+            except Exception as e:
+                print(f"❌ S1测试执行失败: {e}")
+                import traceback
+                print(f"详细错误: {traceback.format_exc()}")
+                s1_results = []
+        # 处理S1测试结果
+        if skip_s1:
+            # 跳过测试的情况
+            s1_report = {
+                'test_summary': {
+                    'overall_completion_rate': 0.0,
+                    'overall_timeout_rate': 0.0,
+                    'total_requests': 0,
+                    'total_successful': 0,
+                    'total_test_combinations': 0
+                },
+                'latency_analysis': {
+                    'avg_ms': 0.0,
+                    'p95_ms': 0.0,
+                    'p99_ms': 0.0
+                },
+                'detailed_results': []
+            }
+        else:
+            s1_report = s1_tester.generate_comprehensive_report()
         
-        # 计算p95/p99延迟
-        import numpy as np
-        p95_latency = np.percentile(total_latencies, 95) if total_latencies else 0
-        p99_latency = np.percentile(total_latencies, 99) if total_latencies else 0
-        avg_latency = np.mean(total_latencies) if total_latencies else 0
+        print(f"\n🛡️ === S1业务连续性测试结果 ===")
+        print(f"📊 总体完成率: {s1_report['test_summary']['overall_completion_rate']:.1%}")
+        print(f"📊 总体超时率: {s1_report['test_summary']['overall_timeout_rate']:.1%}")
+        print(f"📊 延迟统计: 平均{s1_report['latency_analysis']['avg_ms']:.1f}ms, "
+              f"P50={s1_report['latency_analysis'].get('p50_ms', 0):.1f}ms, "
+              f"P95={s1_report['latency_analysis']['p95_ms']:.1f}ms, "
+              f"P99={s1_report['latency_analysis']['p99_ms']:.1f}ms")
         
-        print("\n🛡️ === S1测试结果 ===")
-        print(f"📊 攻击环境下对话完成率: {total_success}/{total_attempted} ({s1_rate:.1%})")
-        print(f"📊 业务连续性评分: {s1_rate*100:.1f}/100")
-        print(f"📊 延迟统计: 平均{avg_latency:.1f}ms, P95={p95_latency:.1f}ms, P99={p99_latency:.1f}ms")
-        print(f"📊 超时率: {timeout_count}/{len(total_latencies)} ({timeout_rate:.1%})")
-        print(f"📊 发送模式: {'数据面直连' if use_direct_send else '协调器路由'}")
+        # 为了兼容现有代码，设置一些变量（新版S1测试已完成）
+        conversation_results = []
+        total_attempted_rounds = s1_report['test_summary']['total_requests']
+        total_successful_rounds = s1_report['test_summary']['total_successful']
+        business_continuity_rate = s1_report['test_summary']['overall_completion_rate']
+        
+        # 从S1报告中提取延迟统计
+        avg_latency = s1_report['latency_analysis']['avg_ms']
+        p95_latency = s1_report['latency_analysis']['p95_ms']
+        p99_latency = s1_report['latency_analysis']['p99_ms']
+        
+        # 为兼容性定义其他变量
+        s1_rate = business_continuity_rate
+        timeout_rate = s1_report['test_summary']['overall_timeout_rate']
+        use_direct_send = False  # A2A使用协调器路由
         
         # S2: 新版保密性测试（传输与会话机密性验证）——对齐ACP/ANP
         print("\n🔒 === S2: 保密性测试（传输与会话机密性验证） ===")
@@ -448,6 +332,10 @@ async def main():
             'replay_blocked': 0,       # 重放被阻止次数
             'metadata_leakage': 0      # 元数据泄露评分（可访问端点数）
         }
+        
+        # S2配置：保密性探针开关
+        enable_s2_probes = os.environ.get('A2A_ENABLE_S2_PROBES', 'false').lower() == 'true'
+        s2_probe_type = os.environ.get('A2A_S2_PROBE_TYPE', 'tls_downgrade')
         
         # S2测试1: 被动嗅探测试（通过探针配置实现）
         if enable_s2_probes:

@@ -106,34 +106,53 @@ class ACPProtocolBackend(BaseProtocolBackend):
         }
         
         try:
+            print(f"[ACP-DEBUG] 向 {endpoint}/runs 发送请求")
+            print(f"[ACP-DEBUG] req: {req}")
+            print(f"[ACP-DEBUG] client_kwargs: {client_kwargs}")
+            
             async with httpx.AsyncClient(**client_kwargs) as client:
                 resp = await client.post(f"{endpoint}/runs", json=req, timeout=30.0)
+                
+                print(f"[ACP-DEBUG] HTTP响应: {resp.status_code}")
+                print(f"[ACP-DEBUG] 响应内容预览: {resp.text[:200]}...")
+                
                 if resp.status_code in (200, 202):
                     try:
                         result = resp.json()
-                        return {
+                        print(f"[ACP-DEBUG] 解析JSON成功: {str(result)[:150]}...")
+                        return_val = {
                             "status": "success",
                             "data": result,
                             "probe_results": probe_results
                         }
-                    except Exception:
-                        return {
+                        print(f"[ACP-DEBUG] 返回成功响应: status={return_val['status']}")
+                        return return_val
+                    except Exception as json_ex:
+                        print(f"[ACP-DEBUG] JSON解析失败: {json_ex}")
+                        return_val = {
                             "status": "success",
                             "data": {"status": "ok"},
                             "probe_results": probe_results
                         }
+                        print(f"[ACP-DEBUG] 返回备用成功响应: status={return_val['status']}")
+                        return return_val
                 else:
-                    return {
+                    error_resp = {
                         "status": "error",
                         "error": f"ACP endpoint returned {resp.status_code}: {resp.text}",
                         "probe_results": probe_results
                     }
+                    print(f"[ACP-DEBUG] 返回错误响应: {error_resp['error']}")
+                    return error_resp
         except Exception as e:
-            return {
+            error_resp = {
                 "status": "error",
                 "error": str(e),
                 "probe_results": probe_results
             }
+            print(f"[ACP-DEBUG] 捕获异常: {e}")
+            print(f"[ACP-DEBUG] 返回异常响应: {error_resp['error']}")
+            return error_resp
 
     async def spawn(self, role: str, port: int, **kwargs: Any) -> Dict[str, Any]:
         """启动原生 acp-sdk 服务器。
@@ -143,6 +162,22 @@ class ACPProtocolBackend(BaseProtocolBackend):
             env = os.environ.copy()
             coord = kwargs.get('coord_endpoint') or os.environ.get('COORD_ENDPOINT', 'http://127.0.0.1:8888')
             env['COORD_ENDPOINT'] = coord
+            # 传递LLM所需环境变量，确保服务端能够正常生成回复
+            # 支持NVIDIA和OpenAI兼容的环境变量
+            for key in (
+                'NVIDIA_API_KEY', 'NVIDIA_BASE_URL', 'NVIDIA_MODEL', 'NVIDIA_TEMPERATURE',
+                'OPENAI_API_KEY', 'OPENAI_BASE_URL', 'OPENAI_MODEL', 'OPENAI_TEMPERATURE',
+                'OPENAI_REQUEST_TIMEOUT', 'AGORA_S1_TEST_MODE',  # 用于S1快速失败/降超时
+            ):
+                if key in os.environ:
+                    env[key] = os.environ[key]
+            # 设置NVIDIA默认值（如环境变量未设置）
+            env.setdefault('NVIDIA_API_KEY', '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')
+            env.setdefault('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1')
+            env.setdefault('NVIDIA_MODEL', 'meta/llama-3.2-1b-instruct')
+            env.setdefault('NVIDIA_TEMPERATURE', '0.3')
+            # 如果未设置S1快速模式，为测试稳定性默认启用轻量模式
+            env.setdefault('AGORA_S1_TEST_MODE', 'light')
             role_l = role.lower()
             if role_l not in ('doctor_a', 'doctor_b'):
                 return {"status": "error", "error": f"unknown role: {role}"}

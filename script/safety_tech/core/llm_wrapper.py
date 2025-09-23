@@ -14,7 +14,7 @@ except Exception as e:  # pragma: no cover
     # Fallback: attempt relative import if path handling differs
     from ...src.utils.core import Core  # type: ignore
 
-__all__ = ["Core", "generate_doctor_reply"]
+__all__ = ["Core", "generate_doctor_reply", "unified_llm_call"]
 
 import time
 import os
@@ -62,8 +62,12 @@ class Core:
                 from openai import OpenAI
                 
                 # Get configuration
-                api_key = self.config["model"]["openai_api_key"]
-                base_url = self.config["model"].get("openai_base_url", "https://api.openai.com/v1")
+                api_key = self.config["model"].get("openai_api_key") or os.environ.get("OPENAI_API_KEY")
+                base_url = (
+                    self.config["model"].get("openai_base_url")
+                    or os.environ.get("OPENAI_BASE_URL")
+                    or "https://integrate.api.nvidia.com/v1"
+                )
                 
                 if not api_key:
                     raise ValueError("OpenAI API key is required but not provided")
@@ -110,7 +114,13 @@ class Core:
         
         elif self.config["model"]["type"] == "openai":
             rounds = 0
-            threshold = 3
+            # S1快速失败：根据环境变量加速（默认light）
+            s1_mode = os.environ.get('AGORA_S1_TEST_MODE', '').lower()
+            fast_fail = s1_mode != 'skip' and s1_mode != ''
+            threshold = 1 if fast_fail else 3
+            # NVIDIA API需要更长的超时时间
+            request_timeout = 10.0 if fast_fail else float(os.environ.get('NVIDIA_REQUEST_TIMEOUT', '30'))
+            wait_on_error = 0.2 if fast_fail else 10
             while True:
                 rounds += 1
                 try:
@@ -126,12 +136,12 @@ class Core:
                     if "max_tokens" in self.config["model"]:
                         params["max_tokens"] = self.config["model"]["max_tokens"]
                     
-                    response = self.client.chat.completions.create(**params)
+                    response = self.client.chat.completions.create(timeout=request_timeout, **params)
                     content = response.choices[0].message.content
                     return content.strip()
                 except Exception as e:
                     print(f"[Core] OpenAI chat generation error: {e}")
-                    time.sleep(10)
+                    time.sleep(wait_on_error)
                     if rounds > threshold:
                         return f"Error in OpenAI chat generation: {str(e)}"
         
@@ -209,7 +219,11 @@ class Core:
                             
         elif self.config["model"]["type"] == "openai":
             rounds = 0
-            threshold = 3
+            s1_mode = os.environ.get('AGORA_S1_TEST_MODE', '').lower()
+            fast_fail = s1_mode != 'skip' and s1_mode != ''
+            threshold = 1 if fast_fail else 3
+            request_timeout = 1.5 if fast_fail else float(os.environ.get('OPENAI_REQUEST_TIMEOUT', '15'))
+            wait_on_error = 0.2 if fast_fail else 10
             
             tools = []
             truncated_messages = self._sanitize_for_gemini(truncated_messages)
@@ -238,6 +252,7 @@ class Core:
                             tool_choice="required",
                             temperature=self.config["model"]["temperature"],
                             n=1,
+                            timeout=request_timeout,
                         )
                     except Exception:
                         response = self.client.chat.completions.create(
@@ -247,6 +262,7 @@ class Core:
                             tool_choice="auto",  # 回退到自动模式
                             temperature=self.config["model"]["temperature"],
                             n=1,
+                            timeout=request_timeout,
                         )
                     
                     choice = response.choices[0] if response.choices else None
@@ -270,6 +286,7 @@ class Core:
                                 tool_choice="auto",
                                 temperature=self.config["model"]["temperature"],
                                 n=1,
+                                timeout=request_timeout,
                             )
                             
                             retry_message = retry_response.choices[0].message
@@ -281,7 +298,7 @@ class Core:
                     return response
                 except Exception as e:
                     print(f"[Core] OpenAI function call error (round {rounds}): {e}")
-                    time.sleep(10)
+                    time.sleep(wait_on_error)
                     if rounds > threshold:
                         raise Exception(f"Function call generation failed too many times. Last error: {str(e)}")
 
@@ -312,16 +329,22 @@ def _build_doctor_context(role: str) -> str:
 
 
 def _read_env_model_config() -> dict:
+    """统一的NVIDIA LLaMA配置读取"""
     import os as _os
-    api_key = _os.environ.get('OPENAI_API_KEY')
-    base_url = _os.environ.get('OPENAI_BASE_URL')
-    model_name = _os.environ.get('OPENAI_MODEL', 'gpt-4o')
-    temperature = float(_os.environ.get('OPENAI_TEMPERATURE', '0.3'))
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY 未设置，无法创建LLM客户端")
+    
+    # NVIDIA LLaMA配置 - 统一默认值
+    api_key = _os.environ.get('NVIDIA_API_KEY', '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')
+    base_url = _os.environ.get('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1')
+    model_name = _os.environ.get('NVIDIA_MODEL', 'meta/llama-3.1-8b-instruct')
+    temperature = float(_os.environ.get('NVIDIA_TEMPERATURE', '0.3'))
+    
+    print(f"[LLM-CONFIG] Using NVIDIA LLaMA: {model_name}")
+    print(f"[LLM-CONFIG] Base URL: {base_url}")
+    print(f"[LLM-CONFIG] API Key: {api_key[:20]}...")
+    
     return {
         'model': {
-            'type': 'openai',
+            'type': 'openai',  # 使用OpenAI兼容库连接NVIDIA
             'name': model_name,
             'temperature': temperature,
             'openai_api_key': api_key,
@@ -331,50 +354,88 @@ def _read_env_model_config() -> dict:
 
 
 def generate_doctor_reply(role: str, text: str, model_config: dict | None = None) -> str:
-    """Generate a medical reply for Doctor A/B with a unified LLM interface.
+    """Generate a medical reply for Doctor A/B using unified LLM interface.
 
     Args:
         role: 'doctor_a' or 'doctor_b' (case-insensitive). Others treated as B.
         text: user input text
-        model_config: optional Core-compatible model config. If None, read from env.
+        model_config: deprecated, now uses unified config
 
     Returns:
         str reply content
     """
-    import time
-    import logging
-    
-    logger = logging.getLogger(__name__)
-    config = model_config or _read_env_model_config()
+    # 使用统一的LLM调用接口
     context = _build_doctor_context(role)
-    prompt = text or ""
-    client = Core(config)
-    messages = []
-    if context:
-        messages.append({"role": "system", "content": context})
-    messages.append({"role": "user", "content": prompt})
+    messages = [{"role": "user", "content": text or ""}]
     
-    # 重试逻辑，处理频率限制等错误
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            result = client.execute(messages)
-            return result or "I apologize, but I'm unable to provide a response at this time."
-        except Exception as e:
-            error_str = str(e).lower()
-            logger.warning(f"[LLM] Attempt {attempt + 1}/{max_retries} failed: {e}")
+    result = unified_llm_call(messages, system_prompt=context)
+    
+    # 如果统一调用失败，返回友好提示
+    if result in ("[LLM暂不可用]", "[LLM调用失败]"):
+        return "I apologize, but I'm unable to provide a response at this time."
+    
+    return result
+
+
+# ===================== 统一LLM调用接口 =====================
+
+def unified_llm_call(messages: list, system_prompt: str = None, temperature: float = None) -> str:
+    """统一的LLM调用接口 - 所有Safety Tech模块都应使用此函数
+    
+    Args:
+        messages: 消息列表，格式: [{"role": "user", "content": "..."}]
+        system_prompt: 可选的系统提示词，会自动插入到消息开头
+        temperature: 可选的温度参数，覆盖默认值
+    
+    Returns:
+        LLM回复的文本内容
+        
+    Example:
+        reply = unified_llm_call([{"role": "user", "content": "Hello"}], 
+                               system_prompt="You are a helpful assistant")
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # 获取统一配置
+        config = _read_env_model_config()
+        
+        # 覆盖温度参数
+        if temperature is not None:
+            config['model']['temperature'] = temperature
+        
+        # 构造完整消息
+        full_messages = []
+        if system_prompt:
+            full_messages.append({"role": "system", "content": system_prompt})
+        full_messages.extend(messages)
+        
+        # 创建Core实例并调用，带重试机制
+        core = Core(config)
+        
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                result = core.execute(full_messages)
+                
+                if result and not any(err in result for err in ["Error in", "医生回复暂不可用", "Request timed out"]):
+                    return result
+                else:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"[LLM] Attempt {attempt + 1} failed: {result}, retrying...")
+                        continue
+                    else:
+                        logger.warning(f"[LLM] All attempts failed, last result: {result}")
+                        return "[LLM暂不可用]"
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    logger.warning(f"[LLM] Attempt {attempt + 1} exception: {e}, retrying...")
+                    continue
+                else:
+                    logger.error(f"[LLM] Final attempt failed: {e}")
+                    return "[LLM调用失败]"
             
-            # 如果是频率限制，等待更长时间
-            if "rate limit" in error_str or "429" in error_str or "quota" in error_str:
-                wait_time = (attempt + 1) * 5  # 5s, 10s, 15s
-                logger.info(f"[LLM] Rate limit detected, waiting {wait_time}s...")
-                time.sleep(wait_time)
-            elif attempt < max_retries - 1:
-                # 其他错误，短暂等待后重试
-                time.sleep(2)
-            else:
-                # 最后一次尝试失败，返回错误提示
-                logger.error(f"[LLM] All {max_retries} attempts failed: {e}")
-                return f"[医生回复暂不可用: {type(e).__name__}]"
-    
-    return "[医生回复暂不可用]"
+    except Exception as e:
+        logger.error(f"[LLM] Unified call failed: {e}")
+        return "[LLM调用失败]"

@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 import asyncio
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TypedDict
 
 from script.safety_tech.protocol_backends.common.interfaces import BaseProtocolBackend
 try:
@@ -23,6 +23,10 @@ except Exception:
 _SENDER = None  # type: ignore
 _SEND_TEXT_TASK = None  # type: ignore
 
+# 定义在模块级，避免SDK在构建JSON Schema时找不到类型
+class AgoraTextResponse(TypedDict):
+    text: str
+
 
 def _ensure_sender() -> None:
     global _SENDER, _SEND_TEXT_TASK
@@ -32,38 +36,71 @@ def _ensure_sender() -> None:
     # 严格导入官方SDK
     import agora  # type: ignore
 
-    # 基于 llm_wrapper 的最小LangChain兼容模型
-    class _LLMWrapperModel:
-        """提供与 LangChain ChatModel 兼容的最小接口（invoke）。
-        使用 llm_wrapper 生成文本，不依赖任何外部GPT服务。
-        """
+    # 基于 llm_wrapper 的LangChain兼容模型，实现Runnable接口
+    try:
+        from langchain_core.runnables import Runnable
+        from langchain_core.messages import BaseMessage, AIMessage
+        
+        class _LLMWrapperModel(Runnable):
+            """提供与 LangChain ChatModel 兼容的Runnable接口。
+            使用 llm_wrapper 生成文本，不依赖任何外部GPT服务。
+            """
 
-        def __init__(self, role_hint: str = "doctor_b") -> None:
-            self._role = role_hint
+            def __init__(self, role_hint: str = "doctor_b") -> None:
+                super().__init__()
+                self._role = role_hint
 
-        def invoke(self, messages: Any, **kwargs: Any):  # noqa: ANN401
-            # 提取用户侧文本（容错拼接）
-            try:
-                texts = []
-                for m in messages or []:
-                    # 支持 LangChain BaseMessage 或 dict
-                    content = getattr(m, "content", None)
-                    if isinstance(content, str):
-                        texts.append(content)
-                    elif isinstance(m, dict):
-                        c = m.get("content") or m.get("text")
-                        if isinstance(c, str):
-                            texts.append(c)
-                prompt = "\n".join(texts)
-            except Exception:
-                prompt = str(messages)
+            def invoke(self, messages: Any, config: Any = None, **kwargs: Any):  # noqa: ANN401
+                # 提取用户侧文本（容错拼接）
+                try:
+                    texts = []
+                    for m in messages or []:
+                        # 支持 LangChain BaseMessage 或 dict
+                        content = getattr(m, "content", None)
+                        if isinstance(content, str):
+                            texts.append(content)
+                        elif isinstance(m, dict):
+                            c = m.get("content") or m.get("text")
+                            if isinstance(c, str):
+                                texts.append(c)
+                    prompt = "\n".join(texts)
+                except Exception:
+                    prompt = str(messages)
 
-            reply = generate_doctor_reply(self._role, prompt)
-            # 返回最小可用结构（兼容 .content 访问）
-            class _Msg:
-                def __init__(self, content: str) -> None:
-                    self.content = content
-            return _Msg(reply)
+                reply = generate_doctor_reply(self._role, prompt)
+                # 返回LangChain兼容的消息对象
+                return AIMessage(content=reply)
+
+            # Agora Toolformer 可能会调用底层模型的 bind_tools
+            def bind_tools(self, tools: Any, *args: Any, **kwargs: Any):  # noqa: ANN401
+                self._tools = tools
+                return self
+    except ImportError:
+        # 回退到简单实现
+        class _LLMWrapperModel:
+            def __init__(self, role_hint: str = "doctor_b") -> None:
+                self._role = role_hint
+
+            def invoke(self, messages: Any, **kwargs: Any):  # noqa: ANN401
+                try:
+                    texts = []
+                    for m in messages or []:
+                        content = getattr(m, "content", None)
+                        if isinstance(content, str):
+                            texts.append(content)
+                        elif isinstance(m, dict):
+                            c = m.get("content") or m.get("text")
+                            if isinstance(c, str):
+                                texts.append(c)
+                    prompt = "\n".join(texts)
+                except Exception:
+                    prompt = str(messages)
+
+                reply = generate_doctor_reply(self._role, prompt)
+                class _Msg:
+                    def __init__(self, content: str) -> None:
+                        self.content = content
+                return _Msg(reply)
 
     # 使用官方 LangChainToolformer，但底层模型由 llm_wrapper 驱动
     toolformer = None
@@ -77,13 +114,27 @@ def _ensure_sender() -> None:
             toolformer = toolformers.LangChainToolformer(_LLMWrapperModel())
         except Exception as e2:
             raise RuntimeError(f"无法创建基于 llm_wrapper 的 Toolformer: {e}, 备用路径: {e2}")
-    sender = agora.Sender.make_default(toolformer)
+    # 为避免进入需要工具实现的多轮协议，禁止自动选择/协商/实现协议
+    sender = agora.Sender.make_default(
+        toolformer,
+        protocol_threshold=10**9,
+        negotiation_threshold=10**9,
+        implementation_threshold=10**9
+    )
 
+    # 按照官方文档，不指定返回类型，让SDK自动处理（参考: https://agoraprotocol.org/docs/getting-started）
     @sender.task()
-    def send_text(text: str) -> str:
-        """发送文本到远端 Agora Receiver 并返回结果。"""
-        # 任务函数体不执行逻辑，仅用于定义签名
-        return ""  # type: ignore
+    def send_text(text: str):
+        """
+        Send text to a remote Agora Receiver and get response.
+        
+        Args:
+            text: The text message to send to the remote agent
+        
+        Returns:
+            Response from the remote agent (type handled automatically by SDK).
+        """
+        pass  # 函数体为空，由Agora SDK自动处理通信逻辑
 
     _SENDER = sender
     _SEND_TEXT_TASK = send_text
@@ -101,6 +152,7 @@ def _extract_text(payload: Dict[str, Any]) -> str:
 
 class AgoraProtocolBackend(BaseProtocolBackend):
     async def send(self, endpoint: str, payload: Dict[str, Any], correlation_id: Optional[str] = None, probe_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        # 确保SDK正确初始化
         _ensure_sender()
         assert _SENDER is not None and _SEND_TEXT_TASK is not None
 
@@ -185,18 +237,44 @@ class AgoraProtocolBackend(BaseProtocolBackend):
                         "probe_results": probe_results
                     }
 
-        # Sender 任务调用是同步函数，放入线程避免阻塞事件循环
+        # 使用官方Agora SDK发送，但要正确处理返回格式
         try:
-            result: Any = await asyncio.to_thread(_SEND_TEXT_TASK, text, target=endpoint)  # type: ignore
+            import asyncio as _asyncio
+            # 使用SDK发送
+            raw_result = await _asyncio.to_thread(_SEND_TEXT_TASK, text, target=endpoint)
+            
+            # 正确处理SDK返回的结果，转换为标准格式
+            if isinstance(raw_result, str):
+                response_text = raw_result
+            elif hasattr(raw_result, 'content'):
+                response_text = str(raw_result.content)
+            elif hasattr(raw_result, 'text'):
+                response_text = str(raw_result.text)
+            else:
+                response_text = str(raw_result)
+            
+            # 返回标准格式
             return {
-                "status": "success",
-                "data": {"response": result},
+                "status": "success", 
+                "data": {
+                    "text": response_text,
+                    "role": "agora_receiver", 
+                    "protocol": "agora",
+                    "content": response_text
+                },
                 "probe_results": probe_results
             }
+            
         except Exception as e:
             return {
                 "status": "error",
-                "error": f"Agora Sender 调用失败: {e}",
+                "error": f"Agora SDK发送失败: {type(e).__name__}: {e}",
+                "data": {
+                    "text": "",
+                    "role": "agora_receiver", 
+                    "protocol": "agora",
+                    "content": ""
+                },
                 "probe_results": probe_results
             }
 

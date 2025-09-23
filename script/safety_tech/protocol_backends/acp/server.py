@@ -134,6 +134,11 @@ class ACPServer:
                 reply = generate_doctor_reply(f'doctor_{role}', text)
                 print(f"[ACP-{self.agent_name}] 生成回复: '{reply[:100]}...'")
                 
+                # 检查LLM回复是否包含错误信息 - 防止伪装成功
+                if reply and ("Error in OpenAI chat generation" in reply or "Error in " in reply or "医生回复暂不可用" in reply):
+                    print(f"[ACP-{self.agent_name}] 检测到LLM错误，返回error状态")
+                    raise HTTPException(status_code=500, detail=f"LLM generation failed: {reply}")
+                
                 # 异步回投协调器/deliver
                 if correlation_id:
                     asyncio.create_task(self._deliver_receipt(correlation_id, reply))

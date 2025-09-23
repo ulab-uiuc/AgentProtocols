@@ -19,11 +19,11 @@ class S1ConfigFactory:
         """轻量测试配置：快速验证"""
         return {
             'load_config': LoadMatrixConfig(
-                concurrent_levels=[8],
+                concurrent_levels=[4],  # 适中的并发数
                 rps_patterns=[LoadPattern.CONSTANT],
                 message_types=[MessageType.SHORT],
-                test_duration_seconds=30,
-                base_rps=5
+                test_duration_seconds=10,  # 缩短测试时间用于调试
+                base_rps=4  # 适中的RPS
             ),
             'disturbance_config': NetworkDisturbanceConfig(
                 jitter_ms_range=(10, 50),

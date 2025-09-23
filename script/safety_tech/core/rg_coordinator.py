@@ -72,6 +72,10 @@ class RGCoordinator:
         # 轮询配置
         self.directory_poll_interval = config.get('directory_poll_interval', 5.0)
         self.running = False
+        
+        # 性能优化：缓存协议后端注册表
+        self._backend_registry = None
+        self._registry_initialized = False
     
     def setup_routes(self):
         """设置HTTP路由"""
@@ -296,6 +300,19 @@ class RGCoordinator:
         
         return result
     
+    def _get_backend_registry(self):
+        """获取缓存的协议后端注册表"""
+        if not self._registry_initialized:
+            try:
+                from script.safety_tech.protocol_backends.common.interfaces import get_registry
+                self._backend_registry = get_registry()
+                self._registry_initialized = True
+                logger.info("协议后端注册表已缓存")
+            except Exception as e:
+                logger.error(f"协议后端注册表初始化失败: {e}")
+                raise RuntimeError(f"Protocol backend registry not available: {e}")
+        return self._backend_registry
+    
     def _extract_message_content(self, payload: Dict[str, Any]) -> str:
         """提取消息内容"""
         # 支持多种payload格式
@@ -422,19 +439,26 @@ class RGCoordinator:
         - 后端实现必须为原生协议，不允许mock/fallback
         - 协调器不再拼装各协议负载细节，由各client实现负责
         """
-        try:
-            from script.safety_tech.protocol_backends.common.interfaces import get_registry
-        except Exception as e:
-            raise RuntimeError(f"Protocol backend registry not available: {e}")
-
-        registry = get_registry()
+        # 使用缓存的注册表，避免重复查询
+        registry = self._get_backend_registry()
         backend = registry.get(participant.protocol)
         if backend is None:
             raise RuntimeError(f"No backend registered for protocol: {participant.protocol}")
 
         # 从payload中提取correlation_id（兼容现有逻辑）
         correlation_id = payload.get('correlation_id')
-        return await backend.send(participant.endpoint, payload, correlation_id)
+        
+        # 添加超时控制，避免长时间阻塞
+        try:
+            result = await asyncio.wait_for(
+                backend.send(participant.endpoint, payload, correlation_id),
+                timeout=35.0  # 35秒超时，给各协议后端足够时间处理
+            )
+            return result
+        except asyncio.TimeoutError:
+            error_msg = f"Backend send timeout for {participant.protocol} to {participant.endpoint}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
     
     # 管理接口
     async def get_conversation_status(self) -> Dict[str, Any]:

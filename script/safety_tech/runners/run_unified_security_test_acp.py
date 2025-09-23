@@ -336,10 +336,8 @@ if __name__ == "__main__":
         # S1配置：支持数据面直连发送
         use_direct_send = os.environ.get('ACP_USE_DIRECT_SEND', 'false').lower() == 'true'
         
-        # S1配置：测试模式选择
-        s1_test_mode = os.environ.get('ACP_S1_TEST_MODE', 'standard')  # light/standard/stress/protocol_optimized
-        # 跳过S1的开关：ACP_DISABLE_S1=true 或 模式为 skip/none/off
-        skip_s1 = os.environ.get('ACP_DISABLE_S1', 'false').lower() == 'true' or s1_test_mode.lower() in ('skip', 'none', 'off')
+        # S1配置：测试模式选择（默认使用protocol_optimized针对ACP特性优化）
+        s1_test_mode = os.environ.get('ACP_S1_TEST_MODE', 'protocol_optimized')  # light/standard/stress/protocol_optimized
         
         # S2配置：保密性探针开关
         enable_s2_probes = os.environ.get('ACP_ENABLE_S2_PROBES', 'false').lower() == 'true'
@@ -360,13 +358,9 @@ if __name__ == "__main__":
             probe_config = probe_factories.get(s2_probe_type, create_s2_tls_downgrade_config)().to_dict()
             print(f"📡 S2探针已启用: {s2_probe_type}")
         
-        # 创建S1业务连续性测试器
+        # 创建S1业务连续性测试器 - 默认使用ACP协议优化配置
         from script.safety_tech.core.s1_config_factory import create_s1_tester
-        
-        if s1_test_mode == 'protocol_optimized':
-            s1_tester = create_s1_tester('acp', 'protocol_optimized')
-        else:
-            s1_tester = create_s1_tester('acp', s1_test_mode)
+        s1_tester = create_s1_tester('acp', s1_test_mode)
         
         print(f"📊 S1测试模式: {s1_test_mode}")
         print(f"📊 负载矩阵: {len(s1_tester.load_config.concurrent_levels)} × "
@@ -374,31 +368,56 @@ if __name__ == "__main__":
               f"{len(s1_tester.load_config.message_types)} = "
               f"{len(s1_tester.load_config.concurrent_levels) * len(s1_tester.load_config.rps_patterns) * len(s1_tester.load_config.message_types)} 种组合")
         
-        # 定义发送函数
+        # 定义ACP优化的发送函数（基于HTTP同步RPC特性）
         async def acp_send_function(payload):
-            """ACP协议发送函数"""
-            async with httpx.AsyncClient() as client:
+            """ACP协议发送函数 - 针对HTTP同步RPC型协议优化"""
+            print(f"[RUNNER-DEBUG] acp_send_function调用, use_direct_send={use_direct_send}")
+            print(f"[RUNNER-DEBUG] payload preview: {str(payload)[:100]}...")
+            
+            try:
                 if use_direct_send:
-                    # 数据面直连发送
+                    # ACP数据面直连发送 - 避免协调器路由开销
+                    print(f"[RUNNER-DEBUG] 使用直连发送到 http://127.0.0.1:{b_port}")
                     from script.safety_tech.core.backend_api import send_backend
                     result = await send_backend('acp', f"http://127.0.0.1:{b_port}", payload, 
                                               payload.get('correlation_id'), probe_config=probe_config)
+                    print(f"[RUNNER-DEBUG] send_backend返回: {str(result)[:150]}...")
                     return result
                 else:
-                    # 协调器路由发送
-                    response = await client.post(f"http://127.0.0.1:{coord_port}/route_message", 
-                                               json=payload, timeout=10.0)
-                    if response.status_code in (200, 202):
-                        try:
-                            resp_data = response.json()
-                            if resp_data.get("status") in ("processed", "ok", "success"):
-                                return {"status": "success", "response": resp_data}
-                            else:
-                                return {"status": "error", "error": resp_data.get("error", "Unknown error")}
-                        except Exception:
-                            return {"status": "success", "response": {"status_code": response.status_code}}
-                    else:
-                        return {"status": "error", "error": f"HTTP {response.status_code}"}
+                    # ACP协调器路由发送 - 使用较短超时以快速失败
+                    print(f"[RUNNER-DEBUG] 使用协调器路由发送到 http://127.0.0.1:{coord_port}/route_message")
+                    async with httpx.AsyncClient(timeout=10.0) as client:
+                        response = await client.post(f"http://127.0.0.1:{coord_port}/route_message", 
+                                                   json=payload)
+                        
+                        print(f"[RUNNER-DEBUG] 协调器响应: HTTP {response.status_code}")
+                        print(f"[RUNNER-DEBUG] 协调器响应内容: {response.text[:150]}...")
+                        
+                        if response.status_code in (200, 202):
+                            try:
+                                resp_data = response.json()
+                                if resp_data.get("status") in ("processed", "ok", "success"):
+                                    result = {"status": "success", "response": resp_data}
+                                    print(f"[RUNNER-DEBUG] 协调器成功: {result}")
+                                    return result
+                                else:
+                                    result = {"status": "error", "error": resp_data.get("error", "Unknown error")}
+                                    print(f"[RUNNER-DEBUG] 协调器业务错误: {result}")
+                                    return result
+                            except Exception as json_ex:
+                                # 解析失败但HTTP状态正常，视为成功
+                                result = {"status": "success", "response": {"status_code": response.status_code}}
+                                print(f"[RUNNER-DEBUG] 协调器JSON解析失败，但视为成功: {result}")
+                                return result
+                        else:
+                            result = {"status": "error", "error": f"HTTP {response.status_code}"}
+                            print(f"[RUNNER-DEBUG] 协调器HTTP错误: {result}")
+                            return result
+                            
+            except Exception as e:
+                result = {"status": "error", "error": str(e)}
+                print(f"[RUNNER-DEBUG] acp_send_function异常: {result}")
+                return result
         
         # 等待协调器轮询完成，确保参与者信息已加载
         print(f"⏳ 等待协调器完成参与者轮询...")
@@ -504,19 +523,20 @@ if __name__ == "__main__":
         monitor_task = asyncio.create_task(monitor_coordinator())
         
         try:
-            if skip_s1:
-                print("⏭️ 跳过S1业务连续性测试（按配置）")
-                s1_results = []
-            else:
-                # 运行S1业务连续性测试矩阵
-                s1_results = await s1_tester.run_full_test_matrix(
-                    send_func=acp_send_function,
-                    sender_id='ACP_Doctor_A',
-                    receiver_id='ACP_Doctor_B',
-                    rg_port=rg_port,
-                    coord_port=coord_port,
-                    obs_port=obs_port
-                )
+            print(f"🚀 开始S1业务连续性测试（ACP协议优化模式）")
+            print(f"🚀 测试参数: sender=ACP_Doctor_A, receiver=ACP_Doctor_B")
+            print(f"🚀 端口配置: rg_port={rg_port}, coord_port={coord_port}, obs_port={obs_port}")
+            
+            # 运行S1业务连续性测试矩阵
+            s1_results = await s1_tester.run_full_test_matrix(
+                send_func=acp_send_function,
+                sender_id='ACP_Doctor_A',
+                receiver_id='ACP_Doctor_B',
+                rg_port=rg_port,
+                coord_port=coord_port,
+                obs_port=obs_port
+            )
+            print("✅ S1业务连续性测试矩阵完成")
         finally:
             # 停止监控任务
             monitor_task.cancel()
@@ -525,46 +545,8 @@ if __name__ == "__main__":
             except asyncio.CancelledError:
                 pass
         
-        # 生成S1综合报告（或占位报告以便后续流程与打印不出错）
-        if skip_s1:
-            s1_report = {
-                'protocol': 'acp',
-                'test_summary': {
-                    'total_combinations_tested': 0,
-                    'total_requests': 0,
-                    'total_successful': 0,
-                    'total_failed': 0,
-                    'total_timeout': 0,
-                    'overall_completion_rate': 0.0,
-                    'overall_timeout_rate': 0.0
-                },
-                'latency_analysis': {
-                    'avg_ms': 0.0,
-                    'p50_ms': 0.0,
-                    'p95_ms': 0.0,
-                    'p99_ms': 0.0
-                },
-                'dimensional_analysis': {
-                    'by_concurrent_level': {},
-                    'by_rps_pattern': {},
-                    'by_message_type': {}
-                },
-                'performance_extremes': {
-                    'best_combination': {
-                        'config': {},
-                        'completion_rate': 0.0,
-                        'avg_latency_ms': 0.0
-                    },
-                    'worst_combination': {
-                        'config': {},
-                        'completion_rate': 0.0,
-                        'avg_latency_ms': 0.0
-                    }
-                },
-                'detailed_results': []
-            }
-        else:
-            s1_report = s1_tester.generate_comprehensive_report()
+        # 生成S1综合报告
+        s1_report = s1_tester.generate_comprehensive_report()
         
         print(f"\n🛡️ === S1业务连续性测试结果 ===")
         print(f"📊 总体完成率: {s1_report['test_summary']['overall_completion_rate']:.1%}")
