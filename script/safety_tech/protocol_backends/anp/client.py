@@ -104,6 +104,57 @@ class ANPProtocolBackend(BaseProtocolBackend):
                 probe_results['network_jitter'] = f"{jitter_ms}ms"
                 # 在发送前添加人工延迟模拟网络抖动
                 await asyncio.sleep(jitter_ms / 1000.0)
+            
+            # E2E负载加密检测探针（新增）
+            if probe_config.get('e2e_payload_detection'):
+                from script.safety_tech.core.e2e_detector import E2EEncryptionDetector
+                e2e_detector = E2EEncryptionDetector(probe_config.get('e2e_watermark', 'ANP_E2E_WATERMARK'))
+                
+                # 修改原始payload注入水印
+                original_payload = {"text": txt, "sender_id": "anp_probe", "receiver_id": "anp_target"}
+                modified_payload = e2e_detector.inject_watermark_payload(original_payload)
+                txt = modified_payload.get('text', txt)
+                
+                # 创建明文探测payload
+                if probe_config.get('e2e_probe_payload'):
+                    probe_payload = e2e_detector.create_plaintext_probe_payload()
+                    txt += f" [PROBE_PAYLOAD: {probe_payload['probe_markers']['credit_card']}]"
+                
+                probe_results['e2e_watermark_injected'] = True
+                probe_results['e2e_detector_active'] = True
+            
+            # 时钟漂移矩阵探针（新增）
+            if probe_config.get('time_skew_matrix'):
+                import random
+                skew_levels = probe_config.get('time_skew_levels', [30, 120, 300, 600])
+                probe_results['time_skew_matrix_active'] = True
+                probe_results['skew_levels_tested'] = skew_levels
+                
+                # 随机选择一个漂移档位进行测试
+                if skew_levels:
+                    selected_skew = random.choice(skew_levels)
+                    # 随机选择正负漂移
+                    skew_direction = random.choice([-1, 1])
+                    actual_skew = selected_skew * skew_direction
+                    old_timestamp = time.time() + actual_skew
+                    
+                    # 时间戳注入到ANP消息中
+                    nonce_id = f"skew_{abs(actual_skew)}_{int(time.time())}"
+                    txt = f"[TIME_SKEW:{old_timestamp}][NONCE:{nonce_id}] {txt}"
+                    
+                    probe_results['time_skew_applied'] = actual_skew
+                    probe_results['skew_direction'] = 'future' if actual_skew > 0 else 'past'
+                    probe_results['skew_nonce'] = nonce_id
+                
+                # 窗口测试：注入重复/乱序标记
+                if probe_config.get('time_skew_window_test'):
+                    window_markers = [
+                        f"[WINDOW_REPEAT:{int(time.time())}]",
+                        f"[WINDOW_DISORDER:{random.randint(1000, 9999)}]",
+                        f"[WINDOW_DUPLICATE:MSG_{random.randint(100, 999)}]"
+                    ]
+                    txt = f"{random.choice(window_markers)} {txt}"
+                    probe_results['window_test_marker'] = True
         
         # 使用ANP标准的/runs端点和格式
         anp_payload = {

@@ -96,7 +96,10 @@ class RGCoordinator:
                     corr = f"corr_{int(time.time()*1000)}"
                     payload['correlation_id'] = corr
 
-                result = await self.route_message(sender_id, receiver_id, payload)
+                # 提取探针配置（如果存在）
+                probe_config = payload.get('probe_config')
+
+                result = await self.route_message(sender_id, receiver_id, payload, probe_config)
                 return result
                 
             except Exception as e:
@@ -256,7 +259,7 @@ class RGCoordinator:
         self.participants = new_participants
         # self.observers已移除 - 新S2设计不需要Observer机制
     
-    async def route_message(self, sender_id: str, receiver_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def route_message(self, sender_id: str, receiver_id: str, payload: Dict[str, Any], probe_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """路由消息"""
         # 验证发送者 - 如果参与者信息为空，尝试强制刷新一次
         if not self.participants:
@@ -307,7 +310,7 @@ class RGCoordinator:
         self._store_message(message)
         
         # 路由消息
-        result = await self._deliver_message(message, payload)
+        result = await self._deliver_message(message, payload, probe_config)
         
         # 向Observers广播镜像
         if self.enable_live_mirror:
@@ -348,7 +351,7 @@ class RGCoordinator:
         if len(self.message_history) > self.max_history_size:
             self.message_history = self.message_history[-self.max_history_size:]
     
-    async def _deliver_message(self, message: ConversationMessage, original_payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def _deliver_message(self, message: ConversationMessage, original_payload: Dict[str, Any], probe_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """投递消息到目标"""
         if message.receiver_id == 'broadcast':
             # 广播到所有非Observer参与者
@@ -356,7 +359,7 @@ class RGCoordinator:
             for participant in self.participants.values():
                 if participant.role != 'observer' and participant.agent_id != message.sender_id:
                     try:
-                        result = await self._send_to_participant(participant, original_payload)
+                        result = await self._send_to_participant(participant, original_payload, probe_config)
                         results.append({"agent_id": participant.agent_id, "result": result})
                     except Exception as e:
                         logger.error(f"Failed to send to {participant.agent_id}: {e}")
@@ -366,7 +369,7 @@ class RGCoordinator:
             # 单播到指定接收者
             receiver = self.participants[message.receiver_id]
             try:
-                result = await self._send_to_participant(receiver, original_payload)
+                result = await self._send_to_participant(receiver, original_payload, probe_config)
                 return result
             except Exception as e:
                 logger.error(f"Failed to send to {message.receiver_id}: {e}")
@@ -447,7 +450,7 @@ class RGCoordinator:
         except Exception as e:
             raise RuntimeError(f"Failed to send to endpoint {url}: {e}")
     
-    async def _send_to_participant(self, participant: ParticipantInfo, payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def _send_to_participant(self, participant: ParticipantInfo, payload: Dict[str, Any], probe_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """发送消息到参与者：通过协议注册表分发到对应后端客户端。
 
         要求：
@@ -466,7 +469,7 @@ class RGCoordinator:
         # 添加超时控制，避免长时间阻塞
         try:
             result = await asyncio.wait_for(
-                backend.send(participant.endpoint, payload, correlation_id),
+                backend.send(participant.endpoint, payload, correlation_id, probe_config),
                 timeout=35.0  # 35秒超时，给各协议后端足够时间处理
             )
             return result

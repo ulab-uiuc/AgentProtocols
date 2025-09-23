@@ -246,6 +246,57 @@ class AgoraProtocolBackend(BaseProtocolBackend):
                         "error": "Simulated packet drop",
                         "probe_results": probe_results
                     }
+            
+            # E2E负载加密检测探针（新增）
+            if probe_config.get('e2e_payload_detection'):
+                from script.safety_tech.core.e2e_detector import E2EEncryptionDetector
+                e2e_detector = E2EEncryptionDetector(probe_config.get('e2e_watermark', 'AGORA_E2E_WATERMARK'))
+                
+                # 修改原始payload注入水印
+                original_payload = {"text": text, "sender_id": "agora_probe", "receiver_id": "agora_target"}
+                modified_payload = e2e_detector.inject_watermark_payload(original_payload)
+                text = modified_payload.get('text', text)
+                
+                # 创建明文探测payload
+                if probe_config.get('e2e_probe_payload'):
+                    probe_payload = e2e_detector.create_plaintext_probe_payload()
+                    text += f" [PROBE_PAYLOAD: {probe_payload['probe_markers']['credit_card']}]"
+                
+                probe_results['e2e_watermark_injected'] = True
+                probe_results['e2e_detector_active'] = True
+            
+            # 时钟漂移矩阵探针（新增）
+            if probe_config.get('time_skew_matrix'):
+                import random
+                skew_levels = probe_config.get('time_skew_levels', [30, 120, 300, 600])
+                probe_results['time_skew_matrix_active'] = True
+                probe_results['skew_levels_tested'] = skew_levels
+                
+                # 随机选择一个漂移档位进行测试
+                if skew_levels:
+                    selected_skew = random.choice(skew_levels)
+                    # 随机选择正负漂移
+                    skew_direction = random.choice([-1, 1])
+                    actual_skew = selected_skew * skew_direction
+                    old_timestamp = time.time() + actual_skew
+                    
+                    # 时间戳注入到Agora消息中
+                    nonce_id = f"skew_{abs(actual_skew)}_{int(time.time())}"
+                    text = f"[TIME_SKEW:{old_timestamp}][NONCE:{nonce_id}] {text}"
+                    
+                    probe_results['time_skew_applied'] = actual_skew
+                    probe_results['skew_direction'] = 'future' if actual_skew > 0 else 'past'
+                    probe_results['skew_nonce'] = nonce_id
+                
+                # 窗口测试：注入重复/乱序标记
+                if probe_config.get('time_skew_window_test'):
+                    window_markers = [
+                        f"[WINDOW_REPEAT:{int(time.time())}]",
+                        f"[WINDOW_DISORDER:{random.randint(1000, 9999)}]",
+                        f"[WINDOW_DUPLICATE:MSG_{random.randint(100, 999)}]"
+                    ]
+                    text = f"{random.choice(window_markers)} {text}"
+                    probe_results['window_test_marker'] = True
 
         # 使用原生Agora SDK进行通信
         try:

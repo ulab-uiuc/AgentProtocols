@@ -782,7 +782,8 @@ class AgoraRealLLMTest:
                                 'text': f'Time skew test {i+1} for level {skew_level}s',
                                 'message_id': f"time_skew_{skew_level}_{i}_{int(_time.time())}",
                                 'correlation_id': f"time_skew_test_{skew_level}_{i}",
-                                'timestamp': _time.time() - skew_level  # 过时的时间戳
+                                'timestamp': _time.time() - skew_level,  # 过时的时间戳
+                                'probe_config': skew_config  # 添加探针配置
                             }
                             
                             async with _httpx.AsyncClient() as client:
