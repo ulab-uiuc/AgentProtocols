@@ -132,14 +132,34 @@ class A2AProtocolBackend(BaseProtocolBackend):
             }
 
     async def spawn(self, role: str, port: int, **kwargs: Any) -> Dict[str, Any]:
+        """启动A2A服务器进程"""
         try:
             env = os.environ.copy()
             env['COORD_ENDPOINT'] = kwargs.get('coord_endpoint') or os.environ.get('COORD_ENDPOINT', 'http://127.0.0.1:8888')
+            
+            # 使用直接代码执行方式，类似ANP的修复方法
+            from pathlib import Path
+            
+            # 找到项目根目录（包含script目录的地方）
+            current_file = Path(__file__).resolve()
+            project_root = current_file.parent.parent.parent.parent.parent  # 从protocol_backends/a2a/client.py回到项目根目录
+            
+            code = (
+                f"import sys; sys.path.insert(0, '{project_root}');"
+                "from script.safety_tech.protocol_backends.a2a.server import run_server;"
+                f"run_server('A2A_Doctor_A' if '{role.lower()}'=='doctor_a' else 'A2A_Doctor_B', {port})"
+            )
+            
             if role.lower() == 'doctor_a':
                 env['A2A_A_PORT'] = str(port)
             else:
                 env['A2A_B_PORT'] = str(port)
-            proc = subprocess.Popen([sys.executable, '-m', 'script.safety_tech.protocol_backends.a2a.server', role.lower()], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+            
+            proc = subprocess.Popen(
+                [sys.executable, "-c", code],
+                cwd=str(project_root),
+                env=env
+            )
             return {"status": "success", "data": {"pid": proc.pid, "port": port}}
         except Exception as e:
             return {"status": "error", "error": f"Failed to spawn A2A server: {e}"}

@@ -159,18 +159,28 @@ class ANPProtocolBackend(BaseProtocolBackend):
         try:
             role_l = role.lower()
             
-            # 使用Python直接启动服务器
+            # 使用Python直接启动服务器，需要设置正确的路径
+            import os
+            from pathlib import Path
+            
+            # 找到项目根目录（包含script目录的地方）
+            current_file = Path(__file__).resolve()
+            project_root = current_file.parent.parent.parent.parent.parent  # 从protocol_backends/anp/client.py回到项目根目录
+            
             code = (
-                "import sys;"
+                f"import sys; sys.path.insert(0, '{project_root}');"
                 "from script.safety_tech.protocol_backends.anp.server import create_doctor_a_server, create_doctor_b_server;"
                 f"server = create_doctor_a_server({port}) if '{role_l}'=='doctor_a' else create_doctor_b_server({port});"
                 "server.run()"
             )
             
+            # 设置环境变量和工作目录为项目根目录
+            env = os.environ.copy()
+            
             proc = subprocess.Popen(
                 [sys.executable, "-c", code],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.STDOUT
+                cwd=str(project_root),
+                env=env
             )
             
             return {

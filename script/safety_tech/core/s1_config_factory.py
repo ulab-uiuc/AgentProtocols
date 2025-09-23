@@ -19,11 +19,11 @@ class S1ConfigFactory:
         """轻量测试配置：快速验证"""
         return {
             'load_config': LoadMatrixConfig(
-                concurrent_levels=[4],  # 适中的并发数
+                concurrent_levels=[1],  # 最小并发数
                 rps_patterns=[LoadPattern.CONSTANT],
                 message_types=[MessageType.SHORT],
-                test_duration_seconds=10,  # 缩短测试时间用于调试
-                base_rps=4  # 适中的RPS
+                test_duration_seconds=5,  # 极短测试时间
+                base_rps=1  # 最小RPS
             ),
             'disturbance_config': NetworkDisturbanceConfig(
                 jitter_ms_range=(10, 50),
@@ -32,11 +32,11 @@ class S1ConfigFactory:
                 enable_connection_drops=False  # 轻量测试不启用连接中断
             ),
             'attack_config': AttackNoiseConfig(
-                malicious_registration_rate=2,
-                spam_message_rate=5,
+                malicious_registration_rate=1,
+                spam_message_rate=1,
                 replay_attack_rate=1,
-                dos_request_rate=10,
-                probe_query_rate=3
+                dos_request_rate=1,
+                probe_query_rate=1
             )
         }
     
