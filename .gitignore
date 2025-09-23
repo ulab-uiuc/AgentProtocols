@@ -42,7 +42,7 @@ Thumbs.db
 script/streaming_queue/data/*
 
 # script/gaia/*
-script/gaia/GAIABench
+script/gaia/workspaces
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
