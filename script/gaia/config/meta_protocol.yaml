@@ -1,7 +1,7 @@
 # Meta Protocol Configuration for GAIA Framework
 # Intelligent protocol selection and cross-protocol communication
 protocol: "meta_protocol"
-mode: "normal"
+mode: "debug"
 
 # Runtime configuration
 runtime:

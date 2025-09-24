@@ -244,10 +244,10 @@ class GAIALLMRouter:
 Your goal is to select optimal communication protocols for multi-agent systems working on diverse academic and research tasks.
 
 AVAILABLE PROTOCOLS (based on performance data):
-- A2A: Fast data transfer (7.39s avg), good for computational tasks, python_execute tool
-- ACP: Reliable reasoning (7.83s avg), good for create_chat_completion, final synthesis  
-- Agora: Balanced performance (7.10s avg), good for browser_use, web research
-- ANP: High accuracy (6.76s avg), secure, good for academic research, critical analysis
+- A2A: Quality avg 2.51 / Success avg 9.29, good for computational tasks, python_execute tool
+- ACP: Quality avg 2.27 / Success avg 5.25, good for create_chat_completion, final synthesis
+- Agora: Quality avg 2.33 / Success avg 6.27, balanced performance, good for browser_use, web research
+- ANP: Quality avg 2.14 / Success avg 7.28, high accuracy, secure, good for academic research, critical analysis
 
 GAIA TASK CHARACTERISTICS:
 - Research tasks: Often require web search, document analysis, academic paper retrieval
