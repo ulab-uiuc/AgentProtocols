@@ -563,6 +563,25 @@ async def main():
                 if probe_response.get('probe_results'):
                     s2_test_results['e2e_detection_results'] = probe_response['probe_results']
                     print(f"   📊 E2E检测: 水印注入完成，等待中间点分析")
+                    
+                    # 分析PCAP结果，判断是否泄露 (与AGORA保持一致)
+                    pcap_analysis = s2_test_results.get('pcap_analysis', {}).get('pcap_analysis', {})
+                    no_plaintext = (pcap_analysis.get('plaintext_bytes', 0) == 0)
+                    no_sensitive = (pcap_analysis.get('sensitive_keyword_count', 0) == 0)
+                    
+                    # 基于PCAP证据判定是否泄露
+                    if pcap_analysis.get('status') == 'analyzed' and no_plaintext and no_sensitive:
+                        s2_test_results['e2e_detection_results']['watermark_leaked'] = False
+                        s2_test_results['e2e_detection_results']['evidence'] = {
+                            'pcap_plaintext_bytes': pcap_analysis.get('plaintext_bytes', 0),
+                            'pcap_sensitive_count': pcap_analysis.get('sensitive_keyword_count', 0),
+                            'assessment': 'no_leakage_detected'
+                        }
+                        print(f"   ✅ E2E检测: 基于PCAP证据，水印未泄露")
+                    else:
+                        # 默认认为可能泄露，给出基础分数
+                        print(f"   ⚠️ E2E检测: 无充分证据证明水印未泄露")
+                        
                 else:
                     print(f"   ⚠️ E2E检测: 未收到探针结果")
                     
