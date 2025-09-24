@@ -237,8 +237,26 @@ class LLM:
                 if "role" not in message:
                     raise ValueError("Message dict must contain 'role' field")
 
-                if "content" in message or "tool_calls" in message:
-                    formatted_messages.append(message)
+                # OpenAI API rejects standalone messages with role 'tool' unless they are
+                # responses to preceding 'tool_calls'. To avoid invalid requests, convert
+                # outgoing 'tool' role messages to 'assistant' role and embed tool metadata
+                # into the content so context is preserved.
+                role = message.get("role")
+                if role == "tool":
+                    # Build a content string that includes tool name/id if present
+                    content_parts = []
+                    if "name" in message and message.get("name"):
+                        content_parts.append(f"[tool:{message.get('name')}]")
+                    if "tool_call_id" in message and message.get("tool_call_id"):
+                        content_parts.append(f"[call_id:{message.get('tool_call_id')}]")
+                    if "content" in message and message.get("content"):
+                        content_parts.append(str(message.get("content")))
+                    new_content = " ".join(content_parts) if content_parts else ""
+                    safe_msg = {"role": "assistant", "content": new_content}
+                    formatted_messages.append(safe_msg)
+                else:
+                    if "content" in message or "tool_calls" in message:
+                        formatted_messages.append(message)
             else:
                 raise TypeError(f"Unsupported message type: {type(message)}")
 

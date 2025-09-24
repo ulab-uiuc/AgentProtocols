@@ -1,6 +1,6 @@
 # ACP protocol configuration for Gaia multi-agent framework
 protocol: "acp"
-mode: "normal"
+mode: "debug"
 
 # Runtime configuration
 runtime:
