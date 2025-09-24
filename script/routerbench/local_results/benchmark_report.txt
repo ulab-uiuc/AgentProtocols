@@ -3,77 +3,87 @@ ProtoRouter Benchmark Evaluation Report
 ============================================================
 
 📊 Overall Statistics:
-  Total scenarios: 60
-  Correct scenarios: 33
-  Overall scenario accuracy: 55.00%
-  Total modules: 180
-  Correct modules: 138
-  Individual module accuracy: 76.67%
-  A2A/ACP confusion count: 21
+  Total scenarios: 58
+  Correct scenarios: 31
+  Overall scenario accuracy: 53.45%
+  Total modules: 170
+  Correct modules: 121
+  Individual module accuracy: 71.18%
+  A2A/ACP confusion count: 38
 
 📈 Statistics by Difficulty:
   L1:
     Scenario accuracy: 75.00% (9/12)
     Module accuracy: 75.00% (9/12)
   L2:
-    Scenario accuracy: 58.33% (7/12)
-    Module accuracy: 75.00% (18/24)
+    Scenario accuracy: 50.00% (6/12)
+    Module accuracy: 70.83% (17/24)
   L3:
-    Scenario accuracy: 66.67% (8/12)
-    Module accuracy: 88.89% (32/36)
+    Scenario accuracy: 75.00% (9/12)
+    Module accuracy: 86.11% (31/36)
   L4:
-    Scenario accuracy: 41.67% (5/12)
-    Module accuracy: 81.25% (39/48)
+    Scenario accuracy: 50.00% (6/12)
+    Module accuracy: 77.08% (37/48)
   L5:
-    Scenario accuracy: 33.33% (4/12)
-    Module accuracy: 66.67% (40/60)
+    Scenario accuracy: 10.00% (1/10)
+    Module accuracy: 54.00% (27/50)
 
 🔄 Protocol Confusion Matrix:
   Actual\Pred      A2A     ACP   Agora     ANP
-  A2A               15      12      17       0
-  ACP                9      51       0       0
-  Agora              0       0      30       0
+  A2A               19      22       2       0
+  ACP               16      37       0       3
+  Agora              0       0      23       3
   ANP                0       0       0      42
 
 ❌ Error Analysis:
-  A2A → Agora: 17 times
-    Example - L1-Q7 Module 1:
-      LLM: The scenario involves ephemeral micro-task request/response with minimal handshake and a single lightweight session. Agora, as a minimal 'meta' protocol, is well-suited for lightweight, negotiation-fr...
-      GT:  A2A favors a short, lightweight link with minimal handshake and non-resource messages, aligning with one lightweight session and tiny request/response cycles....
-
-    Example - L2-Q8 Module 1:
-      LLM: Agora is selected for the Interactive Micro-Tools module due to its lightweight and negotiation-friendly nature, which is ideal for rapid request/response cycles with minimal overhead. The protocol's ...
-      GT:  A2A suits minimal-handshake, small, interactive tool calls with fast turnaround and no resource-oriented APIs....
-
-  A2A → ACP: 12 times
+  A2A → ACP: 22 times
     Example - L1-Q2 Module 1:
-      LLM: The Streaming-Queue System involves a centralized coordinator and multiple workers, focusing on structured task dispatch and result collection. ACP is well-suited for this scenario due to its REST-fir...
+      LLM: For the Streaming-Queue System with a Coordinator and four Workers, ACP is the most suitable choice. The reasons are as follows:\...
       GT:  A2A offers a short, lightweight communication path with minimal handshake, favoring speed in simple streaming-queue settings....
 
-    Example - L1-Q4 Module 1:
-      LLM: The scenario requires low-latency broadcast from a single Publisher to multiple Subscribers, with a focus on frequent, small state updates and minimal delay. ACP is well-suited for structured, address...
-      GT:  A2A uses a lightweight path with minimal handshake overhead, making it suitable for fast fan-out of small, high-frequency updates....
+    Example - L2-Q4 Module 1:
+      LLM: For Module 1: Order Match, ACP is selected due to its REST-first approach which is well-suited for high-frequency, low-latency operations. The minimal handshake and non-resource message requirement al...
+      GT:  A2A’s lightweight link and minimal handshake fit small, high-frequency order flows with tight latency targets....
 
-  ACP → A2A: 9 times
-    Example - L2-Q3 Module 2:
-      LLM: The Task Dispatch & Telemetry module requires a protocol that can handle task dispatch, telemetry collection, and maintain steady throughput with bounded queues. A2A's support for long-running tasks, ...
-      GT:  ACP provides resource endpoints, acknowledgements, idempotent POST/PUT, and rate limiting for steady dispatch and telemetry ingestion....
+  ACP → A2A: 16 times
+    Example - L2-Q2 Module 1:
+      LLM: For Module 1: Model Artifact Transfer, A2A is chosen because it supports first-class long-running tasks and task/artifact lifecycle management, which is crucial for transmitting large artifacts with c...
+      GT:  ACP aligns with REST-first chunk transfer, idempotent POST/PUT, Range/ETag/Digest, and practical backpressure....
 
-    Example - L4-Q10 Module 3:
-      LLM: The Firmware OTA Chunk module involves uploading firmware via chunked endpoints with resume capabilities, requiring robust task/artifact lifecycle management. A2A's support for long-running tasks, mul...
-      GT:  Chunked OTA with Range/ETag/Digest and idempotent retries matches ACP....
+    Example - L2-Q8 Module 2:
+      LLM: For Module 2: Durable Log Upload, A2A is chosen due to its support for first-class long-running tasks and task/artifact lifecycle management, which is crucial for durable chunked log uploads. A2A's ca...
+      GT:  ACP provides REST-first chunk transfer with idempotent retries, integrity checks, and practical backpressure for durable uploads....
 
-  ACP → : 2 times
-    Example - L5-Q9 Module 3:
-      GT:  Chunked map transfer with resume/integrity and backpressure fits resource-oriented flows....
+  Agora → ANP: 3 times
+    Example - L1-Q3 Module 1:
+      LLM: For Module 1: Quorum-Gated Execution, ANP is the most suitable choice due to its strong identity, E2E privacy, and cross-organization trust features which are crucial for maintaining an auditable trai...
+      GT:  Agora emphasizes a meta-protocol model with routine/consensus semantics and strong session discipline, making it suitable for quorum collection, ordering, and auditable coordination....
 
-    Example - L5-Q9 Module 4:
-      GT:  Batch telemetry ingestion with idempotency and rate limits stabilizes pipelines....
+    Example - L2-Q3 Module 1:
+      LLM: The Quorum Approval Gate requires strong ordering, prevention of double execution, and an auditable decision trail. ANP provides a strong identity system and end-to-end encryption which can help ensur...
+      GT:  Agora allows the voting/ordering/threshold routine to be specified as a protocol document and locked via hash for reproducible audit....
 
-  A2A → : 1 times
-    Example - L5-Q9 Module 2:
-      GT:  Lightweight control feedback suits micro request/response cycles....
+  Agora → : 3 times
+    Example - L5-Q2 Module 5:
+      GT:  A protocol document + hash can lock a dispute routine for reproducibility and audit....
 
-  ANP → : 1 times
-    Example - L5-Q9 Module 5:
-      GT:  Confidential cross-fleet sharing requires verifiable identities and protected channels....
+    Example - L5-Q5 Module 5:
+      GT:  A versioned protocol document locks multi-round review for reproducibility and audit....
+
+  ACP → ANP: 3 times
+    Example - L5-Q4 Module 3:
+      LLM: ANP is the best fit for Module 3 as it offers strong identity and E2E privacy, which is crucial for evidence transfer. The protocol's ability to handle complex workflows and its broad vendor ecosystem...
+      GT:  Chunked evidence transfer with resume/integrity aligns with resource-oriented flow control....
+
+    Example - L5-Q7 Module 4:
+      LLM: ANP is selected for Module 4 as it offers a secure environment with end-to-end encryption, which is essential for sensitive evidence data. The strong identity and E2E privacy provided by ANP are criti...
+      GT:  Resource-oriented batch ingestion with idempotency and rate limits stabilizes archives....
+
+  A2A → Agora: 2 times
+    Example - L1-Q7 Module 1:
+      LLM: For Module 1: Ephemeral Micro-Tasks, Agora is the most suitable choice due to its lightweight nature and adaptability. The scenario requires a minimal handshake and a single lightweight session, which...
+      GT:  A2A favors a short, lightweight link with minimal handshake and non-resource messages, aligning with one lightweight session and tiny request/response cycles....
+
+    Example - L4-Q7 Module 2:
+      LLM: Agora is selected for Module 2 due to its flexibility and adaptability for lightweight, live updates. While it does not have built-in governance features, its minimalistic approach allows for the broa...
+      GT:  A2A suits tiny, frequent updates with minimal handshake....
