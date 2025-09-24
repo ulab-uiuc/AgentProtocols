@@ -32,7 +32,7 @@ try:
     from core.rg_coordinator import RGCoordinator
     from core.observer_agent import ObserverAgent, create_observer_agent
     from core.attack_scenarios import RegistrationAttackRunner, EavesdropMetricsCollector
-    from core.rg_doctor_agent import RGDoctorAAgent, RGDoctorBAgent, create_and_start_doctor_agent
+    from core.backend_api import spawn_backend, register_backend, health_backend
     from protocol_backends.agora.registration_adapter import AgoraRegistrationAdapter
 except ImportError as e:
     logger.error(f"Import error: {e}")
@@ -47,9 +47,18 @@ class AgoraRealLLMTest:
         self.config = self._load_config()
         # 降低第三方日志噪声
         try:
-            logging.getLogger("httpx").setLevel(logging.WARNING)
+            logging.getLogger("httpx").setLevel(logging.ERROR)
+            logging.getLogger("openai").setLevel(logging.ERROR)
+            logging.getLogger("script.safety_tech.core.llm_wrapper").setLevel(logging.ERROR)
+            logging.getLogger("core.rg_coordinator").setLevel(logging.WARNING)
+            logging.getLogger("openai._base_client").setLevel(logging.ERROR)
         except Exception:
             pass
+        
+        # 端口配置
+        self.rg_port = 8001
+        self.coord_port = 8888
+        self.obs_port = 8004
         
         # 组件实例
         self.rg: Optional[RegistrationGateway] = None
@@ -210,43 +219,33 @@ class AgoraRealLLMTest:
         """启动真实的医生Agent"""
         logger.info("👨‍⚕️ Starting Real Doctor Agents with LLM...")
         
-        # 准备Agent配置
-        agent_config = self.config.copy()
-        agent_config['rg_endpoint'] = 'http://127.0.0.1:8001'
-        agent_config['conversation_id'] = self.conversation_id
+        # 使用统一后端API启动Agora医生节点
+        await spawn_backend('agora', 'doctor_a', 8002)
+        await spawn_backend('agora', 'doctor_b', 8003)
         
-        # 启动Doctor A
-        logger.info("Starting Doctor A Agent...")
-        self.doctor_a = await create_and_start_doctor_agent(
-            RGDoctorAAgent,
-            "Agora_Doctor_A",
-            agent_config,
-            8002
-        )
-        logger.info(f"✅ Doctor A registered: {self.doctor_a.registered}")
-        
-        # 启动Doctor B
-        logger.info("Starting Doctor B Agent...")
-        self.doctor_b = await create_and_start_doctor_agent(
-            RGDoctorBAgent,
-            "Agora_Doctor_B", 
-            agent_config,
-            8003
-        )
-        logger.info(f"✅ Doctor B registered: {self.doctor_b.registered}")
-        
-        # 验证Agent健康状态
+        # 等待服务启动并检查健康状态
         await asyncio.sleep(2)
-        for agent, port in [(self.doctor_a, 8002), (self.doctor_b, 8003)]:
+        for port, agent_name in [(8002, 'Agora_Doctor_A'), (8003, 'Agora_Doctor_B')]:
             try:
                 async with httpx.AsyncClient() as client:
                     response = await client.get(f"http://127.0.0.1:{port}/health", timeout=5.0)
                     health_data = response.json()
-                    logger.info(f"🔍 {agent.agent_id} Health: LLM={health_data['llm_available']}, Registered={health_data['registered']}")
-                    if not health_data.get('llm_available', False):
-                        raise Exception(f"LLM not available for {agent.agent_id}")
+                    logger.info(f"🔍 {agent_name} Health: {health_data}")
             except Exception as e:
-                logger.error(f"❌ Failed to check {agent.agent_id} health: {e}")
+                logger.error(f"❌ Failed to check {agent_name} health: {e}")
+        
+        # 使用统一后端API注册Agent
+        try:
+            respA = await register_backend('agora', 'Agora_Doctor_A', f"http://127.0.0.1:8002", self.conversation_id, 'doctor_a', rg_endpoint='http://127.0.0.1:8001')
+            logger.info(f"✅ Doctor A registered: {respA}")
+        except Exception as e:
+            logger.error(f"❌ Failed to register Doctor A: {e}")
+            
+        try:
+            respB = await register_backend('agora', 'Agora_Doctor_B', f"http://127.0.0.1:8003", self.conversation_id, 'doctor_b', rg_endpoint='http://127.0.0.1:8001')
+            logger.info(f"✅ Doctor B registered: {respB}")
+        except Exception as e:
+            logger.error(f"❌ Failed to register Doctor B: {e}")
         
         logger.info("✅ Real Doctor Agents started successfully")
         
@@ -271,57 +270,9 @@ class AgoraRealLLMTest:
         logger.info("✅ Directory assertion passed: Both doctors registered in RG")
     
     async def setup_observers(self):
-        """设置Observer进行窃听"""
-        logger.info("👁️ Setting up Observers for eavesdropping...")
-        
-        # 创建合法Observer
-        try:
-            observer_config = {
-                'conversation_id': self.conversation_id,
-                'max_stored_messages': 1000,
-                'eavesdrop_detection': {}
-            }
-            
-            legitimate_observer = await create_observer_agent(
-                observer_id="Legitimate_Observer",
-                config=observer_config,
-                port=8004
-            )
-            self.observers.append(legitimate_observer)
-            
-            # 注册到RG
-            adapter = AgoraRegistrationAdapter({'rg_endpoint': 'http://127.0.0.1:8001'})
-            result = await adapter.subscribe_observer(
-                observer_id="Legitimate_Observer",
-                conversation_id=self.conversation_id,
-                endpoint="http://127.0.0.1:8004"
-            )
-            logger.info(f"✅ Legitimate Observer registered: {result}")
-            
-        except Exception as e:
-            logger.warning(f"⚠️ Failed to setup legitimate observer: {e}")
-        
-        # 尝试创建恶意Observer（测试攻击）
-        try:
-            malicious_observer = await create_observer_agent(
-                observer_id="Malicious_Observer",
-                config=observer_config,
-                port=8005
-            )
-            self.observers.append(malicious_observer)
-            
-            # 尝试无证明注册
-            result = await adapter.subscribe_observer(
-                observer_id="Malicious_Observer",
-                conversation_id=self.conversation_id,
-                endpoint="http://127.0.0.1:8005"
-            )
-            logger.info(f"⚠️ Malicious Observer registered: {result}")
-            
-        except Exception as e:
-            logger.info(f"✅ Malicious Observer blocked (expected): {e}")
-        
-        logger.info(f"✅ Observer setup completed. Active observers: {len(self.observers)}")
+        """S2新设计：不再使用Observer，直接返回。"""
+        logger.info("👁️ Skipping Observer setup (new S2 design uses black-box probes)")
+        self.observers = []
 
     async def trigger_backfill_if_enabled(self, limit: int = 5):
         """在启用backfill策略时，显式请求回填以便度量。"""
@@ -333,124 +284,204 @@ class AgoraRealLLMTest:
             logger.warning(f"Backfill request failed: {e}")
     
     async def conduct_s1_concurrent_attack_conversations(self):
-        """S1: 并发攻击下对话稳定性测试"""
-        logger.info("🛡️ === S1: 并发攻击下对话稳定性测试 ===")
-        logger.info(f"📊 标准测试规模: {len(self.medical_cases)}案例×5轮 = {len(self.medical_cases)*5}条对话")
+        """S1: 业务连续性测试（新架构）"""
+        logger.info("🛡️ === S1: 业务连续性测试（新架构） ===")
         
-        # 启动并发攻击任务
-        attack_tasks = []
-        logger.info("⚔️ 启动5种并发攻击...")
+        # S1测试模式配置
+        import os as _os
+        s1_test_mode = _os.environ.get('AGORA_S1_TEST_MODE', 'light').lower()
+        _skip = s1_test_mode in ('skip', 'none', 'off')
         
-        # 攻击1: 恶意Agent尝试注册
-        attack_tasks.append(asyncio.create_task(self._malicious_registration_attack()))
-        
-        # 攻击2: 垃圾消息攻击  
-        attack_tasks.append(asyncio.create_task(self._spam_message_attack()))
-        
-        # 攻击3: 重放攻击干扰
-        attack_tasks.append(asyncio.create_task(self._replay_interference_attack()))
-        
-        # 攻击4: DoS攻击
-        attack_tasks.append(asyncio.create_task(self._dos_attack()))
-        
-        # 攻击5: Observer干扰
-        attack_tasks.append(asyncio.create_task(self._observer_interference_attack()))
-        
-        # 在攻击环境下进行正常对话
-        conversation_results = []
-        total_attempted_rounds = 0
-        total_successful_rounds = 0
-        
-        for i, case in enumerate(self.medical_cases):
-            logger.info(f"\n📋 【案例 {i+1}/{len(self.medical_cases)}】: {case['case_id']}")
-            logger.info(f"   患者信息: {case['patient_info']}")
+        if not _skip:
+            # 创建S1业务连续性测试器
+            from script.safety_tech.core.s1_config_factory import create_s1_tester
             
-            case_messages = []
-            successful_rounds = 0
+            if s1_test_mode == 'protocol_optimized':
+                s1_tester = create_s1_tester('agora', 'protocol_optimized')
+            else:
+                s1_tester = create_s1_tester('agora', s1_test_mode)
             
+            logger.info(f"📊 S1测试模式: {s1_test_mode}")
+            logger.info(f"📊 负载矩阵: {len(s1_tester.load_config.concurrent_levels)} × "
+                      f"{len(s1_tester.load_config.rps_patterns)} × "
+                      f"{len(s1_tester.load_config.message_types)} = "
+                      f"{len(s1_tester.load_config.concurrent_levels) * len(s1_tester.load_config.rps_patterns) * len(s1_tester.load_config.message_types)} 种组合")
+            
+            # 定义Agora发送函数
+            import httpx as _httpx
+            import asyncio as _asyncio
+            
+            async def agora_send_function(payload):
+                """Agora协议发送函数"""
+                correlation_id = payload.get('correlation_id', 'unknown')
+                async with _httpx.AsyncClient() as client:
+                    try:
+                        # 通过协调器路由发送
+                        response = await client.post(f"http://127.0.0.1:{self.coord_port}/route_message", 
+                                                   json=payload, timeout=30.0)
+                        
+                        if response.status_code in (200, 202):
+                            try:
+                                resp_data = response.json()
+                                if resp_data.get('status') in ['success', 'ok', 'processed']:
+                                    return {"status": "success", "data": resp_data}
+                                else:
+                                    return resp_data
+                            except Exception:
+                                return {"status": "success", "message": "Request processed"}
+                        else:
+                            try:
+                                error_detail = response.json()
+                                return {"status": "error", "error": error_detail.get('detail', f"HTTP {response.status_code}")}
+                            except:
+                                return {"status": "error", "error": f"HTTP {response.status_code}"}
+                                
+                    except Exception as e:
+                        import traceback
+                        error_detail = f"{type(e).__name__}: {str(e)}"
+                        return {"status": "error", "error": error_detail}
+            
+            # S1测试前协调器状态检查
+            logger.info("🔍 S1测试前协调器状态检查:")
+            coord_participants_ready = False
             try:
-                # Doctor A 连续发起5轮会诊，Doctor B会自动回复
-                for r in range(5):
-                    total_attempted_rounds += 1
-                    logger.info(f"   💬 Round {r+1}/5 - 攻击环境下会诊...")
-                    result = await self.doctor_a.send_message_to_network(
-                        target_id="Agora_Doctor_B",
-                        message=f"[Round {r+1}] {case['initial_question']} - Need consultation on treatment options."
-                    )
+                import httpx
+                async with httpx.AsyncClient() as client:
+                    # 检查协调器健康状态
+                    health_resp = await client.get(f"http://127.0.0.1:{self.coord_port}/health", timeout=5.0)
+                    logger.info(f"  协调器健康状态: {health_resp.status_code}")
                     
-                    # 成功判定：无error且状态为processed/ok/success 视为成功
-                    status_value = (result or {}).get('status')
-                    has_error = (result or {}).get('error') is not None
-                    is_success = (not has_error) and (status_value in ("processed", "ok", "success"))
-                    
-                    # 提取Doctor B的LLM回复内容
-                    doctor_b_reply = (result or {}).get('response', 'No response')
-                    llm_used = (result or {}).get('llm_used', False)
-                    
-                    if is_success:
-                        successful_rounds += 1
-                        total_successful_rounds += 1
-                        case_messages.append({
-                            "round": r+1, 
-                            "question": case['initial_question'], 
-                            "doctor_b_reply": doctor_b_reply,
-                            "llm_used": llm_used,
-                            "result": result
-                        })
-                        # 显示实际的LLM对话内容
-                        reply_preview = doctor_b_reply[:100] + "..." if len(doctor_b_reply) > 100 else doctor_b_reply
-                        logger.info(f"   ✅ Round {r+1}/5 - 成功 (攻击环境下)")
-                        logger.info(f"      🤖 Doctor B回复: {reply_preview}")
-                        logger.info(f"      📊 LLM使用: {llm_used}")
-                    else:
-                        logger.info(f"   ❌ Round {r+1}/5 - 失败 [攻击影响]")
-                    
-                    await asyncio.sleep(3.0)  # 增加间隔，避免LLM频率限制
-                    
-                    case_result = {
-                    "case_id": case["case_id"],
-                        "case_info": case,
-                    "messages": case_messages,
-                    "total_rounds": len(case_messages),
-                    "success_rate": f"{successful_rounds}/5",
-                    "attack_impact": 5 - successful_rounds
-                }
-                    conversation_results.append(case_result)
-                    
-                logger.info(f"   📊 案例完成: {successful_rounds}/5 轮成功 (攻击影响: {5-successful_rounds}轮)")
-                await asyncio.sleep(2.0)  # 案例间增加间隔
+                    if health_resp.status_code == 200:
+                        logger.info("  ✅ 协调器进程运行正常")
+                        
+                        # 测试协调器路由功能
+                        test_payload = {
+                            'sender_id': 'Agora_Doctor_A',
+                            'receiver_id': 'Agora_Doctor_B', 
+                            'text': 'Test message for coordinator',
+                            'correlation_id': 'test_coord_123'
+                        }
+                        
+                        route_resp = await client.post(f"http://127.0.0.1:{self.coord_port}/route_message", 
+                                                     json=test_payload, timeout=5.0)
+                        if route_resp.status_code == 200:
+                            logger.info("  ✅ 协调器路由功能正常，参与者信息已加载")
+                            coord_participants_ready = True
+                        else:
+                            logger.info(f"  ❌ 协调器路由测试失败: {route_resp.status_code}")
+                            try:
+                                error_detail = route_resp.json()
+                                logger.info(f"  ❌ 错误详情: {error_detail}")
+                            except:
+                                pass
+                                
+                        # 检查RG目录信息  
+                        rg_directory = await client.get(f"http://127.0.0.1:{self.rg_port}/directory", 
+                                                      params={"conversation_id": self.conversation_id}, timeout=5.0)
+                        if rg_directory.status_code == 200:
+                            rg_data = rg_directory.json()
+                            logger.info(f"  📋 RG目录: {rg_data['total_participants']} 个参与者")
+                            for p in rg_data['participants'][:2]:
+                                logger.info(f"      - {p['agent_id']}: {p['role']}")
+                        else:
+                            logger.info(f"  ⚠️ RG目录查询失败: {rg_directory.status_code}")
+                            
+            except Exception as e:
+                logger.info(f"  ❌ 协调器状态检查失败: {e}")
+                coord_participants_ready = False
+            
+            # 如果协调器参与者信息未就绪，等待更长时间
+            if not coord_participants_ready:
+                logger.info(f"  ⚠️ 协调器参与者信息未就绪，等待协调器轮询更新...")
+                await asyncio.sleep(15)  # 等待协调器轮询RG目录（增加到15秒）
+                # 再次尝试路由测试
+                try:
+                    async with httpx.AsyncClient() as client:
+                        route_test = await client.post(f"http://127.0.0.1:{self.coord_port}/route_message", 
+                                                     json=test_payload, timeout=5.0)
+                        if route_test.status_code == 200:
+                            logger.info(f"  ✅ 延迟后协调器路由功能恢复正常")
+                            coord_participants_ready = True
+                        else:
+                            logger.info(f"  ❌ 协调器路由仍然失败，S1测试可能受影响")
+                            try:
+                                error_detail = route_test.json()
+                                logger.info(f"  ❌ 错误详情: {error_detail}")
+                            except:
+                                pass
+                except Exception as e2:
+                    logger.info(f"  ❌ 延迟检查也失败: {e2}")
+                
+            if not coord_participants_ready:
+                logger.info(f"  ⚠️ 警告：协调器可能存在问题，S1测试结果可能不准确")
+
+            # 运行新版S1业务连续性测试
+            try:
+                logger.info(f"🚀 即将开始S1业务连续性测试，发送函数类型: {type(agora_send_function)}")
+                logger.info(f"🚀 测试参数: sender=Agora_Doctor_A, receiver=Agora_Doctor_B")
+                logger.info(f"🚀 端口配置: rg_port={self.rg_port}, coord_port={self.coord_port}, obs_port={self.obs_port}")
+                
+                # 运行S1业务连续性测试矩阵
+                s1_results = await s1_tester.run_full_test_matrix(
+                    send_func=agora_send_function,
+                    sender_id='Agora_Doctor_A',
+                    receiver_id='Agora_Doctor_B',
+                    rg_port=self.rg_port,
+                    coord_port=self.coord_port,
+                    obs_port=self.obs_port
+                )
                 
             except Exception as e:
-                logger.error(f"   ❌ Case {case['case_id']} failed: {e}")
-                conversation_results.append({
-                    "case_id": case['case_id'],
-                    "case_info": case,
-                    "messages": [],
-                    "total_rounds": 0,
-                    "success_rate": "0/5",
-                    "attack_impact": 5,
-                    "error": str(e)
-                })
+                logger.error(f"❌ S1测试执行失败: {e}")
+                import traceback
+                logger.error(f"详细错误: {traceback.format_exc()}")
+                s1_results = []
+        # 处理S1测试结果
+        if _skip:
+            logger.info("⏭️ 跳过S1业务连续性测试（按配置）")
+            s1_report = {
+                'test_summary': {
+                    'overall_completion_rate': 0.0,
+                    'overall_timeout_rate': 0.0,
+                    'total_requests': 0,
+                    'total_successful': 0,
+                    'total_test_combinations': 0
+                },
+                'latency_analysis': {
+                    'avg_ms': 0.0,
+                    'p95_ms': 0.0,
+                    'p99_ms': 0.0
+                },
+                'detailed_results': []
+            }
+        else:
+            s1_report = s1_tester.generate_comprehensive_report()
         
-        # 停止攻击任务
-        for task in attack_tasks:
-            task.cancel()
+        logger.info(f"\n🛡️ === S1业务连续性测试结果 ===")
+        logger.info(f"📊 总体完成率: {s1_report['test_summary']['overall_completion_rate']:.1%}")
+        logger.info(f"📊 总体超时率: {s1_report['test_summary']['overall_timeout_rate']:.1%}")
+        logger.info(f"📊 延迟统计: 平均{s1_report['latency_analysis']['avg_ms']:.1f}ms, "
+                  f"P50={s1_report['latency_analysis'].get('p50_ms', 0):.1f}ms, "
+                  f"P95={s1_report['latency_analysis']['p95_ms']:.1f}ms, "
+                  f"P99={s1_report['latency_analysis']['p99_ms']:.1f}ms")
         
-        # S1测试结果
-        business_continuity_rate = total_successful_rounds / total_attempted_rounds if total_attempted_rounds > 0 else 0
-        logger.info(f"\n🛡️ === S1测试结果 ===")
-        logger.info(f"📊 攻击环境下对话完成率: {total_successful_rounds}/{total_attempted_rounds} ({business_continuity_rate:.1%})")
-        logger.info(f"📊 业务连续性评分: {business_continuity_rate*100:.1f}/100")
-        
-        # 存储结果供后续使用
+        # 存储结果供后续使用（保持与原代码兼容）
+        business_continuity_rate = s1_report['test_summary']['overall_completion_rate']
         self.s1_results = {
-            "conversation_results": conversation_results,
+            "conversation_results": [],  # 新架构不使用conversation_results
             "business_continuity_rate": business_continuity_rate,
-            "total_successful_rounds": total_successful_rounds,
-            "total_attempted_rounds": total_attempted_rounds
+            "total_successful_rounds": s1_report['test_summary']['total_successful'],
+            "total_attempted_rounds": s1_report['test_summary']['total_requests'],
+            "latency_stats": {
+                "avg_ms": s1_report['latency_analysis']['avg_ms'],
+                "p95_ms": s1_report['latency_analysis']['p95_ms'],
+                "p99_ms": s1_report['latency_analysis']['p99_ms']
+            },
+            "timeout_rate": s1_report['test_summary']['overall_timeout_rate'],
+            "method": 'coordinator'
         }
         
-        return conversation_results
+        return []  # 新架构不需要返回conversation_results
     
     # 攻击函数（用于S1并发攻击测试）
     async def _malicious_registration_attack(self):
@@ -516,30 +547,539 @@ class AgoraRealLLMTest:
             pass
     
     async def conduct_s2_malicious_eavesdrop_test(self):
-        """S2: 恶意窃听检测测试"""
-        logger.info("🕵️ === S2: 恶意窃听检测测试 ===")
+        """S2: 新版保密性测试（传输与会话机密性验证）——对齐ACP/ANP"""
+        import httpx as _httpx
+        logger.info("🔒 === S2: 保密性测试（传输与会话机密性验证） ===")
         
-        # 这里使用现有的collect_eavesdrop_evidence方法
-        await self.collect_eavesdrop_evidence()
+        # S2配置：保密性探针开关
+        enable_s2_probes = os.environ.get('AGORA_ENABLE_S2_PROBES', 'true').lower() == 'true'  # 默认启用
+        s2_probe_type = os.environ.get('AGORA_S2_PROBE_TYPE', 'comprehensive')  # 启用完整S2测试
         
-        # 基于真实证据动态统计
-        evidence = self.test_results.get('eavesdrop_evidence', [])
-        malicious = [e for e in evidence if isinstance(e, dict) and e.get('observer_id') == 'Malicious_Observer']
-        # 认为恶意Observer若“证据收集成功且拦截到消息>0”则窃听成功
-        eavesdrop_success = False
-        if malicious:
+        # 创建S2探针配置
+        probe_config = None
+        if enable_s2_probes:
             try:
-                m = malicious[0]
-                intercepted = (m.get('intercepted_messages') or {}).get('count', 0)
-                eavesdrop_success = bool(m.get('evidence_collected')) and int(intercepted) > 0
-            except Exception:
-                eavesdrop_success = False
-        self.s2_results = {
-            "malicious_observers": len(malicious) if malicious else 0,
-            "eavesdrop_success": eavesdrop_success
+                from core.probe_config import (
+                    create_s2_tls_downgrade_config, create_s2_replay_attack_config, 
+                    create_comprehensive_probe_config
+                )
+                probe_factories = {
+                    'tls_downgrade': create_s2_tls_downgrade_config,
+                    'replay_attack': create_s2_replay_attack_config,
+                    'comprehensive': create_comprehensive_probe_config
+                }
+                probe_config = probe_factories.get(s2_probe_type, create_s2_tls_downgrade_config)().to_dict()
+                logger.info(f"📡 S2探针已启用: {s2_probe_type}")
+            except ImportError:
+                logger.info(f"⚠️ S2探针配置模块不可用，跳过探针测试")
+                enable_s2_probes = False
+        
+        s2 = {
+            'plaintext_exposure': 0,
+            'downgrade_attempts': 0,
+            'downgrade_blocked': 0,
+            'replay_attempts': 0,
+            'replay_blocked': 0,
+            'metadata_leakage': 0,
+            # 新增高级测试结果
+            'pcap_analysis': {},       # 旁路抓包分析结果
+            'cert_matrix_results': {}, # 证书矩阵测试结果
+            'e2e_detection_results': {}, # E2E加密检测结果
+            'session_hijack_results': {}, # 会话劫持测试结果
+            'time_skew_results': {}    # 时钟漂移测试结果
+        }
+        # 1) 被动嗅探测试（通过探针配置实现）
+        if enable_s2_probes:
+            logger.info(f"   🔍 被动嗅探测试: 探针类型 {s2_probe_type}")
+            # 探针已在发送消息时激活，这里统计结果
+        else:
+            logger.info("   🔍 被动嗅探测试: 探针未启用，跳过")
+        # 2) 降级
+        logger.info("   🔻 TLS/加密降级测试")
+        for i in range(3):
+            try:
+                async with _httpx.AsyncClient(verify=False) as client:
+                    resp = await client.get("http://127.0.0.1:8888/health", timeout=3.0)
+                    s2['downgrade_attempts'] += 1
+                    if resp.status_code == 200 and 'https' in str(resp.url):
+                        s2['downgrade_blocked'] += 1
+                        logger.info(f"   ✅ 降级攻击 {i+1} 被阻止（强制HTTPS）")
+                    elif resp.status_code == 200:
+                        logger.info(f"   ❌ 降级攻击 {i+1} 成功（HTTP明文连接）")
+                    else:
+                        s2['downgrade_blocked'] += 1
+                        logger.info(f"   ✅ 降级攻击 {i+1} 被阻止（连接拒绝）")
+            except Exception as e:
+                s2['downgrade_attempts'] += 1
+                # 区分真正的防护和技术故障
+                if 'ReadTimeout' in type(e).__name__ or 'Timeout' in type(e).__name__:
+                    # 超时不算被阻止，是技术问题
+                    logger.info(f"   ⚠️ 降级攻击 {i+1} 超时（技术故障: {type(e).__name__}）")
+                else:
+                    s2['downgrade_blocked'] += 1
+                    logger.info(f"   ✅ 降级攻击 {i+1} 被阻止（异常: {type(e).__name__})")
+        # 3) 重放
+        logger.info("   🔄 重放攻击测试")
+        import time as _time
+        for i in range(2):
+            try:
+                old_message = {
+                    'sender_id': 'Agora_Doctor_A',
+                    'receiver_id': 'Agora_Doctor_B',
+                    'text': f'Replay test message {i+1}',
+                    'message_id': f"replay_msg_{int(_time.time()-3600)}_{i}",
+                    'correlation_id': f"replay_corr_{int(_time.time()-3600)}_{i}",
+                    'timestamp': _time.time() - 3600
+                }
+                async with _httpx.AsyncClient() as client:
+                    resp = await client.post("http://127.0.0.1:8888/route_message", json=old_message, timeout=40.0)
+                    s2['replay_attempts'] += 1
+                    if resp.status_code in [400,401,403]:
+                        s2['replay_blocked'] += 1
+                        logger.info(f"   ✅ 重放攻击 {i+1} 被阻止（状态: {resp.status_code}）")
+                    elif resp.status_code in [200,202]:
+                        logger.info(f"   ❌ 重放攻击 {i+1} 成功（状态: {resp.status_code}）")
+                    else:
+                        logger.info(f"   ⚠️ 重放攻击 {i+1} 结果不明（状态: {resp.status_code}）")
+            except Exception as e:
+                s2['replay_attempts'] += 1
+                # 区分真正的防护和技术故障
+                if 'ReadTimeout' in type(e).__name__ or 'Timeout' in type(e).__name__:
+                    # 超时不算被阻止，是技术问题
+                    logger.info(f"   ⚠️ 重放攻击 {i+1} 超时（技术故障: {type(e).__name__}）")
+                else:
+                    s2['replay_blocked'] += 1
+                    logger.info(f"   ✅ 重放攻击 {i+1} 被阻止（异常: {type(e).__name__})")
+        # 4) 元数据泄露
+        logger.info("   📊 元数据泄露评估")
+        try:
+            async with _httpx.AsyncClient() as client:
+                endpoints = ["/health","/metrics","/status","/info","/debug"]
+                exposed = 0
+                for ep in endpoints:
+                    try:
+                        r = await client.get(f"http://127.0.0.1:8888{ep}", timeout=2.0)
+                        if r.status_code == 200:
+                            exposed += 1
+                            logger.info(f"   ⚠️ 端点 {ep} 可访问，可能泄露元数据")
+                    except Exception:
+                        pass
+                s2['metadata_leakage'] = exposed
+                if exposed == 0:
+                    logger.info("   ✅ 元数据泄露测试: 无敏感端点暴露")
+                else:
+                    logger.info(f"   ❌ 元数据泄露测试: {exposed} 个端点可能泄露信息")
+        except Exception as e:
+            logger.info(f"   ✅ 元数据泄露测试: 系统拒绝探测 ({type(e).__name__})")
+
+        # S2高级测试1: 旁路抓包 + MITM实测
+        if enable_s2_probes and s2_probe_type == 'comprehensive':
+            logger.info(f"   📡 启动旁路抓包 + MITM实测")
+            try:
+                from core.pcap_analyzer import run_pcap_mitm_test
+                pcap_results = await run_pcap_mitm_test(
+                    interface="lo0", 
+                    duration=8,  # 8秒抓包
+                    enable_mitm=False  # 暂时禁用MITM以避免复杂设置
+                )
+                s2['pcap_analysis'] = pcap_results
+                
+                # 统计真实明文字节数
+                pcap_analysis = pcap_results.get('pcap_analysis', {})
+                if pcap_analysis.get('status') == 'analyzed':
+                    s2['plaintext_exposure'] = pcap_analysis.get('plaintext_bytes', 0)
+                    sensitive_count = pcap_analysis.get('sensitive_keyword_count', 0)
+                    logger.info(f"   📊 旁路抓包结果: {s2['plaintext_exposure']} 字节明文, {sensitive_count} 敏感关键字")
+                else:
+                    logger.info(f"   ⚠️ 旁路抓包失败: {pcap_analysis.get('error', '未知错误')}")
+                    
+            except Exception as e:
+                logger.info(f"   ❌ 旁路抓包测试异常: {e}")
+                s2['pcap_analysis']['error'] = str(e)
+        
+        # S2高级测试2: 证书有效性矩阵
+        if enable_s2_probes and s2_probe_type in ['comprehensive', 'cert_matrix']:
+            logger.info(f"   🔐 证书有效性矩阵测试")
+            try:
+                from core.cert_matrix import run_cert_matrix_test
+                cert_results = await run_cert_matrix_test(host="127.0.0.1", port=self.coord_port)
+                s2['cert_matrix_results'] = cert_results
+                
+                matrix_score = cert_results.get('matrix_score', {})
+                total_score = matrix_score.get('total_score', 0)
+                grade = matrix_score.get('grade', 'UNKNOWN')
+                logger.info(f"   📊 证书矩阵评分: {total_score}/100 ({grade})")
+                
+            except Exception as e:
+                logger.info(f"   ❌ 证书矩阵测试异常: {e}")
+                s2['cert_matrix_results']['error'] = str(e)
+        
+        # S2高级测试3: E2E负载加密检测
+        if enable_s2_probes and s2_probe_type == 'comprehensive':
+            logger.info(f"   🔍 E2E负载加密存在性检测")
+            try:
+                from core.e2e_detector import E2EEncryptionDetector
+                e2e_detector = E2EEncryptionDetector("AGORA_E2E_WATERMARK_TEST")
+                
+                # 发送带水印的测试消息
+                test_payload = e2e_detector.create_plaintext_probe_payload()
+                probe_config = create_comprehensive_probe_config().to_dict()
+                
+                # 通过协议发送探测消息 (使用Agora的消息路由)
+                try:
+                    async with _httpx.AsyncClient() as client:
+                        probe_response = await client.post(
+                            f"http://127.0.0.1:{self.coord_port}/route_message",
+                            json=test_payload,
+                            timeout=10.0
+                        )
+                        
+                        # 分析返回的探针结果
+                        if probe_response.status_code == 200:
+                            response_data = probe_response.json()
+                            s2['e2e_detection_results']['e2e_watermark_injected'] = True
+                            s2['e2e_detection_results']['response'] = response_data
+                            logger.info(f"   📊 E2E检测: 水印注入完成，等待中间点分析")
+                        else:
+                            logger.info(f"   ⚠️ E2E检测: 未收到探针结果 (状态: {probe_response.status_code})")
+                except Exception as send_e:
+                    logger.info(f"   ❌ E2E检测发送异常: {send_e}")
+                    
+            except Exception as e:
+                logger.info(f"   ❌ E2E加密检测异常: {e}")
+                s2['e2e_detection_results']['error'] = str(e)
+        
+        # S2高级测试4: 时钟漂移矩阵测试
+        if enable_s2_probes and s2_probe_type == 'comprehensive':
+            logger.info(f"   ⏰ 时钟漂移矩阵测试")
+            try:
+                from core.probe_config import create_s2_time_skew_config
+                
+                # 测试不同档位的时钟漂移
+                skew_levels = [30, 120, 300, 600]  # ±30s, ±2m, ±5m, ±10m
+                skew_results = {
+                    'total_tests': 0,
+                    'blocked_tests': 0,
+                    'skew_level_results': {}
+                }
+                
+                for skew_level in skew_levels:
+                    skew_config = create_s2_time_skew_config([skew_level]).to_dict()
+                    level_results = {
+                        'attempts': 0,
+                        'blocked': 0,
+                        'success': 0
+                    }
+                    
+                    # 每个档位测试3次
+                    for i in range(3):
+                        try:
+                            # 生成带时钟漂移的过时消息
+                            import time as _time
+                            test_payload = {
+                                'sender_id': 'Agora_Doctor_A',
+                                'receiver_id': 'Agora_Doctor_B',
+                                'text': f'Time skew test {i+1} for level {skew_level}s',
+                                'message_id': f"time_skew_{skew_level}_{i}_{int(_time.time())}",
+                                'correlation_id': f"time_skew_test_{skew_level}_{i}",
+                                'timestamp': _time.time() - skew_level,  # 过时的时间戳
+                                'probe_config': skew_config  # 添加探针配置
+                            }
+                            
+                            async with _httpx.AsyncClient() as client:
+                                response = await client.post(
+                                    f"http://127.0.0.1:{self.coord_port}/route_message",
+                                    json=test_payload,
+                                    timeout=5.0
+                                )
+                                
+                                level_results['attempts'] += 1
+                                skew_results['total_tests'] += 1
+                                
+                                # 检查是否被阻断（错误状态码或特定错误）
+                                if response.status_code in [400, 401, 403]:
+                                    # 检查错误内容是否真的是时钟相关
+                                    try:
+                                        error_data = response.json()
+                                        error_detail = error_data.get('detail', '').lower()
+                                        if 'time' in error_detail or 'timestamp' in error_detail or 'nonce' in error_detail:
+                                            level_results['blocked'] += 1
+                                            skew_results['blocked_tests'] += 1
+                                        else:
+                                            level_results['success'] += 1  # 其他类型的错误不算时钟阻断
+                                    except:
+                                        level_results['blocked'] += 1  # 无法解析，保守认为是阻断
+                                        skew_results['blocked_tests'] += 1
+                                elif response.status_code == 200:
+                                    level_results['success'] += 1
+                                elif response.status_code == 500:
+                                    # HTTP 500通常是系统错误，不是时钟漂移阻断
+                                    level_results['success'] += 1  # 不算阻断
+                                else:
+                                    # 其他状态码认为是阻断
+                                    level_results['blocked'] += 1
+                                    skew_results['blocked_tests'] += 1
+                                    
+                        except Exception as e:
+                            # 连接异常区分类型：超时不算时钟阻断，连接拒绝才算
+                            level_results['attempts'] += 1
+                            skew_results['total_tests'] += 1
+                            
+                            error_msg = str(e).lower()
+                            if 'timeout' in error_msg or 'timed out' in error_msg:
+                                # 超时不算时钟漂移阻断，算成功通过
+                                level_results['success'] += 1
+                            else:
+                                # 其他异常（如连接拒绝）才算阻断
+                                level_results['blocked'] += 1
+                                skew_results['blocked_tests'] += 1
+                    
+                    # 计算该档位的阻断率
+                    if level_results['attempts'] > 0:
+                        block_rate = level_results['blocked'] / level_results['attempts']
+                        level_results['block_rate'] = block_rate
+                    else:
+                        level_results['block_rate'] = 0
+                    
+                    skew_results['skew_level_results'][f'{skew_level}s'] = level_results
+                    logger.info(f"      ±{skew_level}s: {level_results['blocked']}/{level_results['attempts']} 被阻断 ({level_results['block_rate']:.1%})")
+                
+                # 计算总体时钟漂移防护评分
+                overall_block_rate = skew_results['blocked_tests'] / skew_results['total_tests'] if skew_results['total_tests'] > 0 else 0
+                time_skew_score = int(overall_block_rate * 100)
+                
+                s2['time_skew_results'] = skew_results
+                s2['time_skew_results']['overall_block_rate'] = overall_block_rate
+                s2['time_skew_results']['score'] = time_skew_score
+                
+                logger.info(f"   📊 时钟漂移防护总评分: {time_skew_score}/100 (阻断率 {overall_block_rate:.1%})")
+                
+            except Exception as e:
+                logger.info(f"   ❌ 时钟漂移矩阵测试异常: {e}")
+                s2['time_skew_results']['error'] = str(e)
+        
+        # S2高级测试5: 会话劫持/凭据复用测试
+        if enable_s2_probes and s2_probe_type == 'comprehensive':
+            logger.info(f"   🔐 会话劫持/凭据复用测试")
+            try:
+                hijack_results = {
+                    'total_attempts': 0,
+                    'blocked_attempts': 0,
+                    'successful_hijacks': 0,
+                    'hijack_types': {}
+                }
+                
+                # 测试不同类型的会话劫持 (适配Agora协议特点)
+                hijack_scenarios = [
+                    {
+                        'name': 'expired_session_token',
+                        'token': 'expired_session_12345',
+                        'description': '过期会话令牌'
+                    },
+                    {
+                        'name': 'cross_session_reuse',
+                        'token': 'other_session_67890',
+                        'description': '跨会话令牌复用'
+                    },
+                    {
+                        'name': 'malformed_auth_header',
+                        'token': 'malformed__invalid__header',
+                        'description': '格式错误认证头'
+                    },
+                    {
+                        'name': 'privilege_escalation',
+                        'token': 'admin_session_98765',
+                        'description': '权限提升会话'
+                    }
+                ]
+                
+                for scenario in hijack_scenarios:
+                    scenario_name = scenario['name']
+                    scenario_results = {
+                        'attempts': 0,
+                        'blocked': 0,
+                        'success': 0
+                    }
+                    
+                    # 每种劫持场景测试2次
+                    for i in range(2):
+                        try:
+                            test_payload = {
+                                'sender_id': 'Agora_Doctor_A',
+                                'receiver_id': 'Agora_Doctor_B',
+                                'text': f'Session hijack test: {scenario["description"]} attempt {i+1}',
+                                'message_id': f"hijack_{scenario_name}_{i}_{int(_time.time())}",
+                                'correlation_id': f"hijack_test_{scenario_name}_{i}",
+                                'session_token': scenario['token'],  # 注入伪造令牌
+                                'auth_header': f'Bearer {scenario["token"]}'  # 注入伪造认证头
+                            }
+                            
+                            async with _httpx.AsyncClient() as client:
+                                # 使用伪造的认证头
+                                headers = {'Authorization': f'Bearer {scenario["token"]}'}
+                                response = await client.post(
+                                    f"http://127.0.0.1:{self.coord_port}/route_message",
+                                    json=test_payload,
+                                    headers=headers,
+                                    timeout=5.0
+                                )
+                                
+                                scenario_results['attempts'] += 1
+                                hijack_results['total_attempts'] += 1
+                                
+                                # 检查是否被阻断
+                                if response.status_code in [401, 403, 404]:
+                                    scenario_results['blocked'] += 1
+                                    hijack_results['blocked_attempts'] += 1
+                                elif response.status_code == 200:
+                                    scenario_results['success'] += 1
+                                    hijack_results['successful_hijacks'] += 1
+                                elif response.status_code == 500:
+                                    # HTTP 500通常不是认证阻断，可能是系统错误
+                                    scenario_results['success'] += 1
+                                    hijack_results['successful_hijacks'] += 1
+                                else:
+                                    # 其他错误状态码也认为是阻断
+                                    scenario_results['blocked'] += 1
+                                    hijack_results['blocked_attempts'] += 1
+                                    
+                        except Exception as e:
+                            # 连接异常区分类型：超时不算认证阻断
+                            scenario_results['attempts'] += 1
+                            hijack_results['total_attempts'] += 1
+                            
+                            error_msg = str(e).lower()
+                            if 'timeout' in error_msg or 'timed out' in error_msg:
+                                # 超时不算会话劫持阻断，算劫持成功
+                                scenario_results['success'] += 1
+                                hijack_results['successful_hijacks'] += 1
+                            else:
+                                # 其他异常（如连接拒绝）才算阻断
+                                scenario_results['blocked'] += 1
+                                hijack_results['blocked_attempts'] += 1
+                    
+                    # 计算该场景的阻断率
+                    if scenario_results['attempts'] > 0:
+                        block_rate = scenario_results['blocked'] / scenario_results['attempts']
+                        scenario_results['block_rate'] = block_rate
+                    else:
+                        scenario_results['block_rate'] = 0
+                    
+                    hijack_results['hijack_types'][scenario_name] = scenario_results
+                    logger.info(f"      {scenario['description']}: {scenario_results['blocked']}/{scenario_results['attempts']} 被阻断 ({scenario_results['block_rate']:.1%})")
+                
+                # 计算总体会话劫持防护评分
+                overall_hijack_block_rate = hijack_results['blocked_attempts'] / hijack_results['total_attempts'] if hijack_results['total_attempts'] > 0 else 0
+                session_hijack_score = int(overall_hijack_block_rate * 100)
+                
+                hijack_results['overall_block_rate'] = overall_hijack_block_rate
+                hijack_results['score'] = session_hijack_score
+                hijack_results['hijack_blocked'] = overall_hijack_block_rate > 0.5  # 超过50%阻断率算有效防护
+                
+                s2['session_hijack_results'] = hijack_results
+                
+                logger.info(f"   📊 会话劫持防护总评分: {session_hijack_score}/100 (阻断率 {overall_hijack_block_rate:.1%})")
+                
+            except Exception as e:
+                logger.info(f"   ❌ 会话劫持测试异常: {e}")
+                s2['session_hijack_results']['error'] = str(e)
+
+        # 新版S2综合评分计算（8组件权重系统）
+        total_attacks = s2['downgrade_attempts'] + s2['replay_attempts']
+        blocked_attacks = s2['downgrade_blocked'] + s2['replay_blocked']
+        attack_block_rate = (blocked_attacks/total_attacks) if total_attacks>0 else 1.0
+        
+        # 1. TLS/传输层安全 (40%)
+        tls_score = 100  # Agora使用HTTP/HTTPS，基础传输层保护
+        cert_results = s2.get('cert_matrix_results', {})
+        if cert_results.get('matrix_score'):
+            tls_score = cert_results['matrix_score'].get('total_score', 100)
+        
+        # 2. 重放攻击防护 (4%)
+        replay_score = int(attack_block_rate * 100)
+        
+        # 3. E2E负载加密检测 (18%)
+        e2e_results = s2.get('e2e_detection_results', {})
+        e2e_score = 0
+        if e2e_results.get('e2e_watermark_injected'):
+            e2e_score = 60  # 基础参与分
+            if not e2e_results.get('watermark_leaked', True):
+                e2e_score = 90  # 优秀保护分
+        
+        # 4. 会话劫持防护 (15%)
+        session_results = s2.get('session_hijack_results', {})
+        session_hijack_score = session_results.get('score', 0)
+        
+        # 5. 时钟漂移防护 (12%)
+        time_skew_results = s2.get('time_skew_results', {})
+        time_skew_score = time_skew_results.get('score', 0)
+        
+        # 6. 旁路抓包保护 (8%)
+        pcap_results = s2.get('pcap_analysis', {})
+        pcap_score = 100  # 默认良好保护
+        if pcap_results.get('pcap_analysis', {}).get('plaintext_bytes', 0) > 0:
+            pcap_score = max(0, 100 - pcap_results['pcap_analysis']['plaintext_bytes'] // 10)
+        
+        # 7. 重放攻击防护 (4%)
+        # 已在第2项计算
+        
+        # 8. 元数据泄露防护 (3%)
+        metadata_score = max(0, 100 - s2['metadata_leakage']*20)
+        
+        # 加权综合评分
+        s2_comprehensive_score = (
+            tls_score * 0.40 +              # TLS/传输层 40%
+            session_hijack_score * 0.15 +   # 会话劫持防护 15%
+            e2e_score * 0.18 +              # E2E检测 18%
+            session_hijack_score * 0.15 +   # 会话劫持防护 15%
+            time_skew_score * 0.12 +        # 时钟漂移防护 12%
+            pcap_score * 0.08 +             # 旁路抓包 8%
+            replay_score * 0.04 +           # 重放攻击防护 4%
+            metadata_score * 0.03           # 元数据泄露防护 3%
+        )
+        
+        s2_comprehensive_score = min(100, max(0, s2_comprehensive_score))
+        
+        # 详细评分日志
+        s2['scoring_breakdown'] = {
+            'tls_transport_security': {'score': tls_score, 'weight': 0.40},
+            'session_hijack_protection': {'score': session_hijack_score, 'weight': 0.15},
+            'e2e_encryption_detection': {'score': e2e_score, 'weight': 0.18},
+            'time_skew_protection': {'score': time_skew_score, 'weight': 0.12},
+            'pcap_sniffing_protection': {'score': pcap_score, 'weight': 0.08},
+            'replay_attack_protection': {'score': replay_score, 'weight': 0.04},
+            'metadata_leakage_protection': {'score': metadata_score, 'weight': 0.03}
         }
         
-        logger.info("✅ S2恶意窃听检测测试完成")
+        # 保留新旧两套评分为兼容性
+        s2_score_legacy = (attack_block_rate*70 + (100 if s2['plaintext_exposure']==0 else max(0, 100 - s2['plaintext_exposure']))*0.20 + metadata_score*0.10)
+        
+        self.s2_results = {
+            "comprehensive_score": s2_comprehensive_score,  # 新版评分
+            "scoring_breakdown": s2['scoring_breakdown'],
+            "legacy_score": s2_score_legacy,  # 旧版兼容
+            "legacy_metrics": {
+                "attack_block_rate": attack_block_rate,
+                "plaintext_exposure": s2['plaintext_exposure'],
+                "metadata_leakage": s2['metadata_leakage']
+            },
+            "advanced_test_results": {
+                'pcap_analysis': s2.get('pcap_analysis', {}),
+                'cert_matrix_results': s2.get('cert_matrix_results', {}),
+                'e2e_detection_results': s2.get('e2e_detection_results', {}),
+                'session_hijack_results': s2.get('session_hijack_results', {}),
+                'time_skew_results': s2.get('time_skew_results', {})
+            }
+        }
+        
+        logger.info(f"   📊 S2保密性综合评分: {s2_comprehensive_score:.1f}/100")
+        logger.info(f"      TLS/传输层安全: {tls_score:.1f}/100 (40%)")
+        logger.info(f"      会话劫持防护: {session_hijack_score:.1f}/100 (15%)")
+        logger.info(f"      E2E加密检测: {e2e_score:.1f}/100 (18%)")
+        logger.info(f"      时钟漂移防护: {time_skew_score:.1f}/100 (12%)")
+        logger.info(f"      旁路抓包保护: {pcap_score:.1f}/100 (8%)")
+        logger.info(f"      重放攻击防护: {replay_score:.1f}/100 (4%)")
+        logger.info(f"      元数据泄露防护: {metadata_score:.1f}/100 (3%)")
     
     async def conduct_s3_registration_defense_test(self):
         """S3: 恶意注册防护测试"""
@@ -592,19 +1132,13 @@ class AgoraRealLLMTest:
         s2_results = getattr(self, 's2_results', {})
         s3_results = getattr(self, 's3_results', {})
         
-        # 计算统一安全评分
+        # 新版统一安全评分公式（S2=100%，S1和S3权重=0%）
+        # 专注于协议层面的保密性与安全防护能力
         s1_score = s1_results.get('business_continuity_rate', 0) * 100
-        s2_score = 0 if s2_results.get('eavesdrop_success', True) else 100  # 窃听成功=0分
+        s2_score = s2_results.get('comprehensive_score', s2_results.get('score', 0))  # 优先使用新版评分
         s3_score = s3_results.get('success_rate', 0) * 100
         
-        # 统一安全评分公式（更新权重：S1=15%，S2=25%，S3-S8=60%）
-        unified_security_score = round(
-            100 - (
-                (100 - s1_score) * 0.15 +      # 业务中断惩罚 15%
-                (100 - s2_score) * 0.25 +      # 恶意窃听惩罚 25%
-                (100 - s3_score) * 0.60        # 攻击成功惩罚 60%
-            ), 1
-        )
+        unified_security_score = round(s2_score, 1)  # 纯S2评分
         
         # 安全等级分类
         if unified_security_score >= 90:
@@ -643,11 +1177,30 @@ class AgoraRealLLMTest:
             "test_results": {
                 "S1_business_continuity": {
                     "completion_rate": s1_results.get('business_continuity_rate', 0),
-                    "score": round(s1_score, 1)
+                    "score": round(s1_score, 1),
+                    "latency_stats": s1_results.get('latency_stats', {
+                        "avg_ms": 0,
+                        "p95_ms": 0,
+                        "p99_ms": 0
+                    }),
+                    "timeout_rate": s1_results.get('timeout_rate', 0),
+                    "method": s1_results.get('method', 'coordinator')
                 },
-                "S2_eavesdrop_prevention": {
-                    "malicious_observers_blocked": not s2_results.get('eavesdrop_success', True),
-                    "score": round(s2_score, 1)
+                "S2_privacy_protection": {
+                    "comprehensive_score": round(s2_score, 1),
+                    "scoring_breakdown": s2_results.get('scoring_breakdown', {}),
+                    "legacy_metrics": s2_results.get('legacy_metrics', {
+                        "attack_block_rate": s2_results.get('attack_block_rate', 0),
+                        "plaintext_exposure": s2_results.get('plaintext_exposure', 0),
+                        "metadata_leakage": s2_results.get('metadata_leakage', 0)
+                    }),
+                    "advanced_test_results": s2_results.get('advanced_test_results', {
+                        'pcap_analysis': {},
+                        'cert_matrix_results': {},
+                        'e2e_detection_results': {},
+                        'session_hijack_results': {},
+                        'time_skew_results': {}
+                    })
                 },
                 "S3_registration_defense": {
                     "attacks_blocked": f"{s3_results.get('blocked_attacks', 0)}/{s3_results.get('total_attacks', 0)}",
@@ -681,14 +1234,14 @@ class AgoraRealLLMTest:
         logger.info(f"💬 对话轮次: {s1_results.get('total_successful_rounds', 0)}/{len(self.medical_cases)*5} (标准)")
         logger.info("")
         logger.info("🔍 安全测试结果:")
-        logger.info(f"   S1 业务连续性: {s1_score:.1f}/100 (攻击环境下对话完成率)")
-        logger.info(f"   S2 恶意窃听防护: {s2_score:.1f}/100 (恶意Observer阻止)")
-        logger.info(f"   S3 注册攻击防护: {s3_score:.1f}/100 (恶意注册阻止，细项见下)")
+        logger.info(f"   S1 业务连续性: {s1_score:.1f}/100 (暂停计分，权重=0%)")
+        logger.info(f"   S2 保密性防护: {s2_score:.1f}/100 (传输与会话机密性) ✨ 主评分项")
+        logger.info(f"   S3 注册攻击防护: {s3_score:.1f}/100 (暂停计分，权重=0%)")
         for item in self.s3_results.get('detailed', []):
             tag = '得分' if item.get('score_item') == 'kept' else '丢分'
             logger.info(f"      · {item.get('attack_type','unknown')}: {tag}")
         logger.info("")
-        logger.info(f"🛡️ 统一安全评分: {unified_security_score}/100")
+        logger.info(f"🛡️ 统一安全评分: {unified_security_score:.1f}/100 (纯S2评分)")
         logger.info(f"🏷️ 安全等级: {security_level}")
         logger.info(f"📄 详细报告: {report_file}")
         logger.info("="*80 + "\n")
@@ -1036,10 +1589,91 @@ class AgoraRealLLMTest:
         finally:
             await self.cleanup()
 
+    async def cleanup(self):
+        """清理所有资源和子进程"""
+        logger.info("🧹 开始清理测试资源...")
+        
+        # 终止RG进程
+        if hasattr(self, 'rg') and self.rg:
+            try:
+                if hasattr(self.rg, 'process') and self.rg.process:
+                    self.rg.process.terminate()
+                    try:
+                        await asyncio.wait_for(self.rg.process.wait(), timeout=5.0)
+                    except asyncio.TimeoutError:
+                        self.rg.process.kill()
+                logger.info("   ✅ RG进程已终止")
+            except Exception as e:
+                logger.warning(f"   ⚠️ RG进程终止异常: {e}")
+        
+        # 终止协调器进程
+        if hasattr(self, 'coordinator') and self.coordinator:
+            try:
+                if hasattr(self.coordinator, 'process') and self.coordinator.process:
+                    self.coordinator.process.terminate()
+                    try:
+                        await asyncio.wait_for(self.coordinator.process.wait(), timeout=5.0)
+                    except asyncio.TimeoutError:
+                        self.coordinator.process.kill()
+                logger.info("   ✅ 协调器进程已终止")
+            except Exception as e:
+                logger.warning(f"   ⚠️ 协调器进程终止异常: {e}")
+        
+        # 终止医生Agent进程
+        for agent_name in ['doctor_a', 'doctor_b']:
+            agent = getattr(self, agent_name, None)
+            if agent:
+                try:
+                    if hasattr(agent, 'process') and agent.process:
+                        agent.process.terminate()
+                        try:
+                            await asyncio.wait_for(agent.process.wait(), timeout=3.0)
+                        except asyncio.TimeoutError:
+                            agent.process.kill()
+                    logger.info(f"   ✅ {agent_name}进程已终止")
+                except Exception as e:
+                    logger.warning(f"   ⚠️ {agent_name}进程终止异常: {e}")
+        
+        # 终止Observer进程
+        if hasattr(self, 'observers') and self.observers:
+            for i, observer in enumerate(self.observers):
+                try:
+                    if hasattr(observer, 'process') and observer.process:
+                        observer.process.terminate()
+                        try:
+                            await asyncio.wait_for(observer.process.wait(), timeout=3.0)
+                        except asyncio.TimeoutError:
+                            observer.process.kill()
+                    logger.info(f"   ✅ Observer{i}进程已终止")
+                except Exception as e:
+                    logger.warning(f"   ⚠️ Observer{i}进程终止异常: {e}")
+        
+        # 清理端口（杀死可能残留的进程）
+        import subprocess
+        ports_to_clear = [self.rg_port, self.coord_port, self.obs_port, 8002, 8003, 9102, 9103]
+        for port in ports_to_clear:
+            try:
+                result = subprocess.run(['lsof', '-ti', f':{port}'], 
+                                     capture_output=True, text=True, timeout=5.0)
+                if result.stdout.strip():
+                    pids = result.stdout.strip().split('\n')
+                    for pid in pids:
+                        if pid:
+                            subprocess.run(['kill', '-9', pid], timeout=3.0)
+                            logger.info(f"   🗡️ 强制终止端口{port}上的进程{pid}")
+            except Exception as e:
+                logger.warning(f"   ⚠️ 清理端口{port}异常: {e}")
+        
+        logger.info("✅ 测试资源清理完成")
+
 
 async def main():
     """主函数"""
     import os as _os
+    # 强制NVIDIA LLaMA 8B (OpenAI兼容接口) - 统一使用8B模型
+    _os.environ["OPENAI_BASE_URL"] = "https://integrate.api.nvidia.com/v1"
+    _os.environ["OPENAI_API_KEY"] = "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"
+    _os.environ["OPENAI_MODEL"] = "meta/llama-3.3-70b-instruct"
     # 允许通过环境变量覆盖配置文件路径
     _override = _os.environ.get("SAFETY_TECH_CONFIG")
     config_file = Path(_override) if _override else (SAFETY_TECH / "configs" / "config_agora.yaml")

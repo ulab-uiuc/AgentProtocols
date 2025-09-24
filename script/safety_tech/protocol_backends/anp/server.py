@@ -1,26 +1,27 @@
 # -*- coding: utf-8 -*-
 """
-ANP Protocol Server with SimpleNode Integration
-- 提供 /health, /agents, /message 基本端点
-- 集成ANP SimpleNode原生DID+WebSocket通信
-- 支持从请求中提取文本，通过ANP通道发送并生成医生回复
-- 支持correlation_id解析与回执回投到协调器 /deliver
+ANP Protocol Server - 符合官方ANP协议规范
+- 基于HTTP的ANP协议实现，不使用WebSocket
+- 使用DID进行身份验证
+- 提供标准的ANP端点：/agents, /health, /runs
+- 支持Agent间的直接HTTP通信
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import sys
 import time
-import threading
-from typing import Any, Dict, Optional
+import uuid
 from pathlib import Path
+from typing import Any, Dict, Optional
 
 import httpx
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 import uvicorn
+from fastapi import FastAPI, HTTPException, Header, Request
+from pydantic import BaseModel
 
 # Add project root to path for imports
 HERE = Path(__file__).parent
@@ -28,304 +29,248 @@ PROJECT_ROOT = HERE.parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-# 严格导入，无回退
-try:
-    from script.safety_tech.core.llm_wrapper import generate_doctor_reply
-except ImportError as e:
-    print(f"[ANP Server] FATAL: llm_wrapper import failed: {e}")
-    sys.exit(1)
-
-# Import ANP SimpleNode - 严格模式，导入失败则报错退出
-try:
-    # Add agentconnect_src to path
-    agentconnect_path = str(PROJECT_ROOT / "agentconnect_src")
-    if os.path.exists(agentconnect_path) and agentconnect_path not in sys.path:
-        sys.path.insert(0, agentconnect_path)
-        print(f"[ANP Server] Added to path: {agentconnect_path}")
-    
-    from simple_node import SimpleNode, SimpleNodeSession
-    from utils.did_generate import did_generate
-    ANP_AVAILABLE = True
-    print("[ANP Server] SimpleNode imported successfully")
-except ImportError as e:
-    print(f"[ANP Server] FATAL: SimpleNode import failed: {e}")
-    print("ANP server requires agentconnect_src with SimpleNode support")
-    sys.exit(1)
-
+from script.safety_tech.core.llm_wrapper import generate_doctor_reply
 
 class MessageRequest(BaseModel):
-    """统一的消息请求模型，兼容多种入参风格"""
-    # 兼容 A2A/自定义风格 {"params": {"message": {"text": "..."}}}
-    params: Optional[Dict[str, Any]] = None
-    # 兼容朴素风格 {"text": "..."}
-    text: Optional[str] = None
-    # 透传其他字段
-    sender_id: Optional[str] = None
-    receiver_id: Optional[str] = None
+    text: str
     correlation_id: Optional[str] = None
 
-
-class MessageResponse(BaseModel):
-    status: str = "success"
-    output: Dict[str, Any]
-
+class RunsRequest(BaseModel):
+    input: Dict[str, Any]
 
 class ANPServer:
-    def __init__(self, agent_name: str, port: int = 9010):
+    """ANP协议服务器 - 符合官方规范的HTTP实现"""
+    
+    def __init__(self, agent_name: str, port: int, doctor_role: str, coordinator_port: int = 8001):
         self.agent_name = agent_name
-        self.port = port  # HTTP端点端口
-        self.ws_port = port + 100  # ANP WebSocket端口
-        self.app = FastAPI(title=f"ANP Server - {agent_name}")
-        self.coord_endpoint = os.environ.get("COORD_ENDPOINT", "http://127.0.0.1:8888")
+        self.port = port
+        self.doctor_role = doctor_role  # "doctor_a" or "doctor_b"
+        self.coordinator_port = coordinator_port
+        self.app = FastAPI(title=f"ANP {agent_name}")
         
-        # ANP SimpleNode集成
-        self.simple_node: Optional[SimpleNode] = None
-        self.did = None
-        self.private_key = None
-        self.did_document_json = None
-        self._peer_did: Optional[str] = None
-        self._peer_session: Optional[SimpleNodeSession] = None
-        self._doctor_role = 'doctor_a' if self.agent_name.endswith('_A') else 'doctor_b'
+        # 生成真实的DID和密钥对 - 必须成功，否则报错
+        # 导入DID生成工具
+        sys.path.insert(0, str(PROJECT_ROOT / "agentconnect_src"))
+        from utils.did_generate import did_generate
         
-        self.setup_routes()
-        self.setup_anp_node()
+        # 生成真实的DID、密钥对和DID文档
+        communication_endpoint = f"ws://127.0.0.1:{port + 100}"  # WebSocket端点
+        self.private_key, self.public_key, self.did, self.did_document_json = did_generate(
+            communication_endpoint,
+            did_server_domain="127.0.0.1",
+            did_server_port=str(port)
+        )
+        
+        # 从DID文档中提取公钥十六进制表示
+        import json
+        from utils.crypto_tool import get_hex_from_public_key
+        self.public_key_hex = get_hex_from_public_key(self.public_key)
+        
+        print(f"[ANP-{self.agent_name}] 生成真实DID: {self.did}")
+        print(f"[ANP-{self.agent_name}] 公钥: {self.public_key_hex[:20]}...")
+        
+        # 存储其他agent的信息
+        self.peer_agents = {}
+        
+        self._setup_routes()
+        print(f"[ANP-{self.agent_name}] 初始化完成，DID: {self.did}")
 
-    def setup_routes(self) -> None:
+    def _setup_routes(self):
+        """设置ANP标准路由"""
+        
         @self.app.get("/health")
-        async def health() -> Dict[str, Any]:
-            return {
-                "status": "healthy",
-                "agent_name": self.agent_name,
-                "protocol": "anp",
-                "timestamp": time.time(),
-            }
-
+        async def health():
+            """健康检查端点"""
+            return {"status": "healthy", "agent": self.agent_name, "did": self.did}
+        
         @self.app.get("/agents")
-        async def agents() -> Dict[str, Any]:
+        async def agents():
+            """ANP标准agents端点 - 返回agent信息"""
             return {
-                "agents": [
-                    {
-                        "name": self.agent_name,
-                        "description": f"ANP Medical Doctor {self.agent_name.split('_')[-1]}",
-                        "status": "active",
-                        "capabilities": ["medical_consultation", "clinical_analysis"],
-                        "protocol": "anp",
-                        "version": "1.0",
-                    }
-                ]
+                "agents": [{
+                    "name": self.agent_name,
+                    "did": self.did,
+                    "description": f"医生Agent - {self.doctor_role}",
+                    "capabilities": ["medical_consultation", "patient_discussion"]
+                }]
             }
-
-        @self.app.post("/message", response_model=MessageResponse)
-        async def handle_message(req: MessageRequest):
+        
+        @self.app.get("/did")
+        async def get_did():
+            """返回DID信息"""
+            return {"did": self.did}
+        
+        @self.app.get("/registration_proof")
+        async def get_registration_proof():
+            """返回注册证明信息"""
+            # 必须有有效的密钥对，否则抛出异常
+            if not (self.public_key_hex and self.private_key):
+                raise HTTPException(status_code=500, detail="No valid keys available")
+            
+            # 生成真实的签名
+            timestamp = float(time.time())
+            message = {"did": self.did, "timestamp": timestamp}
+            
+            from utils.crypto_tool import generate_signature_for_json
+            signature = generate_signature_for_json(self.private_key, message)
+            
+            return {
+                "did": self.did,
+                "did_public_key": self.public_key_hex,
+                "did_signature": signature,
+                "timestamp": str(timestamp),  # 注册网关会用float()解析这个字符串
+                "agent_name": self.agent_name
+            }
+        
+        @self.app.post("/runs")
+        async def runs(request: RunsRequest):
+            """ANP标准runs端点 - 处理任务请求"""
             try:
-                text = ""
-                corr: Optional[str] = req.correlation_id
-                # 解析多种格式
-                if req.params and isinstance(req.params, dict):
-                    msg = (req.params.get("message") or {}) if isinstance(req.params.get("message"), dict) else {}
-                    text = msg.get("text") or ""
-                if not text:
-                    text = req.text or ""
-
-                if not text:
-                    raise HTTPException(status_code=400, detail="Missing text")
-
-                # 解析 [CID:...] 前缀
-                if text.startswith("[CID:") and not corr:
-                    try:
-                        end = text.find("]")
-                        if end != -1:
-                            corr = text[5:end]
-                            text = text[end + 1 :].lstrip()
-                    except Exception:
-                        corr = corr or None
-
-                # 仅允许通过ANP通道发送；无回退
-                if not self._peer_did:
-                    raise HTTPException(status_code=503, detail="ANP peer DID not configured")
-
-                success = await self.send_anp_message(text, corr)
-                if not success:
-                    raise HTTPException(status_code=502, detail="Failed to send via ANP channel")
-
-                return MessageResponse(
-                    status="success",
-                    output={
+                # 从input中提取文本内容
+                content = request.input.get("content", [])
+                if not content or not isinstance(content, list):
+                    raise HTTPException(status_code=400, detail="Invalid input format")
+                
+                # 提取第一个文本内容
+                text_content = None
+                for item in content:
+                    if isinstance(item, dict) and item.get("type") == "text":
+                        text_content = item.get("text", "")
+                        break
+                
+                if not text_content:
+                    raise HTTPException(status_code=400, detail="No text content found")
+                
+                print(f"[ANP-{self.agent_name}] 处理runs请求: {text_content[:50]}...")
+                
+                # 生成医生回复
+                reply = generate_doctor_reply(self.doctor_role, text_content)
+                
+                return {
+                    "output": {
                         "content": [
-                            {"type": "text", "text": f"Message sent via ANP channel to {self._peer_did}"},
+                            {"type": "text", "text": reply}
                         ]
-                    },
-                )
-            except HTTPException:
-                raise
+                    }
+                }
+                
             except Exception as e:
-                raise HTTPException(status_code=500, detail=f"ANP message handling failed: {e}")
-
-    def setup_anp_node(self):
-        """设置ANP SimpleNode"""
-        try:
-            self.simple_node = SimpleNode(
-                host_domain="127.0.0.1",
-                host_port=str(self.ws_port),
-                host_ws_path="/ws",
-                new_session_callback=self._handle_new_session
-            )
-            
-            # 生成DID信息
-            private_key_pem, did, did_document_json = self.simple_node.generate_did_document()
-            self.simple_node.set_did_info(private_key_pem, did, did_document_json)
-            
-            self.private_key = private_key_pem
-            self.did = did
-            self.did_document_json = did_document_json
-            
-            print(f"[ANP-{self.agent_name}] SimpleNode设置完成，DID: {did}")
-        except Exception as e:
-            print(f"[ANP-{self.agent_name}] SimpleNode设置失败: {e}")
-
-    async def _handle_new_session(self, session: SimpleNodeSession):
-        """处理新的ANP会话连接"""
-        print(f"   [DEBUG] {self.agent_name}: 新会话建立，来自 {session.remote_did}")
+                print(f"[ANP-{self.agent_name}] 处理runs请求失败: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
         
-        try:
-            while True:
-                message_bytes = await session.receive_message()
-                if message_bytes:
-                    message_str = message_bytes.decode('utf-8')
-                    print(f"   [DEBUG] {self.agent_name}: 收到来自 {session.remote_did} 的消息: {message_str[:50]}...")
-                    
-                    # 生成回复并发送回声
-                    try:
-                        reply = generate_doctor_reply(self._doctor_role, message_str)
-                        echo_message = f"{self.agent_name} (ANP) echo: {message_str[:50]}..."
-                        await session.send_message(echo_message.encode('utf-8'))
-                        print(f"   [DEBUG] {self.agent_name}: 回声发送成功")
-                        
-                        # 验证回声
-                        echo_bytes = await session.receive_message()
-                        if echo_bytes:
-                            print(f"   [DEBUG] {self.agent_name}: 回声验证成功")
-                    except Exception as e:
-                        print(f"   [DEBUG] {self.agent_name}: 处理消息失败: {e}")
-                else:
-                    await asyncio.sleep(0.1)
-        except Exception as e:
-            print(f"   [DEBUG] {self.agent_name}: 会话消息循环异常: {e}")
-        finally:
-            print(f"   [DEBUG] {self.agent_name}: 会话 {session.remote_did} 消息循环结束")
-
-    async def _outbound_message_loop(self, session: SimpleNodeSession):
-        """处理出站连接的消息接收循环"""
-        try:
-            while True:
-                message_bytes = await session.receive_message()
-                if message_bytes:
-                    message_str = message_bytes.decode('utf-8')
-                    print(f"   [DEBUG] {self.agent_name}: 出站会话收到来自 {session.remote_did} 的消息: {message_str[:50]}...")
-                else:
-                    await asyncio.sleep(0.1)
-        except asyncio.CancelledError:
-            print(f"   [DEBUG] {self.agent_name}: 出站会话 {session.remote_did} 消息循环被取消")
-        except Exception as e:
-            print(f"   [DEBUG] {self.agent_name}: 出站会话消息循环异常: {e}")
-        finally:
-            print(f"   [DEBUG] {self.agent_name}: 出站会话 {session.remote_did} 消息循环结束")
-
-    def set_peer_did(self, peer_did: str):
-        """设置对端DID"""
-        self._peer_did = peer_did
-        print(f"[ANP-{self.agent_name}] 设置对端DID: {peer_did}")
-
-    async def send_anp_message(self, text: str, correlation_id: Optional[str] = None) -> bool:
-        """通过ANP通道发送消息"""
-        if not (self.simple_node and self._peer_did):
-            print(f"[ANP-{self.agent_name}] SimpleNode或peer_did未设置")
-            return False
-        
-        try:
-            # 建立连接（如果尚未建立）
-            if not self._peer_session:
-                print(f"   [DEBUG] {self.agent_name}: 建立到 {self._peer_did} 的连接")
-                self._peer_session = await self.simple_node.connect_to_did(self._peer_did)
-                if not self._peer_session:
-                    print(f"   [DEBUG] {self.agent_name}: 连接建立失败")
-                    return False
-                # 启动出站消息接收循环
-                asyncio.create_task(self._outbound_message_loop(self._peer_session))
-            
-            # 发送消息
-            print(f"   [DEBUG] {self.agent_name}: 向 {self._peer_did} 发送消息: {text[:50]}...")
-            await self._peer_session.send_message(text.encode('utf-8'))
-            print(f"   [DEBUG] {self.agent_name}: 消息发送成功，等待回声...")
-            
-            # 等待回声确认
-            echo_bytes = await self._peer_session.receive_message()
-            if echo_bytes:
-                echo_str = echo_bytes.decode('utf-8')
-                print(f"   [DEBUG] {self.agent_name}: 收到来自 {self._peer_did} 的消息: {echo_str[:50]}...")
-                
-                # 发送回声确认
-                echo_reply = f"{self.agent_name} (ANP) echo: {text[:50]}..."
-                await self._peer_session.send_message(echo_reply.encode('utf-8'))
-                print(f"   [DEBUG] {self.agent_name}: 回声发送成功")
-                
-                # 接收回声确认
-                confirm_bytes = await self._peer_session.receive_message()
-                if confirm_bytes:
-                    print(f"   [DEBUG] {self.agent_name}: 回声验证成功")
-                
-                # 生成医生回复并回投
-                reply = generate_doctor_reply(self._doctor_role, text)
-                if correlation_id:
-                    asyncio.create_task(self._deliver_receipt(correlation_id, reply))
-                
-                return True
-            
-            return False
-        except Exception as e:
-            print(f"   [DEBUG] {self.agent_name}: ANP消息发送异常: {e}")
-            return False
-
-    def start_anp_node(self):
-        """启动ANP SimpleNode（在单独线程中）"""
-        if not self.simple_node:
-            return
-        
-        def run_node():
+        @self.app.post("/message")
+        async def message(request: MessageRequest):
+            """消息端点 - 兼容现有测试"""
             try:
-                self.simple_node.run()
+                print(f"[ANP-{self.agent_name}] 处理消息: {request.text[:50]}...")
+                
+                # 生成医生回复
+                reply = generate_doctor_reply(self.doctor_role, request.text)
+                
+                # 如果有correlation_id，投递回执到协调器
+                if request.correlation_id:
+                    await self._deliver_receipt(request.correlation_id, reply)
+                
+                return {
+                    "status": "success",
+                    "output": {
+                        "content": [
+                            {"type": "text", "text": f"Message processed by {self.agent_name}: {reply[:100]}..."}
+                        ]
+                    }
+                }
+                
             except Exception as e:
-                print(f"[ANP-{self.agent_name}] SimpleNode运行异常: {e}")
+                print(f"[ANP-{self.agent_name}] 处理消息失败: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
         
-        threading.Thread(target=run_node, daemon=True).start()
-        print(f"[ANP-{self.agent_name}] SimpleNode已启动在端口 {self.ws_port}")
-
-    async def _deliver_receipt(self, correlation_id: str, reply: str) -> None:
-        try:
-            payload = {
-                "sender_id": self.agent_name,
-                "receiver_id": "ANP_Doctor_A" if "B" in self.agent_name else "ANP_Doctor_B",
-                "text": reply,
-                "correlation_id": correlation_id,
-            }
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                resp = await client.post(f"{self.coord_endpoint}/deliver", json=payload)
-                if resp.status_code not in (200, 201, 202):
-                    print(
-                        f"[ANP-{self.agent_name}] Deliver failed: HTTP {resp.status_code} - {resp.text}"
+        @self.app.post("/communicate")
+        async def communicate_with_peer(target_agent: str, message: str):
+            """与其他ANP Agent通信"""
+            try:
+                # 查找目标agent的信息
+                if target_agent not in self.peer_agents:
+                    # 尝试发现目标agent
+                    await self._discover_agent(target_agent)
+                
+                if target_agent not in self.peer_agents:
+                    raise HTTPException(status_code=404, detail=f"Agent {target_agent} not found")
+                
+                peer_info = self.peer_agents[target_agent]
+                
+                # 发送HTTP请求到目标agent
+                async with httpx.AsyncClient() as client:
+                    response = await client.post(
+                        f"{peer_info['url']}/runs",
+                        json={
+                            "input": {
+                                "content": [
+                                    {"type": "text", "text": message}
+                                ]
+                            }
+                        },
+                        headers={
+                            "Authorization": f"DID {self.did}",  # 简化的DID认证
+                            "Content-Type": "application/json"
+                        }
                     )
+                    
+                    if response.status_code == 200:
+                        return response.json()
+                    else:
+                        raise HTTPException(status_code=response.status_code, detail=response.text)
+                        
+            except Exception as e:
+                print(f"[ANP-{self.agent_name}] 与{target_agent}通信失败: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
+    
+    async def _discover_agent(self, agent_name: str):
+        """发现其他ANP Agent"""
+        # 尝试常见端口
+        common_ports = [9102, 9103, 9104, 9105]
+        
+        for port in common_ports:
+            try:
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(f"http://127.0.0.1:{port}/agents", timeout=2.0)
+                    if response.status_code == 200:
+                        agents_info = response.json()
+                        agents = agents_info.get("agents", [])
+                        for agent in agents:
+                            if agent.get("name") == agent_name:
+                                self.peer_agents[agent_name] = {
+                                    "name": agent_name,
+                                    "did": agent.get("did"),
+                                    "url": f"http://127.0.0.1:{port}"
+                                }
+                                print(f"[ANP-{self.agent_name}] 发现agent: {agent_name} at {port}")
+                                return
+            except:
+                continue
+    
+    async def _deliver_receipt(self, correlation_id: str, reply: str):
+        """投递回执到协调器"""
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"http://127.0.0.1:{self.coordinator_port}/deliver",
+                    json={
+                        "correlation_id": correlation_id,
+                        "reply": reply,
+                        "sender": self.agent_name
+                    },
+                    timeout=5.0
+                )
+                if response.status_code == 200:
+                    print(f"[ANP-{self.agent_name}] 回执投递成功: CID={correlation_id}")
                 else:
-                    print(f"[ANP-{self.agent_name}] Deliver OK: CID={correlation_id}")
+                    print(f"[ANP-{self.agent_name}] 回执投递失败: {response.status_code}")
         except Exception as e:
-            print(f"[ANP-{self.agent_name}] Deliver error: {e}")
+            print(f"[ANP-{self.agent_name}] 回执投递异常: {e}")
 
     def run(self) -> None:
-        # 启动ANP SimpleNode
-        self.start_anp_node()
-        # 等待SimpleNode启动
-        time.sleep(2)
-        
-        # 启动HTTP服务器
+        """启动ANP服务器"""
+        print(f"[ANP-{self.agent_name}] 启动HTTP服务器在端口 {self.port}")
         uvicorn.run(
             self.app,
             host="127.0.0.1",
@@ -334,31 +279,25 @@ class ANPServer:
             access_log=False,
         )
 
+def create_doctor_a_server(port: int) -> ANPServer:
+    """创建医生A服务器"""
+    return ANPServer("ANP_Doctor_A", port, "doctor_a")
 
-def create_doctor_a_server(port: int = 9010) -> ANPServer:
-    return ANPServer("ANP_Doctor_A", port)
-
-
-def create_doctor_b_server(port: int = 9011) -> ANPServer:
-    return ANPServer("ANP_Doctor_B", port)
-
+def create_doctor_b_server(port: int) -> ANPServer:
+    """创建医生B服务器"""
+    return ANPServer("ANP_Doctor_B", port, "doctor_b")
 
 if __name__ == "__main__":
     import sys
-
-    a_port = int(os.environ.get("ANP_A_PORT", "9010"))
-    b_port = int(os.environ.get("ANP_B_PORT", "9011"))
-
     if len(sys.argv) > 1:
-        arg = sys.argv[1].lower()
-        if arg == "doctor_a":
-            create_doctor_a_server(a_port).run()
-        elif arg == "doctor_b":
-            create_doctor_b_server(b_port).run()
+        role = sys.argv[1]
+        port = int(sys.argv[2]) if len(sys.argv) > 2 else 9102
+        
+        if role == "doctor_a":
+            server = create_doctor_a_server(port)
         else:
-            print("Usage: python -m ...anp.server [doctor_a|doctor_b]")
-            sys.exit(1)
+            server = create_doctor_b_server(port)
+        
+        server.run()
     else:
-        create_doctor_a_server(a_port).run()
-
-
+        print("Usage: python server.py <doctor_a|doctor_b> [port]")

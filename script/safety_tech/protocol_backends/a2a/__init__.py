@@ -26,3 +26,12 @@ __all__ = [
     "analyze_a2a_privacy"
 ]
 
+
+# 自动注册发送后端
+try:
+    from script.safety_tech.protocol_backends.common.interfaces import register_backend
+    from .client import A2AProtocolBackend
+    register_backend('a2a', A2AProtocolBackend())
+except Exception:
+    pass
+

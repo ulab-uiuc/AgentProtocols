@@ -3,13 +3,13 @@ general:
   num_conversations: 5
   max_rounds: 3
 
-# Unified LLM Core configuration
+# Unified LLM Core configuration - NVIDIA LLaMA Platform
 core:
-  type: "openai"  # "local" or "openai"
-  name: "gpt-4o"  # Model name
-  temperature: 0.0
-  openai_api_key: "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"
-  openai_base_url: "https://api.openai.com/v1"
+  type: "openai"  # Uses OpenAI-compatible client for NVIDIA
+  name: "meta/llama-3.1-8b-instruct"  # NVIDIA LLaMA model
+  temperature: 0.3
+  openai_api_key: "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"
+  openai_base_url: "https://integrate.api.nvidia.com/v1"
 
 # ACP Protocol specific configuration
 acp:

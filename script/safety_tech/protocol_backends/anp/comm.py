@@ -17,25 +17,26 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Callable, Set, List
 from urllib.parse import urlparse
 
-# Add AgentConnect to path
-current_dir = Path(__file__).parent.parent.parent.parent.parent
-agentconnect_path = current_dir / "agentconnect_src"
-sys.path.insert(0, str(agentconnect_path))
+# Add local agentconnect_src to path (authoritative source)
+PROJECT_ROOT = Path(__file__).resolve().parents[4]
+agentconnect_path = PROJECT_ROOT / "agentconnect_src"
+if str(agentconnect_path) not in sys.path:
+    sys.path.insert(0, str(agentconnect_path))
 
 try:
-    from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
-    from agent_connect.python.authentication import (
-        DIDWbaAuthHeader, verify_auth_header_signature
-    )
-    from agent_connect.python.utils.did_generate import did_generate
-    from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
-    from agent_connect.python.e2e_encryption import WssMessageSDK
-    
+    # Import from local agentconnect_src (no fallback to external package)
+    from simple_node.simple_node import SimpleNode  # type: ignore
+    from simple_node.simple_node_session import SimpleNodeSession  # type: ignore
+    from authentication.did_wba_auth_header import DIDWbaAuthHeader  # type: ignore
+    from authentication.did_wba_verifier import DidWbaVerifier  # type: ignore
+    from utils.did_generate import did_generate  # type: ignore
+    from utils.crypto_tool import get_pem_from_private_key  # type: ignore
+    from e2e_encryption.wss_message_sdk import WssMessageSDK  # type: ignore
     ANP_AVAILABLE = True
-    print("[ANP Privacy] Successfully imported AgentConnect SDK with privacy features")
+    print("[ANP Privacy] Using local agentconnect_src modules")
 except ImportError as e:
-    ANP_AVAILABLE = False
-    print(f"[ANP Privacy] AgentConnect SDK not available: {e}")
+    # Do not fallback; abort immediately
+    raise
 
 # Import base classes
 try:

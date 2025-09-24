@@ -17,12 +17,12 @@ import sys
 try:
     from ...core.privacy_agent_base import ReceptionistAgent, NosyDoctorAgent
 except ImportError:
-    from core.privacy_agent_base import ReceptionistAgent, NosyDoctorAgent
+    from script.safety_tech.core.privacy_agent_base import ReceptionistAgent, NosyDoctorAgent
 
 # Import LLM core for agent execution
 try:
     # Add project root to path for LLM core
-    from core.llm_wrapper import Core
+    from script.safety_tech.core.llm_wrapper import Core
     LLM_CORE_AVAILABLE = True
     print("[LLM] Core imported successfully for ANP agents")
 except ImportError as e:
@@ -34,34 +34,24 @@ except ImportError as e:
         def __init__(self, *args, **kwargs): pass
         async def process(self, prompt): return "Stub LLM response"
 
-# AgentConnect ANP imports for agent execution
+# AgentConnect ANP imports for agent execution (local only; no fallback)
 try:
-    # Add AgentConnect to path
-    current_dir = Path(__file__).parent
-    agentconnect_path = current_dir / "agentconnect_src"
-    sys.path.insert(0, str(agentconnect_path))
-    
-    from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
-    from agent_connect.python.authentication import (
-        DIDWbaAuthHeader, verify_auth_header_signature
-    )
-    from agent_connect.python.utils.did_generate import did_generate
-    from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
-    
+    PROJECT_ROOT = Path(__file__).resolve().parents[4]
+    agentconnect_path = PROJECT_ROOT / "agentconnect_src"
+    if str(agentconnect_path) not in sys.path:
+        sys.path.insert(0, str(agentconnect_path))
+
+    from simple_node.simple_node import SimpleNode  # type: ignore
+    from simple_node.simple_node_session import SimpleNodeSession  # type: ignore
+    from authentication.did_wba_auth_header import DIDWbaAuthHeader  # type: ignore
+    from authentication.did_wba_verifier import DidWbaVerifier  # type: ignore
+    from utils.did_generate import did_generate  # type: ignore
+    from utils.crypto_tool import get_pem_from_private_key  # type: ignore
     ANP_EXECUTOR_AVAILABLE = True
-    print("[ANP Privacy] Successfully imported AgentConnect SDK agent execution")
-except ImportError as e:
-    ANP_EXECUTOR_AVAILABLE = False
-    print(f"[ANP Privacy] AgentConnect SDK not available: {e}")
-    
-    # Create minimal stubs for development
-    class SimpleNode:
-        def __init__(self, *args, **kwargs): pass
-        async def start_server(self, *args, **kwargs): pass
-        async def send_message(self, *args, **kwargs): return {"status": "stub"}
-    
-    class SimpleNodeSession:
-        def __init__(self, *args, **kwargs): pass
+    print("[ANP Privacy] Using local agentconnect_src for ANP agent execution")
+except ImportError:
+    # Abort immediately to enforce no-fallback policy
+    raise
 
 
 class ANPReceptionistAgent(ReceptionistAgent):
