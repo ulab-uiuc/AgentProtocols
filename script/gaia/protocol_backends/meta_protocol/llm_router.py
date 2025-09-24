@@ -242,18 +242,37 @@ class GAIALLMRouter:
         """Create system prompt optimized for GAIA task routing."""
         return """You are an intelligent protocol router for GAIA (General Agent Interaction Architecture) tasks.
 Your goal is to select optimal communication protocols for multi-agent systems working on diverse academic and research tasks.
+AVAILABLE PROTOCOLS (concise, with clarified strengths, quality and success metrics):
 
-AVAILABLE PROTOCOLS (based on performance data):
-- A2A: Fast data transfer (7.39s avg), good for computational tasks, python_execute tool
-- ACP: Reliable reasoning (7.83s avg), good for create_chat_completion, final synthesis  
-- Agora: Balanced performance (7.10s avg), good for browser_use, web research
-- ANP: High accuracy (6.76s avg), secure, good for academic research, critical analysis
+- A2A (agent id: A2A-Worker):
+    * Primary strengths: Highest measured throughput and strong quality for computational and file-IO heavy tasks.
+    * Typical best-for: `python_execute`, bulk `file_manipulation`, ETL/data_processing, editor/file replace operations.
+    * Metrics (example / historical): Quality avg = 2.51, Success rate = 59.6%, Avg response time = 7.39s
+    * Selection priority: Prefer A2A when correctness of computed outputs and heavy data throughput matter more than minimal latency.
 
-GAIA TASK CHARACTERISTICS:
-- Research tasks: Often require web search, document analysis, academic paper retrieval
-- Computational tasks: Need python execution, statistical analysis, data processing
-- Reasoning tasks: Require complex logical reasoning and synthesis
-- Mixed tasks: Combine multiple capabilities and tool types
+- ACP (agent id: ACP-Worker):
+    * Primary strengths: Fast synthesis of chat-style completions and reliable final synthesis.
+    * Typical best-for: `create_chat_completion`, final answer synthesis, multi-turn consolidation of evidence.
+    * Metrics (example / historical): Quality avg = 2.27, Success rate = 59.0%, Avg response time = 7.83s
+    * Selection priority: Prefer ACP when low-latency synthesis is desired or when rapid, stable finalization is important.
+
+- Agora (agent id: Agora-Worker):
+    * Primary strengths: Balanced and robust for information gathering and web interactions.
+    * Typical best-for: `browser_use`, `web_search`, document scraping and multi-step information retrieval.
+    * Metrics (example / historical): Quality avg = 2.33, Success rate = 60.0%, Avg response time = 7.10s
+    * Selection priority: Prefer Agora for tasks requiring web access, information aggregation, or mixed workflows.
+
+- ANP (agent id: ANP-Worker):
+    * Primary strengths: Highest accuracy/precision and secure handling for sensitive or academic-grade outputs.
+    * Typical best-for: critical analysis, academic_research, sensitive_data handling, high-accuracy-required tasks.
+    * Metrics (example / historical): Quality avg = 2.14, Success rate = 61.0%, Avg response time = 6.76s
+    * Selection priority: Prefer ANP when output correctness and security are top priorities (e.g., academic claims, legal or privacy-sensitive content).
+
+GAIA TASK CHARACTERISTICS (short):
+- Research tasks: web search, document analysis, paper retrieval
+- Computational tasks: python execution, statistical analysis, data processing
+- Reasoning tasks: complex logical reasoning and synthesis
+- Mixed tasks: combine multiple capabilities and tool types
 
 PROTOCOL SELECTION STRATEGY:
 - For browser_use tool: Prefer Agora (optimized for web interactions)
@@ -264,11 +283,11 @@ PROTOCOL SELECTION STRATEGY:
 
 ASSIGNMENT REQUIREMENTS:
 - Match protocols to agent tools and roles
-- Consider task complexity and domain areas
-- Balance performance and reliability
-- Ensure appropriate protocol for each agent's specific function
+- Consider task complexity, domain areas, and special flags (`high_accuracy_required`, `low_latency_required`)
+- Balance performance, reliability, and current_load
+- Provide concise reasoning explaining key criteria and any overrides (e.g., security or accuracy overrides)
 
-Use tool calling to provide structured protocol selection."""
+Use tool calling to provide a structured protocol selection (fields: `selected_protocols`, `agent_assignments`, `reasoning`, `confidence`)."""
 
     def _create_gaia_user_prompt(self, task_analysis: Dict[str, Any], 
                                 agents_config: List[Dict[str, Any]]) -> str:
