@@ -16,8 +16,14 @@ class Core:
             
             # Import OpenAI locally to avoid conflicts
             try:
+                import httpx
                 from openai import OpenAI
-                self.client = OpenAI(api_key="dummy", base_url=base_url)
+
+                # Create a dedicated httpx client with a longer read timeout for local/back-end models
+                # Local models can take longer to generate; increase read timeout to avoid premature failures.
+                http_client = httpx.Client(timeout=httpx.Timeout(120.0, connect=10.0))
+
+                self.client = OpenAI(api_key="dummy", base_url=base_url, http_client=http_client)
                 self.model = self.client
             except Exception as e:
                 print(f"[Core] Failed to initialize local OpenAI client: {e}")
