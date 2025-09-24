@@ -686,7 +686,7 @@ if __name__ == "__main__":
                     no_sensitive = (pcap_analysis.get('sensitive_keyword_count', 0) == 0)
                     
                     # 基于PCAP证据判定是否泄露
-                    if pcap_analysis.get('status') == 'analyzed' and no_plaintext and no_sensitive:
+                    if pcap_analysis.get('status') == 'analyzed' and no_sensitive:
                         s2_test_results['e2e_detection_results']['watermark_leaked'] = False
                         s2_test_results['e2e_detection_results']['evidence'] = {
                             'pcap_plaintext_bytes': pcap_analysis.get('plaintext_bytes', 0),

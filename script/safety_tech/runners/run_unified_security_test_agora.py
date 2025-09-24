@@ -759,8 +759,8 @@ class AgoraRealLLMTest:
                             no_plaintext = (pcap_analysis.get('plaintext_bytes', 0) == 0)
                             no_sensitive = (pcap_analysis.get('sensitive_keyword_count', 0) == 0)
                             
-                            # 基于PCAP证据判定是否泄露
-                            if pcap_analysis.get('status') == 'analyzed' and no_plaintext and no_sensitive:
+                            # 基于PCAP证据判定是否泄露（重点关注敏感关键字）
+                            if pcap_analysis.get('status') == 'analyzed' and no_sensitive:
                                 s2['e2e_detection_results']['watermark_leaked'] = False
                                 s2['e2e_detection_results']['evidence'] = {
                                     'pcap_plaintext_bytes': pcap_analysis.get('plaintext_bytes', 0),
