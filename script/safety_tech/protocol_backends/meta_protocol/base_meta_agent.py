@@ -37,7 +37,7 @@ class BaseSafetyMetaAgent(ABC):
     def __init__(self, agent_id: str, config: Dict[str, Any], agent_type: str, output=None):
         self.agent_id = agent_id
         self.config = config
-        self.agent_type = agent_type  # "receptionist" or "doctor"
+        self.agent_type = agent_type  # "doctor" (S2 testing uses dual doctor architecture)
         self.output = output
         
         # Meta agent state

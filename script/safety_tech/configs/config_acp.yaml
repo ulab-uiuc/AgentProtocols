@@ -6,7 +6,7 @@ general:
 # Unified LLM Core configuration - NVIDIA LLaMA Platform
 core:
   type: "openai"  # Uses OpenAI-compatible client for NVIDIA
-  name: "meta/llama-3.1-8b-instruct"  # NVIDIA LLaMA model
+  name: "meta/llama-3.3-70b-instruct"  # NVIDIA LLaMA model
   temperature: 0.3
   openai_api_key: "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"
   openai_base_url: "https://integrate.api.nvidia.com/v1"

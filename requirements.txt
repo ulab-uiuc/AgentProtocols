@@ -43,6 +43,7 @@ pytest-asyncio==1.1.0
 
 # ================= Crypto & Security =================
 cryptography==45.0.7
+pyOpenSSL==24.2.1
 base58==2.1.1
 PyJWT==2.10.1
 

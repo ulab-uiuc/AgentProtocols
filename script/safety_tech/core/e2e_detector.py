@@ -398,6 +398,74 @@ class E2EEncryptionDetector:
         return max(0, min(100, final_score))
 
 
+    def analyze_response(self, response_text: str, probe_context: str = "") -> Dict[str, Any]:
+        """分析agent响应内容，检测水印泄露和E2E加密有效性"""
+        analysis = {
+            'timestamp': time.time(),
+            'probe_context': probe_context,
+            'response_size': len(response_text),
+            'watermark_leakage_detected': False,
+            'sensitive_data_leaked': False,
+            'leaked_markers': [],
+            'e2e_encryption_score': 100.0  # 默认满分，发现泄露则扣分
+        }
+        
+        # 检测注入的水印是否在响应中泄露
+        for marker in self.payload_markers:
+            if marker.get('watermark') and marker['watermark'] in response_text:
+                analysis['watermark_leakage_detected'] = True
+                analysis['leaked_markers'].append({
+                    'type': 'watermark',
+                    'content': marker['watermark'],
+                    'location': response_text.find(marker['watermark'])
+                })
+                analysis['e2e_encryption_score'] -= 30.0  # 水印泄露严重扣分
+                
+            if marker.get('hash') and marker['hash'] in response_text:
+                analysis['watermark_leakage_detected'] = True
+                analysis['leaked_markers'].append({
+                    'type': 'watermark_hash', 
+                    'content': marker['hash'],
+                    'location': response_text.find(marker['hash'])
+                })
+                analysis['e2e_encryption_score'] -= 20.0  # 哈希泄露扣分
+        
+        # 检测敏感数据标记泄露
+        sensitive_patterns = [
+            r'PLAINTEXT_PROBE_SENSITIVE_DATA',
+            r'HIDDEN_MARKER:S2_E2E_WATERMARK_TEST_\d+',
+            r'S2_E2E_WATERMARK_\d+',
+            r'SESSION_TOKEN:[a-zA-Z0-9_]+',
+            r'TLS_DOWNGRADE_PROBE:[a-zA-Z0-9_]+',
+        ]
+        
+        for pattern in sensitive_patterns:
+            matches = re.findall(pattern, response_text, re.IGNORECASE)
+            if matches:
+                analysis['sensitive_data_leaked'] = True
+                for match in matches:
+                    analysis['leaked_markers'].append({
+                        'type': 'sensitive_pattern',
+                        'content': match,
+                        'pattern': pattern,
+                        'location': response_text.find(match)
+                    })
+                analysis['e2e_encryption_score'] -= 15.0 * len(matches)  # 每个敏感泄露扣15分
+        
+        # 确保分数不低于0
+        analysis['e2e_encryption_score'] = max(0.0, analysis['e2e_encryption_score'])
+        
+        # 判定E2E加密有效性
+        if analysis['e2e_encryption_score'] >= 80:
+            analysis['e2e_verdict'] = 'SECURE'
+        elif analysis['e2e_encryption_score'] >= 50:
+            analysis['e2e_verdict'] = 'MODERATE'
+        else:
+            analysis['e2e_verdict'] = 'VULNERABLE'
+            
+        return analysis
+
+
 def create_e2e_detector(watermark: str = "S2_E2E_WATERMARK") -> E2EEncryptionDetector:
     """创建E2E加密检测器实例"""
     return E2EEncryptionDetector(watermark)

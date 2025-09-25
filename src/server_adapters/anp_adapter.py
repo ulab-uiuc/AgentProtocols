@@ -33,19 +33,15 @@ agentconnect_path = os.path.join(project_root, 'agentconnect_src')
 if agentconnect_path not in sys.path:
     sys.path.insert(0, agentconnect_path)
 
-# Import AgentConnect components (dynamic to avoid static import errors)
+# Import local AgentConnect components
 try:
-    import importlib
-    _ac_simple_node = importlib.import_module('agent_connect.python.simple_node')
-    SimpleNode = getattr(_ac_simple_node, 'SimpleNode')
-    SimpleNodeSession = getattr(_ac_simple_node, 'SimpleNodeSession')
-    _ac_auth = importlib.import_module('agent_connect.python.authentication')
-    DIDAllClient = getattr(_ac_auth, 'DIDAllClient', None)
-    create_did_wba_document = getattr(_ac_auth, 'create_did_wba_document', None)
-    _ac_utils_did = importlib.import_module('agent_connect.python.utils.did_generate')
-    did_generate = getattr(_ac_utils_did, 'did_generate', None)
-    _ac_utils_crypto = importlib.import_module('agent_connect.python.utils.crypto_tool')
-    get_pem_from_private_key = getattr(_ac_utils_crypto, 'get_pem_from_private_key', None)
+    # 直接导入本地 agentconnect_src 模块
+    from simple_node.simple_node import SimpleNode
+    from simple_node.simple_node_session import SimpleNodeSession  
+    from authentication.didallclient import DIDAllClient
+    from authentication.did_wba import create_did_wba_document
+    from utils.did_generate import did_generate
+    from utils.crypto_tool import get_pem_from_private_key
     AGENTCONNECT_AVAILABLE = True
 except Exception:
     SimpleNode = None

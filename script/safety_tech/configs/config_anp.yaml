@@ -5,11 +5,11 @@ general:
 
 # Unified LLM Core configuration
 core:
-  type: "openai"  # "local" or "openai"
-  name: "gpt-4o"  # Model name
+  type: "openai"  # Uses OpenAI-compatible client for NVIDIA
+  name: "meta/llama-3.3-70b-instruct"  # NVIDIA LLaMA model
   temperature: 0.0
-  openai_api_key: "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"
-  openai_base_url: "https://api.openai.com/v1"
+  openai_api_key: "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"
+  openai_base_url: "https://integrate.api.nvidia.com/v1"
 
 # ANP Protocol specific configuration
 anp:
