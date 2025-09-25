@@ -550,6 +550,9 @@ class BaseAgent:
 
     async def _start_server(self, executor: Any) -> None:
         """Start the internal server using pluggable adapter."""
+        # Ensure port is available, auto-increment if needed
+        await self._ensure_port_available()
+
         # Use server adapter to build server and agent card
         self._server_instance, self._self_agent_card = self._server_adapter.build(
             host=self._host,
@@ -566,6 +569,9 @@ class BaseAgent:
 
     async def _start_anp_server(self, executor: Any, anp_config: Dict[str, Any]) -> None:
         """Start ANP server with special configuration."""
+        # Ensure port is available, auto-increment if needed
+        await self._ensure_port_available()
+
         # Use server adapter to build ANP server and agent card
         self._server_instance, self._self_agent_card = self._server_adapter.build(
             host=self._host,
@@ -580,6 +586,40 @@ class BaseAgent:
         
         # ANP uses WebSocket, so we wait differently
         await self._wait_for_anp_server_ready()
+
+    async def _ensure_port_available(self, max_attempts: int = 50) -> None:
+        """Ensure `self._port` is free; if not, try incrementing port until free.
+
+        This function updates `self._port` in-place. It probes localhost (127.0.0.1)
+        and treats any bindable address as available. It will raise RuntimeError if
+        no free port is found within max_attempts.
+        """
+        import socket
+
+        attempts = 0
+        base_port = int(self._port or 0)
+        if base_port == 0:
+            # Let OS pick a free port (no probing required)
+            return
+
+        while attempts < max_attempts:
+            port_to_check = base_port + attempts
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                try:
+                    s.bind((self._host, port_to_check))
+                    # Successfully bound -> port is free; update and return
+                    s.close()
+                    self._port = port_to_check
+                    if attempts > 0:
+                        print(f"INFO: Port in use, switched to available port {self._port}")
+                    return
+                except OSError:
+                    # Port in use, try next
+                    attempts += 1
+                    continue
+
+        raise RuntimeError(f"No available port found starting at {base_port} after {max_attempts} attempts")
 
     async def _wait_for_anp_server_ready(self, timeout: float = DEFAULT_SERVER_STARTUP_TIMEOUT) -> None:
         """Wait for ANP server to be ready (WebSocket-based)."""
