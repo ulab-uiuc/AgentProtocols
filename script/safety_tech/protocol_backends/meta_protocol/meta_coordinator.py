@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Safety Meta Protocol Coordinator
-Uses src/core/base_agent.py and src/core/network.py for proper meta-protocol integration.
+Uses standard safety protocol components with intelligent routing.
 """
 
 from __future__ import annotations
@@ -23,39 +23,43 @@ if str(PROJECT_ROOT) not in sys.path:
 if str(SAFETY_TECH) not in sys.path:
     sys.path.insert(0, str(SAFETY_TECH))
 
-# Import from src
-from src.core.base_agent import BaseAgent
-from src.core.network import AgentNetwork
-
 # Import safety_tech components
 from runners.runner_base import RunnerBase
 
-# Import meta agents
-from .acp_meta_agent import ACPSafetyMetaAgent
-from .anp_meta_agent import ANPSafetyMetaAgent  
-from .agora_meta_agent import AgoraSafetyMetaAgent
-from .a2a_meta_agent import A2ASafetyMetaAgent
+# Import meta protocol components
+from .llm_router import SafetyLLMRouter
+from .agents import MetaReceptionistAgent, MetaNosyDoctorAgent, create_meta_receptionist_executor, create_meta_doctor_executor
+from .analyzer import MetaPrivacyAnalyzer
+from .comm import MetaCommBackend
+from .registration_adapter import MetaRegistrationAdapter
 
 
 class SafetyMetaCoordinator(RunnerBase):
     """
-    Safety Meta Protocol Coordinator using src/core components
+    Safety Meta Protocol Coordinator using standard safety protocol components
     
-    Uses BaseAgent and AgentNetwork from src/core for proper meta-protocol integration.
-    Each protocol has 2 agents: receptionist and doctor.
+    Uses intelligent routing to select optimal protocol and manages privacy testing.
+    Each setup has 2 agents: receptionist and doctor.
     """
 
     def __init__(self, config_path: str = "config_meta.yaml"):
         super().__init__(config_path)
         
-        # Use src/core/network.py AgentNetwork
-        self.agent_network: Optional[AgentNetwork] = None
-        self.meta_agents: Dict[str, Any] = {}  # agent_id -> meta agent wrapper
-        self.base_agents: Dict[str, BaseAgent] = {}  # agent_id -> BaseAgent instance
+        # Meta protocol components
+        self.llm_router = SafetyLLMRouter()
+        self.routing_decision = None
+        self.selected_protocol = None
         
-        self.protocol_type: Optional[str] = None
-        self.receptionist_agent: Optional[Any] = None
-        self.doctor_agent: Optional[Any] = None
+        # Communication and registration
+        self.comm_backend: Optional[MetaCommBackend] = None
+        self.registration_adapter: Optional[MetaRegistrationAdapter] = None
+        
+        # Agents
+        self.receptionist_agent: Optional[MetaReceptionistAgent] = None
+        self.doctor_agent: Optional[MetaNosyDoctorAgent] = None
+        
+        # Privacy analysis
+        self.privacy_analyzer: Optional[MetaPrivacyAnalyzer] = None
         
         # Performance tracking
         self.conversation_stats = {
@@ -65,99 +69,163 @@ class SafetyMetaCoordinator(RunnerBase):
             "avg_response_time": 0.0,
             "privacy_violations": 0
         }
+        
+        # Initialize LLM client
+        self._initialize_llm_client()
 
-    async def create_network(self) -> AgentNetwork:
-        """Create meta network using src/core/network.py"""
+    def _initialize_llm_client(self) -> None:
+        """Initialize LLM client for intelligent routing"""
         try:
-            # Use AgentNetwork from src/core
-            self.agent_network = AgentNetwork()
+            core_config = self.config.get("core", {})
             
-            self.output.success("Meta protocol network (src/core) infrastructure created")
-            return self.agent_network
+            if core_config.get("type") == "openai":
+                api_key = core_config.get("openai_api_key")
+                base_url = core_config.get("openai_base_url", "https://api.openai.com/v1")
+                model = core_config.get("name", "gpt-4o")
+                
+                if api_key:
+                    # Create simple LLM client
+                    class SimpleLLMClient:
+                        def __init__(self, api_key, base_url, model):
+                            self.api_key = api_key
+                            self.base_url = base_url
+                            self.model = model
+                        
+                        async def ask_tool(self, messages, tools, tool_choice):
+                            import aiohttp
+                            headers = {
+                                "Authorization": f"Bearer {self.api_key}",
+                                "Content-Type": "application/json"
+                            }
+                            payload = {
+                                "model": self.model,
+                                "messages": messages,
+                                "tools": tools,
+                                "tool_choice": tool_choice,
+                                "temperature": 0.1
+                            }
+                            
+                            async with aiohttp.ClientSession() as session:
+                                async with session.post(f"{self.base_url}/chat/completions", 
+                                                       headers=headers, json=payload) as response:
+                                    if response.status != 200:
+                                        error_text = await response.text()
+                                        raise Exception(f"LLM API call failed: {response.status} - {error_text}")
+                                    result = await response.json()
+                                    return result["choices"][0]["message"]
+                    
+                    llm_client = SimpleLLMClient(api_key, base_url, model)
+                    self.llm_router.set_llm_client(llm_client)
+                    
+                    self.output.success(f"🧠 LLM client initialized: {model}")
+                else:
+                    self.output.warning("⚠️  No OpenAI API key found, using heuristic routing")
+            else:
+                self.output.info("📋 Using heuristic-based protocol selection")
+                
+        except Exception as e:
+            self.output.warning(f"⚠️  Failed to initialize LLM client: {e}")
+
+    async def create_network(self) -> Dict[str, Any]:
+        """Create meta protocol network infrastructure"""
+        try:
+            # Use LLM to select optimal protocol for safety testing
+            sample_task = {
+                "question": "Medical privacy conversation with sensitive patient data",
+                "context": "Doctor-patient interaction requiring privacy protection",
+                "metadata": {
+                    "type": "medical_conversation",
+                    "privacy_level": "high",
+                    "agents_needed": 2,
+                    "roles": ["receptionist", "doctor"]
+                }
+            }
+            
+            self.output.info("🧠 Analyzing task for optimal protocol selection...")
+            
+            # Get routing decision
+            self.routing_decision = await self.llm_router.route_safety_task(sample_task, num_agents=2)
+            self.selected_protocol = self.routing_decision.selected_protocol
+            
+            self.output.success(f"📊 Protocol selected: {self.selected_protocol.upper()}")
+            self.output.info(f"🎯 Confidence: {self.routing_decision.confidence:.1%}")
+            self.output.info(f"💡 Reasoning: {self.routing_decision.reasoning}")
+            
+            # Initialize communication backend
+            self.comm_backend = MetaCommBackend(
+                selected_protocol=self.selected_protocol,
+                routing_decision=self.routing_decision
+            )
+            
+            # Initialize registration adapter
+            self.registration_adapter = MetaRegistrationAdapter(
+                config=self.config,
+                selected_protocol=self.selected_protocol,
+                routing_decision=self.routing_decision,
+                output=self.output
+            )
+            
+            # Initialize privacy analyzer
+            self.privacy_analyzer = MetaPrivacyAnalyzer(self.config, self.output)
+            
+            self.output.success("Meta protocol network infrastructure created")
+            return {"selected_protocol": self.selected_protocol, "routing_decision": self.routing_decision}
+            
         except Exception as e:
             self.output.error(f"Failed to create meta network: {e}")
             raise
 
     async def setup_agents(self) -> Dict[str, Any]:
-        """Setup meta agents using BaseAgent from src/core"""
+        """Setup meta agents with intelligent protocol selection"""
         try:
-            # Get protocol from config
-            self.protocol_type = self.config.get("general", {}).get("protocol", "acp")
+            if not self.selected_protocol:
+                raise RuntimeError("No protocol selected. Call create_network() first.")
             
-            agents = {}
+            # Create agent IDs based on selected protocol
+            receptionist_id = f"{self.selected_protocol.upper()}_Meta_Receptionist"
+            doctor_id = f"{self.selected_protocol.upper()}_Meta_Doctor"
             
-            if self.protocol_type == "acp":
-                # Create ACP meta agents
-                self.receptionist_agent = ACPSafetyMetaAgent(
-                    "ACP_Meta_Receptionist", self.config, "receptionist", self.output
-                )
-                self.doctor_agent = ACPSafetyMetaAgent(
-                    "ACP_Meta_Doctor", self.config, "doctor", self.output
-                )
-                
-            elif self.protocol_type == "anp":
-                # Create ANP meta agents
-                self.receptionist_agent = ANPSafetyMetaAgent(
-                    "ANP_Meta_Receptionist", self.config, "receptionist", self.output
-                )
-                self.doctor_agent = ANPSafetyMetaAgent(
-                    "ANP_Meta_Doctor", self.config, "doctor", self.output
-                )
-                
-            elif self.protocol_type == "agora":
-                # Create Agora meta agents
-                self.receptionist_agent = AgoraSafetyMetaAgent(
-                    "Agora_Meta_Receptionist", self.config, "receptionist", self.output
-                )
-                self.doctor_agent = AgoraSafetyMetaAgent(
-                    "Agora_Meta_Doctor", self.config, "doctor", self.output
-                )
-                
-            elif self.protocol_type == "a2a":
-                # Create A2A meta agents
-                self.receptionist_agent = A2ASafetyMetaAgent(
-                    "A2A_Meta_Receptionist", self.config, "receptionist", self.output
-                )
-                self.doctor_agent = A2ASafetyMetaAgent(
-                    "A2A_Meta_Doctor", self.config, "doctor", self.output
-                )
-            else:
-                raise ValueError(f"Unsupported protocol: {self.protocol_type}")
-
-            # Initialize meta agents and create BaseAgent instances with different ports
-            receptionist_port = 8100  # Base port for receptionist
-            doctor_port = 8101        # Base port for doctor
-            
-            receptionist_base_agent = await self.receptionist_agent.create_base_agent(port=receptionist_port)
-            doctor_base_agent = await self.doctor_agent.create_base_agent(port=doctor_port)
-            
-            # Register BaseAgent instances in AgentNetwork
-            await self.agent_network.register_agent(receptionist_base_agent)
-            await self.agent_network.register_agent(doctor_base_agent)
-            
-            # Connect agents (receptionist <-> doctor)
-            await self.agent_network.connect_agents(
-                self.receptionist_agent.agent_id, 
-                self.doctor_agent.agent_id
-            )
-            await self.agent_network.connect_agents(
-                self.doctor_agent.agent_id,
-                self.receptionist_agent.agent_id
+            # Create meta protocol agents
+            self.receptionist_agent = MetaReceptionistAgent(
+                agent_id=receptionist_id,
+                selected_protocol=self.selected_protocol,
+                routing_decision=self.routing_decision
             )
             
-            # Store references
-            self.base_agents[self.receptionist_agent.agent_id] = receptionist_base_agent
-            self.base_agents[self.doctor_agent.agent_id] = doctor_base_agent
+            self.doctor_agent = MetaNosyDoctorAgent(
+                agent_id=doctor_id,
+                selected_protocol=self.selected_protocol,
+                routing_decision=self.routing_decision
+            )
             
-            agents[self.receptionist_agent.agent_id] = self.receptionist_agent
-            agents[self.doctor_agent.agent_id] = self.doctor_agent
+            # Register agents with registration adapter
+            receptionist_reg = await self.registration_adapter.register_meta_agent(
+                agent_id=receptionist_id,
+                agent_config={"agent_type": "receptionist", "protocol": self.selected_protocol},
+                host="127.0.0.1",
+                port=8100
+            )
             
-            self.meta_agents = agents
+            doctor_reg = await self.registration_adapter.register_meta_agent(
+                agent_id=doctor_id,
+                agent_config={"agent_type": "doctor", "protocol": self.selected_protocol},
+                host="127.0.0.1", 
+                port=8101
+            )
             
-            # Install outbound adapters for inter-agent communication
-            await self.install_outbound_adapters()
+            if not (receptionist_reg.get("success") and doctor_reg.get("success")):
+                raise RuntimeError("Agent registration failed")
             
-            self.output.success(f"Meta {self.protocol_type.upper()} agents configured: {list(agents.keys())}")
+            # Register endpoints with communication backend
+            await self.comm_backend.register_endpoint(receptionist_id, "http://127.0.0.1:8100")
+            await self.comm_backend.register_endpoint(doctor_id, "http://127.0.0.1:8101")
+            
+            agents = {
+                receptionist_id: self.receptionist_agent,
+                doctor_id: self.doctor_agent
+            }
+            
+            self.output.success(f"Meta {self.selected_protocol.upper()} agents configured: {list(agents.keys())}")
             return agents
             
         except Exception as e:
@@ -165,41 +233,32 @@ class SafetyMetaCoordinator(RunnerBase):
             raise
 
     async def run_health_checks(self) -> None:
-        """Run health checks using AgentNetwork"""
-        if not self.agent_network:
+        """Run health checks using registration adapter"""
+        if not self.registration_adapter:
             return
         
-        self.output.info("🏥 Running agent health checks...")
+        self.output.info("🏥 Running meta protocol health checks...")
         
         try:
-            # Check if all agents are healthy
-            all_healthy = True
-            for agent_id, base_agent in self.base_agents.items():
-                try:
-                    # Use BaseAgent's health check method instead of get_agent_card
-                    if hasattr(base_agent, 'health_check'):
-                        is_healthy = await base_agent.health_check()
-                    else:
-                        # Fallback: check if agent has a listening address
-                        is_healthy = bool(base_agent.get_listening_address())
-                    
-                    if not is_healthy:
-                        all_healthy = False
-                        self.output.error(f"Agent {agent_id} is unhealthy")
-                except Exception as e:
-                    all_healthy = False
-                    self.output.error(f"Agent {agent_id} health check failed: {e}")
+            # Check health of all registered agents
+            health_results = await self.registration_adapter.health_check_all()
             
-            if all_healthy:
-                self.output.success(f"All {len(self.base_agents)} agents are healthy")
-            else:
-                self.output.warning("Some agents are unhealthy")
+            healthy_count = 0
+            for agent_id, health in health_results.items():
+                if health.get("healthy", False):
+                    self.output.success(f"✅ {agent_id} - Healthy")
+                    healthy_count += 1
+                else:
+                    error = health.get("error", "Unknown error")
+                    self.output.error(f"❌ {agent_id} - {error}")
+            
+            self.output.info(f"Health Check: {healthy_count}/{len(health_results)} agents healthy")
                 
         except Exception as e:
             self.output.warning(f"Health check failed: {e}")
 
     async def run_privacy_test(self) -> Dict[str, Any]:
-        """Run privacy protection tests using meta agents"""
+        """Run privacy protection tests using meta protocol"""
         try:
             # Load enhanced dataset
             enhanced_questions = self.load_enhanced_dataset()
@@ -212,7 +271,7 @@ class SafetyMetaCoordinator(RunnerBase):
             )
             max_rounds = general_config.get("max_rounds", 3)
             
-            self.output.info(f"Running {num_conversations} META-{self.protocol_type.upper()} conversations with {max_rounds} rounds each")
+            self.output.info(f"Running {num_conversations} META-{self.selected_protocol.upper()} conversations with {max_rounds} rounds each")
             
             test_questions = enhanced_questions[:num_conversations]
             
@@ -222,19 +281,19 @@ class SafetyMetaCoordinator(RunnerBase):
             )
             
             # Save conversation data
-            conv_output_file = self._get_output_path(f"agent_conversations_meta_{self.protocol_type}.json")
+            conv_output_file = self._get_output_path(f"agent_conversations_meta_{self.selected_protocol}.json")
             self.save_conversation_data(conversation_results, conv_output_file)
             
-            # Analyze privacy violations using appropriate analyzer
-            analysis_results = await self._analyze_privacy_results(conversation_results)
+            # Analyze privacy violations using meta protocol analyzer
+            analysis_results = self.privacy_analyzer.analyze_conversations_from_data(conversation_results)
             
             # Save analysis results
-            analysis_output_file = self._get_output_path(f"privacy_analysis_meta_{self.protocol_type}.json")
+            analysis_output_file = self._get_output_path(f"privacy_analysis_meta_{self.selected_protocol}.json")
             self._save_analysis_results(analysis_results, analysis_output_file)
             
             # Generate report
-            report = self._generate_privacy_report(analysis_results)
-            report_output_file = self._get_output_path(f"detailed_privacy_report_meta_{self.protocol_type}.txt")
+            report = self._generate_meta_privacy_report(analysis_results)
+            report_output_file = self._get_output_path(f"detailed_privacy_report_meta_{self.selected_protocol}.txt")
             with open(report_output_file, 'w', encoding='utf-8') as f:
                 f.write(report)
             
@@ -249,19 +308,25 @@ class SafetyMetaCoordinator(RunnerBase):
             raise
 
     async def _run_meta_conversations(self, questions: List[str], max_rounds: int) -> Dict[str, Any]:
-        """Run conversations using AgentNetwork message routing"""
+        """Run conversations using meta protocol communication backend"""
         conversations = []
         
         for i, question in enumerate(questions):
-            conversation_id = f"meta_{self.protocol_type}_conv_{i+1}"
+            conversation_id = f"meta_{self.selected_protocol}_conv_{i+1}"
             
-            self.output.info(f"Starting META-{self.protocol_type.upper()} conversation {i+1}/{len(questions)}")
+            self.output.info(f"Starting META-{self.selected_protocol.upper()} conversation {i+1}/{len(questions)}")
             
             # Initialize conversation
             conversation = {
                 "conversation_id": conversation_id,
                 "original_question": question,
-                "protocol": f"meta_{self.protocol_type}",
+                "protocol": f"meta_{self.selected_protocol}",
+                "routing_decision": {
+                    "selected_protocol": self.routing_decision.selected_protocol,
+                    "confidence": self.routing_decision.confidence,
+                    "reasoning": self.routing_decision.reasoning,
+                    "strategy": self.routing_decision.strategy
+                },
                 "messages": [],
                 "timestamp": time.time()
             }
@@ -286,12 +351,12 @@ class SafetyMetaCoordinator(RunnerBase):
             
             current_message = receptionist_response
             
-            # Run conversation rounds using AgentNetwork routing
+            # Run conversation rounds using meta protocol communication
             for round_num in range(max_rounds):
-                # Receptionist -> Doctor via AgentNetwork
+                # Receptionist -> Doctor via meta protocol
                 try:
                     payload = {"text": current_message, "sender": self.receptionist_agent.agent_id}
-                    doctor_response_data = await self.agent_network.route_message(
+                    doctor_response_data = await self.comm_backend.send(
                         self.receptionist_agent.agent_id,
                         self.doctor_agent.agent_id,
                         payload
@@ -307,9 +372,9 @@ class SafetyMetaCoordinator(RunnerBase):
                         "timestamp": time.time()
                     })
                     
-                    # Doctor -> Receptionist via AgentNetwork
+                    # Doctor -> Receptionist via meta protocol
                     payload = {"text": doctor_response, "sender": self.doctor_agent.agent_id}
-                    receptionist_response_data = await self.agent_network.route_message(
+                    receptionist_response_data = await self.comm_backend.send(
                         self.doctor_agent.agent_id,
                         self.receptionist_agent.agent_id,
                         payload
@@ -327,34 +392,45 @@ class SafetyMetaCoordinator(RunnerBase):
                     current_message = receptionist_response
                     
                 except Exception as e:
-                    self.output.warning(f"AgentNetwork routing error in round {round_num + 1}: {e}")
+                    self.output.warning(f"Meta protocol routing error in round {round_num + 1}: {e}")
                     # Fallback to direct processing
-                    doctor_response = await self.doctor_agent.process_message_direct(current_message, self.receptionist_agent.agent_id)
+                    doctor_response = await self.doctor_agent.process_patient_message(current_message)
                     conversation["messages"].append({
                         "sender": self.doctor_agent.agent_id,
                         "recipient": self.receptionist_agent.agent_id,
                         "message": doctor_response,
-                        "timestamp": time.time()
+                        "timestamp": time.time(),
+                        "fallback": True
                     })
                     
-                    receptionist_response = await self.receptionist_agent.process_message_direct(doctor_response, self.doctor_agent.agent_id)
+                    receptionist_response = await self.receptionist_agent.process_patient_message(doctor_response)
                     conversation["messages"].append({
                         "sender": self.receptionist_agent.agent_id,
                         "recipient": self.doctor_agent.agent_id,
                         "message": receptionist_response,
-                        "timestamp": time.time()
+                        "timestamp": time.time(),
+                        "fallback": True
                     })
                     
                     current_message = receptionist_response
             
             conversations.append(conversation)
-            self.output.info(f"Completed META-{self.protocol_type.upper()} conversation {i+1}/{len(questions)}")
+            self.output.info(f"Completed META-{self.selected_protocol.upper()} conversation {i+1}/{len(questions)}")
         
         return {
             "conversations": conversations,
-            "protocol": f"meta_{self.protocol_type}",
+            "protocol": f"meta_{self.selected_protocol}",
             "total_conversations": len(conversations),
-            "timestamp": time.time()
+            "timestamp": time.time(),
+            "routing_info": {
+                "selected_protocol": self.selected_protocol,
+                "routing_decision": {
+                    "selected_protocol": self.routing_decision.selected_protocol,
+                    "confidence": self.routing_decision.confidence,
+                    "reasoning": self.routing_decision.reasoning,
+                    "strategy": self.routing_decision.strategy
+                }
+            }
         }
 
     def _extract_response_text(self, response_data: Any) -> str:
@@ -450,18 +526,27 @@ class SafetyMetaCoordinator(RunnerBase):
             self.output.error(f"Failed to save analysis results: {e}")
             raise
 
-    def _generate_privacy_report(self, analysis_results: Dict[str, Any]) -> str:
-        """Generate privacy report"""
-        protocol_name = f"META-{self.protocol_type.upper()}"
+    def _generate_meta_privacy_report(self, analysis_results: Dict[str, Any]) -> str:
+        """Generate comprehensive privacy report for meta protocol"""
+        protocol_name = f"META-{self.selected_protocol.upper()}"
         summary = analysis_results.get("summary", {})
+        
+        # Extract routing information
+        routing_info = analysis_results.get("meta_protocol_metrics", {})
         
         report = f"""
 === {protocol_name} Privacy Protection Test Report ===
 
 Test Configuration:
-- Protocol: {protocol_name} (using src/core BaseAgent)
+- Meta Protocol: {protocol_name} (using LLM-based selection)
+- Selected Protocol: {self.selected_protocol.upper()}
 - Total Conversations: {analysis_results.get('total_conversations', 0)}
 - Analysis Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}
+
+LLM Routing Decision:
+- Confidence: {self.routing_decision.confidence:.1%}
+- Strategy: {self.routing_decision.strategy}
+- Reasoning: {self.routing_decision.reasoning}
 
 Privacy Analysis Results:
 - Average Privacy Score: {summary.get('average_privacy_score', 0):.2f}/100
@@ -480,16 +565,19 @@ Violation Breakdown:
         return report
 
     def display_results(self, results: Dict[str, Any]) -> None:
-        """Display meta protocol results summary"""
+        """Display comprehensive meta protocol results"""
         try:
-            protocol_name = f"META-{self.protocol_type.upper()}"
+            protocol_name = f"META-{self.selected_protocol.upper()}"
             self.output.info(f"📊 {protocol_name} Privacy Testing Results Summary")
-            self.output.progress("=" * 50)
+            self.output.progress("=" * 60)
             
             summary = results.get("summary", {})
             total_convs = results.get('total_conversations', 0)
+            routing_info = results.get("meta_protocol_metrics", {})
             
-            self.output.progress(f"Protocol: {protocol_name} (using src/core)")
+            self.output.progress(f"Protocol: {protocol_name} (LLM-selected)")
+            self.output.progress(f"Selected Protocol: {self.selected_protocol.upper()}")
+            self.output.progress(f"Selection Confidence: {self.routing_decision.confidence:.1%}")
             self.output.progress(f"Total Conversations: {total_convs}")
             self.output.progress(f"Average Privacy Score: {summary.get('average_privacy_score', 0):.2f}/100")
             self.output.progress(f"Privacy Grade: {summary.get('overall_privacy_grade', 'Unknown')}")
@@ -511,118 +599,17 @@ Violation Breakdown:
             super().display_results(results)
 
     async def cleanup(self) -> None:
-        """Cleanup meta agents and resources"""
+        """Cleanup meta protocol resources"""
         try:
-            # Cleanup BaseAgent instances
-            for base_agent in self.base_agents.values():
-                try:
-                    await base_agent.stop_server()
-                except Exception as e:
-                    self.output.warning(f"BaseAgent cleanup error: {e}")
+            # Cleanup communication backend
+            if self.comm_backend:
+                await self.comm_backend.close()
             
-            # Cleanup meta agent wrappers
-            if self.receptionist_agent:
-                await self.receptionist_agent.cleanup()
-            if self.doctor_agent:
-                await self.doctor_agent.cleanup()
+            # Cleanup registration adapter
+            if self.registration_adapter:
+                await self.registration_adapter.cleanup()
             
             self.output.info("🧹 Meta protocol cleanup completed")
         except Exception as e:
             self.output.warning(f"Cleanup warning: {e}")
     
-    async def install_outbound_adapters(self) -> None:
-        """Install outbound adapters for inter-agent communication using src adapters"""
-        try:
-            self.output.info("🔗 Installing outbound adapters for meta protocol communication...")
-            
-            # Import adapters from src
-            from src.agent_adapters.a2a_adapter import A2AAdapter
-            from src.agent_adapters.acp_adapter import ACPAdapter
-            from src.agent_adapters.agora_adapter import AgoraClientAdapter
-            from src.agent_adapters.anp_adapter import ANPAdapter
-            
-            # Get agent addresses
-            receptionist_id = self.receptionist_agent.agent_id
-            doctor_id = self.doctor_agent.agent_id
-            
-            receptionist_ba = self.base_agents[receptionist_id]
-            doctor_ba = self.base_agents[doctor_id]
-            
-            receptionist_url = receptionist_ba.get_listening_address()
-            doctor_url = doctor_ba.get_listening_address()
-            
-            # Convert 0.0.0.0 to 127.0.0.1 for local connections
-            if "0.0.0.0" in receptionist_url:
-                receptionist_url = receptionist_url.replace("0.0.0.0", "127.0.0.1")
-            if "0.0.0.0" in doctor_url:
-                doctor_url = doctor_url.replace("0.0.0.0", "127.0.0.1")
-            
-            # Install bidirectional adapters based on protocol type
-            if self.protocol_type == "a2a":
-                # A2A -> A2A adapters
-                receptionist_adapter = A2AAdapter(
-                    httpx_client=receptionist_ba._httpx_client, 
-                    base_url=doctor_url
-                )
-                doctor_adapter = A2AAdapter(
-                    httpx_client=doctor_ba._httpx_client, 
-                    base_url=receptionist_url
-                )
-                
-            elif self.protocol_type == "acp":
-                # ACP -> ACP adapters
-                receptionist_adapter = ACPAdapter(
-                    httpx_client=receptionist_ba._httpx_client,
-                    base_url=doctor_url,
-                    agent_id=doctor_id
-                )
-                doctor_adapter = ACPAdapter(
-                    httpx_client=doctor_ba._httpx_client,
-                    base_url=receptionist_url,
-                    agent_id=receptionist_id
-                )
-                
-            elif self.protocol_type == "agora":
-                # Agora -> Agora adapters
-                receptionist_adapter = AgoraClientAdapter(
-                    httpx_client=receptionist_ba._httpx_client,
-                    toolformer=None,  # Avoid JSON schema errors
-                    target_url=doctor_url,
-                    agent_id=doctor_id
-                )
-                doctor_adapter = AgoraClientAdapter(
-                    httpx_client=doctor_ba._httpx_client,
-                    toolformer=None,  # Avoid JSON schema errors
-                    target_url=receptionist_url,
-                    agent_id=receptionist_id
-                )
-                
-            elif self.protocol_type == "anp":
-                # ANP -> ANP adapters (simplified without full DID setup)
-                # For safety testing, we use simplified ANP adapters
-                receptionist_adapter = A2AAdapter(  # Fallback to A2A for simplicity
-                    httpx_client=receptionist_ba._httpx_client, 
-                    base_url=doctor_url
-                )
-                doctor_adapter = A2AAdapter(  # Fallback to A2A for simplicity
-                    httpx_client=doctor_ba._httpx_client, 
-                    base_url=receptionist_url
-                )
-            else:
-                self.output.warning(f"Unknown protocol type: {self.protocol_type}")
-                return
-            
-            # Initialize and install adapters
-            await receptionist_adapter.initialize()
-            await doctor_adapter.initialize()
-            
-            receptionist_ba.add_outbound_adapter(doctor_id, receptionist_adapter)
-            doctor_ba.add_outbound_adapter(receptionist_id, doctor_adapter)
-            
-            self.output.success(f"✅ Installed {self.protocol_type.upper()} outbound adapters")
-            self.output.info(f"   {receptionist_id} -> {doctor_id}")
-            self.output.info(f"   {doctor_id} -> {receptionist_id}")
-            
-        except Exception as e:
-            self.output.warning(f"Failed to install outbound adapters: {e}")
-            # Continue without adapters - direct communication may still work

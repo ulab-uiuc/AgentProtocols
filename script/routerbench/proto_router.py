@@ -46,6 +46,16 @@ class ProtoRouterBenchmark:
             # Parse the function call response
             llm_selection = self._parse_llm_response(response)
             
+            # Debug: check if we got selections for all modules
+            if llm_selection and "module_selections" in llm_selection:
+                module_count = len(llm_selection["module_selections"])
+                expected_count = scenario.get("modules_count", 1)
+                if module_count != expected_count:
+                    print(f"[WARNING] Expected {expected_count} modules, got {module_count} selections")
+                    print(f"[DEBUG] LLM response: {llm_selection}")
+            else:
+                print(f"[ERROR] No module_selections found in LLM response: {llm_selection}")
+            
             return {
                 "scenario_id": scenario_id,
                 "llm_response": llm_selection,

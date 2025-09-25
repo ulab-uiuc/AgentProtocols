@@ -1,5 +1,5 @@
 [
-{
+  {
     "id": "L1-Q1",
     "description": "Single-module doctor-to-doctor dialogue system with two legitimate LLM agents (Doctor A and Doctor B) conducting multi-round consultations (e.g., 10 cases × 5 rounds per case).",
     "modules_count": 1,
