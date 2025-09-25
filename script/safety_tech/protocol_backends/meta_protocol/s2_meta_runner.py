@@ -356,8 +356,8 @@ async def main():
     )
     parser.add_argument('--config', default='config_meta_s2.yaml', 
                        help='Configuration file path')
-    parser.add_argument('--test-focus', choices=['comprehensive', 'tls_focused', 'e2e_focused', 'session_focused'], 
-                       default='comprehensive', help='S2 test focus area (e2e_focused requires sudo)')
+    parser.add_argument('--test-focus', choices=['comprehensive', 'tls_focused', 'e2e_focused', 'session_focused', 'anp_pure', 'agora_pure', 'acp_pure', 'a2a_pure'],
+                       default='comprehensive', help='S2 test focus area (e2e_focused requires sudo, *_pure for single protocol tests)')
     parser.add_argument('--enable-cross-protocol', action='store_true', default=True,
                        help='Enable cross-protocol communication testing')
     parser.add_argument('--enable-mitm', action='store_true', default=False,

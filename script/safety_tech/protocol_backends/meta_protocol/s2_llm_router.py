@@ -420,6 +420,30 @@ S2测试配置:
             doctor_b_protocol = sorted_by_session[1][0] if len(sorted_by_session) > 1 else sorted_by_session[0][0]  
             strategy = "session_protection_focused"
             
+        elif test_focus == "anp_pure":
+            # Pure ANP protocol test
+            doctor_a_protocol = "anp"
+            doctor_b_protocol = "anp"
+            strategy = "pure_anp_protocol_test"
+            
+        elif test_focus == "agora_pure":
+            # Pure Agora protocol test
+            doctor_a_protocol = "agora"
+            doctor_b_protocol = "agora"
+            strategy = "pure_agora_protocol_test"
+            
+        elif test_focus == "acp_pure":
+            # Pure ACP protocol test
+            doctor_a_protocol = "acp"
+            doctor_b_protocol = "acp"
+            strategy = "pure_acp_protocol_test"
+            
+        elif test_focus == "a2a_pure":
+            # Pure A2A protocol test
+            doctor_a_protocol = "a2a"
+            doctor_b_protocol = "a2a"
+            strategy = "pure_a2a_protocol_test"
+            
         else:
             # Default: use best overall protocols
             doctor_a_protocol = "anp"     # Highest S2 score

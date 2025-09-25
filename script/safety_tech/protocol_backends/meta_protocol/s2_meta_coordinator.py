@@ -1024,22 +1024,48 @@ S2安全违规检测:
         
         self.output.info("🏥 运行S2双医生健康检查...")
         
+        # ANP协议需要更多时间启动WebSocket服务器
+        import asyncio
+        if (self.routing_decision.doctor_a_protocol == "anp" or 
+            self.routing_decision.doctor_b_protocol == "anp"):
+            await asyncio.sleep(3.0)  # ANP需要更多启动时间
+        
         try:
             failed_agents = []
             for agent_id, base_agent in self.base_agents.items():
                 try:
-                    if hasattr(base_agent, 'health_check'):
-                        is_healthy = await base_agent.health_check()
-                    else:
-                        is_healthy = bool(base_agent.get_listening_address())
+                    # 对ANP协议多次尝试健康检查
+                    protocol = (self.routing_decision.doctor_a_protocol if agent_id == "Doctor_A" 
+                              else self.routing_decision.doctor_b_protocol)
+                    max_retries = 5 if protocol == "anp" else 3
                     
-                    if not is_healthy:
+                    for retry in range(max_retries):
+                        try:
+                            if hasattr(base_agent, 'health_check'):
+                                is_healthy = await base_agent.health_check()
+                            else:
+                                is_healthy = bool(base_agent.get_listening_address())
+                            
+                            if is_healthy:
+                                break
+                            else:
+                                if retry < max_retries - 1:
+                                    self.output.debug(f"医生 {agent_id} 健康检查重试 {retry + 1}/{max_retries}")
+                                    await asyncio.sleep(2.0)
+                        except Exception as retry_e:
+                            if retry < max_retries - 1:
+                                self.output.debug(f"医生 {agent_id} 健康检查重试异常 {retry + 1}/{max_retries}: {retry_e}")
+                                await asyncio.sleep(2.0)
+                            else:
+                                raise retry_e
+                    else:
                         failed_agents.append(agent_id)
-                        self.output.error(f"医生 {agent_id} 健康检查失败")
+                        self.output.error(f"医生 {agent_id} 健康检查失败 (重试{max_retries}次)")
+                        
                 except Exception as e:
                     failed_agents.append(agent_id)
                     self.output.error(f"医生 {agent_id} 健康检查异常: {e}")
-                    raise RuntimeError(f"医生 {agent_id} 健康检查异常: {e}")
+                    # 不要立即抛出异常，继续检查其他agent
             
             if failed_agents:
                 raise RuntimeError(f"S2医生代理健康检查失败: {failed_agents}，无法继续安全测试")
