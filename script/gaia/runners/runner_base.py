@@ -783,17 +783,17 @@ class RunnerBase(abc.ABC):
         max_tasks = runtime_config.get('max_tasks', None)
         
         if self.mode == "debug":
-            # Debug mode: limit to 1 task
+            # Debug mode: limit to 2 tasks
             if isinstance(tasks, list) and tasks:
-                tasks = tasks[:1]
+                tasks = tasks[:2]
             else:
                 print(f"[WARN] Debug 模式下任务结构异常，tasks 类型: {type(tasks).__name__}")
                 tasks = [] if tasks is None else ([tasks] if isinstance(tasks, dict) else [])
         elif self.mode == "mm":
-            # Multimodal mode: only run first 3 tasks
+            # Multimodal mode: only run first 2 tasks
             if isinstance(tasks, list) and tasks:
-                tasks = tasks[:3]
-                print("🎯 MM 模式：仅运行前 3 条任务 (multimodal.jsonl)")
+                tasks = tasks[:2]
+                print("🎯 MM 模式：仅运行前 2 条任务 (multimodal.jsonl)")
             else:
                 print(f"[WARN] MM 模式下任务结构异常，tasks 类型: {type(tasks).__name__}")
                 tasks = [] if tasks is None else ([tasks] if isinstance(tasks, dict) else [])

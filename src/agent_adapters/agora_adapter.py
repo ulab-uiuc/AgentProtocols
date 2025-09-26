@@ -126,69 +126,6 @@ class AgoraClientAdapter(BaseProtocolAdapter):
     
     def _register_communication_tasks(self):
         """Register Agora tasks for different communication patterns."""
-        
-        # Weather communication task
-        @self.sender.task()
-        def weather_query(
-            location: str, 
-            date: str = "today",
-            format: str = "standard"
-        ) -> Dict[str, Any]:
-            """
-            Query weather information from remote agent.
-            
-            Parameters:
-            location: City or location name
-            date: Date for weather query (default: today)
-            format: Response format preference
-            
-            Returns:
-            Weather data dictionary with temperature, conditions, etc.
-            """
-            pass
-        
-        # Booking/reservation task
-        @self.sender.task()
-        def booking_request(
-            service: str,
-            datetime: str,
-            details: Dict[str, Any] = None,
-            user_info: Dict[str, str] = None
-        ) -> Dict[str, Any]:
-            """
-            Make booking or reservation request.
-            
-            Parameters:
-            service: Type of service (hotel, restaurant, taxi, etc.)
-            datetime: Requested date and time
-            details: Additional booking requirements
-            user_info: User information for booking
-            
-            Returns:
-            Booking confirmation with ID and status
-            """
-            pass
-        
-        # Data query task
-        @self.sender.task()
-        def data_query(
-            query_type: str,
-            parameters: Dict[str, Any],
-            filters: Dict[str, Any] = None
-        ) -> Any:
-            """
-            Generic data query to remote service.
-            
-            Parameters:
-            query_type: Type of data being requested
-            parameters: Query parameters
-            filters: Optional filters to apply
-            
-            Returns:
-            Query results in appropriate format
-            """
-            pass
-        
         # General message task
         @self.sender.task()
         def send_message(
@@ -211,9 +148,6 @@ class AgoraClientAdapter(BaseProtocolAdapter):
         
         # Store task references
         self.tasks = {
-            'weather': weather_query,
-            'booking': booking_request,
-            'data': data_query,
             'general': send_message
         }
     
