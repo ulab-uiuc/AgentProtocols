@@ -1,0 +1,16 @@
+com\agentconnect\authentication\VerificationMethod.class
+com\agentconnect\utils\LLMOutputProcessor.class
+com\agentconnect\utils\LogBase.class
+com\agentconnect\utils\DiDDocumentTool.class
+com\agentconnect\utils\DIDGenerator.class
+com\agentconnect\utils\CryptoTool.class
+com\agentconnect\authentication\DIDWBA$SignCallback.class
+com\agentconnect\authentication\package-info.class
+com\agentconnect\utils\LogBase$AnsiColors.class
+com\agentconnect\utils\package-info.class
+com\agentconnect\authentication\DIDAllClient.class
+com\agentconnect\authentication\Ed25519VerificationKey2018.class
+com\agentconnect\authentication\DIDWbaAuthHeader.class
+com\agentconnect\utils\DIDVerifier.class
+com\agentconnect\authentication\EcdsaSecp256k1VerificationKey2019.class
+com\agentconnect\authentication\DIDWBA.class
