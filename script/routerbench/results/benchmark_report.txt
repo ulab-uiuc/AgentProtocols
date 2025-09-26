@@ -1,0 +1,64 @@
+============================================================
+ProtoRouter Benchmark Evaluation Report
+============================================================
+
+📊 Overall Statistics:
+  Total scenarios: 60
+  Correct scenarios: 45
+  Overall scenario accuracy: 75.00%
+  Total modules: 180
+  Correct modules: 156
+  Individual module accuracy: 86.67%
+  A2A/ACP confusion count: 15
+
+📈 Statistics by Difficulty:
+  L1:
+    Scenario accuracy: 75.00% (9/12)
+    Module accuracy: 75.00% (9/12)
+  L2:
+    Scenario accuracy: 75.00% (9/12)
+    Module accuracy: 83.33% (20/24)
+  L3:
+    Scenario accuracy: 91.67% (11/12)
+    Module accuracy: 97.22% (35/36)
+  L4:
+    Scenario accuracy: 83.33% (10/12)
+    Module accuracy: 93.75% (45/48)
+  L5:
+    Scenario accuracy: 50.00% (6/12)
+    Module accuracy: 78.33% (47/60)
+
+🔄 Protocol Confusion Matrix:
+  Actual\Pred      A2A     ACP   Agora     ANP
+  A2A               26      10       9       0
+  ACP                5      57       0       0
+  Agora              0       0      30       0
+  ANP                0       0       0      43
+
+❌ Error Analysis:
+  A2A → ACP: 10 times
+    Example - L1-Q2 Module 1:
+      LLM: ACP is well-suited for structured, addressable operations with clear progress semantics and repeatable handling at scale, which aligns with the centralized streaming-queue network's need for efficient...
+      GT:  A2A offers a short, lightweight communication path with minimal handshake, favoring speed in simple streaming-queue settings....
+
+    Example - L1-Q4 Module 1:
+      LLM: ACP is well-suited for scenarios requiring low-latency broadcast and consistent update delivery due to its REST-first approach, which supports structured, addressable operations with clear progress se...
+      GT:  A2A uses a lightweight path with minimal handshake overhead, making it suitable for fast fan-out of small, high-frequency updates....
+
+  A2A → Agora: 9 times
+    Example - L1-Q7 Module 1:
+      LLM: Agora is well-suited for scenarios requiring minimal handshake and lightweight session management. Its meta-protocol nature allows for fast protocol evolution and heterogeneity tolerance, which is ide...
+      GT:  A2A favors a short, lightweight link with minimal handshake and non-resource messages, aligning with one lightweight session and tiny request/response cycles....
+
+    Example - L2-Q7 Module 1:
+      LLM: Agora is well-suited for the Low-Latency Alert Push module due to its lightweight and negotiation-friendly nature, which is ideal for pushing small, frequent alert messages with minimal handshake. The...
+      GT:  A2A fits lightweight, minimal-handshake alert fan-out with steady cadence and low latency, avoiding resource/state-machine overheads....
+
+  ACP → A2A: 5 times
+    Example - L5-Q1 Module 3:
+      LLM: A2A is suitable for massive dataset transfers as it supports long-running tasks and complex workflows with its HTTP + JSON-RPC + SSE transport model. It provides task/artifact lifecycle management, wh...
+      GT:  Chunked transfer with resume/integrity and server-side flow control aligns with large dataset movement....
+
+    Example - L5-Q2 Module 3:
+      LLM: A2A is suitable for ETL archival tasks that require batch appending with acknowledgements and observable status. Its support for long-running tasks and task/artifact lifecycle management helps in hand...
+      GT:  Batch append benefits from idempotent writes, status codes, and server-driven backpressure....
