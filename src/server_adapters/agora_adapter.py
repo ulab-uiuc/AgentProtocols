@@ -483,10 +483,10 @@ class AgoraServerWrapper:
             try:
                 from flask import request, jsonify
                 import sys
-                
+
                 data = request.get_json()
                 print(f"[DEBUG] AgoraServerWrapper /message called with data: {data}", file=sys.stderr, flush=True)
-                
+
                 # Extract message text from nested structure
                 text_data = data.get('text', data)
                 if isinstance(text_data, dict):
@@ -498,23 +498,23 @@ class AgoraServerWrapper:
                         message_text = str(message_obj)
                 else:
                     message_text = str(text_data)
-                
+
                 print(f"[DEBUG] Extracted message_text: {message_text[:100]}...", file=sys.stderr, flush=True)
-                
+
                 # Check if executor has agora_qa_worker for direct LLM call
                 if hasattr(self.executor, 'agora_qa_worker') and hasattr(self.executor.agora_qa_worker, 'answer'):
-                    
+
                     # Create async function for LLM call
                     async def call_llm():
                         return await self.executor.agora_qa_worker.answer(message_text)
-                    
+
                     # Run async call in new thread with event loop
                     import threading
                     import asyncio
-                    
+
                     result_container = [None]
                     error_container = [None]
-                    
+
                     def run_async():
                         try:
                             loop = asyncio.new_event_loop()
@@ -525,26 +525,33 @@ class AgoraServerWrapper:
                             error_container[0] = e
                         finally:
                             loop.close()
-                    
+
                     thread = threading.Thread(target=run_async)
                     thread.start()
                     thread.join(timeout=120)  # Increase timeout for complex tasks
-                    
+
                     if error_container[0]:
                         error_msg = str(error_container[0])
                         print(f"[DEBUG] Agora execution error: {error_msg}", file=sys.stderr, flush=True)
                         return jsonify({"error": error_msg}), 500
-                    elif result_container[0]:
-                        result = str(result_container[0])
-                        print(f"[DEBUG] Agora execution success: {len(result)} chars", file=sys.stderr, flush=True)
-                        # Return result directly as string for agora_to_ute() compatibility
-                        return result
+                    elif result_container[0] is not None:
+                        result = result_container[0]
+                        print(f"[DEBUG] Agora execution success: {type(result)}", file=sys.stderr, flush=True)
+
+                        # Normalize return types to JSON
+                        if isinstance(result, (dict, list)):
+                            # Return dict/list directly as JSON
+                            return jsonify(result), 200
+                        else:
+                            # Return stringy results under 'text' key for compatibility
+                            return jsonify({"text": str(result), "status": "success"}), 200
                     else:
-                        print(f"[DEBUG] Agora execution timeout", file=sys.stderr, flush=True)
+                        print(f"[DEBUG] Agora execution timeout or no result", file=sys.stderr, flush=True)
                         return jsonify({"text": "No result", "status": "timeout"}), 500
                 else:
-                    return jsonify({"text": f"Agora processed: {message_text}", "status": "fallback"})
-                    
+                    # Non-LLM path: return structured JSON for compatibility
+                    return jsonify({"text": f"Agora processed: {message_text}", "status": "fallback"}), 200
+
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
         
@@ -601,4 +608,4 @@ class AgoraServerWrapper:
         """Set shutdown flag."""
         self.should_exit_flag = value
         if value:
-            print(f"🛑 Shutdown signal received for Agora Server {self.agent_id}") 
+            print(f"🛑 Shutdown signal received for Agora Server {self.agent_id}")

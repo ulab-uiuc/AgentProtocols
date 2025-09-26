@@ -456,9 +456,9 @@ class MeshNetwork(ABC):
                             d['content'] = "<BINARY_PAYLOAD - omitted; saved to workspace file if needed>"
                         else:
                             s = str(content)
-                            if len(s) > 2000:
+                            if len(s) > 4000:
                                 # Truncate long contents but keep a preview
-                                d['content'] = s[:2000] + "...<truncated>"
+                                d['content'] = s[:4000] + "...<truncated>"
                             else:
                                 d['content'] = s
                 except Exception:

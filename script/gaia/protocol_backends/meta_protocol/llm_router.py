@@ -245,28 +245,27 @@ Your goal is to select optimal communication protocols for multi-agent systems w
 AVAILABLE PROTOCOLS (concise, with clarified strengths, quality and success metrics):
 
 - A2A (agent id: A2A-Worker):
-    * Primary strengths: Highest measured throughput and strong quality for computational and file-IO heavy tasks.
-    * Typical best-for: `python_execute`, bulk `file_manipulation`, ETL/data_processing, editor/file replace operations.
+    * Primary strengths: Strongest throughput for computational and file-I/O heavy workloads, with extended context handling that makes it well-suited for large-scale data processing, long document editing, and complex reasoning chains.
     * Metrics (example / historical): Quality avg = 2.51, Success rate = 59.6%, Avg response time = 7.39s
-    * Selection priority: Prefer A2A when correctness of computed outputs and heavy data throughput matter more than minimal latency.
+    * Selection priority: Prefer A2A when correctness under heavy computation, long-context reasoning, or high data throughput is critical (e.g., python_execute, bulk file_manipulation, ETL/data_processing).
 
 - ACP (agent id: ACP-Worker):
-    * Primary strengths: Fast synthesis of chat-style completions and reliable final synthesis.
+    * Primary strengths: Fast and reliable in multi-turn dialogue synthesis, with stable summarization and low-latency generation for medium-length contexts.
     * Typical best-for: `create_chat_completion`, final answer synthesis, multi-turn consolidation of evidence.
     * Metrics (example / historical): Quality avg = 2.27, Success rate = 59.0%, Avg response time = 7.83s
-    * Selection priority: Prefer ACP when low-latency synthesis is desired or when rapid, stable finalization is important.
+    * Selection priority: Prefer ACP when rapid, coherent synthesis or stable finalization of answers is important (e.g., create_chat_completion, concise report writing, quick answer consolidation).
 
 - Agora (agent id: Agora-Worker):
-    * Primary strengths: Balanced and robust for information gathering and web interactions.
+    * Primary strengths: Balanced and robust for web interaction, with strong multi-step retrieval, document scraping, and evidence aggregation across diverse sources.
     * Typical best-for: `browser_use`, `web_search`, document scraping and multi-step information retrieval.
     * Metrics (example / historical): Quality avg = 2.33, Success rate = 60.0%, Avg response time = 7.10s
-    * Selection priority: Prefer Agora for tasks requiring web access, information aggregation, or mixed workflows.
+    * Selection priority: Prefer Agora when external web access, information gathering, or multi-document aggregation is required (e.g., web_search, cross-document synthesis, multi-step retrieval workflows).
 
 - ANP (agent id: ANP-Worker):
-    * Primary strengths: Highest accuracy/precision and secure handling for sensitive or academic-grade outputs.
+    * Primary strengths: Highest precision and safety, with strong safeguards against unsafe code execution or malicious queries, making it ideal for academic-grade analysis and privacy-sensitive tasks.
     * Typical best-for: critical analysis, academic_research, sensitive_data handling, high-accuracy-required tasks.
     * Metrics (example / historical): Quality avg = 2.14, Success rate = 61.0%, Avg response time = 6.76s
-    * Selection priority: Prefer ANP when output correctness and security are top priorities (e.g., academic claims, legal or privacy-sensitive content).
+    * Selection priority: Prefer ANP when accuracy and security take precedence (e.g., academic research, legal/ethical analysis, sensitive data handling, secure code validation).
 
 GAIA TASK CHARACTERISTICS (short):
 - Research tasks: web search, document analysis, paper retrieval

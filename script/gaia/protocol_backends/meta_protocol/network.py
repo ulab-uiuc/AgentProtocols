@@ -719,15 +719,22 @@ class MetaProtocolNetwork(MeshNetwork):
         
         # Use LLM router to assign protocols for this specific task
         protocol_assignments = await self._assign_protocols_with_llm_router(agents_config)
+
+        # Persist assignments on the network instance for later inspection (e.g., runner output)
+        try:
+            self.protocol_assignments = protocol_assignments
+        except Exception:
+            # Defensive: if attribute cannot be set for some reason, continue without failing
+            pass
         
         # Resolve global agent prompts map if any
         prompts_map = self.config.get("agent_prompts", {}) or {}
-        
+
         for i, agent_config in enumerate(agents_config):
             try:
                 agent_id = str(agent_config["id"])
                 assigned_protocol = protocol_assignments.get(agent_id, "a2a")  # Default fallback
-                
+
                 print(f"[MetaProtocolNetwork] Creating agent {i+1}/{len(agents_config)}: {agent_config}")
                 print(f"[MetaProtocolNetwork] 🎯 LLM assigned protocol '{assigned_protocol}' to agent {agent_config['name']}")
                 

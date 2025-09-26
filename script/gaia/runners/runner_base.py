@@ -607,6 +607,12 @@ class RunnerBase(abc.ABC):
             # Create network (abstract)
             network = self.create_network(general_config)
 
+            # Persist reference to the last created network for metadata inspection
+            try:
+                self.last_network = network
+            except Exception:
+                pass
+
             # Start -> Health check -> Execute -> Stop
             await self.start_network(network)
             await self.check_health(network)
@@ -822,21 +828,59 @@ class RunnerBase(abc.ABC):
             for task in tasks:
                 try:
                     result = await self.run_single_task(task, self.timeout)
+
+                    # Attach per-task agent assignments if available on the most recent network
+                    try:
+                        last_net = getattr(self, 'last_network', None)
+                        assignments = getattr(last_net, 'protocol_assignments', None) if last_net is not None else None
+                        if assignments and isinstance(result, dict):
+                            from collections import OrderedDict
+                            new_result = OrderedDict()
+                            # Preserve task_id and question order if present
+                            if 'task_id' in result:
+                                new_result['task_id'] = result['task_id']
+                            if 'question' in result:
+                                new_result['question'] = result['question']
+                            # Insert assignments immediately after question
+                            new_result['agent_assignments'] = assignments
+                            # Append remaining keys in original order
+                            for k, v in result.items():
+                                if k in ('task_id', 'question'):
+                                    continue
+                                new_result[k] = v
+                            result = new_result
+                        elif assignments:
+                            # Best-effort fallback for non-dict results
+                            try:
+                                result['agent_assignments'] = assignments
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+
+                    # Deduplicate predicted/final fields if identical
+                    try:
+                        if isinstance(result, dict) and result.get('predicted_answer') == result.get('final_answer_extracted'):
+                            result.pop('final_answer_extracted', None)
+                    except Exception:
+                        pass
+
                     results.append(result)
 
-                    if result["status"] == "success":
-                        success_count += 1
-                    elif result["status"] == "timeout":
-                        timeout_count += 1
-                    else:
+                    # Update counters based on normalized status
+                    try:
+                        status = result.get('status') if isinstance(result, dict) else None
+                        if status == 'success':
+                            success_count += 1
+                        elif status == 'timeout':
+                            timeout_count += 1
+                        else:
+                            error_count += 1
+                            failed_tasks.append(result)
+                    except Exception:
                         error_count += 1
                         failed_tasks.append(result)
 
-                    pbar.set_postfix({
-                        "Success": success_count,
-                        "Timeout": timeout_count,
-                        "Error": error_count,
-                    })
                 except NotImplementedError:
                     raise
                 except Exception as e:
@@ -852,12 +896,20 @@ class RunnerBase(abc.ABC):
                     }
                     results.append(error_result)
                     failed_tasks.append(error_result)
-                    pbar.set_postfix({
-                        "Success": success_count,
-                        "Timeout": timeout_count,
-                        "Error": error_count,
-                    })
-                pbar.update(1)
+                finally:
+                    # Always update progress bar once per task
+                    try:
+                        pbar.set_postfix({
+                            "Success": success_count,
+                            "Timeout": timeout_count,
+                            "Error": error_count,
+                        })
+                        pbar.update(1)
+                    except Exception:
+                        try:
+                            pbar.update(1)
+                        except Exception:
+                            pass
 
         # Aggregate total toolcall and llm call time across all task results
         total_toolcall_time = 0.0
@@ -899,6 +951,9 @@ class RunnerBase(abc.ABC):
             "results": results,
             "failed_tasks": failed_tasks,
         }
+
+        # Note: agent assignments are now attached per-task in each result if available.
+        # Do not include a global 'agent_assignments' in metadata to avoid stale/incorrect values.
 
         out_path = Path(self.output_file)
         out_path.parent.mkdir(parents=True, exist_ok=True)

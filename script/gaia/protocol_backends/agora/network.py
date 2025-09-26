@@ -49,6 +49,7 @@ class AgoraCommBackend:
     async def send(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Send message via Agora protocol."""
         endpoint = self._endpoints.get(dst_id)
+        logger.info(f">>> {Colors.BLUE}[AgoraCommBackend] Sending from {src_id} to {dst_id} via {endpoint}{Colors.RESET}")
         if not endpoint:
             raise RuntimeError(f"Unknown destination agent: {dst_id}")
 
