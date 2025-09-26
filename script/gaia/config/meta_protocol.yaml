@@ -8,6 +8,7 @@ runtime:
   task_file: "script/gaia/dataset/2023/validation/metadata.jsonl"
   output_file: "workspaces/meta_protocol/gaia_meta_results.json"
   timeout: 300  # seconds per task
+  # max_tasks: 1  # Test single task only
 
 meta_protocol:
   # Available protocols for intelligent selection

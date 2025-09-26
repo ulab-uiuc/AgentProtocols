@@ -35,7 +35,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass 
 class RegistrationRecord:
     """注册记录数据结构"""
     agent_id: str

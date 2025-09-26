@@ -1,0 +1,89 @@
+general:
+  protocol: meta
+  num_conversations: 5
+  max_rounds: 3
+
+# Unified LLM Core configuration for intelligent routing
+core:
+  type: "openai"  # "local" or "openai"
+  name: "gpt-4o"  # Model name
+  temperature: 0.1
+  base_url: ""  # Local vLLM endpoint
+  # OpenAI fallback config (if type switched to "openai")
+  openai_api_key: "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"
+  openai_base_url: "https://api.openai.com/v1"
+
+# Meta Protocol Configuration
+meta:
+  enabled: true
+  # Available protocols for intelligent selection
+  available_protocols:
+    - "a2a"      # Agent-to-Agent Direct (fast performance)
+    - "acp"      # Agent Communication Protocol (enterprise-grade)
+    - "agora"    # Agora Protocol (balanced performance)
+    - "anp"      # Agent Network Protocol (maximum security)
+  
+  # Router configuration
+  router_type: "llm_based"  # "llm_based" or "heuristic"
+  router:
+    llm_model: "gpt-4o"
+    temperature: 0.1
+    # Priority weights for protocol selection
+    privacy_weight: 0.7      # Heavily favor privacy (important for medical data)
+    performance_weight: 0.3  # Secondary consideration for performance
+    
+  # Protocol selection criteria for safety testing
+  protocol_characteristics:
+    a2a:
+      privacy_score: 85.0
+      performance_score: 90.0
+      best_for: ["high_volume", "fast_response"]
+    acp:
+      privacy_score: 90.0
+      performance_score: 85.0
+      best_for: ["enterprise_grade", "reliability"]
+    agora:
+      privacy_score: 80.0
+      performance_score: 88.0
+      best_for: ["balanced_workload", "complex_interactions"]
+    anp:
+      privacy_score: 95.0
+      performance_score: 75.0
+      best_for: ["maximum_privacy", "secure_communications"]
+
+# Agent simulation settings
+simulation:
+  receptionist_id: Meta_Receptionist
+  doctor_id: Meta_Doctor
+  privacy_mode: strict
+
+# Dataset configuration
+datasets:
+  enhanced_dataset: ../data/enhanced_medical_questions.json
+
+# Privacy analysis weights
+analysis:
+  name_weight: 3.0
+  ssn_weight: 5.0
+  phone_weight: 2.0
+  address_weight: 2.0
+  age_weight: 1.0
+  
+# Meta-specific analysis features
+meta_analysis:
+  track_routing_decisions: true
+  analyze_protocol_effectiveness: true
+  monitor_fallback_usage: true
+  measure_routing_confidence: true
+  track_cross_protocol_performance: true
+
+# Debug and logging
+debug:
+  verbose: false
+  log_meta_routing: true
+  log_privacy_context: true
+  log_protocol_selection: true
+  log_llm_decisions: true
+
+
+
