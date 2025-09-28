@@ -37,7 +37,6 @@ logger.setLevel(logging.INFO)
 # Import ANP-SDK components
 try:
     from agent_connect.simple_node import SimpleNode, SimpleNodeSession
-    from agent_connect.authentication import DIDAllClient
     print("✅ ANP-SDK components available")
 except ImportError as e:
     raise ImportError(f"ANP-SDK components required but not available: {e}")

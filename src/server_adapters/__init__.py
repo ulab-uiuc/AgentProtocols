@@ -20,7 +20,6 @@ from .dummy_adapter import DummyServerAdapter
 
 # Import ANP server adapter directly
 from .anp_adapter import ANPServerAdapter, ANPExecutorWrapper, ANPSimpleNodeWrapper
-ANP_AVAILABLE = True
 
 # Import ACP server adapter
 from .acp_adapter import ACPServerAdapter
@@ -38,8 +37,7 @@ __all__ = [
     "AgentProtocolServerAdapter",
     "AgentProtocolStarletteApplication",
     "ANPServerAdapter",
-    "ANPExecutorWrapper", 
+    "ANPExecutorWrapper",
     "ANPSimpleNodeWrapper",
-    "DummyServerAdapter",
-    "ANP_AVAILABLE"
+    "DummyServerAdapter"
 ]

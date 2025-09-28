@@ -32,7 +32,6 @@ try:
     from utils.did_generate import did_generate  # type: ignore
     from utils.crypto_tool import get_pem_from_private_key  # type: ignore
     from e2e_encryption.wss_message_sdk import WssMessageSDK  # type: ignore
-    ANP_AVAILABLE = True
     print("[ANP Privacy] Using local agentconnect_src modules")
 except ImportError as e:
     # Do not fallback; abort immediately
@@ -161,9 +160,6 @@ class ANPCommBackend(BaseCommBackend):
         self.selective_disclosure_enabled = self.privacy_config.get('selective_disclosure', True)
         self.human_authorization_enabled = self.privacy_config.get('human_authorization', False)
         
-        if not ANP_AVAILABLE:
-            if self.output:
-                self.output.warning("[ANPCommBackend] AgentConnect not available - using privacy-aware stub mode")
 
     async def register_endpoint(self, agent_id: str, address: str) -> None:
         """Register ANP agent with privacy protection features"""
@@ -184,37 +180,27 @@ class ANPCommBackend(BaseCommBackend):
                 agent_type = "doctor"
                 privacy_level = "medium"  # Doctors need some info but should be careful
             
-            if ANP_AVAILABLE:
-                # Generate DID for this agent
-                ws_endpoint = f"ws://{host}:{port}/ws"
-                private_key, _, did, did_document_json = did_generate(ws_endpoint)
-                private_key_pem = get_pem_from_private_key(private_key)
-                
-                # Create SimpleNode with DID authentication
-                simple_node = SimpleNode(
-                    host_domain=host,
-                    host_port=str(port),
-                    host_ws_path="/ws",
-                    private_key_pem=private_key_pem,
-                    did=did,
-                    did_document_json=did_document_json
-                )
-                
-                # Start the SimpleNode
-                simple_node.run()
-                await asyncio.sleep(0.5)  # Wait for node to be ready
-                
-                if self.output:
-                    self.output.success(f"[ANPCommBackend] Registered ANP agent {agent_id} with DID: {did}")
-            else:
-                # Stub mode
-                did = f"did:anp:stub:{agent_id}"
-                private_key_pem = None
-                did_document_json = None
-                simple_node = None
-                
-                if self.output:
-                    self.output.info(f"[ANPCommBackend] Registered privacy agent {agent_id} (stub mode) @ {address}")
+            # Generate DID for this agent
+            ws_endpoint = f"ws://{host}:{port}/ws"
+            private_key, _, did, did_document_json = did_generate(ws_endpoint)
+            private_key_pem = get_pem_from_private_key(private_key)
+
+            # Create SimpleNode with DID authentication
+            simple_node = SimpleNode(
+                host_domain=host,
+                host_port=str(port),
+                host_ws_path="/ws",
+                private_key_pem=private_key_pem,
+                did=did,
+                did_document_json=did_document_json
+            )
+
+            # Start the SimpleNode
+            simple_node.run()
+            await asyncio.sleep(0.5)  # Wait for node to be ready
+
+            if self.output:
+                self.output.success(f"[ANPCommBackend] Registered ANP agent {agent_id} with DID: {did}")
             
             # Create privacy-enhanced agent
             agent = ANPPrivacyAgent(
@@ -426,11 +412,11 @@ class ANPCommBackend(BaseCommBackend):
         if not agent:
             return False
         
-        if ANP_AVAILABLE and agent.simple_node:
+        if agent.simple_node:
             # Check if SimpleNode is running
             return True  # Simplified check
-        
-        return True  # Stub mode is always "healthy"
+
+        return True
 
     async def close(self) -> None:
         """Close ANP backend with privacy cleanup"""

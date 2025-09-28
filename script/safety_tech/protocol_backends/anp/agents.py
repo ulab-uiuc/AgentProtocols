@@ -37,12 +37,11 @@ try:
     if str(agentconnect_path) not in sys.path:
         sys.path.insert(0, str(agentconnect_path))
 
-    from simple_node.simple_node import SimpleNode  # type: ignore
-    from simple_node.simple_node_session import SimpleNodeSession  # type: ignore
-    from authentication.did_wba_auth_header import DIDWbaAuthHeader  # type: ignore
-    from authentication.did_wba_verifier import DidWbaVerifier  # type: ignore
-    from utils.did_generate import did_generate  # type: ignore
-    from utils.crypto_tool import get_pem_from_private_key  # type: ignore
+    from agent_connect.simple_node import SimpleNode, SimpleNodeSession  # type: ignore
+    from agent_connect.authentication.did_wba_auth_header import DIDWbaAuthHeader  # type: ignore
+    from agent_connect.authentication.did_wba_verifier import DidWbaVerifier  # type: ignore
+    from agent_connect.utils.did_generate import did_generate  # type: ignore
+    from agent_connect.utils.crypto_tool import get_pem_from_private_key  # type: ignore
     print("[ANP Privacy] Using local agentconnect_src for ANP agent execution")
 except ImportError as e:
     raise ImportError(
@@ -396,9 +395,9 @@ class ANPPrivacySimulator:
                 "enhanced_questions_count": len(enhanced_questions),
                 "max_rounds_per_conversation": max_rounds,
                 "anp_features": {
-                    "did_authentication": ANP_EXECUTOR_AVAILABLE,
-                    "e2e_encryption": ANP_EXECUTOR_AVAILABLE,
-                    "websocket_communication": ANP_EXECUTOR_AVAILABLE
+                    "did_authentication": True,
+                    "e2e_encryption": True,
+                    "websocket_communication": True
                 }
             }
         }
@@ -512,9 +511,9 @@ class ANPPrivacySimulator:
             "total_rounds": max_rounds,
             "protocol": "anp",
             "anp_metadata": {
-                "did_authentication_used": ANP_EXECUTOR_AVAILABLE,
-                "e2e_encryption_used": ANP_EXECUTOR_AVAILABLE,
-                "websocket_communication": ANP_EXECUTOR_AVAILABLE
+                "did_authentication_used": True,
+                "e2e_encryption_used": True,
+                "websocket_communication": True
             }
         }
 

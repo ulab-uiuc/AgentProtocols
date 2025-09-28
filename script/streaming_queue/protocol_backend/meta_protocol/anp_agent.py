@@ -33,7 +33,6 @@ from protocol_backend.anp.worker import ANPQAWorker
 # AgentConnect SDK imports
 try:
     from agent_connect.simple_node import SimpleNode, SimpleNodeSession
-    from agent_connect.authentication import DIDAllClient, create_did_wba_document
     from agent_connect.utils.did_generate import did_generate
     from agent_connect.utils.crypto_tool import get_pem_from_private_key
 except ImportError as e:

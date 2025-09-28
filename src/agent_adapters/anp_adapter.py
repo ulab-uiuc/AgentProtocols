@@ -33,19 +33,19 @@ if str(AC_PATH) not in sys.path:
     sys.path.insert(0, str(AC_PATH))
 
 # AgentConnect absolute imports
-from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
-from agent_connect.python.authentication import DIDAllClient, create_did_wba_document, generate_auth_header
-from agent_connect.python.utils.did_generate import did_generate
-from agent_connect.python.meta_protocol.meta_protocol import MetaProtocol, ProtocolType
-from agent_connect.python.app_protocols.protocol_container import ProtocolContainer
-from agent_connect.python.e2e_encryption.message_generation import generate_encrypted_message
+from agent_connect.simple_node import SimpleNode, SimpleNodeSession
+from agent_connect.authentication import DIDAllClient, create_did_wba_document, generate_auth_header
+from agent_connect.utils.did_generate import did_generate
+from agent_connect.meta_protocol.meta_protocol import MetaProtocol, ProtocolType
+from agent_connect.app_protocols.protocol_container import ProtocolContainer
+from agent_connect.e2e_encryption.message_generation import generate_encrypted_message
 
 # Apply global patch for DID verification to handle alias format
 try:
-    from agent_connect.python.utils.crypto_tool import verify_did_with_public_key, generate_bitcoin_address
-    
+    from agent_connect.utils.crypto_tool import verify_did_with_public_key, generate_bitcoin_address
+
     _original_verify = verify_did_with_public_key
-    
+
     def _patched_verify_did_with_public_key(did: str, public_key) -> bool:
         """Patched version that handles both full DID and alias format"""
         try:
@@ -53,21 +53,20 @@ try:
             # This enables ANP connections to work without complex crypto verification
             logger.debug(f"DID verification bypassed for testing: {did}")
             return True
-            
+
         except Exception as e:
             # Fallback to original function
             try:
                 return _original_verify(did, public_key)
             except Exception:
                 return True  # Allow connection for testing
-    
+
     # Apply global patch
-    import agent_connect.python.utils.crypto_tool
-    agent_connect.python.utils.crypto_tool.verify_did_with_public_key = _patched_verify_did_with_public_key
+    import agent_connect.utils.crypto_tool
+    agent_connect.utils.crypto_tool.verify_did_with_public_key = _patched_verify_did_with_public_key
     
 except Exception as e:
     logger.warning(f"Failed to apply global DID verification patch: {e}")
-AGENTCONNECT_AVAILABLE = True
 
 
 class ANPAdapter(BaseProtocolAdapter):
@@ -183,11 +182,6 @@ class ANPAdapter(BaseProtocolAdapter):
         new_session_callback : Optional[Callable]
             Callback function for handling new incoming sessions
         """
-        if not AGENTCONNECT_AVAILABLE:
-            raise ImportError(
-                "AgentConnect library not available. "
-                "Please install AgentConnect to use ANP adapter."
-            )
         
         super().__init__(base_url=f"anp://{target_did}", auth_headers=auth_headers or {})
         

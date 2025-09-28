@@ -36,13 +36,11 @@ if agentconnect_path not in sys.path:
 # Import local AgentConnect components
 try:
     # 直接导入本地 agentconnect_src 模块
-    from simple_node.simple_node import SimpleNode
-    from simple_node.simple_node_session import SimpleNodeSession  
-    from authentication.didallclient import DIDAllClient
-    from authentication.did_wba import create_did_wba_document
-    from utils.did_generate import did_generate
-    from utils.crypto_tool import get_pem_from_private_key
-    AGENTCONNECT_AVAILABLE = True
+    from agent_connect.simple_node import SimpleNode, SimpleNodeSession
+    from agent_connect.authentication.didallclient import DIDAllClient
+    from agent_connect.authentication.did_wba import create_did_wba_document
+    from agent_connect.utils.did_generate import did_generate
+    from agent_connect.utils.crypto_tool import get_pem_from_private_key
 except Exception:
     SimpleNode = None
     SimpleNodeSession = None
@@ -50,8 +48,7 @@ except Exception:
     create_did_wba_document = None
     did_generate = None
     get_pem_from_private_key = None
-    AGENTCONNECT_AVAILABLE = False
-
+    raise ImportError("AgentConnect library not available. Please install it via 'pip install agent-connect'.")
 
 logger = logging.getLogger(__name__)
 
@@ -824,11 +821,6 @@ class ANPServerAdapter(BaseServerAdapter):
         Tuple[Any, Dict[str, Any]]
             Server instance and agent card
         """
-        if not AGENTCONNECT_AVAILABLE:
-            raise ImportError(
-                "AgentConnect library not available. "
-                "Please install AgentConnect to use ANP server adapter."
-            )
         
         # Extract configuration
         did_service_url = kwargs.get('did_service_url')

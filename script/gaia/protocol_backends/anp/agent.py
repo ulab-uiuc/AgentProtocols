@@ -33,9 +33,7 @@ try:
     if agentconnect_path not in sys.path:
         sys.path.insert(0, agentconnect_path)
     
-    from agent_connect.simple_node.simple_node import SimpleNode
-    from agent_connect.simple_node import SimpleNodeSession
-    # from agent_connect.authentication import DIDAllClient
+    from agent_connect.simple_node import SimpleNode, SimpleNodeSession
     from agent_connect.utils.did_generate import did_generate
     from agent_connect.utils.crypto_tool import get_pem_from_private_key
     from agent_connect.meta_protocol.meta_protocol import MetaProtocol, ProtocolType

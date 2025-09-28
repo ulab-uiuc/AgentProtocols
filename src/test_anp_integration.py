@@ -19,10 +19,9 @@ try:
     from src.core.base_agent import BaseAgent
     from src.server_adapters import ANPServerAdapter
     from src.agent_adapters import ANPAdapter, ANPMessageBuilder
-    ANP_AVAILABLE = True
 except ImportError as e:
     logger.warning(f"ANP adapters not available: {e}")
-    ANP_AVAILABLE = False
+    raise ImportError("ANP adapters require the AgentConnect library. Please install it via 'pip install agent-connect'.")
 
 
 # 简单的测试执行器
@@ -61,12 +60,6 @@ async def test_anp_adapter_availability():
     print("\n🧪 测试ANP适配器可用性")
     print("=" * 50)
     
-    if not ANP_AVAILABLE:
-        print("❌ ANP适配器不可用 - AgentConnect库未安装")
-        print("💡 要使用ANP协议，请安装AgentConnect:")
-        print("   pip install agent-connect")
-        return False
-    
     try:
         # 测试导入
         assert ANPAdapter is not None
@@ -89,10 +82,6 @@ async def test_anp_message_builder():
     """测试ANP消息构建器"""
     print("\n🧪 测试ANP消息构建器")
     print("=" * 50)
-    
-    if not ANP_AVAILABLE:
-        print("⏭️  跳过测试 - ANP不可用")
-        return False
     
     try:
         # 测试文本消息
@@ -126,11 +115,7 @@ async def test_anp_server_creation():
     """测试ANP服务器创建（模拟）"""
     print("\n🧪 测试ANP服务器创建")
     print("=" * 50)
-    
-    if not ANP_AVAILABLE:
-        print("⏭️  跳过测试 - ANP不可用")
-        return False
-    
+
     try:
         # 创建测试执行器
         executor = TestANPExecutor("ANP Server Test")
@@ -159,10 +144,7 @@ async def test_anp_client_creation():
     """测试ANP客户端创建（模拟）"""
     print("\n🧪 测试ANP客户端创建")
     print("=" * 50)
-    
-    if not ANP_AVAILABLE:
-        print("⏭️  跳过测试 - ANP不可用")
-        return False
+
     
     try:
         import httpx
@@ -380,7 +362,7 @@ async def main():
     
     print(f"\n🎯 总体结果: {passed}/{total} 测试通过")
     
-    if ANP_AVAILABLE:
+    if ANPAdapter is not None:
         print("🎉 ANP适配器已成功集成到多协议框架中！")
         print("💡 现在可以使用ANP协议进行去中心化的智能体通信。")
     else:

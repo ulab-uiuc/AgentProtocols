@@ -28,21 +28,8 @@ from .a2a_adapter import A2AAdapter
 # Optional agora adapter import
 try:
     from .agora_adapter import AgoraClientAdapter, AgoraServerAdapter, AgoraServerWrapper  # 添加
-    AGORA_AVAILABLE = True
 except ImportError:
     # Agora adapter not available, create placeholder classes
-    class AgoraClientAdapter:
-        def __init__(self, *args, **kwargs):
-            raise RuntimeError("Agora adapter not available - missing 'agora' module")
-
-    class AgoraServerAdapter:
-        def __init__(self, *args, **kwargs):
-            raise RuntimeError("Agora adapter not available - missing 'agora' module")
-
-    class AgoraServerWrapper:
-        def __init__(self, *args, **kwargs):
-            raise RuntimeError("Agora adapter not available - missing 'agora' module")
-
-    AGORA_AVAILABLE = False
+    raise ImportError("Agora adapters require the Agora SDK. Please install it via 'pip install agora-sdk'.")
 
 __all__ = ["BaseProtocolAdapter", "A2AAdapter", "ACPAdapter" , "AgentProtocolAdapter" , "AgoraClientAdapter", "AgoraServerAdapter", "AgoraServerWrapper", "ANPAdapter", "ANPMessageBuilder"]
