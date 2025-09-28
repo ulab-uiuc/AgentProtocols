@@ -49,13 +49,12 @@ try:
     from src.core.base_agent import BaseAgent
     from src.core.intelligent_network_manager import IntelligentNetworkManager, RouterType
     from src.core.intelligent_router import LLMIntelligentRouter
-    META_CORE_AVAILABLE = True
     print(f"[MetaProtocolAgent] Meta core imported successfully from {src_path}")
 except ImportError as e:
     print(f"[MetaProtocolAgent] Meta core import failed: {e}")
     print(f"[MetaProtocolAgent] Agent network root: {agent_network_root}")
     print(f"[MetaProtocolAgent] Current working directory: {os.getcwd()}")
-    raise ImportError(f"Cannot import meta core components: {e}")
+    raise ImportError(f"[META_PROTOCOL]: Failed to import BaseAgent from src.core - {e}")
 finally:
     # Restore original working directory
     os.chdir(original_cwd)
@@ -182,17 +181,17 @@ class MetaProtocolAgent(MeshAgent):
     async def connect(self):
         """Connect meta protocol agent and initialize protocol adapters."""
         await super().connect()
-        
-        if META_CORE_AVAILABLE and self._base_agent:
+
+        if self._base_agent:
             try:
                 # Start BaseAgent
                 await self._base_agent.start()
-                
+
                 # Initialize protocol adapters for available protocols
                 await self._initialize_protocol_adapters()
-                
+
                 print(f"[MetaProtocolAgent] {self.name} connected with meta protocol support")
-                
+
             except Exception as e:
                 print(f"[MetaProtocolAgent] Error connecting meta components: {e}")
         else:
@@ -455,5 +454,5 @@ class MetaProtocolAgent(MeshAgent):
             "active_adapters": list(self._protocol_adapters.keys()),
             "performance_metrics": self._protocol_performance,
             "task_history_count": len(self._task_history),
-            "meta_core_available": META_CORE_AVAILABLE
+            "meta_core_available": True
         }

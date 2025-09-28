@@ -48,13 +48,12 @@ os.chdir(str(agent_network_root))
 try:
     from src.core.intelligent_network_manager import IntelligentNetworkManager, RouterType
     from src.core.network import AgentNetwork
-    META_CORE_AVAILABLE = True
     print(f"[MetaProtocolNetwork] Meta core imported successfully from {src_path}")
 except ImportError as e:
     print(f"[MetaProtocolNetwork] Meta core import failed: {e}")
     print(f"[MetaProtocolNetwork] Agent network root: {agent_network_root}")
     print(f"[MetaProtocolNetwork] Current working directory: {os.getcwd()}")
-    raise ImportError(f"Cannot import meta core components: {e}")
+    raise ImportError(f"[META_PROTOCOL]: Failed to import IntelligentNetworkManager from src.core - {e}")
 finally:
     # Restore original working directory
     os.chdir(original_cwd)
@@ -71,13 +70,10 @@ class MetaProtocolCommBackend:
         self._protocol_networks: Dict[str, Any] = {}  # protocol -> network instance
         self._agent_protocols: Dict[str, str] = {}  # agent_id -> selected protocol
         
-        # Initialize intelligent network manager if available
-        if META_CORE_AVAILABLE:
-            self._intelligent_network = IntelligentNetworkManager(
-                router_type=RouterType.LLM_BASED
-            )
-        else:
-            self._intelligent_network = None
+        # Initialize intelligent network manager
+        self._intelligent_network = IntelligentNetworkManager(
+            router_type=RouterType.LLM_BASED
+        )
 
         # Initialize simple transmission metrics to avoid AttributeError during deliver()
         self.pkt_cnt = 0
@@ -840,7 +836,7 @@ class MetaProtocolNetwork(MeshNetwork):
             "available_protocols": self._available_protocols,
             "protocol_metrics": self._protocol_metrics,
             "agents_count": len(self.agents),
-            "meta_core_available": META_CORE_AVAILABLE,
+            "meta_core_available": True,
             "network_runtime": (time.time() - self._network_start_time) if self._network_start_time else 0.0
         }
         

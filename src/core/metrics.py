@@ -8,15 +8,13 @@ from typing import Optional
 
 try:
     import psutil
-    PSUTIL_AVAILABLE = True
-except ImportError:
-    PSUTIL_AVAILABLE = False
+except ImportError as e:
+    raise ImportError(f"[METRICS]: Failed to import psutil for system monitoring - {e}")
 
 try:
     import pynvml
-    PYNVML_AVAILABLE = True
-except ImportError:
-    PYNVML_AVAILABLE = False
+except ImportError as e:
+    raise ImportError(f"[METRICS]: Failed to import pynvml for GPU monitoring - {e}")
 
 from prometheus_client import Counter, Histogram, Gauge, start_http_server
 
@@ -62,30 +60,26 @@ def setup_prometheus_metrics(port: int = 8000) -> None:
 
 async def sample_system_metrics(host_name: str = "localhost") -> None:
     """Continuously sample system metrics."""
-    if PYNVML_AVAILABLE:
-        try:
-            pynvml.nvmlInit()
-            gpu_count = pynvml.nvmlDeviceGetCount()
-        except Exception:
-            gpu_count = 0
-    else:
+    try:
+        pynvml.nvmlInit()
+        gpu_count = pynvml.nvmlDeviceGetCount()
+    except Exception:
         gpu_count = 0
 
     while True:
         try:
             # CPU metrics
-            if PSUTIL_AVAILABLE:
-                cpu_percent = psutil.cpu_percent(interval=None)
-                CPU_PERCENT.labels(host_name).set(cpu_percent)
+            cpu_percent = psutil.cpu_percent(interval=None)
+            CPU_PERCENT.labels(host_name).set(cpu_percent)
 
-                # Memory metrics
-                memory = psutil.virtual_memory()
-                MEMORY_BYTES.labels(host_name, "total").set(memory.total)
-                MEMORY_BYTES.labels(host_name, "used").set(memory.used)
-                MEMORY_BYTES.labels(host_name, "available").set(memory.available)
+            # Memory metrics
+            memory = psutil.virtual_memory()
+            MEMORY_BYTES.labels(host_name, "total").set(memory.total)
+            MEMORY_BYTES.labels(host_name, "used").set(memory.used)
+            MEMORY_BYTES.labels(host_name, "available").set(memory.available)
 
             # GPU metrics
-            if PYNVML_AVAILABLE and gpu_count > 0:
+            if gpu_count > 0:
                 for i in range(gpu_count):
                     try:
                         handle = pynvml.nvmlDeviceGetHandleByIndex(i)
@@ -142,12 +136,12 @@ def get_metrics_summary() -> dict:
     """Get a summary of current metrics values."""
     summary = {}
     
-    # This is a simplified version - in production you'd use 
+    # This is a simplified version - in production you'd use
     # prometheus_client.REGISTRY to get actual values
     summary["metrics_configured"] = {
         "latency_buckets": len(REQUEST_LATENCY._upper_bounds),
-        "system_metrics_enabled": PSUTIL_AVAILABLE,
-        "gpu_metrics_enabled": PYNVML_AVAILABLE
+        "system_metrics_enabled": True,
+        "gpu_metrics_enabled": True
     }
     
     return summary 

@@ -20,10 +20,9 @@ try:
     from browser_use import BrowserConfig
     from browser_use.browser.context import BrowserContext, BrowserContextConfig
     from browser_use.dom.service import DomService
-    BROWSER_USE_AVAILABLE = True
 except ImportError as e:
     raise ImportError(
-        f"Failed to import browser_use: {e}. "
+        f"[BROWSER_USE]: Failed to import browser_use - {e}. "
         f"Please install browser_use: pip install browser-use"
     )
 from pydantic import Field, field_validator
