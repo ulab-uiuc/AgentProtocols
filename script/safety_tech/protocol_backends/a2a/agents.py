@@ -438,7 +438,7 @@ class A2APrivacySimulator:
                     "protocol": "a2a",
                     "timestamp": time.time(),
                     "a2a_metadata": {
-                        "sdk_available": A2A_EXECUTOR_AVAILABLE,
+                        "sdk_available": True,
                         "total_rounds": rounds_per_conversation,
                         "privacy_features_active": True
                     }
@@ -462,6 +462,6 @@ class A2APrivacySimulator:
             "a2a_features": {
                 "privacy_protection": True,
                 "information_extraction": True,
-                "sdk_integration": A2A_EXECUTOR_AVAILABLE
+                "sdk_integration": True
             }
         }

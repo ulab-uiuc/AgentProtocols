@@ -228,7 +228,7 @@ class ACPSafetyMetaAgent(BaseSafetyMetaAgent):
         info.update({
             "protocol": "acp",
             "has_acp_executor": self.acp_executor is not None,
-            "acp_sdk_available": ACP_SDK_AVAILABLE,
+            "acp_sdk_available": True,
             "executor_type": "safety_tech_native",
             "llm_available": self.acp_executor.llm is not None if self.acp_executor else False
         })

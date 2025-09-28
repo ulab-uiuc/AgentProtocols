@@ -277,7 +277,6 @@ class ACPServerAdapter(BaseServerAdapter):
         """Build ACP server using ACP SDK native executor interface."""
         
         # Check if ACP SDK is available (use the variable defined at module level)
-        # ACP_SDK_AVAILABLE is defined at the top of this file
         try:
             # Test import to check SDK availability
             import acp_sdk
