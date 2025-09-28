@@ -40,16 +40,8 @@ from protocol_backends.meta_protocol.meta_coordinator import (
 try:
     from colorama import init, Fore, Back, Style
     init()
-    COLORAMA_AVAILABLE = True
-except ImportError:
-    COLORAMA_AVAILABLE = False
-    # Define dummy color constants
-    class Fore:
-        GREEN = BLUE = YELLOW = RED = WHITE = CYAN = ""
-    class Back:
-        RED = ""
-    class Style:
-        RESET_ALL = BRIGHT = ""
+except ImportError as e:
+    raise ImportError(f"Colorama is required for meta network colored output. Please install colorama package. Error: {e}")
 
 
 class ColoredOutput:

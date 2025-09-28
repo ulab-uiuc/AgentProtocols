@@ -30,7 +30,6 @@ from src.core.base_agent import BaseAgent
 # A2A SDK imports
 try:
     from a2a.server.agent_execution import AgentExecutor, RequestContext
-    A2A_AVAILABLE = True
 except ImportError as e:
     print(f"[A2A-META] A2A SDK not available: {e}")
     raise ImportError(f"A2A protocol requires A2A SDK: {e}")

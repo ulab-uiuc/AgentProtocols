@@ -32,11 +32,9 @@ agentconnect_path = project_root / "agentconnect_src"
 sys.path.insert(0, str(agentconnect_path))
 
 try:
-    from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
-    ANP_AVAILABLE = True
-except ImportError:
-    ANP_AVAILABLE = False
-    print("[ANP Worker] AgentConnect not available")
+    from agent_connect.simple_node import SimpleNode, SimpleNodeSession
+except ImportError as e:
+    raise ImportError(f"AgentConnect SDK required but not available: {e}")
 
 
 class ANPQAWorker:
@@ -134,22 +132,17 @@ class ANPQAWorker:
         self.private_keys = private_keys
         
         # Initialize SimpleNode for enhanced ANP communication
-        if ANP_AVAILABLE:
-            try:
-                # For workers, SimpleNode will be used for incoming connections
-                # The actual SimpleNode will be created by the communication backend
-                self.simple_node = None  # Will be set by comm backend
-                self.node_session = None
-                print(f"[ANP Worker] ANP identity set (SimpleNode managed by backend): {did_document.get('id', 'Unknown')}")
-            except Exception as e:
-                print(f"[ANP Worker] Failed to create SimpleNode: {e}")
-                self.simple_node = None
-                self.node_session = None
-                print(f"[ANP Worker] ANP identity set (SimpleNode failed): {did_document.get('id', 'Unknown')}")
-        else:
+        try:
+            # For workers, SimpleNode will be used for incoming connections
+            # The actual SimpleNode will be created by the communication backend
+            self.simple_node = None  # Will be set by comm backend
+            self.node_session = None
+            print(f"[ANP Worker] ANP identity set (SimpleNode managed by backend): {did_document.get('id', 'Unknown')}")
+        except Exception as e:
+            print(f"[ANP Worker] Failed to create SimpleNode: {e}")
             self.simple_node = None
             self.node_session = None
-            print(f"[ANP Worker] ANP identity set (AgentConnect unavailable): {did_document.get('id', 'Unknown')}")
+            print(f"[ANP Worker] ANP identity set (SimpleNode failed): {did_document.get('id', 'Unknown')}")
 
     async def answer(self, question: str) -> str:
         """

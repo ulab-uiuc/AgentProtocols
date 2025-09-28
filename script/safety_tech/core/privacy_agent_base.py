@@ -14,7 +14,6 @@ from typing import Any, Dict, Optional, List
 from pathlib import Path
 
 # Import LLM Core from unified utils
-LLM_AVAILABLE = False
 try:
     # Try different import paths for Core LLM
     try:
@@ -29,17 +28,9 @@ try:
             project_root = Path(__file__).resolve().parent.parent.parent.parent
             sys.path.insert(0, str(project_root))
             from src.utils.core import Core
-    LLM_AVAILABLE = True
     print("[LLM] Core imported successfully")
 except ImportError as e:
-    LLM_AVAILABLE = False
-    print(f"[LLM] Core import failed: {e}")
-    # Fallback Core class for graceful degradation
-    class Core:
-        def __init__(self, config): 
-            pass
-        def execute(self, messages): 
-            return "LLM not available"
+    raise ImportError(f"LLM Core required but not available: {e}")
 
 
 class PrivacyAgentBase(ABC):
@@ -55,7 +46,7 @@ class PrivacyAgentBase(ABC):
         self.llm = None
         self.use_llm = False
         
-        if LLM_AVAILABLE and config:
+        if config:
             try:
                 model_config = self._get_llm_config()
                 if model_config:

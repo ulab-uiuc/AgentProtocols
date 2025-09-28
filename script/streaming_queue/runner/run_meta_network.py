@@ -507,8 +507,8 @@ class MetaProtocolRunner(RunnerBase):
             self._anp_server_card = server_card
 
             # Create local DID for client
-            from agent_connect.python.utils.did_generate import did_generate
-            from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
+            from agent_connect.utils.did_generate import did_generate
+            from agent_connect.utils.crypto_tool import get_pem_from_private_key
             
             local_ws_port = _find_free_port()
             local_ws_endpoint = f"ws://127.0.0.1:{local_ws_port}/ws"

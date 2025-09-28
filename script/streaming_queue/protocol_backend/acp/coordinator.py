@@ -23,18 +23,17 @@ from core.qa_coordinator_base import QACoordinatorBase
 # Import ACP SDK components
 try:
     from acp_sdk import Message
-    ACP_AVAILABLE = True
-except ImportError:
-    ACP_AVAILABLE = False
+except ImportError as e:
+    raise ImportError(
+        f"ACP SDK is required but not available: {e}. "
+        "Please install with: pip install acp-sdk"
+    )
 
 
 class ACPCoordinatorExecutor:
     """ACP Coordinator Executor using ACP SDK patterns."""
     
     def __init__(self, config: Dict[str, Any], output=None):
-        if not ACP_AVAILABLE:
-            raise RuntimeError("ACP SDK is not available. Please install acp-sdk.")
-        
         self.config = config
         self.output = output
         self._coordinator = None

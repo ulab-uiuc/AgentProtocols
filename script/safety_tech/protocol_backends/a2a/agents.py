@@ -22,24 +22,9 @@ try:
     from a2a.server.agent_execution import AgentExecutor, RequestContext
     from a2a.server.events import EventQueue
     from a2a.utils import new_agent_text_message
-    A2A_EXECUTOR_AVAILABLE = True
     print("[A2A Privacy] Successfully imported A2A SDK agent execution")
 except ImportError as e:
-    A2A_EXECUTOR_AVAILABLE = False
-    print(f"\033[91m[A2A Privacy] A2A SDK not available: {e}\033[0m")
-    
-    # Create minimal stubs for development
-    class AgentExecutor:
-        async def execute(self, context, event_queue): pass
-    
-    class RequestContext:
-        def get_user_input(self): return "stub input"
-        
-    class EventQueue:
-        async def enqueue_event(self, event): pass
-    
-    def new_agent_text_message(text):
-        return {"content": text, "type": "text"}
+    raise ImportError(f"A2A SDK required but not available: {e}")
 
 
 # Safe wrapper for EventQueue.enqueue_event

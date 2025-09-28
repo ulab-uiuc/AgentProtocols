@@ -541,8 +541,8 @@ class MetaProtocolRunner(FailStormRunnerBase):
             raise RuntimeError(f"No DID found for ANP agent {dst_id}")
         
         # Create local DID for client
-        from agent_connect.python.utils.did_generate import did_generate
-        from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
+        from agent_connect.utils.did_generate import did_generate
+        from agent_connect.utils.crypto_tool import get_pem_from_private_key
         import socket
         
         def _find_free_port():

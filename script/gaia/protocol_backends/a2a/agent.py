@@ -25,30 +25,21 @@ logging.getLogger("uvicorn.error").setLevel(logging.ERROR)
 logging.getLogger("uvicorn.access").setLevel(logging.ERROR)  
 logging.getLogger("starlette").setLevel(logging.ERROR)
 
-# A2A SDK imports (optional, will be checked at runtime)
+# A2A SDK imports
 try:
     from a2a.server.agent_execution import AgentExecutor, RequestContext
     from a2a.server.events import EventQueue
     from a2a.utils import new_agent_text_message
     from a2a.types import MessageSendParams, Message, Role, TextPart
-    A2A_AVAILABLE = True
-except ImportError:
-    A2A_AVAILABLE = False
-    AgentExecutor = None
-    RequestContext = None
-    EventQueue = None
-    new_agent_text_message = None
-    MessageSendParams = None
-    Message = None
-    Role = None
-    TextPart = None
+except ImportError as e:
+    raise ImportError(f"A2A SDK components required but not available: {e}")
 
 # Core LLM imports
 try:
     # Add agent_network/src to path for Core import - use simpler path resolution
     import os
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    # Go up from protocol_backends/a2a to script/gaia to agent_network to src  
+    # Go up from protocol_backends/a2a to script/gaia to agent_network to src
     # Current: .../agent_network/script/gaia/protocol_backends/a2a
     # Target:  .../agent_network/src
     src_path = os.path.join(current_dir, '..', '..', '..', '..', 'src')
@@ -66,15 +57,9 @@ try:
         core_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(core_module)
         Core = core_module.Core
-    CORE_AVAILABLE = True
 # print(f"[DEBUG] Core imported successfully from {src_path}")
 except ImportError as e:
-    CORE_AVAILABLE = False
-    Core = None
-    print(f"[DEBUG] Core import failed: {e}")
-    print(f"[DEBUG] Attempted path: {src_path if 'src_path' in locals() else 'path calculation failed'}")
-    import traceback
-    traceback.print_exc()
+    raise ImportError(f"Core LLM components required but not available: {e}")
 
 # HTTP server imports
 from starlette.applications import Starlette
@@ -88,22 +73,16 @@ class A2AExecutor(AgentExecutor):
     """A2A Executor that integrates with GAIA Core LLM."""
     
     def __init__(self, agent):
-        if not A2A_AVAILABLE:
-            raise RuntimeError("A2A SDK is required but not available")
-        
         self.agent = agent
         self.core = None
-        
+
         # Initialize Core LLM
-        if CORE_AVAILABLE:
-            try:
-                llm_config = self._create_llm_config()
-                self.core = Core(llm_config)
-                print(f"✅ Core LLM initialized: {llm_config.get('model', {}).get('name', 'unknown')}")
-            except Exception as e:
-                raise RuntimeError(f"Core LLM initialization failed: {e}")
-        else:
-            raise RuntimeError("Core LLM is required but not available")
+        try:
+            llm_config = self._create_llm_config()
+            self.core = Core(llm_config)
+            print(f"✅ Core LLM initialized: {llm_config.get('model', {}).get('name', 'unknown')}")
+        except Exception as e:
+            raise RuntimeError(f"Core LLM initialization failed: {e}")
     
     def _create_llm_config(self) -> Dict[str, Any]:
         """Create LLM configuration for Core."""
@@ -256,7 +235,6 @@ class A2AAgent(MeshAgent):
             "agent_name": self.name,
             "protocol": "a2a",
             "connected": self._connected,
-            "a2a_available": A2A_AVAILABLE,
             "base_url": self._base_url,
             "server_running": self._server_task is not None and not self._server_task.done() if self._server_task else False,
         }
@@ -330,13 +308,8 @@ class A2AAgent(MeshAgent):
     # ==================== A2A Server Management ====================
     async def _start_server(self):
         """Start A2A server with HTTP endpoints."""
-        if not A2A_AVAILABLE:
-            raise RuntimeError("A2A SDK is required but not available")
-        
 # Debug info (can be enabled for troubleshooting)
         # print(f"[DEBUG] Starting A2A server for {self.name}")
-        # print(f"[DEBUG] A2A_AVAILABLE: {A2A_AVAILABLE}")
-        # print(f"[DEBUG] CORE_AVAILABLE: {CORE_AVAILABLE}")
         
         # Create A2A executor
         self._executor = A2AExecutor(self)

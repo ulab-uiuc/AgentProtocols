@@ -19,15 +19,12 @@ from core.network import MeshNetwork
 from core.schema import Message, ExecutionStatus, Colors
 from protocol_backends.agora.agent import AgoraAgent
 
-# Agora Protocol imports (optional, will be checked at runtime)
+# Agora Protocol imports
 try:
     import agora
     from langchain_openai import ChatOpenAI
-    AGORA_AVAILABLE = True
-except ImportError:
-    AGORA_AVAILABLE = False
-    agora = None
-    ChatOpenAI = None
+except ImportError as e:
+    raise ImportError(f"Agora Protocol SDK required but not available: {e}")
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -244,9 +241,6 @@ class AgoraNetwork(MeshNetwork):
         """Start Agora network with enhanced initialization."""
         print("🌐 Starting Agora multi-agent network...")
         try:
-            if not AGORA_AVAILABLE:
-                raise RuntimeError("Agora Protocol SDK not available. Install with: pip install agora-protocol")
-            
             # Register endpoints and start agents
             for agent in self.agents:
                 endpoint = f"http://localhost:{agent.port}"
@@ -296,7 +290,7 @@ class AgoraNetwork(MeshNetwork):
         stats = {
             "network_type": "agora",
             "total_agents": len(self.agents),
-            "agora_available": AGORA_AVAILABLE,
+            "agora_available": True,
             "performance_metrics": {
                 "bytes_tx": self.bytes_tx,
                 "bytes_rx": self.bytes_rx,

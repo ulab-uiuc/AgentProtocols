@@ -30,12 +30,11 @@ from src.core.base_agent import BaseAgent
 try:
     agentconnect_path = agent_network_root / "agentconnect_src"
     sys.path.insert(0, str(agentconnect_path))
-    
-    from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
-    from agent_connect.python.authentication import DIDAllClient, create_did_wba_document
-    from agent_connect.python.utils.did_generate import did_generate
-    from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
-    ANP_AVAILABLE = True
+
+    from agent_connect.simple_node import SimpleNode, SimpleNodeSession
+    from agent_connect.authentication import create_did_wba_document
+    from agent_connect.utils.did_generate import did_generate
+    from agent_connect.utils.crypto_tool import get_pem_from_private_key
 except ImportError as e:
     print(f"[ANP-META] AgentConnect SDK not available: {e}")
     raise ImportError(f"ANP protocol requires AgentConnect SDK: {e}")

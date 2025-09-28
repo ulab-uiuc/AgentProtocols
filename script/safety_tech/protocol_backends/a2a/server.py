@@ -18,11 +18,12 @@ try:
     from a2a.types import AgentCapabilities, AgentCard, AgentSkill, AgentProvider
     from a2a.server.agent_execution import AgentExecutor, RequestContext
     from a2a.server.events import EventQueue
-    A2A_SDK_AVAILABLE = True
     print("[A2A Server] A2A SDK available")
 except ImportError as e:
-    A2A_SDK_AVAILABLE = False
-    print(f"[A2A Server] A2A SDK not available: {e}")
+    raise ImportError(
+        f"A2A SDK is required but not available: {e}. "
+        "Please install with: pip install a2a-sdk"
+    )
 
 try:
     from script.safety_tech.core.llm_wrapper import generate_doctor_reply
@@ -30,7 +31,7 @@ except Exception:
     from core.llm_wrapper import generate_doctor_reply
 
 
-class A2ADoctorExecutor(AgentExecutor if A2A_SDK_AVAILABLE else object):
+class A2ADoctorExecutor(AgentExecutor):
     """A2A医生代理执行器"""
     
     def __init__(self, agent_name: str):
@@ -129,9 +130,6 @@ class A2ADoctorExecutor(AgentExecutor if A2A_SDK_AVAILABLE else object):
 
 def create_doctor_app(agent_name: str, port: int):
     """创建A2A医生代理应用（使用本项目A2A适配器，内置/health与/message）"""
-    if not A2A_SDK_AVAILABLE:
-        raise RuntimeError("A2A SDK not available")
-
     # 创建执行器
     executor = A2ADoctorExecutor(agent_name)
 
@@ -203,10 +201,6 @@ def run_server(agent_name: str, port: int):
 
 
 if __name__ == "__main__":
-    if not A2A_SDK_AVAILABLE:
-        print("Cannot start A2A server without SDK")
-        sys.exit(1)
-    
     # 从环境变量获取配置
     a_port = int(os.environ.get('A2A_A_PORT', '8010'))
     b_port = int(os.environ.get('A2A_B_PORT', '8011'))

@@ -26,10 +26,11 @@ except ImportError:
 try:
     import agora
     from langchain_openai import ChatOpenAI
-    AGORA_AVAILABLE = True
-except ImportError:
-    AGORA_AVAILABLE = False
-    print("Warning: Agora Protocol SDK not available. Install with: pip install agora-protocol")
+except ImportError as e:
+    raise ImportError(
+        f"Agora Protocol SDK is required but not available: {e}. "
+        "Please install with: pip install agora-protocol"
+    )
 
 
 @dataclass
@@ -119,9 +120,6 @@ class AgoraCommBackend(BaseCommBackend):
 
     async def spawn_local_agent(self, agent_id: str, host: str, port: int, executor: Any) -> AgoraAgentHandle:
         """Spawn local Agora agent server using Agora Protocol SDK."""
-        if not AGORA_AVAILABLE:
-            raise RuntimeError("Agora Protocol SDK not available. Install with: pip install agora-protocol")
-        
         # Ensure OpenAI API key is available
         if not os.getenv("OPENAI_API_KEY"):
             raise RuntimeError("OPENAI_API_KEY environment variable not set")

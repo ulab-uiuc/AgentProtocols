@@ -26,29 +26,19 @@ sys.path.insert(0, str(agentconnect_path))
 
 # Import AgentConnect components for true ANP implementation
 try:
-    from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
-    from agent_connect.python.authentication import (
+    from agent_connect.simple_node import SimpleNode, SimpleNodeSession
+    from agent_connect.authentication import (
         DIDWbaAuthHeader, verify_auth_header_signature
     )
-    from agent_connect.python.utils.did_generate import did_generate
-    from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
-    
-    ANP_AVAILABLE = True
+    from agent_connect.utils.did_generate import did_generate
+    from agent_connect.utils.crypto_tool import get_pem_from_private_key
     print("[ANP StreamingQueue] Successfully imported AgentConnect SDK")
 except ImportError as e:
-    ANP_AVAILABLE = False
-    print(f"[ANP StreamingQueue] AgentConnect SDK not available: {e}")
-    
-    # Create stubs for development (should not be used in production)
-    class SimpleNode:
-        def __init__(self, *args, **kwargs): pass
-    
-    class SimpleNodeSession:
-        def __init__(self, *args, **kwargs): pass
-        async def send_message(self, *args, **kwargs): return {}
-        async def close(self): pass
-    
-    def did_generate(): return {}, {}
+    raise ImportError(
+        f"AgentConnect SDK is required but not available: {e}. "
+        "ANP protocol requires DID authentication and E2E encryption. "
+        "Please install AgentConnect SDK from agentconnect_src."
+    )
 
 # ================= Streaming Queue Imports =================
 # Add streaming_queue to path for imports
@@ -131,9 +121,6 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
     """
     
     # ================= DID认证设置 =================
-    if not ANP_AVAILABLE:
-        raise RuntimeError("AgentConnect SDK not available - cannot create real ANP agent")
-    
     try:
         # Generate DID and private keys for authentication
         service_endpoint = f"http://{host}:{http_port}"
@@ -431,9 +418,6 @@ def _extract_message_content(payload: Dict[str, Any]) -> str:
 async def _verify_did_auth(auth_header: str, did_document: Dict[str, Any]) -> bool:
     """Verify DID authentication header with proper JWT validation"""
     try:
-        if not ANP_AVAILABLE:
-            return False
-        
         # Parse authorization header
         if not auth_header.startswith("Bearer "):
             return False
@@ -762,9 +746,9 @@ class ANPCommBackend(BaseCommBackend):
     async def _create_did_auth_token(self, handle: ANPAgentHandle) -> Optional[str]:
         """Create DID authentication token with proper cryptographic signing"""
         try:
-            if not ANP_AVAILABLE or not handle.private_keys:
+            if not handle.private_keys:
                 return None
-            
+
             # Get DID and private key with safe access
             did_doc = handle.did_document
             if isinstance(did_doc, str):

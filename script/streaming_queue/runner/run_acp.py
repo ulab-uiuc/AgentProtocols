@@ -30,17 +30,12 @@ from protocol_backend.acp.worker import ACPWorkerExecutor
 try:
     import acp_sdk
     from acp_sdk import RunCreateRequest, RunMode
-    ACP_AVAILABLE = True
 except ImportError as e:
-    print(f"Warning: ACP SDK not available: {e}")
-    ACP_AVAILABLE = False
+    raise ImportError(f"ACP SDK is required for ACP runner. Please install the acp-sdk package. Error: {e}")
 
 
 class ACPRunner(RunnerBase):
     def __init__(self, config_path: str = "config/acp.yaml"):
-        if not ACP_AVAILABLE:
-            raise RuntimeError("ACP SDK is required for ACP runner. Please install acp-sdk.")
-        
         super().__init__(config_path)
         self._backend: Optional[ACPCommBackend] = None
         self._handles: List[Any] = []

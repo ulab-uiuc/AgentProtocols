@@ -33,25 +33,16 @@ try:
     if agentconnect_path not in sys.path:
         sys.path.insert(0, agentconnect_path)
     
-    from agent_connect.python.simple_node.simple_node import SimpleNode
-    from agent_connect.python.simple_node import SimpleNodeSession
-    from agent_connect.python.authentication import DIDAllClient
-    from agent_connect.python.utils.did_generate import did_generate
-    from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
-    from agent_connect.python.meta_protocol.meta_protocol import MetaProtocol, ProtocolType
+    from agent_connect.simple_node.simple_node import SimpleNode
+    from agent_connect.simple_node import SimpleNodeSession
+    # from agent_connect.authentication import DIDAllClient
+    from agent_connect.utils.did_generate import did_generate
+    from agent_connect.utils.crypto_tool import get_pem_from_private_key
+    from agent_connect.meta_protocol.meta_protocol import MetaProtocol, ProtocolType
     
-    ANP_SDK_AVAILABLE = True
     print("✅ ANP-SDK components imported successfully")
-except ImportError:
-    ANP_SDK_AVAILABLE = False
-    SimpleNode = None
-    SimpleNodeSession = None
-    DIDAllClient = None
-    did_generate = None
-    get_pem_from_private_key = None
-    MetaProtocol = None
-    ProtocolType = None
-    print("⚠️ ANP-SDK components not available")
+except ImportError as e:
+    raise ImportError(f"ANP-SDK components required but not available: {e}")
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +88,7 @@ class ANPAgent(MeshAgent):
         self._uvicorn_server: Optional[uvicorn.Server] = None
         # Pretty initialization output
         print(f"[{name}] ANP Agent on port {port}")
-        print(f"[ANPAgent] Initialized with ANP-SDK: {ANP_SDK_AVAILABLE}")
+        print(f"[ANPAgent] Initialized with ANP-SDK")
 
         self._log("ANPAgent initialized (network-managed ANP protocol)")
 
@@ -112,13 +103,10 @@ class ANPAgent(MeshAgent):
 
     async def connect(self):
         """Start ANP SimpleNode and mark agent as connected."""
-        if not self._connected and ANP_SDK_AVAILABLE:
+        if not self._connected:
             await self._start_anp_node()
             self._connected = True
             self._log("ANPAgent connected and ANP node started")
-        elif not ANP_SDK_AVAILABLE:
-            self._connected = True  # Fallback mode
-            self._log("ANPAgent connected (fallback mode - no ANP-SDK)")
 
     async def disconnect(self):
         """Stop ANP SimpleNode and mark agent as disconnected."""
@@ -150,11 +138,10 @@ class ANPAgent(MeshAgent):
             "agent_name": self.name,
             "protocol": "anp",
             "connected": self._connected,
-            "anp_sdk_available": ANP_SDK_AVAILABLE,
             "anp_initialized": self.anp_initialized,
             "did": self.local_did_info.get('did', self.target_did),
             "websocket_endpoint": f"ws://{self.host_domain}:{self.host_port}{self.host_ws_path}",
-            "node_running": self._node_task is not None and not self._node_task.done() if self._node_task else False,
+            "node_running": self._node_task is not None and not self._node_task.done() if self._node_task else False
         }
 
     async def start(self):
@@ -213,10 +200,6 @@ class ANPAgent(MeshAgent):
     async def health_check(self) -> bool:
         """Check if the ANP agent is healthy and ready to process messages."""
         try:
-            # If SDK不可用，仅检查连接标志
-            if not ANP_SDK_AVAILABLE:
-                return bool(self._connected)
-            # SDK可用时，放宽判定，避免启动竞态导致误报
             return bool(self._connected and (self.anp_initialized or self._simple_node is not None))
         except Exception as e:
             self._log(f"Health check failed: {e}")
@@ -228,9 +211,6 @@ class ANPAgent(MeshAgent):
         Start ANP SimpleNode by directly creating and managing the Uvicorn server.
         This provides full control over the server's lifecycle and prevents SystemExit crashes.
         """
-        if not ANP_SDK_AVAILABLE:
-            return
-        
         try:
             if not self.local_did_info.get('did'):
                 await self._generate_did()
@@ -307,14 +287,6 @@ class ANPAgent(MeshAgent):
 
     async def _generate_did(self):
         """Generate DID using ANP-SDK."""
-        if not ANP_SDK_AVAILABLE or not did_generate:
-            self.local_did_info = {
-                'did': f"did:all:agent_{self.id}@{self.host_domain}:{self.host_port}",
-                'private_key_pem': '',
-                'did_document_json': '{}'
-            }
-            return
-        
         try:
             ws_endpoint = f"ws://{self.host_domain}:{self.host_port}{self.host_ws_path}"
             private_key, _, did, did_document_json = did_generate(ws_endpoint)
@@ -360,7 +332,6 @@ class ANPAgent(MeshAgent):
                 "e2e_encryption": self.enable_encryption,
                 "protocol_negotiation": self.enable_negotiation,
                 "websocket": True,
-                "anp_sdk": ANP_SDK_AVAILABLE,
                 "initialized": self.anp_initialized,
                 "connected": self._connected
             }

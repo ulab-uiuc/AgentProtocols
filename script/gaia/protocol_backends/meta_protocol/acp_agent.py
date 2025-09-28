@@ -30,7 +30,6 @@ from src.core.base_agent import BaseAgent
 try:
     from acp_sdk.models import Message, MessagePart
     from acp_sdk.server import Context, RunYield
-    ACP_AVAILABLE = True
 except ImportError as e:
     print(f"[ACP-META] ACP SDK not available: {e}")
     raise ImportError(f"ACP protocol requires ACP SDK: {e}")

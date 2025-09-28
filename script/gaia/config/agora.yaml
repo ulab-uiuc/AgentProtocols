@@ -1,6 +1,6 @@
 # Agora protocol configuration for Gaia multi-agent framework
 protocol: "Agora"
-mode: "debug"
+mode: "normal"
 
 # Runtime configuration
 runtime:

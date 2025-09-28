@@ -21,15 +21,14 @@ from core.schema import Message, ExecutionStatus
 from protocol_backends.a2a.agent import A2AAgent
 from core.schema import Colors
 
-# A2A SDK imports (optional, will be checked at runtime)
+# A2A SDK imports
 try:
     from a2a.server.agent_execution import AgentExecutor, RequestContext
     from a2a.server.events import EventQueue
     from a2a.utils import new_agent_text_message
     from a2a.types import MessageSendParams
-    A2A_AVAILABLE = True
-except ImportError:
-    A2A_AVAILABLE = False
+except ImportError as e:
+    raise ImportError(f"A2A SDK components required but not available: {e}")
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -309,9 +308,6 @@ class A2ANetwork(MeshNetwork):
         """Start A2A network with enhanced initialization."""
         print("🌐 Starting A2A multi-agent network...")
         try:
-            if not A2A_AVAILABLE:
-                raise RuntimeError("A2A Protocol SDK not available. A2A runner requires 'a2a' package.")
-            
             # Start all agents (which will start their A2A servers)
             for agent in self.agents:
                 # Register endpoints again for safety
@@ -370,7 +366,6 @@ class A2ANetwork(MeshNetwork):
         stats = {
             "network_type": "a2a",
             "total_agents": len(self.agents),
-            "a2a_available": A2A_AVAILABLE,
             "performance_metrics": {
                 "bytes_tx": self.bytes_tx,
                 "bytes_rx": self.bytes_rx,

@@ -21,13 +21,12 @@ try:
     from a2a.server.request_handlers import DefaultRequestHandler
     from a2a.server.tasks import InMemoryTaskStore
     from a2a.types import AgentCapabilities, AgentCard, AgentSkill, AgentProvider
-    A2A_SDK_AVAILABLE = True
     print("[A2A Server] A2A SDK available for server creation")
 except ImportError as e:
-    A2A_SDK_AVAILABLE = False
-    print(f"[A2A Server] A2A SDK not available: {e}")
-    print("Cannot start A2A servers without SDK")
-    sys.exit(1)
+    raise ImportError(
+        f"A2A SDK is required but not available: {e}. "
+        "Please install with: pip install a2a-sdk"
+    )
 
 # Import our executors
 from protocol_backends.a2a import A2AReceptionistExecutor, A2ADoctorExecutor
@@ -146,10 +145,6 @@ def run_server(app, port, name):
 
 async def main():
     """Start both A2A servers"""
-    if not A2A_SDK_AVAILABLE:
-        print("Cannot start servers without A2A SDK")
-        return
-    
     config = load_config()
     print("[A2A Server] Configuration loaded")
     

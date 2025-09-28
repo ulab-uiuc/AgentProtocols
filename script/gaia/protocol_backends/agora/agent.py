@@ -16,15 +16,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from core.agent import MeshAgent
 from core.schema import AgentState, Message
 
-# Agora Protocol imports (optional, will be checked at runtime)
+# Agora Protocol imports
 try:
     import agora
     from langchain_openai import ChatOpenAI
-    AGORA_AVAILABLE = True
-except ImportError:
-    AGORA_AVAILABLE = False
-    agora = None
-    ChatOpenAI = None
+except ImportError as e:
+    raise ImportError(f"Agora SDK components required but not available: {e}")
 
 
 class AgoraAgent(MeshAgent):
@@ -46,12 +43,9 @@ class AgoraAgent(MeshAgent):
 
     async def connect(self):
         """Start agent and Agora server."""
-        if not AGORA_AVAILABLE:
-            raise RuntimeError("Agora Protocol SDK not available. Install with: pip install agora-protocol")
-        
         if not os.getenv("OPENAI_API_KEY"):
             raise RuntimeError("OPENAI_API_KEY environment variable not set")
-        
+
         self._start_agora_server()
         self._connected = True
         self._log("AgoraAgent connected and server started")

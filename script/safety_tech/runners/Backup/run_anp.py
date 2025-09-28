@@ -29,13 +29,11 @@ from protocol_backends.anp import (
 
 # Try to import AgentConnect for integrated testing
 try:
-    from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
+    from agent_connect.simple_node import SimpleNode, SimpleNodeSession
     import uvicorn
-    ANP_SERVER_AVAILABLE = True
     print("[ANP Integrated] AgentConnect available for SimpleNode creation")
-except ImportError:
-    ANP_SERVER_AVAILABLE = False
-    print("[ANP Integrated] AgentConnect not available - cannot run integrated nodes")
+except ImportError as e:
+    raise ImportError(f"AgentConnect is required for ANP integrated testing. Please install the agent_connect package. Error: {e}")
 
 
 class ANPIntegratedRunner(RunnerBase):
@@ -53,16 +51,13 @@ class ANPIntegratedRunner(RunnerBase):
     async def create_network(self) -> NetworkBase:
         """Create ANP network with AgentConnect SimpleNodes"""
         try:
-            if ANP_SERVER_AVAILABLE:
-                # SimpleNodes will be created during agent setup
-                self.output.success("ANP AgentConnect infrastructure ready")
-            else:
-                self.output.warning("AgentConnect not available - running in mock mode")
-            
+            # SimpleNodes will be created during agent setup
+            self.output.success("ANP AgentConnect infrastructure ready")
+
             # Initialize ANP communication backend
             self._backend = ANPCommBackend(self.config, self.output)
             network = NetworkBase(comm_backend=self._backend)
-            
+
             self.output.success("ANP network infrastructure created")
             return network
         except Exception as e:

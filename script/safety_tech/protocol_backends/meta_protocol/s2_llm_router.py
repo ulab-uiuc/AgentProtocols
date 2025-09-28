@@ -29,12 +29,12 @@ if str(SAFETY_TECH) not in sys.path:
 # Import LLM core
 try:
     from core.llm_wrapper import Core
-    LLM_CORE_AVAILABLE = True
-except ImportError:
-    LLM_CORE_AVAILABLE = False
-    class Core:
-        def __init__(self, *args, **kwargs): pass
-        def execute(self, messages): return "LLM unavailable"
+except ImportError as e:
+    raise ImportError(
+        f"LLM Core is required but not available: {e}. "
+        "S2 Meta protocol requires LLM for intelligent routing. "
+        "Please ensure core/llm_wrapper.py is available."
+    )
 
 
 @dataclass
@@ -98,11 +98,6 @@ class S2LLMRouter:
     
     def _initialize_llm(self):
         """Initialize LLM core for routing decisions."""
-        if not LLM_CORE_AVAILABLE:
-            if self.output:
-                self.output.error("LLM Core不可用，S2 Meta协议需要LLM支持")
-            raise RuntimeError("S2 Meta协议需要LLM支持，请安装并配置core.llm_wrapper模块")
-            
         try:
             core_config = self.config.get("core", {})
             llm_config = {

@@ -23,23 +23,12 @@ try:
     from a2a.client import A2AClient
     from a2a.utils import new_agent_text_message
     from a2a.types import SendMessageRequest
-    A2A_AVAILABLE = True
     print("[A2A] Successfully imported A2A SDK for privacy testing")
 except ImportError as e:
-    A2A_AVAILABLE = False
-    print(f"[FATAL ERROR] A2A SDK is required for privacy testing: {e}")
-    # Create minimal stubs for development
-    class A2AClient:
-        def __init__(self, *args, **kwargs): pass
-        async def send_message(self, *args, **kwargs): return {"status": "stub"}
-    
-    def new_agent_text_message(text): 
-        return {"content": text, "type": "text"}
-    
-    class SendMessageRequest:
-        def __init__(self, **kwargs): 
-            for k, v in kwargs.items():
-                setattr(self, k, v)
+    raise ImportError(
+        f"A2A SDK is required but not available: {e}. "
+        "Please install with: pip install a2a-sdk"
+    )
 
 
 def create_safe_privacy_message(message_type: str, payload: dict, target: str = None) -> dict:
@@ -84,9 +73,6 @@ class A2ACommBackend(BaseCommBackend):
         self._clients: Dict[str, A2AClient] = {}
         self._connected = False
         self._message_queue = asyncio.Queue()
-        
-        if not A2A_AVAILABLE:
-            print("[WARNING] A2A SDK not available - using stub implementation")
 
     async def register_endpoint(self, agent_id: str, address: str) -> None:
         """Register privacy testing agent endpoint"""
@@ -109,19 +95,16 @@ class A2ACommBackend(BaseCommBackend):
         )
         self._agent_handles[agent_id] = handle
         
-        # Initialize A2A client if SDK is available
-        if A2A_AVAILABLE:
-            try:
-                httpx_client = httpx.AsyncClient(timeout=30.0)
-                a2a_client = A2AClient(httpx_client, url=address)
-                self._clients[agent_id] = a2a_client
-                handle.client = a2a_client
-                handle.is_connected = True
-                print(f"[A2ACommBackend] Registered privacy agent {agent_id} ({agent_type}) @ {address}")
-            except Exception as e:
-                print(f"[A2ACommBackend] Failed to create A2A client for {agent_id}: {e}")
-        else:
-            print(f"[A2ACommBackend] Registered privacy agent {agent_id} (stub mode) @ {address}")
+        # Initialize A2A client
+        try:
+            httpx_client = httpx.AsyncClient(timeout=30.0)
+            a2a_client = A2AClient(httpx_client, url=address)
+            self._clients[agent_id] = a2a_client
+            handle.client = a2a_client
+            handle.is_connected = True
+            print(f"[A2ACommBackend] Registered privacy agent {agent_id} ({agent_type}) @ {address}")
+        except Exception as e:
+            print(f"[A2ACommBackend] Failed to create A2A client for {agent_id}: {e}")
 
     async def send(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Any:
         """Send privacy testing message via A2A protocol"""
@@ -132,46 +115,39 @@ class A2ACommBackend(BaseCommBackend):
         try:
             # Create privacy-specific A2A message
             privacy_message = self._to_privacy_message(src_id, dst_id, payload)
-            
-            if A2A_AVAILABLE and dst_id in self._clients:
-                # Send via real A2A SDK
-                message_text = json.dumps(privacy_message)
-                a2a_message = new_agent_text_message(message_text)
-                
-                # Create SendMessageRequest with proper routing
-                request = SendMessageRequest(
-                    id=str(uuid.uuid4()),
-                    jsonrpc="2.0",
-                    method="message/send",
-                    params={
-                        "message": a2a_message,
-                        "receiver_id": dst_id,
-                        "sender_id": src_id,
-                        "privacy_context": True  # 标识隐私测试上下文
-                    }
-                )
-                
-                client = self._clients[dst_id]
-                response = await client.send_message(request)
-                
-                # Extract response content for privacy analysis
-                response_content = self._extract_privacy_response(response)
-                
-                print(f"[A2ACommBackend] Privacy message sent: {src_id} -> {dst_id}")
-                return {
-                    "raw": response,
-                    "text": response_content,
-                    "privacy_safe": True
+
+            if dst_id not in self._clients:
+                raise RuntimeError(f"No A2A client available for {dst_id}")
+
+            # Send via A2A SDK
+            message_text = json.dumps(privacy_message)
+            a2a_message = new_agent_text_message(message_text)
+
+            # Create SendMessageRequest with proper routing
+            request = SendMessageRequest(
+                id=str(uuid.uuid4()),
+                jsonrpc="2.0",
+                method="message/send",
+                params={
+                    "message": a2a_message,
+                    "receiver_id": dst_id,
+                    "sender_id": src_id,
+                    "privacy_context": True  # 标识隐私测试上下文
                 }
-            else:
-                # Stub mode for development
-                response_text = f"[A2A-STUB] Response from {dst_id} to privacy query"
-                print(f"[A2ACommBackend] Stub privacy message: {src_id} -> {dst_id}")
-                return {
-                    "raw": {"status": "stub", "message": privacy_message},
-                    "text": response_text,
-                    "privacy_safe": True
-                }
+            )
+
+            client = self._clients[dst_id]
+            response = await client.send_message(request)
+
+            # Extract response content for privacy analysis
+            response_content = self._extract_privacy_response(response)
+
+            print(f"[A2ACommBackend] Privacy message sent: {src_id} -> {dst_id}")
+            return {
+                "raw": response,
+                "text": response_content,
+                "privacy_safe": True
+            }
                 
         except Exception as e:
             print(f"[A2ACommBackend] Privacy message send failed {src_id} -> {dst_id}: {e}")
@@ -192,16 +168,15 @@ class A2ACommBackend(BaseCommBackend):
         if endpoint.startswith("a2a://"):
             return True
         
-        # For real HTTP endpoints with A2A
-        if A2A_AVAILABLE and agent_id in self._clients:
+        # Use A2A client for health check
+        if agent_id in self._clients:
             try:
-                # Use A2A client for health check
                 client = self._clients[agent_id]
                 # Simple ping via A2A
                 ping_message = create_safe_privacy_message("HEALTH_CHECK", {"ping": "privacy_test"})
                 request = SendMessageRequest(
                     id=str(uuid.uuid4()),
-                    jsonrpc="2.0", 
+                    jsonrpc="2.0",
                     method="message/send",
                     params={
                         "message": new_agent_text_message(json.dumps(ping_message)),
@@ -213,14 +188,14 @@ class A2ACommBackend(BaseCommBackend):
             except Exception as e:
                 print(f"[A2ACommBackend] Health check failed for {agent_id}: {e}")
                 return False
-        else:
-            # Fallback HTTP health check
-            try:
-                async with httpx.AsyncClient() as client:
-                    response = await client.get(f"{endpoint}/health", timeout=5.0)
-                    return response.status_code == 200
-            except Exception:
-                return False
+
+        # Fallback HTTP health check
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(f"{endpoint}/health", timeout=5.0)
+                return response.status_code == 200
+        except Exception:
+            return False
 
     async def close(self) -> None:
         """Close A2A privacy testing resources"""
@@ -317,8 +292,7 @@ class A2ACommBackend(BaseCommBackend):
         return {
             "total_agents": len(self._agent_handles),
             "connected_agents": sum(1 for h in self._agent_handles.values() if h.is_connected),
-            "agent_types": {agent_type: sum(1 for h in self._agent_handles.values() if h.agent_type == agent_type) 
+            "agent_types": {agent_type: sum(1 for h in self._agent_handles.values() if h.agent_type == agent_type)
                            for agent_type in ["receptionist", "doctor", "analyzer"]},
-            "protocol": "a2a",
-            "sdk_available": A2A_AVAILABLE
+            "protocol": "a2a"
         }

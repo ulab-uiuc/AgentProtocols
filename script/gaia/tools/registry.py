@@ -15,11 +15,8 @@ import sys
 # Import BrowserUseTool with proper version checking
 try:
     from .browser_use_tool import BrowserUseTool
-    BROWSER_USE_AVAILABLE = True
 except (ImportError, RuntimeError) as e:
-    print(f"Warning: BrowserUseTool not available - {e}")
-    BrowserUseTool = None
-    BROWSER_USE_AVAILABLE = False
+    raise ImportError(f"BrowserUseTool is required for tool registry. Please install browser_use package and ensure compatibility. Error: {e}")
 
 
 class ToolRegistry:
@@ -34,12 +31,9 @@ class ToolRegistry:
             SandboxPythonExecute(),
             StrReplaceEditor(),
             CreateChatCompletion(),
+            BrowserUseTool(),
         ]
-        
-        # Add BrowserUseTool if available
-        if BROWSER_USE_AVAILABLE and BrowserUseTool:
-            tools.append(BrowserUseTool())
-        
+
         self.available_tools: ToolCollection = ToolCollection(*tools)
     
     def add_tool(self, tool: BaseTool):

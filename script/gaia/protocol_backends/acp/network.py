@@ -20,16 +20,12 @@ from core.network import MeshNetwork
 from core.schema import Message, ExecutionStatus, Colors
 from protocol_backends.acp.agent import ACPAgent
 
-# Optional acp_sdk imports (checked at runtime)
+# ACP SDK imports
 try:
     from acp_sdk.client import Client as ACPClient
     from acp_sdk.models import Message as ACPMessage, MessagePart as ACPMessagePart
-    ACP_AVAILABLE = True
-except Exception:
-    ACP_AVAILABLE = False
-    ACPClient = None  # type: ignore
-    ACPMessage = None  # type: ignore
-    ACPMessagePart = None  # type: ignore
+except ImportError as e:
+    raise ImportError(f"ACP SDK components required but not available: {e}")
 
 
 def _sanitize_agent_name(name: str) -> str:
@@ -56,8 +52,6 @@ class ACPCommBackend:
         }
 
     def _get_client(self, agent_id: str):
-        if not ACP_AVAILABLE:
-            raise RuntimeError("acp_sdk not available. Install with: pip install acp-sdk")
         client = self._clients.get(agent_id)
         if client is None:
             base = self._registry[agent_id]["base_url"].replace("localhost", "127.0.0.1")

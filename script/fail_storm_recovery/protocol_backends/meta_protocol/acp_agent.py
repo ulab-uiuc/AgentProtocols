@@ -29,27 +29,29 @@ sys.path.insert(0, str(src_path))
 
 try:
     from src.core.base_agent import BaseAgent
-    BASE_AGENT_AVAILABLE = True
-except ImportError:
-    BASE_AGENT_AVAILABLE = False
-    BaseAgent = None
+except ImportError as e:
+    raise ImportError(
+        f"BaseAgent is required but not available: {e}. "
+        "Please ensure src/core/base_agent.py is available."
+    )
 
 try:
     from protocol_backends.acp.agent import ACPAgent, create_acp_agent
-    ACP_NATIVE_AVAILABLE = True
-except ImportError:
-    ACP_NATIVE_AVAILABLE = False
-    ACPAgent = None
-    create_acp_agent = None
+except ImportError as e:
+    raise ImportError(
+        f"ACP native agent is required but not available: {e}. "
+        "Please ensure protocol_backends/acp/agent.py is available."
+    )
 
 # ACP SDK imports
 try:
     from acp_sdk.models import Message, MessagePart
     from acp_sdk.server import Context, RunYield
-    ACP_SDK_AVAILABLE = True
-except ImportError:
-    ACP_SDK_AVAILABLE = False
-    Message = MessagePart = Context = RunYield = None
+except ImportError as e:
+    raise ImportError(
+        f"ACP SDK is required but not available: {e}. "
+        "Please install with: pip install acp-sdk"
+    )
 
 logger = logging.getLogger(__name__)
 

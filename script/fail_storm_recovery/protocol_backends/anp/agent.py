@@ -18,12 +18,12 @@ current_dir = Path(__file__).parent.parent.parent
 agentconnect_path = current_dir.parent.parent / "agentconnect_src"
 sys.path.insert(0, str(agentconnect_path))
 
-from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
-from agent_connect.python.authentication import (
+from agent_connect.simple_node import SimpleNode, SimpleNodeSession
+from agent_connect.authentication import (
     DIDWbaAuthHeader, verify_auth_header_signature
 )
-from agent_connect.python.utils.did_generate import did_generate
-from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
+from agent_connect.utils.did_generate import did_generate
+from agent_connect.utils.crypto_tool import get_pem_from_private_key
 
 
 class ANPAgent:

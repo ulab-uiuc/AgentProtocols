@@ -13,28 +13,28 @@ from .base import BaseTool, ToolResult
 
 try:
     from .web_search import WebSearch
-except ImportError:
-    WebSearch = None
+except ImportError as e:
+    raise ImportError(f"WebSearch tool required but not available: {e}")
 
 try:
     from .python_execute import PythonExecute
-except ImportError:
-    PythonExecute = None
+except ImportError as e:
+    raise ImportError(f"PythonExecute tool required but not available: {e}")
 
 try:
     from .planning import PlanningTool
-except ImportError:
-    PlanningTool = None
+except ImportError as e:
+    raise ImportError(f"PlanningTool required but not available: {e}")
 
 try:
     from .file_operators import FileOperators
-except ImportError:
-    FileOperators = None
+except ImportError as e:
+    raise ImportError(f"FileOperators tool required but not available: {e}")
 
 try:
     from .create_chat_completion import CreateChatCompletion
-except ImportError:
-    CreateChatCompletion = None
+except ImportError as e:
+    raise ImportError(f"CreateChatCompletion tool required but not available: {e}")
 
 
 class ToolAdapter:
@@ -57,8 +57,7 @@ class ToolAdapter:
         }
         
         for name, tool_class in tool_mappings.items():
-            if tool_class is not None:
-                tools[name] = tool_class
+            tools[name] = tool_class
         
         return tools
     
@@ -234,11 +233,9 @@ class FallbackToolAdapter(ToolAdapter):
             "create_chat_completion": SimpleChatCompletionTool
         }
         
-        # Use fallback tools for any missing tools
+        # Add fallback tools to available tools
         for name, tool_class in fallback_tools.items():
-            if name not in self.available_tools:
-                self.available_tools[name] = tool_class
-                print(f"Using fallback implementation for tool: {name}")
+            self.available_tools[name] = tool_class
 
 
 # Global tool adapter instance

@@ -32,18 +32,17 @@ from qa_worker_base import QAWorkerBase
 # Import ACP SDK components
 try:
     from acp_sdk.models import Message, MessagePart
-    ACP_AVAILABLE = True
-except ImportError:
-    ACP_AVAILABLE = False
+except ImportError as e:
+    raise ImportError(
+        f"ACP SDK is required but not available: {e}. "
+        "Please install with: pip install acp-sdk"
+    )
 
 
 class ACPWorkerExecutor:
     """ACP Worker Executor using ACP SDK patterns."""
     
     def __init__(self, config: Dict[str, Any]):
-        if not ACP_AVAILABLE:
-            raise RuntimeError("ACP SDK is not available. Please install acp-sdk.")
-        
         self.config = config
         self._worker = None
         

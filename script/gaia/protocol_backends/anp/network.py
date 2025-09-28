@@ -34,16 +34,13 @@ from core.schema import Colors
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# Check ANP-SDK availability
+# Import ANP-SDK components
 try:
-    # Import AgentConnect components to check availability
-    from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
-    from agent_connect.python.authentication import DIDAllClient
-    ANP_SDK_AVAILABLE = True
+    from agent_connect.simple_node import SimpleNode, SimpleNodeSession
+    from agent_connect.authentication import DIDAllClient
     print("✅ ANP-SDK components available")
-except Exception as _e:
-    ANP_SDK_AVAILABLE = False
-    print(f"⚠️ ANP-SDK components not available: {_e}")
+except ImportError as e:
+    raise ImportError(f"ANP-SDK components required but not available: {e}")
 
 
 class ANPCommBackend:
@@ -66,8 +63,6 @@ class ANPCommBackend:
 
     async def connect(self, src_id: str, dst_id: str) -> None:
         """Establish ANP SimpleNode session from src to dst using ANP-SDK."""
-        if not ANP_SDK_AVAILABLE:
-            return
         key = (str(src_id), str(dst_id))
         if key in self._sessions:
             return
@@ -196,10 +191,6 @@ class ANPNetwork(MeshNetwork):
         self.base_port = config.get("network", {}).get("port_range", {}).get("start", 9000)
         self.host_domain = config.get("network", {}).get("host", "127.0.0.1")
         
-        # Check ANP-SDK availability
-        if not ANP_SDK_AVAILABLE:
-            print("⚠️  ANP-SDK not fully available, using fallback implementation")
-        
         self.register_agents_from_config()
         
         print("🌐 ANP Network initialized")
@@ -322,9 +313,6 @@ class ANPNetwork(MeshNetwork):
         """Start ANP network with enhanced initialization."""
         print("🌐 Starting ANP multi-agent network...")
         try:
-            if not ANP_SDK_AVAILABLE:
-                print("⚠️ ANP-SDK not available, using fallback implementation")
-            
             # Register agent endpoints first (DID might be available after node starts; we register placeholder)
             for agent in self.agents:
                 await self.comm_backend.register_endpoint(str(agent.id), agent)
@@ -374,7 +362,6 @@ class ANPNetwork(MeshNetwork):
         stats = {
             "network_type": "anp",
             "total_agents": len(self.agents),
-            "anp_sdk_available": ANP_SDK_AVAILABLE,
             "performance_metrics": {
                 "bytes_tx": self.bytes_tx,
                 "bytes_rx": self.bytes_rx,
@@ -474,14 +461,13 @@ class ANPNetwork(MeshNetwork):
         print(f"📝 ANP registered agent {agent.id} ({agent.name})")
         
         # If network is already running, register with backend
-        if self.running and ANP_SDK_AVAILABLE:
+        if self.running:
             asyncio.create_task(self.comm_backend.register_endpoint(str(agent.id), agent))
 
     def get_network_status(self) -> Dict[str, Any]:
         """Get ANP network status."""
         return {
             "protocol": "ANP",
-            "anp_sdk_available": ANP_SDK_AVAILABLE,
             "agents_count": len(self.agents),
             "running": self.running,
             "base_port": self.base_port,
@@ -500,7 +486,6 @@ class ANPNetwork(MeshNetwork):
         """ANP network health check."""
         health_status = {
             "network_running": self.running,
-            "anp_available": ANP_SDK_AVAILABLE,
             "agents_healthy": 0,
             "agents_total": len(self.agents)
         }

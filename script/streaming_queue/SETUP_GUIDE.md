@@ -101,7 +101,7 @@ python -m runner.run_a2a
 python -c "import acp_sdk; print(f'ACP SDK: {acp_sdk.__version__}')"
 
 # 测试ANP
-python -c "import sys; sys.path.append('../../agentconnect_src'); from agent_connect.python.utils.did_generate import did_generate; print('ANP SDK: OK')"
+python -c "import sys; sys.path.append('../../agentconnect_src'); from agent_connect.utils.did_generate import did_generate; print('ANP SDK: OK')"
 
 # 测试Agora
 python -c "import agora; print('Agora: OK')"

@@ -31,14 +31,15 @@ if str(current_file.parent) not in sys.path:
 # Import from streaming_queue core with explicit path handling
 try:
     from core.qa_coordinator_base import QACoordinatorBase
-    CORE_AVAILABLE = True
-except ImportError:
-    # Fallback: direct import from core directory
+except ImportError as e:
+    # Try fallback: direct import from core directory
     core_path = streaming_queue_path / "core"
     if str(core_path) not in sys.path:
         sys.path.insert(0, str(core_path))
-    from qa_coordinator_base import QACoordinatorBase
-    CORE_AVAILABLE = True
+    try:
+        from qa_coordinator_base import QACoordinatorBase
+    except ImportError as e2:
+        raise ImportError(f"QACoordinatorBase required but not available: {e2}")
 
 # Import Meta-specific performance metrics
 from meta_performance_metrics import MetaPerformanceMetricsCollector
@@ -421,8 +422,8 @@ class MetaProtocolCoordinator(QACoordinatorBase):
             raise RuntimeError("Server card does not contain DID")
 
         # 2) create a local DID for the client side (ANPAdapter)
-        from agent_connect.python.utils.did_generate import did_generate
-        from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
+        from agent_connect.utils.did_generate import did_generate
+        from agent_connect.utils.crypto_tool import get_pem_from_private_key
         
         local_ws_port = _find_free_port()
         local_ws_endpoint = f"ws://127.0.0.1:{local_ws_port}/ws"

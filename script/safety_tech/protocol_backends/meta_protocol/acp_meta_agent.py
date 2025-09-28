@@ -31,9 +31,11 @@ from .base_meta_agent import BaseSafetyMetaAgent
 try:
     from acp_sdk.models import Message, MessagePart
     from acp_sdk.server import Context, RunYield
-    ACP_SDK_AVAILABLE = True
-except ImportError:
-    ACP_SDK_AVAILABLE = False
+except ImportError as e:
+    raise ImportError(
+        f"ACP SDK is required but not available: {e}. "
+        "Please install with: pip install acp-sdk"
+    )
 
 
 class ACPSafetyExecutor:
@@ -139,13 +141,6 @@ class ACPSafetyMetaAgent(BaseSafetyMetaAgent):
     async def create_base_agent(self, host: str = "0.0.0.0", port: Optional[int] = None) -> BaseAgent:
         """Create BaseAgent with ACP server adapter - no fallback, fail-fast approach"""
         try:
-            # 验证ACP SDK可用性
-            if not ACP_SDK_AVAILABLE:
-                raise RuntimeError(
-                    "ACP SDK不可用，S2安全测试需要完整的ACP协议支持。"
-                    "请安装ACP SDK: pip install acp-sdk"
-                )
-            
             # 创建Safety Tech原生ACP executor
             self.acp_executor = ACPSafetyExecutor(
                 config=self.config,

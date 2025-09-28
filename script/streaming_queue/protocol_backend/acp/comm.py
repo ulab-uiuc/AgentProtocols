@@ -31,10 +31,11 @@ from base import BaseCommBackend
 try:
     import acp_sdk
     from acp_sdk import Session, Run, RunCreateRequest, Message, RunMode
-    ACP_AVAILABLE = True
 except ImportError as e:
-    logging.warning(f"ACP SDK not available: {e}")
-    ACP_AVAILABLE = False
+    raise ImportError(
+        f"ACP SDK is required but not available: {e}. "
+        "Please install with: pip install acp-sdk"
+    )
 
 
 class ACPAgentHandle:
@@ -99,9 +100,6 @@ class ACPCommBackend(BaseCommBackend):
     """ACP communication backend using ACP SDK 1.0.3."""
     
     def __init__(self, **kwargs):
-        if not ACP_AVAILABLE:
-            raise RuntimeError("ACP SDK is not available. Please install acp-sdk.")
-        
         self._agents: Dict[str, ACPAgentHandle] = {}
         self._sessions: Dict[str, Session] = {}
         self._endpoints: Dict[str, str] = {}

@@ -56,13 +56,8 @@ ShardWorkerExecutor = agent_executor_module.ShardWorkerExecutor
 try:
     from colorama import init, Fore, Back, Style
     init(autoreset=True)
-    COLORS_AVAILABLE = True
-except ImportError:
-    COLORS_AVAILABLE = False
-    class Fore:
-        RED = GREEN = YELLOW = BLUE = CYAN = WHITE = ""
-    class Style:
-        BRIGHT = RESET_ALL = ""
+except ImportError as e:
+    raise ImportError(f"Colorama is required for fail storm runner colored output. Please install colorama package. Error: {e}")
 
 
 class ColoredOutput:

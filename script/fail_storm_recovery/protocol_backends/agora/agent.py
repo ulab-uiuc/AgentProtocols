@@ -21,9 +21,11 @@ from langchain_openai import ChatOpenAI
 try:
     from agora.receiver import Receiver, ReceiverServer
     from agora.common.toolformers import LangChainToolformer
-    AGORA_AVAILABLE = True
-except ImportError:
-    AGORA_AVAILABLE = False
+except ImportError as e:
+    raise ImportError(
+        f"Agora SDK is required but not available: {e}. "
+        "Please install with: pip install agora-sdk"
+    )
 
 # HTTP client
 import httpx
@@ -165,9 +167,6 @@ class AgoraAgent:
         """Start Agora SDK server."""
         try:
             # 1. Create Toolformer
-            if not AGORA_AVAILABLE:
-                raise RuntimeError("Agora dependencies not found. Please install agora-sdk.")
-                
             try:
                 model = ChatOpenAI(model="gpt-4o-mini") 
                 toolformer = LangChainToolformer(model)

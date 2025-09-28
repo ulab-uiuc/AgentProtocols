@@ -205,7 +205,7 @@ environment:
   
   # Environment variables to set
   env_vars:
-    PYTHONPATH: "src:agentconnect_src/agent_connect/python"
+    PYTHONPATH: "src:agentconnect_src/agent_connect"
     
   # Resource limits
   max_memory_mb: 4096

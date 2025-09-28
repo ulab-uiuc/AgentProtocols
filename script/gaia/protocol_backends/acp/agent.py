@@ -20,19 +20,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from core.agent import MeshAgent
 from core.schema import Message, AgentState
 
-# Optional acp_sdk imports (checked at runtime)
+# ACP SDK imports
 try:
     from acp_sdk.server import Server, Context, RunYield, RunYieldResume
     from acp_sdk.models import Message as ACPMessage, MessagePart as ACPMessagePart
-    ACP_AVAILABLE = True
-except Exception:
-    ACP_AVAILABLE = False
-    Server = None  # type: ignore
-    Context = None  # type: ignore
-    RunYield = Dict[str, Any]  # type: ignore
-    RunYieldResume = Any  # type: ignore
-    ACPMessage = None  # type: ignore
-    ACPMessagePart = None  # type: ignore
+except ImportError as e:
+    raise ImportError(f"ACP SDK components required but not available: {e}")
 
 
 class ACPAgent(MeshAgent):
@@ -106,10 +99,6 @@ class ACPAgent(MeshAgent):
 
     # ==================== ACP Server integration ====================
     def _create_server(self) -> Optional[Any]:
-        if not ACP_AVAILABLE:
-            print("[ACPAgent] acp_sdk not available; cannot create server")
-            return None
-
         server = Server()
 
         # 允许 name 动态传入（若 SDK 不支持 name 形参则降级为默认 echo）
@@ -184,9 +173,6 @@ class ACPAgent(MeshAgent):
 
     def run_server_background(self) -> None:
         """Start ACP server in a background asyncio task and wait for port readiness."""
-        if not ACP_AVAILABLE:
-            print("[ACPAgent] acp_sdk not available; skip starting server")
-            return
         # If already running, do nothing
         if self._server_thread and self._server_thread.is_alive():
             return

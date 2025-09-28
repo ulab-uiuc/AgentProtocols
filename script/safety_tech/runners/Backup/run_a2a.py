@@ -45,11 +45,9 @@ try:
     from a2a.server.tasks import InMemoryTaskStore
     from a2a.types import AgentCapabilities, AgentCard, AgentSkill, AgentProvider
     import uvicorn
-    A2A_SERVER_AVAILABLE = True
     print("[A2A Integrated] A2A SDK available for server creation")
-except ImportError:
-    A2A_SERVER_AVAILABLE = False
-    print("[A2A Integrated] A2A SDK not available - cannot run integrated servers")
+except ImportError as e:
+    raise ImportError(f"A2A SDK is required for A2A integrated testing. Please install the a2a package. Error: {e}")
 
 # Copy the analyzer from run_a2a.py
 class ExtendedA2APrivacyAnalyzer(PrivacyAnalyzerBase):
@@ -210,8 +208,6 @@ class A2AIntegratedRunner(RunnerBase):
 
     def _create_agent_app(self, agent_type: str, port: int) -> Any:
         """Create A2A agent application"""
-        if not A2A_SERVER_AVAILABLE:
-            raise RuntimeError("A2A SDK not available for server creation")
         
         if agent_type == "receptionist":
             executor = A2AReceptionistExecutor(self.config, "A2A_Receptionist", self.output)
@@ -269,9 +265,6 @@ class A2AIntegratedRunner(RunnerBase):
 
     def _start_agent_server(self, agent_type: str, port: int):
         """Start A2A agent server in background thread"""
-        if not A2A_SERVER_AVAILABLE:
-            self.output.warning(f"Cannot start {agent_type} server - A2A SDK not available")
-            return
         
         def run_server():
             try:
@@ -296,16 +289,13 @@ class A2AIntegratedRunner(RunnerBase):
         """Create A2A network and start agent servers"""
         try:
             # Start A2A agent servers first
-            if A2A_SERVER_AVAILABLE:
-                self.output.info("Starting integrated A2A agent servers...")
-                self._start_agent_server("receptionist", 8001)
-                self._start_agent_server("doctor", 8002)
-                self.output.success("A2A agent servers started")
-                
-                # Wait a bit more for servers to be ready
-                await asyncio.sleep(3)
-            else:
-                self.output.warning("A2A SDK not available - running in mock mode")
+            self.output.info("Starting integrated A2A agent servers...")
+            self._start_agent_server("receptionist", 8001)
+            self._start_agent_server("doctor", 8002)
+            self.output.success("A2A agent servers started")
+
+            # Wait a bit more for servers to be ready
+            await asyncio.sleep(3)
             
             # Initialize A2A communication backend
             a2a_config = self.config.get("a2a", {})

@@ -11,30 +11,14 @@ try:
     from a2a.server.events import EventQueue
     # Import new_agent_text_message but ensure it uses string role
     from a2a.utils import new_agent_text_message as _original_new_agent_text_message
-    
+
     def new_agent_text_message(text, role="user"):
         """Wrapper for new_agent_text_message that ensures compatibility"""
         # A2A SDK's new_agent_text_message only takes text parameter
         return _original_new_agent_text_message(text)
-    
-    A2A_AVAILABLE = True
-except ImportError:
-    print("Warning: a2a-sdk not available, using mock classes")
-    A2A_AVAILABLE = False
-    
-    class AgentExecutor:
-        pass
-    
-    class RequestContext:
-        def get_user_input(self):
-            return "Mock input"
-    
-    class EventQueue:
-        async def enqueue_event(self, event):
-            pass
-    
-    def new_agent_text_message(text, role="user"):
-        return {"type": "text", "content": text, "role": str(role)}
+
+except ImportError as e:
+    raise ImportError(f"A2A SDK is required for shard coordinator agent executor. Please install the a2a package. Error: {e}")
 
 async def safe_enqueue_event(event_queue, event):
     """Safely enqueue event, handling both sync and async event queues."""

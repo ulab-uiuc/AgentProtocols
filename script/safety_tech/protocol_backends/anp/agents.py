@@ -23,16 +23,12 @@ except ImportError:
 try:
     # Add project root to path for LLM core
     from script.safety_tech.core.llm_wrapper import Core
-    LLM_CORE_AVAILABLE = True
     print("[LLM] Core imported successfully for ANP agents")
 except ImportError as e:
-    LLM_CORE_AVAILABLE = False
-    print(f"\033[91m[ANP Privacy] LLM Core not available: {e}\033[0m")
-    
-    # Create minimal stub for development
-    class Core:
-        def __init__(self, *args, **kwargs): pass
-        async def process(self, prompt): return "Stub LLM response"
+    raise ImportError(
+        f"LLM Core is required but not available: {e}. "
+        "Please ensure script/safety_tech/core/llm_wrapper.py is available."
+    )
 
 # AgentConnect ANP imports for agent execution (local only; no fallback)
 try:
@@ -47,11 +43,13 @@ try:
     from authentication.did_wba_verifier import DidWbaVerifier  # type: ignore
     from utils.did_generate import did_generate  # type: ignore
     from utils.crypto_tool import get_pem_from_private_key  # type: ignore
-    ANP_EXECUTOR_AVAILABLE = True
     print("[ANP Privacy] Using local agentconnect_src for ANP agent execution")
-except ImportError:
-    # Abort immediately to enforce no-fallback policy
-    raise
+except ImportError as e:
+    raise ImportError(
+        f"AgentConnect SDK is required but not available: {e}. "
+        "ANP protocol requires DID authentication and E2E encryption. "
+        "Please ensure agentconnect_src is available."
+    )
 
 
 class ANPReceptionistAgent(ReceptionistAgent):
@@ -69,18 +67,18 @@ class ANPReceptionistAgent(ReceptionistAgent):
 
     async def initialize_anp(self):
         """Initialize ANP-specific features (DID, encryption)"""
-        if ANP_EXECUTOR_AVAILABLE:
-            try:
-                # Generate DID for this agent
-                did_result = did_generate()
-                self.did_doc = did_result["did_doc"]
-                self.private_keys = did_result["private_keys"]
-                
-                if self.output:
-                    self.output.info(f"[{self.agent_id}] ANP DID initialized: {self.did_doc.get('id', 'unknown')}")
-            except Exception as e:
-                if self.output:
-                    self.output.error(f"[{self.agent_id}] Failed to initialize ANP DID: {e}")
+        try:
+            # Generate DID for this agent
+            did_result = did_generate()
+            self.did_doc = did_result["did_doc"]
+            self.private_keys = did_result["private_keys"]
+
+            if self.output:
+                self.output.info(f"[{self.agent_id}] ANP DID initialized: {self.did_doc.get('id', 'unknown')}")
+        except Exception as e:
+            if self.output:
+                self.output.error(f"[{self.agent_id}] Failed to initialize ANP DID: {e}")
+            raise
 
     async def send_to_agent(self, target_id: str, message: str) -> Dict[str, Any]:
         """Send message to another agent through ANP network with E2E encryption"""
@@ -132,18 +130,18 @@ class ANPDoctorAgent(NosyDoctorAgent):
 
     async def initialize_anp(self):
         """Initialize ANP-specific features (DID, encryption)"""
-        if ANP_EXECUTOR_AVAILABLE:
-            try:
-                # Generate DID for this agent
-                did_result = did_generate()
-                self.did_doc = did_result["did_doc"]
-                self.private_keys = did_result["private_keys"]
-                
-                if self.output:
-                    self.output.info(f"[{self.agent_id}] ANP DID initialized: {self.did_doc.get('id', 'unknown')}")
-            except Exception as e:
-                if self.output:
-                    self.output.error(f"[{self.agent_id}] Failed to initialize ANP DID: {e}")
+        try:
+            # Generate DID for this agent
+            did_result = did_generate()
+            self.did_doc = did_result["did_doc"]
+            self.private_keys = did_result["private_keys"]
+
+            if self.output:
+                self.output.info(f"[{self.agent_id}] ANP DID initialized: {self.did_doc.get('id', 'unknown')}")
+        except Exception as e:
+            if self.output:
+                self.output.error(f"[{self.agent_id}] Failed to initialize ANP DID: {e}")
+            raise
 
     async def send_to_agent(self, target_id: str, message: str) -> Dict[str, Any]:
         """Send message to another agent through ANP network with E2E encryption"""
@@ -183,30 +181,27 @@ class ANPReceptionistExecutor:
         
         # Create the core privacy agent
         self.receptionist = ANPReceptionistAgent(agent_id, config, output)
-        
+
         # Initialize LLM core
-        if LLM_CORE_AVAILABLE:
-            try:
-                core_config = config.get("core", {})
-                # Create config in the format expected by Core class
-                llm_config = {
-                    "model": {
-                        "type": core_config.get("type", "openai"),
-                        "name": core_config.get("name", "gpt-4o"),
-                        "temperature": core_config.get("temperature", 0.3),
-                        "openai_api_key": core_config.get("openai_api_key"),
-                        "openai_base_url": core_config.get("openai_base_url")
-                    }
+        try:
+            core_config = config.get("core", {})
+            # Create config in the format expected by Core class
+            llm_config = {
+                "model": {
+                    "type": core_config.get("type", "openai"),
+                    "name": core_config.get("name", "gpt-4o"),
+                    "temperature": core_config.get("temperature", 0.3),
+                    "openai_api_key": core_config.get("openai_api_key"),
+                    "openai_base_url": core_config.get("openai_base_url")
                 }
-                self.llm_core = Core(llm_config)
-                if self.output:
-                    self.output.info(f"[{agent_id}] Core LLM initialized: {core_config.get('name', 'gpt-4o')}")
-            except Exception as e:
-                if self.output:
-                    self.output.error(f"[{agent_id}] Failed to initialize LLM core: {e}")
-                self.llm_core = None
-        else:
-            self.llm_core = None
+            }
+            self.llm_core = Core(llm_config)
+            if self.output:
+                self.output.info(f"[{agent_id}] Core LLM initialized: {core_config.get('name', 'gpt-4o')}")
+        except Exception as e:
+            if self.output:
+                self.output.error(f"[{agent_id}] Failed to initialize LLM core: {e}")
+            raise
         
         if self.output:
             self.output.info(f"ANP Receptionist Executor initialized: {agent_id}")
@@ -275,30 +270,27 @@ class ANPDoctorExecutor:
         
         # Create the core privacy agent
         self.doctor = ANPDoctorAgent(agent_id, config, output)
-        
+
         # Initialize LLM core
-        if LLM_CORE_AVAILABLE:
-            try:
-                core_config = config.get("core", {})
-                # Create config in the format expected by Core class
-                llm_config = {
-                    "model": {
-                        "type": core_config.get("type", "openai"),
-                        "name": core_config.get("name", "gpt-4o"),
-                        "temperature": core_config.get("temperature", 0.3),
-                        "openai_api_key": core_config.get("openai_api_key"),
-                        "openai_base_url": core_config.get("openai_base_url")
-                    }
+        try:
+            core_config = config.get("core", {})
+            # Create config in the format expected by Core class
+            llm_config = {
+                "model": {
+                    "type": core_config.get("type", "openai"),
+                    "name": core_config.get("name", "gpt-4o"),
+                    "temperature": core_config.get("temperature", 0.3),
+                    "openai_api_key": core_config.get("openai_api_key"),
+                    "openai_base_url": core_config.get("openai_base_url")
                 }
-                self.llm_core = Core(llm_config)
-                if self.output:
-                    self.output.info(f"[{agent_id}] Core LLM initialized: {core_config.get('name', 'gpt-4o')}")
-            except Exception as e:
-                if self.output:
-                    self.output.error(f"[{agent_id}] Failed to initialize LLM core: {e}")
-                self.llm_core = None
-        else:
-            self.llm_core = None
+            }
+            self.llm_core = Core(llm_config)
+            if self.output:
+                self.output.info(f"[{agent_id}] Core LLM initialized: {core_config.get('name', 'gpt-4o')}")
+        except Exception as e:
+            if self.output:
+                self.output.error(f"[{agent_id}] Failed to initialize LLM core: {e}")
+            raise
         
         if self.output:
             self.output.info(f"ANP Doctor Executor initialized: {agent_id}")

@@ -17,19 +17,8 @@ import httpx
 try:
     from colorama import init, Fore, Back, Style
     init(autoreset=True)
-    COLORS_AVAILABLE = True
-except ImportError:
-    COLORS_AVAILABLE = False
-    class Fore:
-        RED = ""
-        GREEN = ""
-        YELLOW = ""
-        BLUE = ""
-        CYAN = ""
-        WHITE = ""
-    class Style:   
-        BRIGHT = ""
-        RESET_ALL = ""
+except ImportError as e:
+    raise ImportError(f"Colorama is required for shard QA colored output. Please install colorama package. Error: {e}")
 
 # Add paths to import AgentNetwork and protocols
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))

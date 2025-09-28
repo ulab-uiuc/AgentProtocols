@@ -33,9 +33,11 @@ from protocol_backends.agora.agent import AgoraAgent, create_agora_agent
 # Agora SDK imports
 try:
     import agora
-    AGORA_AVAILABLE = True
-except ImportError:
-    AGORA_AVAILABLE = False
+except ImportError as e:
+    raise ImportError(
+        f"Agora SDK is required but not available: {e}. "
+        "Please install with: pip install agora-sdk"
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -233,21 +235,16 @@ class AgoraMetaAgent:
                 
                 try:
                     from src.agent_adapters.agora_adapter import AgoraClientAdapter
-                    
+                    from agora import Toolformer
+
                     listen_url = self.base_agent.get_listening_address()
                     if "0.0.0.0" in listen_url:
                         listen_url = listen_url.replace("0.0.0.0", "127.0.0.1")
-                    
-                    # Create minimal toolformer - verify this matches your implementation
-                    toolformer = None
-                    try:
-                        from agora import Toolformer
-                        toolformer = Toolformer()  # May need additional parameters
-                    except Exception as e:
-                        logger.warning(f"[{self.agent_id}] Toolformer creation failed: {e}")
-                    
-                    # Attempt adapter creation with known signature
-                    # NOTE: Adjust parameters based on actual AgoraClientAdapter.__init__
+
+                    # Create Toolformer
+                    toolformer = Toolformer()
+
+                    # Create adapter
                     adapter = AgoraClientAdapter(
                         httpx_client=self.base_agent._httpx_client,
                         toolformer=toolformer,
@@ -257,11 +254,8 @@ class AgoraMetaAgent:
                     await adapter.initialize()
                     self.base_agent.add_outbound_adapter(self.agent_id, adapter)
                     logger.info(f"[{self.agent_id}] Installed loopback Agora adapter at {listen_url}")
-                    
-                except ImportError:
-                    logger.warning(f"[{self.agent_id}] AgoraClientAdapter not available, skipping loopback")
                 except Exception as e:
-                    logger.warning(f"[{self.agent_id}] Loopback adapter failed (signature mismatch?): {e}")
+                    logger.warning(f"[{self.agent_id}] Loopback adapter failed: {e}")
                     # Production deployments should use install_loopback=False to avoid this
 
             # 6) Diagnostics

@@ -29,7 +29,6 @@ from src.core.base_agent import BaseAgent
 # Agora SDK imports
 try:
     import agora
-    AGORA_AVAILABLE = True
 except ImportError as e:
     print(f"[AGORA-META] Agora SDK not available: {e}")
     raise ImportError(f"Agora protocol requires Agora SDK: {e}")

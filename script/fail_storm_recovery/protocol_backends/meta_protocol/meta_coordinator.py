@@ -33,11 +33,8 @@ sys.path.insert(0, str(src_path))
 # Import from fail_storm_recovery core
 try:
     from core.failstorm_metrics import FailStormMetricsCollector
-    FAILSTORM_CORE_AVAILABLE = True
-except ImportError:
-    # Fallback: use basic metrics if fail_storm core not available
-    FailStormMetricsCollector = None
-    FAILSTORM_CORE_AVAILABLE = False
+except ImportError as e:
+    raise ImportError(f"FailStorm core metrics required but not available: {e}")
 
 # Import Meta-specific performance metrics
 from .meta_performance_metrics import MetaPerformanceMetricsCollector
@@ -70,14 +67,11 @@ class MetaProtocolCoordinator:
         self.config = config or {}
         self.output = output
         
-        # Use FailStorm metrics if available, otherwise use Meta metrics
-        if FAILSTORM_CORE_AVAILABLE and FailStormMetricsCollector:
-            self.failstorm_metrics_collector = FailStormMetricsCollector(
-                protocol_name="meta_protocol",
-                config=self.config
-            )
-        else:
-            self.failstorm_metrics_collector = None
+        # Initialize FailStorm metrics
+        self.failstorm_metrics_collector = FailStormMetricsCollector(
+            protocol_name="meta_protocol",
+            config=self.config
+        )
         
         # Meta-protocol metrics collector
         self.meta_metrics_collector = MetaPerformanceMetricsCollector()
@@ -532,8 +526,8 @@ class MetaProtocolCoordinator:
             raise RuntimeError("Server card does not contain DID")
 
         # 2) create a local DID for the client side (ANPAdapter)
-        from agent_connect.python.utils.did_generate import did_generate
-        from agent_connect.python.utils.crypto_tool import get_pem_from_private_key
+        from agent_connect.utils.did_generate import did_generate
+        from agent_connect.utils.crypto_tool import get_pem_from_private_key
         
         local_ws_port = _find_free_port()
         local_ws_endpoint = f"ws://127.0.0.1:{local_ws_port}/ws"
@@ -708,10 +702,8 @@ class MetaProtocolCoordinator:
             # Get comprehensive Meta performance metrics
             performance_report = self.meta_metrics_collector.get_comprehensive_report()
             
-            # Include FailStorm metrics if available
-            failstorm_report = None
-            if self.failstorm_metrics_collector:
-                failstorm_report = self.failstorm_metrics_collector.get_final_results()
+            # Include FailStorm metrics
+            failstorm_report = self.failstorm_metrics_collector.get_final_results()
             
             payload = {
                 "metadata": {

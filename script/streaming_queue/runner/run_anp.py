@@ -28,19 +28,11 @@ agentconnect_path = PROJECT_ROOT / "agentconnect_src"
 sys.path.insert(0, str(agentconnect_path))
 
 try:
-    from agent_connect.python.utils.did_generate import did_generate
-    from agent_connect.python.simple_node import SimpleNode, SimpleNodeSession
-    ANP_AVAILABLE = True
+    from agent_connect.utils.did_generate import did_generate
+    from agent_connect.simple_node import SimpleNode, SimpleNodeSession
     print("[ANP Runner] AgentConnect SDK available")
 except ImportError as e:
-    ANP_AVAILABLE = False
-    print(f"[ANP Runner] AgentConnect SDK not available: {e}")
-    
-    # Stub for development
-    def did_generate(service_endpoint, router=""):
-        import uuid
-        did_id = f"did:anp:{uuid.uuid4()}"
-        return None, None, did_id, {"id": did_id}
+    raise ImportError(f"AgentConnect SDK is required for ANP runner. Please install the agent_connect package. Error: {e}")
 
 # ================= Streaming Queue Imports =================
 from runner_base import RunnerBase, ColoredOutput
@@ -85,9 +77,6 @@ class ANPRunner(RunnerBase):
     # ================= Protocol-Specific Implementation =================
     async def create_network(self) -> NetworkBase:
         """Create ANP network with real AgentConnect backend"""
-        # Allow running even without full AgentConnect SDK for testing
-        # if not ANP_AVAILABLE:
-        #     raise RuntimeError("AgentConnect SDK not available - cannot create ANP network")
         
         self.output.info("Creating ANP network with AgentConnect backend...")
         
@@ -369,7 +358,7 @@ class ANPRunner(RunnerBase):
         """Display ANP setup summary"""
         self.output.info("=== ANP Protocol Summary ===")
         self.output.success(f"Protocol: ANP (Agent Network Protocol)")
-        self.output.success(f"AgentConnect SDK: {'✓ Available' if ANP_AVAILABLE else '✗ Not Available'}")
+        self.output.success(f"AgentConnect SDK: ✓ Available")
         self.output.success(f"DID Identities: {self.anp_metrics['did_identities_generated']}")
         self.output.success(f"HTTP Endpoints: {self.anp_metrics['http_endpoints']}")
         self.output.success(f"WebSocket Endpoints: {self.anp_metrics['websocket_endpoints']}")
@@ -409,11 +398,7 @@ class ANPRunner(RunnerBase):
 async def _main():
     """Main entry point for ANP runner"""
     print("[ANP Runner] Starting ANP Protocol Streaming Queue Runner")
-    
-    if not ANP_AVAILABLE:
-        print("[ANP Runner] WARNING: AgentConnect SDK not available!")
-        print("[ANP Runner] Some ANP features will not work properly.")
-    
+
     runner = ANPRunner()
     await runner.run()
 
