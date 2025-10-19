@@ -17,11 +17,13 @@ A comprehensive multi-agent communication framework supporting multiple protocol
 ## 📋 Table of Contents
 
 - [Quick Start](#-quick-start)
-- [Supported Scenarios](#-supported-scenarios)
+- [Supported Scenarios & Getting Started](#-supported-scenarios--getting-started)
 - [Protocol Guide](#-protocol-guide)
 - [Installation](#-installation)
 - [Configuration](#-configuration)
+- [Architecture](#-architecture)
 - [Development](#-development)
+- [Monitoring & Observability](#-monitoring--observability)
 - [Contributing](#-contributing)
 - [中文文档 (简体中文)](README_zh_CN.md)
 
@@ -43,75 +45,96 @@ git clone https://github.com/MultiagentBench/Multiagent-Protocol.git
 cd Multiagent-Protocol
 
 # Install dependencies
+conda create -n map python==3.11 -y
+conda activate map
+
 pip install -r requirements.txt
 
 # Set environment variables
 export OPENAI_API_KEY='sk-your-openai-api-key-here'
 ```
 
-## 🎯 Supported Scenarios
+## 🎯 Supported Scenarios & Getting Started
 
 ### 1. 🌍 GAIA (General AI Agent) Framework
 **Purpose**: Task execution and coordination across distributed AI agents
 
-**Supported Protocols**:
-- **ANP (Agent Network Protocol)**: DID-based authentication with E2E encryption
-- **A2A (Agent-to-Agent)**: Direct peer communication with message routing
-- **ACP (Agent Communication Protocol)**: Session-based conversation management
-- **Agora**: Tool-based agent orchestration with LangChain integration
-
-**Usage**:
+**Quick Start**:
 ```bash
-# Set API key
-export OPENAI_API_KEY='sk-your-key-here'
+# 1. Set up environment
+export OPENAI_API_KEY='sk-your-key'
 
+# 2. Run GAIA with ANP protocol
+python -m scenario.gaia.runners.run_anp
+
+# 3. Monitor output for agent interactions
+# Expected: Multiple agents collaborating on tasks with DID authentication
+```
+
+**All Available Runners**:
+```bash
 # Run with different protocols
-python -m script.gaia.runners.run_anp        # ANP Protocol
-python -m script.gaia.runners.run_a2a        # A2A Protocol
-python -m script.gaia.runners.run_acp        # ACP Protocol
-python -m script.gaia.runners.run_agora      # Agora Protocol
-python -m script.gaia.runners.run_dummy      # Dummy Protocol
+python -m scenario.gaia.runners.run_anp        # ANP Protocol
+python -m scenario.gaia.runners.run_a2a        # A2A Protocol
+python -m scenario.gaia.runners.run_acp        # ACP Protocol
+python -m scenario.gaia.runners.run_agora      # Agora Protocol
 
 # Meta-protocol coordination
-python -m script.gaia.runners.run_meta_protocol
+python -m scenario.gaia.runners.run_meta_protocol
 ```
 
 ### 2. 📡 Streaming Queue
 **Purpose**: High-throughput message processing with coordinator-worker patterns
 
-**Supported Protocols**: ANP, A2A, ACP, Agora, Meta-Protocol
-
-**Usage**:
+**Quick Start**:
 ```bash
-export OPENAI_API_KEY='sk-your-key-here'
+# 1. Set up environment
+export OPENAI_API_KEY='sk-your-key'
 
+# 2. Run streaming queue with A2A
+python -m scenario.streaming_queue.runner.run_a2a
+
+# 3. Observe coordinator-worker message processing
+# Expected: High-frequency message exchange with load balancing
+```
+
+**All Available Runners**:
+```bash
 # Stream processing with different protocols
-python -m script.streaming_queue.runner.run_anp     # ANP Streaming
-python -m script.streaming_queue.runner.run_a2a     # A2A Streaming
-python -m script.streaming_queue.runner.run_acp     # ACP Streaming
-python -m script.streaming_queue.runner.run_agora   # Agora Streaming
+python -m scenario.streaming_queue.runner.run_anp     # ANP Streaming
+python -m scenario.streaming_queue.runner.run_a2a     # A2A Streaming
+python -m scenario.streaming_queue.runner.run_acp     # ACP Streaming
+python -m scenario.streaming_queue.runner.run_agora   # Agora Streaming
 
 # Meta-network coordination
-python -m script.streaming_queue.runner.run_meta_network
+python -m scenario.streaming_queue.runner.run_meta_network
 ```
 
 ### 3. 🛡️ Safety Tech
 **Purpose**: Privacy-preserving agent communication and security testing
 
-**Supported Protocols**: ANP, A2A, ACP, Agora, Meta
-
-**Usage**:
+**Quick Start**:
 ```bash
-export OPENAI_API_KEY='sk-your-key-here'
+# 1. Set up environment
+export OPENAI_API_KEY='sk-your-key'
 
+# 2. Run privacy-aware security tests
+python -m scenario.safety_tech.runners.run_unified_security_test_anp
+
+# 3. Review privacy protection mechanisms
+# Expected: Encrypted communication with privacy compliance reports
+```
+
+**All Available Runners**:
+```bash
 # Unified security testing
-python -m script.safety_tech.runners.run_unified_security_test_anp
-python -m script.safety_tech.runners.run_unified_security_test_a2a
-python -m script.safety_tech.runners.run_unified_security_test_acp
-python -m script.safety_tech.runners.run_unified_security_test_agora
+python -m scenario.safety_tech.runners.run_unified_security_test_anp
+python -m scenario.safety_tech.runners.run_unified_security_test_a2a
+python -m scenario.safety_tech.runners.run_unified_security_test_acp
+python -m scenario.safety_tech.runners.run_unified_security_test_agora
 
 # S2 Meta-protocol security analysis
-python -m script.safety_tech.runners.run_s2_meta
+python -m scenario.safety_tech.runners.run_s2_meta
 ```
 
 ### 4. 🔄 Fail Storm Recovery
@@ -124,16 +147,38 @@ python -m script.safety_tech.runners.run_s2_meta
 export OPENAI_API_KEY='sk-your-key-here'
 
 # Fault tolerance testing
-python -m script.fail_storm_recovery.runners.run_anp
-python -m script.fail_storm_recovery.runners.run_a2a
-python -m script.fail_storm_recovery.runners.run_acp
-python -m script.fail_storm_recovery.runners.run_agora
-python -m script.fail_storm_recovery.runners.run_simple_json
+python -m scenario.fail_storm_recovery.runners.run_anp
+python -m scenario.fail_storm_recovery.runners.run_a2a
+python -m scenario.fail_storm_recovery.runners.run_acp
+python -m scenario.fail_storm_recovery.runners.run_agora
+python -m scenario.fail_storm_recovery.runners.run_simple_json
 
 # Meta-protocol coordination
-python -m script.fail_storm_recovery.runners.run_meta
-python -m script.fail_storm_recovery.runners.run_meta_network
+python -m scenario.fail_storm_recovery.runners.run_meta # no adapter
+python -m scenario.fail_storm_recovery.runners.run_meta_network # with adapter
 ```
+
+### 5. 🧪 RouterBench - Protocol Routing Benchmark
+**Purpose**: Benchmark and evaluate protocol routing performance and decision-making
+
+**Quick Start**:
+```bash
+# 1. Set up environment
+export OPENAI_API_KEY='sk-your-key'
+
+# 2. Run the benchmark test
+python /root/Multiagent-Protocol/routerbench/run_benchmark.py
+
+# 3. Review benchmark results
+# Expected: Protocol routing accuracy, latency metrics, and performance analysis
+# Results saved to: routerbench/results/benchmark_results.json
+```
+
+**Features**:
+- Protocol selection accuracy testing
+- Routing latency benchmarking
+- Multi-protocol comparison
+- Detailed performance reports
 
 ## 🔧 Protocol Guide
 
@@ -177,10 +222,10 @@ export LOG_LEVEL='INFO'                              # DEBUG, INFO, WARNING, ERR
 
 ### Configuration Files
 
-Each scenario uses YAML configuration files located in `script/{scenario}/config/`:
+Each scenario uses YAML configuration files located in `scenario/{scenario}/config/`:
 
 ```yaml
-# Example: script/gaia/config/anp.yaml
+# Example: scenario/gaia/config/anp.yaml
 model:
   type: "openai"
   name: "gpt-4o"
@@ -231,31 +276,17 @@ workflow:
 
 ## 🧪 Development
 
-### Running Tests
-
-```bash
-# Run all tests
-pytest
-
-# Run tests for specific scenario
-pytest script/gaia/tests/
-pytest script/safety_tech/tests/
-
-# Run with coverage
-pytest --cov=src --cov-report=html
-```
-
 ### Adding New Protocols
 
-1. Create protocol backend in `script/{scenario}/protocol_backends/{protocol_name}/`
+1. Create protocol backend in `scenario/{scenario}/protocol_backends/{protocol_name}/`
 2. Implement required interfaces: `agent.py`, `network.py`, `comm.py`
-3. Add configuration in `script/{scenario}/config/{protocol_name}.yaml`
-4. Create runner in `script/{scenario}/runners/run_{protocol_name}.py`
+3. Add configuration in `scenario/{scenario}/config/{protocol_name}.yaml`
+4. Create runner in `scenario/{scenario}/runners/run_{protocol_name}.py`
 
 ### Code Structure
 
 ```
-script/
+scenario/
 ├── {scenario}/                    # Scenario implementation
 │   ├── config/                   # Configuration files
 │   ├── protocol_backends/        # Protocol implementations
@@ -301,47 +332,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Documentation**: [Wiki](https://github.com/your-org/Multiagent-Protocol/wiki)
 - **Issues**: [GitHub Issues](https://github.com/your-org/Multiagent-Protocol/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/your-org/Multiagent-Protocol/discussions)
-
-## 🚀 Getting Started Examples
-
-### Example 1: Simple GAIA Task Execution
-
-```bash
-# 1. Set up environment
-export OPENAI_API_KEY='sk-your-key'
-
-# 2. Run GAIA with ANP protocol
-python -m script.gaia.runners.run_anp
-
-# 3. Monitor output for agent interactions
-# Expected: Multiple agents collaborating on tasks with DID authentication
-```
-
-### Example 2: High-Throughput Streaming
-
-```bash
-# 1. Set up environment
-export OPENAI_API_KEY='sk-your-key'
-
-# 2. Run streaming queue with A2A
-python -m script.streaming_queue.runner.run_a2a
-
-# 3. Observe coordinator-worker message processing
-# Expected: High-frequency message exchange with load balancing
-```
-
-### Example 3: Security Testing
-
-```bash
-# 1. Set up environment
-export OPENAI_API_KEY='sk-your-key'
-
-# 2. Run privacy-aware security tests
-python -m script.safety_tech.runners.run_unified_security_test_anp
-
-# 3. Review privacy protection mechanisms
-# Expected: Encrypted communication with privacy compliance reports
-```
 
 ---
 

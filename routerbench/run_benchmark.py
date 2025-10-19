@@ -48,18 +48,18 @@ def load_dataset(data_path: str) -> list:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='运行ProtoRouter Benchmark')
-    parser.add_argument('--config', default='config.yaml', help='配置文件路径')
-    parser.add_argument('--data', default='data/data.json', help='数据集路径')
-    parser.add_argument('--output', default='results', help='输出目录')
-    parser.add_argument('--limit', type=int, help='限制处理的场景数量（用于测试）')
+    parser = argparse.ArgumentParser(description='run ProtoRouter Benchmark')
+    parser.add_argument('--config', default='routerbench/config.yaml', help='config file path')
+    parser.add_argument('--data', default='routerbench/data/data.json', help='data path')
+    parser.add_argument('--output', default='results', help='output directory')
+    parser.add_argument('--limit', type=int, help='limit the number of scenarios to process (for testing)')
     
     args = parser.parse_args()
-    
-    # 确保输出目录存在
+
+    # Ensure output directory exists
     os.makedirs(args.output, exist_ok=True)
     
-    # 加载配置和数据
+    # Load configuration and data
     print("🔧 Loading configuration...")
     config = load_config(args.config)
     

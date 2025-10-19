@@ -8,7 +8,7 @@ import os
 from typing import Dict, List, Any, Optional
 
 # Add src to path for importing utils
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 from utils.core import Core
 from prompt_template import format_scenario_prompt, PROTOCOL_SELECTION_FUNCTION
 

@@ -252,8 +252,8 @@ class RunnerBase:
                 configured_path,  # Use config path first
                 "data/enhanced_medical_questions.json",  # From safety_tech dir
                 "../data/enhanced_medical_questions.json",  # From runner dir
-                "agent_network/script/safety_tech/data/enhanced_medical_questions.json",  # From project root
-                "script/safety_tech/data/enhanced_medical_questions.json",  # From agent_network dir
+                "agent_network/scenario/safety_tech/data/enhanced_medical_questions.json",  # From project root
+                "scenario/safety_tech/data/enhanced_medical_questions.json",  # From agent_network dir
             ]
             
             dataset_path = None
