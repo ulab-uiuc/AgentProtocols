@@ -15,7 +15,7 @@ qa:
     count: 1
     start_port: 9998
     data_file: "data/top1000_simplified.jsonl"
-    result_file: "scenario/streaming_queue/results/qa_results_a2a.json"
+    result_file: "scenarios/streaming_queue/results/qa_results_a2a.json"
     batch_size: 50
     first_50: false
   worker:

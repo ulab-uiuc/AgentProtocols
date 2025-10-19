@@ -4,7 +4,7 @@ mode: "debug"
 
 # Runtime configuration
 runtime:
-  task_file: "scenario/gaia/dataset/2023/validation/metadata.jsonl"
+  task_file: "scenarios/gaia/dataset/2023/validation/metadata.jsonl"
   output_file: "workspaces/acp/gaia_acp_results.json"
   timeout: 300  # seconds per task
 

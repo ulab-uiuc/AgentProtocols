@@ -5,7 +5,7 @@ mode: "normal"
 
 # Runtime configuration
 runtime:
-  task_file: "scenario/gaia/dataset/2023/validation/metadata.jsonl"
+  task_file: "scenarios/gaia/dataset/2023/validation/metadata.jsonl"
   output_file: "workspaces/meta_protocol/gaia_meta_results.json"
   timeout: 300  # seconds per task
   # max_tasks: 1  # Test single task only

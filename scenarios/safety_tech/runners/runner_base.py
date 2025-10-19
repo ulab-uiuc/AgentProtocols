@@ -554,7 +554,7 @@ class RunnerBase:
                 Path(configured_path),  # Config path
                 Path("data/enhanced_medical_questions.json"),  # From safety_tech dir
                 Path("../data/enhanced_medical_questions.json"),  # From runner dir
-                Path("scenario/safety_tech/data/enhanced_medical_questions.json"),  # From project root
+                Path("scenarios/safety_tech/data/enhanced_medical_questions.json"),  # From project root
             ]
             
             dataset_path = None
@@ -671,7 +671,7 @@ class RunnerBase:
             proc = subprocess.Popen([
                 sys.executable, "-c",
                 f"import sys; sys.path.insert(0, '{project_root}'); "
-                "from scenario.safety_tech.core.registration_gateway import RegistrationGateway; "
+                "from scenarios.safety_tech.core.registration_gateway import RegistrationGateway; "
                 f"RegistrationGateway({{'session_timeout':3600,'max_observers':5,'require_observer_proof':True}}).run(host='{host}', port={self.rg_port})"
             ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             

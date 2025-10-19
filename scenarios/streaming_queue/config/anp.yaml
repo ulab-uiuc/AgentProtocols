@@ -17,7 +17,7 @@ qa:
     count: 1
     start_port: 9901
     data_file: "data/top1000_simplified.jsonl"
-    result_file: "scenario/streaming_queue/results/qa_results_anp.json"
+    result_file: "scenarios/streaming_queue/results/qa_results_anp.json"
     batch_size: 50
     first_50: false
   worker:

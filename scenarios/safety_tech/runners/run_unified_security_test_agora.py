@@ -51,7 +51,7 @@ class AgoraSecurityTestRunner(RunnerBase):
         try:
             logging.getLogger("httpx").setLevel(logging.ERROR)
             logging.getLogger("openai").setLevel(logging.ERROR)
-            logging.getLogger("scenario.safety_tech.core.llm_wrapper").setLevel(logging.ERROR)
+            logging.getLogger("scenarios.safety_tech.core.llm_wrapper").setLevel(logging.ERROR)
             logging.getLogger("core.rg_coordinator").setLevel(logging.WARNING)
             logging.getLogger("openai._base_client").setLevel(logging.ERROR)
         except Exception:

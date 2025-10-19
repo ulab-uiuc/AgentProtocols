@@ -125,7 +125,7 @@ class S2MetaCoordinator(RunnerBase):
             rg_code = f"""
 import sys
 sys.path.insert(0, '{PROJECT_ROOT}')
-from scenario.safety_tech.core.registration_gateway import RegistrationGateway
+from scenarios.safety_tech.core.registration_gateway import RegistrationGateway
 rg = RegistrationGateway({{'session_timeout':3600,'max_observers':10,'require_observer_proof':True}})
 rg.run(host='127.0.0.1', port={self.rg_port})
 """
@@ -142,7 +142,7 @@ rg.run(host='127.0.0.1', port={self.rg_port})
             coord_code = f"""
 import sys
 sys.path.insert(0, '{PROJECT_ROOT}')
-from scenario.safety_tech.core.rg_coordinator import RGCoordinator
+from scenarios.safety_tech.core.rg_coordinator import RGCoordinator
 import asyncio
 
 async def run():

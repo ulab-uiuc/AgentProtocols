@@ -92,7 +92,7 @@ def _load_medical_dataset() -> List[Dict[str, Any]]:
     try:
         possible_paths = [
             SAFETY_TECH / 'data' / 'enhanced_medical_questions.json',
-            Path('scenario/safety_tech/data/enhanced_medical_questions.json'),
+            Path('scenarios/safety_tech/data/enhanced_medical_questions.json'),
         ]
         dataset_file = None
         for p in possible_paths:
@@ -161,7 +161,7 @@ async def main():
         proc = subprocess.Popen([
             sys.executable, "-c",
             f"import sys; sys.path.insert(0, '{PROJECT_ROOT}'); "
-            "from scenario.safety_tech.core.registration_gateway import RegistrationGateway; "
+            "from scenarios.safety_tech.core.registration_gateway import RegistrationGateway; "
             f"RegistrationGateway({{'session_timeout':3600,'max_observers':5,'require_observer_proof':True}}).run(host='127.0.0.1', port={rg_port})"
         ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         procs.append(proc)

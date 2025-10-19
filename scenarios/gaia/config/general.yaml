@@ -40,7 +40,7 @@ mode: "debug" # debug or normal
 
 # Runtime configuration
 runtime:
-  task_file: "scenario/gaia/dataset/2023/validation/metadata.jsonl"
+  task_file: "scenarios/gaia/dataset/2023/validation/metadata.jsonl"
   output_file: "workspaces/gaia_dummy_results.json"
   timeout: 300  # seconds per task
 

@@ -284,7 +284,7 @@ class ACPProtocolBackend(BaseProtocolBackend):
                 code = (
                     "import sys;"
                     f"sys.path.insert(0, '{project_root}');"
-                    "from scenario.safety_tech.protocol_backends.acp.server import create_doctor_a_server;"
+                    "from scenarios.safety_tech.protocol_backends.acp.server import create_doctor_a_server;"
                     f"server = create_doctor_a_server({port});"
                     "server.run()"
                 )
@@ -292,7 +292,7 @@ class ACPProtocolBackend(BaseProtocolBackend):
                 code = (
                     "import sys;"
                     f"sys.path.insert(0, '{project_root}');"
-                    "from scenario.safety_tech.protocol_backends.acp.server import create_doctor_b_server;"
+                    "from scenarios.safety_tech.protocol_backends.acp.server import create_doctor_b_server;"
                     f"server = create_doctor_b_server({port});"
                     "server.run()"
                 )

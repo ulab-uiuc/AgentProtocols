@@ -4,7 +4,7 @@ mode: "normal"
 
 # Runtime configuration
 runtime:
-  task_file: "scenario/gaia/dataset/2023/validation/metadata.jsonl"
+  task_file: "scenarios/gaia/dataset/2023/validation/metadata.jsonl"
   output_file: "workspaces/agora/gaia_agora_results.json"
   timeout: 300  # seconds per task
 

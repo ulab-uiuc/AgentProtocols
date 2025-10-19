@@ -65,7 +65,7 @@ export OPENAI_API_KEY='sk-your-openai-api-key-here'
 export OPENAI_API_KEY='sk-your-key'
 
 # 2. Run GAIA with ANP protocol
-python -m scenario.gaia.runners.run_anp
+python -m scenarios.gaia.runners.run_anp
 
 # 3. Monitor output for agent interactions
 # Expected: Multiple agents collaborating on tasks with DID authentication
@@ -74,13 +74,13 @@ python -m scenario.gaia.runners.run_anp
 **All Available Runners**:
 ```bash
 # Run with different protocols
-python -m scenario.gaia.runners.run_anp        # ANP Protocol
-python -m scenario.gaia.runners.run_a2a        # A2A Protocol
-python -m scenario.gaia.runners.run_acp        # ACP Protocol
-python -m scenario.gaia.runners.run_agora      # Agora Protocol
+python -m scenarios.gaia.runners.run_anp        # ANP Protocol
+python -m scenarios.gaia.runners.run_a2a        # A2A Protocol
+python -m scenarios.gaia.runners.run_acp        # ACP Protocol
+python -m scenarios.gaia.runners.run_agora      # Agora Protocol
 
 # Meta-protocol coordination
-python -m scenario.gaia.runners.run_meta_protocol
+python -m scenarios.gaia.runners.run_meta_protocol
 ```
 
 ### 2. 📡 Streaming Queue
@@ -92,7 +92,7 @@ python -m scenario.gaia.runners.run_meta_protocol
 export OPENAI_API_KEY='sk-your-key'
 
 # 2. Run streaming queue with A2A
-python -m scenario.streaming_queue.runner.run_a2a
+python -m scenarios.streaming_queue.runner.run_a2a
 
 # 3. Observe coordinator-worker message processing
 # Expected: High-frequency message exchange with load balancing
@@ -101,13 +101,13 @@ python -m scenario.streaming_queue.runner.run_a2a
 **All Available Runners**:
 ```bash
 # Stream processing with different protocols
-python -m scenario.streaming_queue.runner.run_anp     # ANP Streaming
-python -m scenario.streaming_queue.runner.run_a2a     # A2A Streaming
-python -m scenario.streaming_queue.runner.run_acp     # ACP Streaming
-python -m scenario.streaming_queue.runner.run_agora   # Agora Streaming
+python -m scenarios.streaming_queue.runner.run_anp     # ANP Streaming
+python -m scenarios.streaming_queue.runner.run_a2a     # A2A Streaming
+python -m scenarios.streaming_queue.runner.run_acp     # ACP Streaming
+python -m scenarios.streaming_queue.runner.run_agora   # Agora Streaming
 
 # Meta-network coordination
-python -m scenario.streaming_queue.runner.run_meta_network
+python -m scenarios.streaming_queue.runner.run_meta_network
 ```
 
 ### 3. 🛡️ Safety Tech
@@ -119,7 +119,7 @@ python -m scenario.streaming_queue.runner.run_meta_network
 export OPENAI_API_KEY='sk-your-key'
 
 # 2. Run privacy-aware security tests
-python -m scenario.safety_tech.runners.run_unified_security_test_anp
+python -m scenarios.safety_tech.runners.run_unified_security_test_anp
 
 # 3. Review privacy protection mechanisms
 # Expected: Encrypted communication with privacy compliance reports
@@ -128,13 +128,13 @@ python -m scenario.safety_tech.runners.run_unified_security_test_anp
 **All Available Runners**:
 ```bash
 # Unified security testing
-python -m scenario.safety_tech.runners.run_unified_security_test_anp
-python -m scenario.safety_tech.runners.run_unified_security_test_a2a
-python -m scenario.safety_tech.runners.run_unified_security_test_acp
-python -m scenario.safety_tech.runners.run_unified_security_test_agora
+python -m scenarios.safety_tech.runners.run_unified_security_test_anp
+python -m scenarios.safety_tech.runners.run_unified_security_test_a2a
+python -m scenarios.safety_tech.runners.run_unified_security_test_acp
+python -m scenarios.safety_tech.runners.run_unified_security_test_agora
 
 # S2 Meta-protocol security analysis
-python -m scenario.safety_tech.runners.run_s2_meta
+python -m scenarios.safety_tech.runners.run_s2_meta
 ```
 
 ### 4. 🔄 Fail Storm Recovery
@@ -147,14 +147,14 @@ python -m scenario.safety_tech.runners.run_s2_meta
 export OPENAI_API_KEY='sk-your-key-here'
 
 # Fault tolerance testing
-python -m scenario.fail_storm_recovery.runners.run_anp
-python -m scenario.fail_storm_recovery.runners.run_a2a
-python -m scenario.fail_storm_recovery.runners.run_acp
-python -m scenario.fail_storm_recovery.runners.run_agora
+python -m scenarios.fail_storm_recovery.runners.run_anp
+python -m scenarios.fail_storm_recovery.runners.run_a2a
+python -m scenarios.fail_storm_recovery.runners.run_acp
+python -m scenarios.fail_storm_recovery.runners.run_agora
 
 # Meta-protocol coordination
-python -m scenario.fail_storm_recovery.runners.run_meta # no adapter
-python -m scenario.fail_storm_recovery.runners.run_meta_network # with adapter
+python -m scenarios.fail_storm_recovery.runners.run_meta # no adapter
+python -m scenarios.fail_storm_recovery.runners.run_meta_network # with adapter
 ```
 
 ### 5. 🧪 RouterBench - Protocol Routing Benchmark
