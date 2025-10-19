@@ -10,7 +10,7 @@ runtime:
 
 # Framework configuration
 framework:
-  name: "gpt-4o"
+  name: "multi-agent protocol framework for GAIA"
   version: "1.0.0"
 
 network:
