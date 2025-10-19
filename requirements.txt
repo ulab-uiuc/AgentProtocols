@@ -1,5 +1,6 @@
 # Agent Network Multi-Protocol Requirements
 # Python Version: 3.12.11
+# 说明：本文件只包含项目直接依赖的核心包，其他依赖会自动安装
 
 # ================= Core Protocol SDKs =================
 acp-sdk==1.0.3
@@ -11,31 +12,36 @@ agora-protocol==0.2.0
 # ================= Web Framework =================
 fastapi==0.116.1
 uvicorn==0.35.0
-starlette==0.47.3
-flask==3.1.2
+Flask==3.1.2
 
 # ================= HTTP & Async =================
 httpx==0.28.1
 aiohttp==3.12.15
 requests==2.32.5
-asyncio==4.0.0
+aiofiles==24.1.0
 
-# ================= AI/ML =================
+# ================= AI/ML & LLM =================
 openai==1.102.0
 langchain==0.3.27
 langchain-openai==0.3.32
+langchain-anthropic==0.3.3
 anthropic==0.64.0
+ollama==0.5.3
 
-# ================= Data & Config =================
+# ================= Data Processing & Config =================
 pydantic==2.11.7
-pyyaml==6.0.2
+PyYAML==6.0.2
 pandas==2.2.3
 numpy==2.3.2
 
-# ================= Monitoring =================
+# ================= Document Processing =================
+PyPDF2==3.0.1
+
+# ================= Monitoring & Logging =================
 prometheus-client==0.22.1
 loguru==0.7.3
 psutil==7.0.0
+pynvml==12.0.0
 
 # ================= Testing =================
 pytest==8.4.1
@@ -43,11 +49,13 @@ pytest-asyncio==1.1.0
 
 # ================= Crypto & Security =================
 cryptography==45.0.7
-pyOpenSSL==24.2.1
+pyOpenSSL==25.1.0
 base58==2.1.1
 PyJWT==2.10.1
+jcs==0.2.1
 
 # ================= Utilities =================
 colorama==0.4.6
 python-dotenv==1.1.1
 websockets==15.0.1
+python-dateutil==2.9.0.post0

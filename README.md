@@ -140,7 +140,7 @@ python -m scenario.safety_tech.runners.run_s2_meta
 ### 4. 🔄 Fail Storm Recovery
 **Purpose**: Fault-tolerant systems with automatic recovery mechanisms
 
-**Supported Protocols**: ANP, A2A, ACP, Agora, Simple JSON, Meta-Protocol
+**Supported Protocols**: ANP, A2A, ACP, Agora, Meta-Protocol
 
 **Usage**:
 ```bash
@@ -151,7 +151,6 @@ python -m scenario.fail_storm_recovery.runners.run_anp
 python -m scenario.fail_storm_recovery.runners.run_a2a
 python -m scenario.fail_storm_recovery.runners.run_acp
 python -m scenario.fail_storm_recovery.runners.run_agora
-python -m scenario.fail_storm_recovery.runners.run_simple_json
 
 # Meta-protocol coordination
 python -m scenario.fail_storm_recovery.runners.run_meta # no adapter
