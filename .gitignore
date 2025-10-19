@@ -4,6 +4,8 @@ streaming_queue\data\qa_results.json
 streaming_queue\data\top1000.jsonl
 streaming_queue/data/*
 dataset/
+script/fail_storm_recovery/results/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

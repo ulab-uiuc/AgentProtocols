@@ -31,7 +31,7 @@ A comprehensive multi-agent communication framework supporting multiple protocol
 
 ```bash
 # Required environment
-Python 3.12+
+Python 3.11+
 OpenAI API Key (for LLM-based agents)
 ```
 
@@ -39,7 +39,7 @@ OpenAI API Key (for LLM-based agents)
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/Multiagent-Protocol.git
+git clone https://github.com/MultiagentBench/Multiagent-Protocol.git
 cd Multiagent-Protocol
 
 # Install dependencies
@@ -47,19 +47,6 @@ pip install -r requirements.txt
 
 # Set environment variables
 export OPENAI_API_KEY='sk-your-openai-api-key-here'
-```
-
-### Run Your First Multi-Agent System
-
-```bash
-# GAIA Framework with ANP Protocol
-python -m script.gaia.runners.run_anp
-
-# Streaming Queue with A2A Protocol
-python -m script.streaming_queue.runner.run_a2a
-
-# Safety Testing with ACP Protocol
-python -m script.safety_tech.runners.run_unified_security_test_acp
 ```
 
 ## 🎯 Supported Scenarios
@@ -72,7 +59,6 @@ python -m script.safety_tech.runners.run_unified_security_test_acp
 - **A2A (Agent-to-Agent)**: Direct peer communication with message routing
 - **ACP (Agent Communication Protocol)**: Session-based conversation management
 - **Agora**: Tool-based agent orchestration with LangChain integration
-- **Dummy**: Mock protocol for testing and development
 
 **Usage**:
 ```bash
@@ -112,7 +98,7 @@ python -m script.streaming_queue.runner.run_meta_network
 ### 3. 🛡️ Safety Tech
 **Purpose**: Privacy-preserving agent communication and security testing
 
-**Supported Protocols**: ANP, A2A, ACP, Agora, S2-Meta
+**Supported Protocols**: ANP, A2A, ACP, Agora, Meta
 
 **Usage**:
 ```bash
@@ -147,19 +133,6 @@ python -m script.fail_storm_recovery.runners.run_simple_json
 # Meta-protocol coordination
 python -m script.fail_storm_recovery.runners.run_meta
 python -m script.fail_storm_recovery.runners.run_meta_network
-```
-
-### 5. 🗺️ Async MAPF (Multi-Agent Path Finding)
-**Purpose**: Distributed path planning and coordination
-
-**Supported Protocols**: A2A
-
-**Usage**:
-```bash
-export OPENAI_API_KEY='sk-your-key-here'
-
-# Multi-agent path finding
-python -m script.async_mapf.runners.run_a2a
 ```
 
 ## 🔧 Protocol Guide

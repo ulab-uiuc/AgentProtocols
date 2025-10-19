@@ -1,0 +1,183 @@
+{
+  "network_memory": [
+    {
+      "role": "user",
+      "content": "🎯 ORIGINAL TASK REQUIREMENT:\nOf the authors (First M. Last) that worked on the paper \"Pie Menus or Linear Menus, Which Is Better?\" in 2015, what was the title of the first paper authored by the one that had authored prior papers?\n================================================================================\nStep 1 - Current Task Input:\nOf the authors (First M. Last) that worked on the paper \"Pie Menus or Linear Menus, Which Is Better?\" in 2015, what was the title of the first paper authored by the one that had authored prior papers?\n\n⚠️  REMEMBER: All your work must contribute to answering the ORIGINAL TASK above!"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "call_03cuRb3JxuNqIWjzQ7olxM7S",
+          "type": "function",
+          "function": {
+            "name": "browser_use",
+            "arguments": "{\"action\":\"web_search\",\"query\":\"Pie Menus or Linear Menus, Which Is Better? 2015 authors\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'Pie Menus or Linear Menus, Which Is Better? 2015 authors':\n\n1. Pie Menus or Linear Menus, Which Is Better?\n   URL: https://pietromurano.org/Papers/Murano-Khan-Published-Version.pdf\n   Description: pietromurano.org | Whether this figure is correct or not, the amount is likely to be more in 2015 than in 2010. ... The authors conclude that flower menus are good for 'large.\n   Content: [PDF Content Extracted]       Vol. 6, No. 9, September 2015                                                                                                 ISSN 2079-8407  Journal of Emerging Trends in Computing and Information Sciences  ©2009-2015 CIS Journal. All rights reserved.    http://www.cisjournal.org     476 Pie Menus or Linear Menus, Which Is Better?  1 Pietro Murano, 2 Iram N. Khan  1 Department of Computer Science, t he Universal Design of ICT Res earch Group, Oslo and   Akershus University College of Applied Sciences, Oslo, Norway  2 University of Salford, School of Computing, Science and Enginee ring, Salford, M5 4WT, UK      ABSTRACT  This paper is about a continuing investigation aiming to find o u t  w h i c h  m e n u  t y p e  i s  m o r e  u s e a b l e  o n  a  w e b  s i t e  o r   application. This paper specifically compares pie menus with li near menus. Although other researchers have investigated  similar themes it is felt that there is still not enough knowl...\n\n2. (PDF) Pie Menus or Linear Menus, Which Is Better?\n   URL: https://www.researchgate.net/publication/283265537_Pie_Menus_or_Linear_Menus_Which_Is_Better\n   Description: www.researchgate.net | Pie Menus or Linear Menus, Which Is Better? September 2015. Authors: Pietro ... Pie Menus or Linear Menus, Which Is Better? 1 Pietro Murano, 2 Iram N ...\n\n3. search agent error and mcp error · Issue #64 · inclusionAI/AWorld ...\n   URL: https://github.com/inclusionAI/AWorld/issues/64\n   Description: github.com | May 13, 2025 ... ... ...<truncated>",
+      "name": "browser_use",
+      "tool_call_id": "call_03cuRb3JxuNqIWjzQ7olxM7S"
+    },
+    {
+      "role": "assistant",
+      "content": "Tool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'Pie Menus or Linear Menus, Which Is Better? 2015 authors':\n\n1. Pie Menus or Linear Menus, Which Is Better?\n   URL: https://pietromurano.org/Papers/Murano-Khan-Published-Version.pdf\n   Description: pietromurano.org | Whether this figure is correct or not, the amount is likely to be more in 2015 than in 2010. ... The authors conclude that flower menus are good for 'large.\n   Content: [PDF Content Extracted]       Vol. 6, No. 9, September 2015                                                                                                 ISSN 2079-8407  Journal of Emerging Trends in Computing and Information Sciences  ©2009-2015 CIS Journal. All rights reserved.    http://www.cisjournal.org     476 Pie Menus or Linear Menus, Which Is Better?  1 Pietro Murano, 2 Iram N. Khan  1 Department of Computer Science, t he Universal Design of ICT Res earch Group, Oslo and   Akershus University College of Applied Sciences, Oslo, Norway  2 University of Salford, School of Computing, Science and Enginee ring, Salford, M5 4WT, UK      ABSTRACT  This paper is about a continuing investigation aiming to find o u t  w h i c h  m e n u  t y p e  i s  m o r e  u s e a b l e  o n  a  w e b  s i t e  o r   application. This paper specifically compares pie menus with li near menus. Although other researchers have investigated  similar themes it is felt that there is still not enough knowl...\n\n2. (PDF) Pie Menus or Linear Menus, Which Is Better?\n   URL: https://www.researchgate.net/publication/283265537_Pie_Menus_or_Linear_Menus_Which_Is_Better\n   Description: www.researchgate.net | Pie Menus or Linear Menus, Which Is Better? September 2015. Authors: Pietro ... Pie Menus or Linear Menus, Which Is Better? 1 Pietro Murano, 2 Iram N ...\n\n3. search agent error and mcp error · Issue #64 · inclusionAI/AWorld ...\n   URL: https://github.com/inclusionAI/AWorld/issues/64\n   Description: github.com | May 13, ...<truncated>"
+    },
+    {
+      "role": "user",
+      "content": "🎯 ORIGINAL TASK REQUIREMENT:\nOf the authors (First M. Last) that worked on the paper \"Pie Menus or Linear Menus, Which Is Better?\" in 2015, what was the title of the first paper authored by the one that had authored prior papers?\n================================================================================\nStep 2 - Current Task Input:\nTool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'Pie Menus or Linear Menus, Which Is Better? 2015 authors':\n\n1. Pie Menus or Linear Menus, Which Is Better?\n   URL: https://pietromurano.org/Papers/Murano-Khan-Published-Version.pdf\n   Description: pietromurano.org | Whether this figure is correct or not, the amount is likely to be more in 2015 than in 2010. ... The authors conclude that flower menus are good for 'large.\n   Content: [PDF Content Extracted]       Vol. 6, No. 9, September 2015                                                                                                 ISSN 2079-8407  Journal of Emerging Trends in Computing and Information Sciences  ©2009-2015 CIS Journal. All rights reserved.    http://www.cisjournal.org     476 Pie Menus or Linear Menus, Which Is Better?  1 Pietro Murano, 2 Iram N. Khan  1 Department of Computer Science, t he Universal Design of ICT Res earch Group, Oslo and   Akershus University College of Applied Sciences, Oslo, Norway  2 University of Salford, School of Computing, Science and Enginee ring, Salford, M5 4WT, UK      ABSTRACT  This paper is about a continuing investigation aiming to find o u t  w h i c h  m e n u  t y p e  i s  m o r e  u s e a b l e  o n  a  w e b  s i t e  o r   application. This paper specifically compares pie menus with li near menus. Although other researchers have investigated  similar themes it is felt that there is still not enough knowl...\n\n2. (PDF) Pie Menus or Linear Menus, Which Is Better?\n   URL: https://www.researchgate.net/publication/283265537_Pie_Menus_or_Linear_Menus_Which_Is_Better\n   Description: www....<truncated>"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "call_QvoyAQqwBN3ZUiWTq9MANUh0",
+          "type": "function",
+          "function": {
+            "name": "browser_use",
+            "arguments": "{\"action\": \"web_search\", \"query\": \"Pietro Murano first paper\"}"
+          }
+        },
+        {
+          "id": "call_9Psqj473fSYEz65o1dws23NA",
+          "type": "function",
+          "function": {
+            "name": "browser_use",
+            "arguments": "{\"action\": \"web_search\", \"query\": \"Iram N. Khan first paper\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'Pietro Murano first paper':\n\n1. Publications - Pietro Murano\n   URL: https://pietromurano.org/publications.html\n   Description: pietromurano.org | INTERNATIONAL REFEREED JOURNAL PAPERS. Keya, Rashika Tasnim, Heldal, Ilona, Patel, Daniel, Murano, Pietro & Wijkmark, Cecilia Hammar (2025) Implementing ...\n   Content: Pietro Murano - Publications Pietro Murano Publications Home Research Lecturing Administration Popular Media Contact This section lists all my publications and where possible the publications are included. Click on a title to read a paper. INTERNATIONAL REFEREED JOURNAL PAPERS Keya, Rashika Tasnim, Heldal, Ilona, Patel, Daniel, Murano, Pietro & Wijkmark, Cecilia Hammar (2025) Implementing Virtual Reality for Fire Evacuation Preparedness at Schools - PDF , Computers, 14, 286. Al-Jasim, Alyaa & Murano, Pietro (2023) Designing User Interface Toggles for Usability - PDF , Journal of User Experience, Volume 18, Issue 4, August 2023. Shrestha, Sayush Lal & Murano, Pietro (2022) The Design and Evaluation of an Online Dictionary User Interface - PDF , International Journal of Computing and Digital Systems, Volume 1, March 2022. Keya, Rashika Tasnim & Murano, Pietro (2022) Is Carousel Interaction Really Usable? - PDF , First Monday, Volume 27, Issue 1, January 2022. Chaudhary, Karan Singh & Mur...\n\n2. ‪Pietro Murano‬ - ‪Google Scholar‬\n   URL: https://scholar.google.com/citations?user=L9um4xoAAAAJ&hl=en\n   Description: scholar.google.com | Their combined citations are counted only for the first article. Merged ... Pietro Murano. Professor (Full) of Human Computer Interaction. Verified email ...\n\n3. Is carousel interaction really usable? | First Monday\n   URL: https://firstmonday.org/ojs/index.php/fm/article/view/11801\n   Description: firstmonday.org | Jan 11, 2022 ... In this paper a novel and significant study into the usability ... Pietro Murano, Oslo Metropolitan University. Assoc...<truncated>",
+      "name": "browser_use",
+      "tool_call_id": "call_QvoyAQqwBN3ZUiWTq9MANUh0"
+    },
+    {
+      "role": "tool",
+      "content": "Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'Iram N. Khan first paper':\n\n1. Imran Khan - Wikipedia\n   URL: https://en.wikipedia.org/wiki/Imran_Khan\n   Description: en.wikipedia.org | Imran Ahmed Khan Niazi (born 5 October 1952) is a Pakistani politician, philanthropist, and former cricketer who served as the 19th prime minister of ...\n\n2. ‪Dr. Iram Khan‬ - ‪Google Scholar‬\n   URL: https://scholar.google.com/citations?user=RzmqKwcAAAAJ&hl=en\n   Description: scholar.google.com | Their combined citations are counted only for the first article. Merged ... Q Amber, AB Qazi, N Javaid, IA Khan, M Ahmad. Information Discovery and ...\n\n3. Iran - Wikipedia\n   URL: https://en.wikipedia.org/wiki/Iran\n   Description: en.wikipedia.org | The Iranian Revolution in 1979 overthrew the monarchy, and the Islamic Republic of Iran was established by Ruhollah Khomeini, the country's first supreme leader ...\n\nMetadata:\n- Total results: 3\n- Language: en\n- Country: us\n\nFetched Content from https://en.wikipedia.org/wiki/Imran_Khan:\n\n\nImran Khan - Wikipedia\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n[Jump to content](#bodyContent)\n\nMain menu\n\nMain menu\nmove to sidebar\nhide\n\nNavigation\n\n* [Main page](/wiki/Main_Page \"Visit the main page [z]\")\n* [Contents](/wiki/Wikipedia:Contents \"Guides to browsing Wikipedia\")\n* [Current events](/wiki/Portal:Current_events \"Articles related to current events\")\n* [Random article](/wiki/Special:Random \"Visit a randomly selected article [x]\")\n* [About Wikipedia](/wiki/Wikipedia:About \"Learn about Wikipedia and how it works\")\n* [Contact us](//en.wikipedia.org/wiki/Wikipedia:Contact_us \"How to contact Wikipedia\")\n\n\nContribute\n\n* [Help](/wiki/Help:Contents \"Guidance on how to use and edit Wikipedia\")\n* [Learn to edit](/wiki/Help:Introduction \"Learn how to edit Wikipedia\")\n* [Community portal](/wiki/Wikipedia:Community_portal \"The hub for editors\")\n* [Recent changes](/wiki/Special:RecentChanges \"A list of recent changes to Wikipedia [r]\")\n* [Upl...<truncated>",
+      "name": "browser_use",
+      "tool_call_id": "call_9Psqj473fSYEz65o1dws23NA"
+    },
+    {
+      "role": "assistant",
+      "content": "Tool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'Iram N. Khan first paper':\n\n1. Imran Khan - Wikipedia\n   URL: https://en.wikipedia.org/wiki/Imran_Khan\n   Description: en.wikipedia.org | Imran Ahmed Khan Niazi (born 5 October 1952) is a Pakistani politician, philanthropist, and former cricketer who served as the 19th prime minister of ...\n\n2. ‪Dr. Iram Khan‬ - ‪Google Scholar‬\n   URL: https://scholar.google.com/citations?user=RzmqKwcAAAAJ&hl=en\n   Description: scholar.google.com | Their combined citations are counted only for the first article. Merged ... Q Amber, AB Qazi, N Javaid, IA Khan, M Ahmad. Information Discovery and ...\n\n3. Iran - Wikipedia\n   URL: https://en.wikipedia.org/wiki/Iran\n   Description: en.wikipedia.org | The Iranian Revolution in 1979 overthrew the monarchy, and the Islamic Republic of Iran was established by Ruhollah Khomeini, the country's first supreme leader ...\n\nMetadata:\n- Total results: 3\n- Language: en\n- Country: us\n\nFetched Content from https://en.wikipedia.org/wiki/Imran_Khan:\n\n\nImran Khan - Wikipedia\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n[Jump to content](#bodyContent)\n\nMain menu\n\nMain menu\nmove to sidebar\nhide\n\nNavigation\n\n* [Main page](/wiki/Main_Page \"Visit the main page [z]\")\n* [Contents](/wiki/Wikipedia:Contents \"Guides to browsing Wikipedia\")\n* [Current events](/wiki/Portal:Current_events \"Articles related to current events\")\n* [Random article](/wiki/Special:Random \"Visit a randomly selected article [x]\")\n* [About Wikipedia](/wiki/Wikipedia:About \"Learn about Wikipedia and how it works\")\n* [Contact us](//en.wikipedia.org/wiki/Wikipedia:Contact_us \"How to contact Wikipedia\")\n\n\nContribute\n\n* [Help](/wiki/Help:Contents \"Guidance on how to use and edit Wikipedia\")\n* [Learn to edit](/wiki/Help:Introduction \"Learn how to edit Wikipedia\")\n* [Community portal](/wiki/Wikipedia:Community_portal \"The hub for editors\")\n* [Recent changes](/wiki/Special:RecentChanges \"A list of recent changes to Wikipedia...<truncated>"
+    }
+  ],
+  "workflow_progress": {
+    "total_steps": 2,
+    "completed_steps": 2,
+    "completion_rate": 1.0,
+    "status_breakdown": {
+      "pending": 0,
+      "processing": 0,
+      "success": 2,
+      "error": 0,
+      "timeout": 0
+    },
+    "step_details": {
+      "0": "success",
+      "1": "success"
+    }
+  },
+  "step_executions": {
+    "step_0": {
+      "step": 0,
+      "agent_id": "0",
+      "agent_name": "PublicationResearcher",
+      "status": "success",
+      "start_time": 1758616007.9700613,
+      "end_time": 1758616011.4161747,
+      "duration": 3.446113348007202,
+      "messages": [
+        {
+          "role": "user",
+          "content": "🎯 ORIGINAL TASK REQUIREMENT:\nOf the authors (First M. Last) that worked on the paper \"Pie Menus or Linear Menus, Which Is Better?\" in 2015, what was the title of the first paper authored by the one that had authored prior papers?\n================================================================================\nStep 1 - Current Task Input:\nOf the authors (First M. Last) that worked on the paper \"Pie Menus or Linear Menus, Which Is Better?\" in 2015, what was the title of the first paper authored by the one that had authored prior papers?\n\n⚠️  REMEMBER: All your work must contribute to answering the ORIGINAL TASK above!"
+        },
+        {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "call_03cuRb3JxuNqIWjzQ7olxM7S",
+              "type": "function",
+              "function": {
+                "name": "browser_use",
+                "arguments": "{\"action\":\"web_search\",\"query\":\"Pie Menus or Linear Menus, Which Is Better? 2015 authors\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'Pie Menus or Linear Menus, Which Is Better? 2015 authors':\n\n1. Pie Menus or Linear Menus, Which Is Better?\n   URL: https://pietromurano.org/Papers/Murano-Khan-Published-Version.pdf\n   Description: pietromurano.org | Whether this figure is correct or not, the amount is likely to be more in 2015 than in 2010. ... The authors conclude that flower menus are good for 'large.\n   Content: [PDF Content Extracted]       Vol. 6, No. 9, September 2015                                                                                                 ISSN 2079-8407  Journal of Emerging Trends in Computing and Information Sciences  ©2009-2015 CIS Journal. All rights reserved.    http://www.cisjournal.org     476 Pie Menus or Linear Menus, Which Is Better?  1 Pietro Murano, 2 Iram N. Khan  1 Department of Computer Science, t he Universal Design of ICT Res earch Group, Oslo and   Akershus University College of Applied Sciences, Oslo, Norway  2 University of Salford, School of Computing, Science and Enginee ring, Salford, M5 4WT, UK      ABSTRACT  This paper is about a continuing investigation aiming to find o u t  w h i c h  m e n u  t y p e  i s  m o r e  u s e a b l e  o n  a  w e b  s i t e  o r   application. This paper specifically compares pie menus with li near menus. Although other researchers have investigated  similar themes it is felt that there is still not enough knowl...\n\n2. (PDF) Pie Menus or Linear Menus, Which Is Better?\n   URL: https://www.researchgate.net/publication/283265537_Pie_Menus_or_Linear_Menus_Which_Is_Better\n   Description: www.researchgate.net | Pie Menus or Linear Menus, Which Is Better? September 2015. Authors: Pietro ... Pie Menus or Linear Menus, Which Is Better? 1 Pietro Murano, 2 Iram N ...\n\n3. search agent error and mcp error · Issue #64 · inclusionAI/AWorld ...\n   URL: https://github.com/inclusionAI/AWorld/issues/64\n   Description: github.com | May 13, 2025 ... ... ...<truncated>",
+          "name": "browser_use",
+          "tool_call_id": "call_03cuRb3JxuNqIWjzQ7olxM7S"
+        },
+        {
+          "role": "assistant",
+          "content": "Tool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'Pie Menus or Linear Menus, Which Is Better? 2015 authors':\n\n1. Pie Menus or Linear Menus, Which Is Better?\n   URL: https://pietromurano.org/Papers/Murano-Khan-Published-Version.pdf\n   Description: pietromurano.org | Whether this figure is correct or not, the amount is likely to be more in 2015 than in 2010. ... The authors conclude that flower menus are good for 'large.\n   Content: [PDF Content Extracted]       Vol. 6, No. 9, September 2015                                                                                                 ISSN 2079-8407  Journal of Emerging Trends in Computing and Information Sciences  ©2009-2015 CIS Journal. All rights reserved.    http://www.cisjournal.org     476 Pie Menus or Linear Menus, Which Is Better?  1 Pietro Murano, 2 Iram N. Khan  1 Department of Computer Science, t he Universal Design of ICT Res earch Group, Oslo and   Akershus University College of Applied Sciences, Oslo, Norway  2 University of Salford, School of Computing, Science and Enginee ring, Salford, M5 4WT, UK      ABSTRACT  This paper is about a continuing investigation aiming to find o u t  w h i c h  m e n u  t y p e  i s  m o r e  u s e a b l e  o n  a  w e b  s i t e  o r   application. This paper specifically compares pie menus with li near menus. Although other researchers have investigated  similar themes it is felt that there is still not enough knowl...\n\n2. (PDF) Pie Menus or Linear Menus, Which Is Better?\n   URL: https://www.researchgate.net/publication/283265537_Pie_Menus_or_Linear_Menus_Which_Is_Better\n   Description: www.researchgate.net | Pie Menus or Linear Menus, Which Is Better? September 2015. Authors: Pietro ... Pie Menus or Linear Menus, Which Is Better? 1 Pietro Murano, 2 Iram N ...\n\n3. search agent error and mcp error · Issue #64 · inclusionAI/AWorld ...\n   URL: https://github.com/inclusionAI/AWorld/issues/64\n   Description: github.com | May 13, ...<truncated>"
+        }
+      ],
+      "error_message": null
+    },
+    "step_1": {
+      "step": 1,
+      "agent_id": "1",
+      "agent_name": "ReasoningSynthesizer",
+      "status": "success",
+      "start_time": 1758616011.9175186,
+      "end_time": 1758616019.1061795,
+      "duration": 7.1886608600616455,
+      "messages": [
+        {
+          "role": "user",
+          "content": "🎯 ORIGINAL TASK REQUIREMENT:\nOf the authors (First M. Last) that worked on the paper \"Pie Menus or Linear Menus, Which Is Better?\" in 2015, what was the title of the first paper authored by the one that had authored prior papers?\n================================================================================\nStep 2 - Current Task Input:\nTool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'Pie Menus or Linear Menus, Which Is Better? 2015 authors':\n\n1. Pie Menus or Linear Menus, Which Is Better?\n   URL: https://pietromurano.org/Papers/Murano-Khan-Published-Version.pdf\n   Description: pietromurano.org | Whether this figure is correct or not, the amount is likely to be more in 2015 than in 2010. ... The authors conclude that flower menus are good for 'large.\n   Content: [PDF Content Extracted]       Vol. 6, No. 9, September 2015                                                                                                 ISSN 2079-8407  Journal of Emerging Trends in Computing and Information Sciences  ©2009-2015 CIS Journal. All rights reserved.    http://www.cisjournal.org     476 Pie Menus or Linear Menus, Which Is Better?  1 Pietro Murano, 2 Iram N. Khan  1 Department of Computer Science, t he Universal Design of ICT Res earch Group, Oslo and   Akershus University College of Applied Sciences, Oslo, Norway  2 University of Salford, School of Computing, Science and Enginee ring, Salford, M5 4WT, UK      ABSTRACT  This paper is about a continuing investigation aiming to find o u t  w h i c h  m e n u  t y p e  i s  m o r e  u s e a b l e  o n  a  w e b  s i t e  o r   application. This paper specifically compares pie menus with li near menus. Although other researchers have investigated  similar themes it is felt that there is still not enough knowl...\n\n2. (PDF) Pie Menus or Linear Menus, Which Is Better?\n   URL: https://www.researchgate.net/publication/283265537_Pie_Menus_or_Linear_Menus_Which_Is_Better\n   Description: www....<truncated>"
+        },
+        {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "call_QvoyAQqwBN3ZUiWTq9MANUh0",
+              "type": "function",
+              "function": {
+                "name": "browser_use",
+                "arguments": "{\"action\": \"web_search\", \"query\": \"Pietro Murano first paper\"}"
+              }
+            },
+            {
+              "id": "call_9Psqj473fSYEz65o1dws23NA",
+              "type": "function",
+              "function": {
+                "name": "browser_use",
+                "arguments": "{\"action\": \"web_search\", \"query\": \"Iram N. Khan first paper\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'Pietro Murano first paper':\n\n1. Publications - Pietro Murano\n   URL: https://pietromurano.org/publications.html\n   Description: pietromurano.org | INTERNATIONAL REFEREED JOURNAL PAPERS. Keya, Rashika Tasnim, Heldal, Ilona, Patel, Daniel, Murano, Pietro & Wijkmark, Cecilia Hammar (2025) Implementing ...\n   Content: Pietro Murano - Publications Pietro Murano Publications Home Research Lecturing Administration Popular Media Contact This section lists all my publications and where possible the publications are included. Click on a title to read a paper. INTERNATIONAL REFEREED JOURNAL PAPERS Keya, Rashika Tasnim, Heldal, Ilona, Patel, Daniel, Murano, Pietro & Wijkmark, Cecilia Hammar (2025) Implementing Virtual Reality for Fire Evacuation Preparedness at Schools - PDF , Computers, 14, 286. Al-Jasim, Alyaa & Murano, Pietro (2023) Designing User Interface Toggles for Usability - PDF , Journal of User Experience, Volume 18, Issue 4, August 2023. Shrestha, Sayush Lal & Murano, Pietro (2022) The Design and Evaluation of an Online Dictionary User Interface - PDF , International Journal of Computing and Digital Systems, Volume 1, March 2022. Keya, Rashika Tasnim & Murano, Pietro (2022) Is Carousel Interaction Really Usable? - PDF , First Monday, Volume 27, Issue 1, January 2022. Chaudhary, Karan Singh & Mur...\n\n2. ‪Pietro Murano‬ - ‪Google Scholar‬\n   URL: https://scholar.google.com/citations?user=L9um4xoAAAAJ&hl=en\n   Description: scholar.google.com | Their combined citations are counted only for the first article. Merged ... Pietro Murano. Professor (Full) of Human Computer Interaction. Verified email ...\n\n3. Is carousel interaction really usable? | First Monday\n   URL: https://firstmonday.org/ojs/index.php/fm/article/view/11801\n   Description: firstmonday.org | Jan 11, 2022 ... In this paper a novel and significant study into the usability ... Pietro Murano, Oslo Metropolitan University. Assoc...<truncated>",
+          "name": "browser_use",
+          "tool_call_id": "call_QvoyAQqwBN3ZUiWTq9MANUh0"
+        },
+        {
+          "role": "tool",
+          "content": "Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'Iram N. Khan first paper':\n\n1. Imran Khan - Wikipedia\n   URL: https://en.wikipedia.org/wiki/Imran_Khan\n   Description: en.wikipedia.org | Imran Ahmed Khan Niazi (born 5 October 1952) is a Pakistani politician, philanthropist, and former cricketer who served as the 19th prime minister of ...\n\n2. ‪Dr. Iram Khan‬ - ‪Google Scholar‬\n   URL: https://scholar.google.com/citations?user=RzmqKwcAAAAJ&hl=en\n   Description: scholar.google.com | Their combined citations are counted only for the first article. Merged ... Q Amber, AB Qazi, N Javaid, IA Khan, M Ahmad. Information Discovery and ...\n\n3. Iran - Wikipedia\n   URL: https://en.wikipedia.org/wiki/Iran\n   Description: en.wikipedia.org | The Iranian Revolution in 1979 overthrew the monarchy, and the Islamic Republic of Iran was established by Ruhollah Khomeini, the country's first supreme leader ...\n\nMetadata:\n- Total results: 3\n- Language: en\n- Country: us\n\nFetched Content from https://en.wikipedia.org/wiki/Imran_Khan:\n\n\nImran Khan - Wikipedia\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n[Jump to content](#bodyContent)\n\nMain menu\n\nMain menu\nmove to sidebar\nhide\n\nNavigation\n\n* [Main page](/wiki/Main_Page \"Visit the main page [z]\")\n* [Contents](/wiki/Wikipedia:Contents \"Guides to browsing Wikipedia\")\n* [Current events](/wiki/Portal:Current_events \"Articles related to current events\")\n* [Random article](/wiki/Special:Random \"Visit a randomly selected article [x]\")\n* [About Wikipedia](/wiki/Wikipedia:About \"Learn about Wikipedia and how it works\")\n* [Contact us](//en.wikipedia.org/wiki/Wikipedia:Contact_us \"How to contact Wikipedia\")\n\n\nContribute\n\n* [Help](/wiki/Help:Contents \"Guidance on how to use and edit Wikipedia\")\n* [Learn to edit](/wiki/Help:Introduction \"Learn how to edit Wikipedia\")\n* [Community portal](/wiki/Wikipedia:Community_portal \"The hub for editors\")\n* [Recent changes](/wiki/Special:RecentChanges \"A list of recent changes to Wikipedia [r]\")\n* [Upl...<truncated>",
+          "name": "browser_use",
+          "tool_call_id": "call_9Psqj473fSYEz65o1dws23NA"
+        },
+        {
+          "role": "assistant",
+          "content": "Tool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'Iram N. Khan first paper':\n\n1. Imran Khan - Wikipedia\n   URL: https://en.wikipedia.org/wiki/Imran_Khan\n   Description: en.wikipedia.org | Imran Ahmed Khan Niazi (born 5 October 1952) is a Pakistani politician, philanthropist, and former cricketer who served as the 19th prime minister of ...\n\n2. ‪Dr. Iram Khan‬ - ‪Google Scholar‬\n   URL: https://scholar.google.com/citations?user=RzmqKwcAAAAJ&hl=en\n   Description: scholar.google.com | Their combined citations are counted only for the first article. Merged ... Q Amber, AB Qazi, N Javaid, IA Khan, M Ahmad. Information Discovery and ...\n\n3. Iran - Wikipedia\n   URL: https://en.wikipedia.org/wiki/Iran\n   Description: en.wikipedia.org | The Iranian Revolution in 1979 overthrew the monarchy, and the Islamic Republic of Iran was established by Ruhollah Khomeini, the country's first supreme leader ...\n\nMetadata:\n- Total results: 3\n- Language: en\n- Country: us\n\nFetched Content from https://en.wikipedia.org/wiki/Imran_Khan:\n\n\nImran Khan - Wikipedia\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n[Jump to content](#bodyContent)\n\nMain menu\n\nMain menu\nmove to sidebar\nhide\n\nNavigation\n\n* [Main page](/wiki/Main_Page \"Visit the main page [z]\")\n* [Contents](/wiki/Wikipedia:Contents \"Guides to browsing Wikipedia\")\n* [Current events](/wiki/Portal:Current_events \"Articles related to current events\")\n* [Random article](/wiki/Special:Random \"Visit a randomly selected article [x]\")\n* [About Wikipedia](/wiki/Wikipedia:About \"Learn about Wikipedia and how it works\")\n* [Contact us](//en.wikipedia.org/wiki/Wikipedia:Contact_us \"How to contact Wikipedia\")\n\n\nContribute\n\n* [Help](/wiki/Help:Contents \"Guidance on how to use and edit Wikipedia\")\n* [Learn to edit](/wiki/Help:Introduction \"Learn how to edit Wikipedia\")\n* [Community portal](/wiki/Wikipedia:Community_portal \"The hub for editors\")\n* [Recent changes](/wiki/Special:RecentChanges \"A list of recent changes to Wikipedia...<truncated>"
+        }
+      ],
+      "error_message": null
+    }
+  },
+  "timestamp": 1758616039.597168
+}

@@ -1,0 +1,1704 @@
+{
+  "metadata": {
+    "total_questions": 50,
+    "successful_questions": 50,
+    "failed_questions": 0,
+    "average_response_time": 1.3283536100387574,
+    "timestamp": 1760787428.8411958,
+    "network_type": "MetaProtocolCoordinator"
+  },
+  "detailed_performance_metrics": {
+    "test_duration": 17.136287212371826,
+    "test_start_time": 1760787411.7042706,
+    "test_end_time": 1760787428.8405578,
+    "protocols": {
+      "meta": {
+        "protocol": "meta",
+        "total_completed": 0,
+        "total_failed": 0,
+        "total_timeout": 0,
+        "total_tasks": 0,
+        "success_rate": 0.0,
+        "total_retries": 0,
+        "total_network_errors": 0,
+        "worker_completion_counts": {},
+        "load_balance_variance": 0.0
+      },
+      "a2a": {
+        "protocol": "a2a",
+        "total_completed": 13,
+        "total_failed": 0,
+        "total_timeout": 0,
+        "total_tasks": 13,
+        "success_rate": 1.0,
+        "total_retries": 0,
+        "total_network_errors": 0,
+        "worker_completion_counts": {
+          "agent_1": 13
+        },
+        "load_balance_variance": 0.0,
+        "average_response_time": 1.3160591125488281,
+        "min_response_time": 1.1423430442810059,
+        "max_response_time": 1.4988174438476562,
+        "response_time_std": 0.09555198706559623,
+        "median_response_time": 1.3060133457183838
+      },
+      "acp": {
+        "protocol": "acp",
+        "total_completed": 13,
+        "total_failed": 0,
+        "total_timeout": 0,
+        "total_tasks": 13,
+        "success_rate": 1.0,
+        "total_retries": 0,
+        "total_network_errors": 0,
+        "worker_completion_counts": {
+          "agent_2": 13
+        },
+        "load_balance_variance": 0.0,
+        "average_response_time": 1.3181205162635217,
+        "min_response_time": 1.2042720317840576,
+        "max_response_time": 1.4137961864471436,
+        "response_time_std": 0.07060274671341371,
+        "median_response_time": 1.3207848072052002
+      },
+      "agora": {
+        "protocol": "agora",
+        "total_completed": 12,
+        "total_failed": 0,
+        "total_timeout": 0,
+        "total_tasks": 12,
+        "success_rate": 1.0,
+        "total_retries": 0,
+        "total_network_errors": 0,
+        "worker_completion_counts": {
+          "agent_3": 12
+        },
+        "load_balance_variance": 0.0,
+        "average_response_time": 1.3584806124369304,
+        "min_response_time": 1.25026535987854,
+        "max_response_time": 1.4931061267852783,
+        "response_time_std": 0.08353286798830362,
+        "median_response_time": 1.348853349685669
+      },
+      "anp": {
+        "protocol": "anp",
+        "total_completed": 12,
+        "total_failed": 0,
+        "total_timeout": 0,
+        "total_tasks": 12,
+        "success_rate": 1.0,
+        "total_retries": 0,
+        "total_network_errors": 0,
+        "worker_completion_counts": {
+          "agent_4": 12
+        },
+        "load_balance_variance": 0.0,
+        "average_response_time": 1.322626491387685,
+        "min_response_time": 1.2172808647155762,
+        "max_response_time": 1.5233619213104248,
+        "response_time_std": 0.09023969632012259,
+        "median_response_time": 1.333109974861145
+      }
+    },
+    "workers": {
+      "agent_1": {
+        "worker_id": "agent_1",
+        "protocol": "a2a",
+        "completed_tasks": 13,
+        "failed_tasks": 0,
+        "timeout_tasks": 0,
+        "total_tasks": 13,
+        "success_rate": 1.0,
+        "connection_retries": 0,
+        "network_errors": 0,
+        "network_error_rate": 0.0,
+        "total_requests": 13,
+        "cross_protocol_calls": 0,
+        "llm_routing_decisions": 0,
+        "average_response_time": 1.3160591125488281,
+        "min_response_time": 1.1423430442810059,
+        "max_response_time": 1.4988174438476562,
+        "response_time_std": 0.09555198706559623,
+        "median_response_time": 1.3060133457183838
+      },
+      "agent_2": {
+        "worker_id": "agent_2",
+        "protocol": "acp",
+        "completed_tasks": 13,
+        "failed_tasks": 0,
+        "timeout_tasks": 0,
+        "total_tasks": 13,
+        "success_rate": 1.0,
+        "connection_retries": 0,
+        "network_errors": 0,
+        "network_error_rate": 0.0,
+        "total_requests": 13,
+        "cross_protocol_calls": 0,
+        "llm_routing_decisions": 0,
+        "average_response_time": 1.3181205162635217,
+        "min_response_time": 1.2042720317840576,
+        "max_response_time": 1.4137961864471436,
+        "response_time_std": 0.07060274671341371,
+        "median_response_time": 1.3207848072052002
+      },
+      "agent_3": {
+        "worker_id": "agent_3",
+        "protocol": "agora",
+        "completed_tasks": 12,
+        "failed_tasks": 0,
+        "timeout_tasks": 0,
+        "total_tasks": 12,
+        "success_rate": 1.0,
+        "connection_retries": 0,
+        "network_errors": 0,
+        "network_error_rate": 0.0,
+        "total_requests": 12,
+        "cross_protocol_calls": 0,
+        "llm_routing_decisions": 0,
+        "average_response_time": 1.3584806124369304,
+        "min_response_time": 1.25026535987854,
+        "max_response_time": 1.4931061267852783,
+        "response_time_std": 0.08353286798830362,
+        "median_response_time": 1.348853349685669
+      },
+      "agent_4": {
+        "worker_id": "agent_4",
+        "protocol": "anp",
+        "completed_tasks": 12,
+        "failed_tasks": 0,
+        "timeout_tasks": 0,
+        "total_tasks": 12,
+        "success_rate": 1.0,
+        "connection_retries": 0,
+        "network_errors": 0,
+        "network_error_rate": 0.0,
+        "total_requests": 12,
+        "cross_protocol_calls": 0,
+        "llm_routing_decisions": 0,
+        "average_response_time": 1.322626491387685,
+        "min_response_time": 1.2172808647155762,
+        "max_response_time": 1.5233619213104248,
+        "response_time_std": 0.09023969632012259,
+        "median_response_time": 1.333109974861145
+      }
+    },
+    "meta_specific": {
+      "protocol_mix": {
+        "meta": 4,
+        "a2a": 1,
+        "acp": 1,
+        "agora": 1,
+        "anp": 1
+      },
+      "total_routing_decisions": 0,
+      "routing_decisions": [],
+      "cross_protocol_efficiency": 0.0,
+      "protocol_distribution": {
+        "meta": 100.0,
+        "a2a": 25.0,
+        "acp": 25.0,
+        "agora": 25.0,
+        "anp": 25.0
+      }
+    },
+    "summary": {
+      "total_completed": 50,
+      "total_failed": 0,
+      "total_timeout": 0,
+      "total_tasks": 50,
+      "overall_success_rate": 1.0,
+      "total_retries": 0,
+      "total_network_errors": 0,
+      "protocol_count": 5,
+      "worker_count": 4,
+      "global_average_response_time": 1.3283524084091187,
+      "global_min_response_time": 1.1423430442810059,
+      "global_max_response_time": 1.5233619213104248,
+      "global_response_time_std": 0.08455418348080963,
+      "global_median_response_time": 1.3244421482086182
+    }
+  },
+  "meta_protocol_stats": {
+    "agent_1": {
+      "questions_processed": 13,
+      "total_response_time": 17.108690977096558,
+      "avg_response_time": 1.3160531520843506,
+      "errors": 0,
+      "protocol": "a2a"
+    },
+    "agent_2": {
+      "questions_processed": 13,
+      "total_response_time": 17.135504722595215,
+      "avg_response_time": 1.3181157478919396,
+      "errors": 0,
+      "protocol": "acp"
+    },
+    "agent_3": {
+      "questions_processed": 12,
+      "total_response_time": 16.301685571670532,
+      "avg_response_time": 1.358473797639211,
+      "errors": 0,
+      "protocol": "agora"
+    },
+    "agent_4": {
+      "questions_processed": 12,
+      "total_response_time": 15.87143588066101,
+      "avg_response_time": 1.322619656721751,
+      "errors": 0,
+      "protocol": "anp"
+    }
+  },
+  "results": [
+    {
+      "question_id": 2,
+      "question": "where is the federal penitentiary in ind",
+      "worker": "agent_2",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.3885562419891357,
+      "timestamp": 1760787413.093154,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.",
+            "results": [
+              {
+                "type": "text",
+                "content": "Error in local chat generation: Connection error.",
+                "timestamp": 1760787413.092377
+              }
+            ]
+          },
+          "protocol": "acp"
+        },
+        "protocol": "acp",
+        "response_time": 1.388547658920288,
+        "success": true
+      }
+    },
+    {
+      "question_id": 3,
+      "question": "health benefits of eating vegetarian",
+      "worker": "agent_3",
+      "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+      "response_time": 1.3996789455413818,
+      "timestamp": 1760787413.1044652,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "status": "success",
+            "text": "[Agora Enhanced] Error in local chat generation: Connection error."
+          },
+          "protocol": "agora"
+        },
+        "protocol": "agora",
+        "response_time": 1.3996713161468506,
+        "success": true
+      }
+    },
+    {
+      "question_id": 1,
+      "question": "what does the golgi apparatus do to the proteins and lipids once they arrive ?",
+      "worker": "agent_1",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.445936679840088,
+      "timestamp": 1760787413.1502733,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "",
+            "events": [
+              {
+                "contextId": null,
+                "extensions": null,
+                "kind": "message",
+                "messageId": "c059b3ce-a58b-4668-b566-d96dee6774eb",
+                "metadata": null,
+                "parts": [
+                  {
+                    "kind": "text",
+                    "metadata": null,
+                    "text": "Error in local chat generation: Connection error."
+                  }
+                ],
+                "referenceTaskIds": null,
+                "role": "agent",
+                "taskId": null
+              }
+            ]
+          },
+          "protocol": "a2a"
+        },
+        "protocol": "a2a",
+        "response_time": 1.4459278583526611,
+        "success": true
+      }
+    },
+    {
+      "question_id": 4,
+      "question": "what foods are good if you have gout?",
+      "worker": "agent_4",
+      "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787413]",
+      "response_time": 1.5233633518218994,
+      "timestamp": 1760787413.2286043,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787413]",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787413]"
+          },
+          "protocol": "anp"
+        },
+        "protocol": "anp",
+        "response_time": 1.5233564376831055,
+        "success": true
+      }
+    },
+    {
+      "question_id": 6,
+      "question": "what is the nutritional value of oatmeal",
+      "worker": "agent_3",
+      "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+      "response_time": 1.3040523529052734,
+      "timestamp": 1760787414.4085321,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "status": "success",
+            "text": "[Agora Enhanced] Error in local chat generation: Connection error."
+          },
+          "protocol": "agora"
+        },
+        "protocol": "agora",
+        "response_time": 1.3040435314178467,
+        "success": true
+      }
+    },
+    {
+      "question_id": 5,
+      "question": "what is the endocrine system responsible for?",
+      "worker": "agent_2",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.4056212902069092,
+      "timestamp": 1760787414.4988089,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.",
+            "results": [
+              {
+                "type": "text",
+                "content": "Error in local chat generation: Connection error.",
+                "timestamp": 1760787414.4982183
+              }
+            ]
+          },
+          "protocol": "acp"
+        },
+        "protocol": "acp",
+        "response_time": 1.4056007862091064,
+        "success": true
+      }
+    },
+    {
+      "question_id": 7,
+      "question": "definition for daring",
+      "worker": "agent_1",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.4033787250518799,
+      "timestamp": 1760787414.5536726,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "",
+            "events": [
+              {
+                "contextId": null,
+                "extensions": null,
+                "kind": "message",
+                "messageId": "8c9acc7b-bcae-4d2e-95ac-4d5d9eb26e7d",
+                "metadata": null,
+                "parts": [
+                  {
+                    "kind": "text",
+                    "metadata": null,
+                    "text": "Error in local chat generation: Connection error."
+                  }
+                ],
+                "referenceTaskIds": null,
+                "role": "agent",
+                "taskId": null
+              }
+            ]
+          },
+          "protocol": "a2a"
+        },
+        "protocol": "a2a",
+        "response_time": 1.4033701419830322,
+        "success": true
+      }
+    },
+    {
+      "question_id": 8,
+      "question": "is dhgate a scam",
+      "worker": "agent_4",
+      "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787414]",
+      "response_time": 1.3374052047729492,
+      "timestamp": 1760787414.5660343,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787414]",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787414]"
+          },
+          "protocol": "anp"
+        },
+        "protocol": "anp",
+        "response_time": 1.3373973369598389,
+        "success": true
+      }
+    },
+    {
+      "question_id": 10,
+      "question": "what study for mets to brain",
+      "worker": "agent_2",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.2968461513519287,
+      "timestamp": 1760787415.7956727,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.",
+            "results": [
+              {
+                "type": "text",
+                "content": "Error in local chat generation: Connection error.",
+                "timestamp": 1760787415.7950718
+              }
+            ]
+          },
+          "protocol": "acp"
+        },
+        "protocol": "acp",
+        "response_time": 1.2968409061431885,
+        "success": true
+      }
+    },
+    {
+      "question_id": 11,
+      "question": "how far deep to plant beet early wonder",
+      "worker": "agent_1",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.2788703441619873,
+      "timestamp": 1760787415.8325613,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "",
+            "events": [
+              {
+                "contextId": null,
+                "extensions": null,
+                "kind": "message",
+                "messageId": "72adecb9-4248-4565-807b-0d457f8fabd9",
+                "metadata": null,
+                "parts": [
+                  {
+                    "kind": "text",
+                    "metadata": null,
+                    "text": "Error in local chat generation: Connection error."
+                  }
+                ],
+                "referenceTaskIds": null,
+                "role": "agent",
+                "taskId": null
+              }
+            ]
+          },
+          "protocol": "a2a"
+        },
+        "protocol": "a2a",
+        "response_time": 1.2788639068603516,
+        "success": true
+      }
+    },
+    {
+      "question_id": 9,
+      "question": "how to become a teacher assistant",
+      "worker": "agent_3",
+      "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+      "response_time": 1.4481639862060547,
+      "timestamp": 1760787415.8567123,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "status": "success",
+            "text": "[Agora Enhanced] Error in local chat generation: Connection error."
+          },
+          "protocol": "agora"
+        },
+        "protocol": "agora",
+        "response_time": 1.4481568336486816,
+        "success": true
+      }
+    },
+    {
+      "question_id": 12,
+      "question": "ways to stop diarrhea in my pupply",
+      "worker": "agent_4",
+      "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787415]",
+      "response_time": 1.3288166522979736,
+      "timestamp": 1760787415.8948734,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787415]",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787415]"
+          },
+          "protocol": "anp"
+        },
+        "protocol": "anp",
+        "response_time": 1.3288109302520752,
+        "success": true
+      }
+    },
+    {
+      "question_id": 15,
+      "question": "what is the difference between a medical doctor and a doctor of osteopathic",
+      "worker": "agent_3",
+      "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+      "response_time": 1.2502660751342773,
+      "timestamp": 1760787417.1069944,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "status": "success",
+            "text": "[Agora Enhanced] Error in local chat generation: Connection error."
+          },
+          "protocol": "agora"
+        },
+        "protocol": "agora",
+        "response_time": 1.2502570152282715,
+        "success": true
+      }
+    },
+    {
+      "question_id": 16,
+      "question": "where is the graphic card located in the cpu",
+      "worker": "agent_4",
+      "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787417]",
+      "response_time": 1.227271318435669,
+      "timestamp": 1760787417.122164,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787417]",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787417]"
+          },
+          "protocol": "anp"
+        },
+        "protocol": "anp",
+        "response_time": 1.2272655963897705,
+        "success": true
+      }
+    },
+    {
+      "question_id": 13,
+      "question": "what disease do roof rats cause",
+      "worker": "agent_2",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.401909589767456,
+      "timestamp": 1760787417.1976037,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.",
+            "results": [
+              {
+                "type": "text",
+                "content": "Error in local chat generation: Connection error.",
+                "timestamp": 1760787417.197034
+              }
+            ]
+          },
+          "protocol": "acp"
+        },
+        "protocol": "acp",
+        "response_time": 1.4019043445587158,
+        "success": true
+      }
+    },
+    {
+      "question_id": 14,
+      "question": "when was niagara falls created",
+      "worker": "agent_1",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.4988179206848145,
+      "timestamp": 1760787417.3313959,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "",
+            "events": [
+              {
+                "contextId": null,
+                "extensions": null,
+                "kind": "message",
+                "messageId": "e455bfb2-00db-47e6-b8cc-0a09f5350913",
+                "metadata": null,
+                "parts": [
+                  {
+                    "kind": "text",
+                    "metadata": null,
+                    "text": "Error in local chat generation: Connection error."
+                  }
+                ],
+                "referenceTaskIds": null,
+                "role": "agent",
+                "taskId": null
+              }
+            ]
+          },
+          "protocol": "a2a"
+        },
+        "protocol": "a2a",
+        "response_time": 1.4988114833831787,
+        "success": true
+      }
+    },
+    {
+      "question_id": 18,
+      "question": "what are hamitic peoples",
+      "worker": "agent_4",
+      "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787418]",
+      "response_time": 1.2362189292907715,
+      "timestamp": 1760787418.358405,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787418]",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787418]"
+          },
+          "protocol": "anp"
+        },
+        "protocol": "anp",
+        "response_time": 1.2362120151519775,
+        "success": true
+      }
+    },
+    {
+      "question_id": 17,
+      "question": "where is the graphic card located in the cpu",
+      "worker": "agent_3",
+      "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+      "response_time": 1.3418786525726318,
+      "timestamp": 1760787418.4488873,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "status": "success",
+            "text": "[Agora Enhanced] Error in local chat generation: Connection error."
+          },
+          "protocol": "agora"
+        },
+        "protocol": "agora",
+        "response_time": 1.341869592666626,
+        "success": true
+      }
+    },
+    {
+      "question_id": 19,
+      "question": "property premises meaning",
+      "worker": "agent_2",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.3281002044677734,
+      "timestamp": 1760787418.525732,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.",
+            "results": [
+              {
+                "type": "text",
+                "content": "Error in local chat generation: Connection error.",
+                "timestamp": 1760787418.5251217
+              }
+            ]
+          },
+          "protocol": "acp"
+        },
+        "protocol": "acp",
+        "response_time": 1.3280951976776123,
+        "success": true
+      }
+    },
+    {
+      "question_id": 20,
+      "question": "does ichigo lose his powers",
+      "worker": "agent_1",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.259737253189087,
+      "timestamp": 1760787418.5911605,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "",
+            "events": [
+              {
+                "contextId": null,
+                "extensions": null,
+                "kind": "message",
+                "messageId": "74d6b8d6-6565-470b-a83e-802bf6d0ed17",
+                "metadata": null,
+                "parts": [
+                  {
+                    "kind": "text",
+                    "metadata": null,
+                    "text": "Error in local chat generation: Connection error."
+                  }
+                ],
+                "referenceTaskIds": null,
+                "role": "agent",
+                "taskId": null
+              }
+            ]
+          },
+          "protocol": "a2a"
+        },
+        "protocol": "a2a",
+        "response_time": 1.2597315311431885,
+        "success": true
+      }
+    },
+    {
+      "question_id": 21,
+      "question": "what structure are located in the abdominal  cavity?",
+      "worker": "agent_4",
+      "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787419]",
+      "response_time": 1.3534486293792725,
+      "timestamp": 1760787419.7118893,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787419]",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787419]"
+          },
+          "protocol": "anp"
+        },
+        "protocol": "anp",
+        "response_time": 1.3534424304962158,
+        "success": true
+      }
+    },
+    {
+      "question_id": 22,
+      "question": "does flomax cause liver damage",
+      "worker": "agent_3",
+      "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+      "response_time": 1.2807137966156006,
+      "timestamp": 1760787419.7296243,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "status": "success",
+            "text": "[Agora Enhanced] Error in local chat generation: Connection error."
+          },
+          "protocol": "agora"
+        },
+        "protocol": "agora",
+        "response_time": 1.2807064056396484,
+        "success": true
+      }
+    },
+    {
+      "question_id": 24,
+      "question": "who discovered the element carbon",
+      "worker": "agent_1",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.256981372833252,
+      "timestamp": 1760787419.8481703,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "",
+            "events": [
+              {
+                "contextId": null,
+                "extensions": null,
+                "kind": "message",
+                "messageId": "366c3238-c408-45be-a087-beb5b4c18c80",
+                "metadata": null,
+                "parts": [
+                  {
+                    "kind": "text",
+                    "metadata": null,
+                    "text": "Error in local chat generation: Connection error."
+                  }
+                ],
+                "referenceTaskIds": null,
+                "role": "agent",
+                "taskId": null
+              }
+            ]
+          },
+          "protocol": "a2a"
+        },
+        "protocol": "a2a",
+        "response_time": 1.2569754123687744,
+        "success": true
+      }
+    },
+    {
+      "question_id": 23,
+      "question": "what is printing mechanism",
+      "worker": "agent_2",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.3291945457458496,
+      "timestamp": 1760787419.8549545,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.",
+            "results": [
+              {
+                "type": "text",
+                "content": "Error in local chat generation: Connection error.",
+                "timestamp": 1760787419.854395
+              }
+            ]
+          },
+          "protocol": "acp"
+        },
+        "protocol": "acp",
+        "response_time": 1.3291895389556885,
+        "success": true
+      }
+    },
+    {
+      "question_id": 25,
+      "question": "is the hawb the tracking number",
+      "worker": "agent_4",
+      "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787420]",
+      "response_time": 1.2172815799713135,
+      "timestamp": 1760787420.9292073,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787420]",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787420]"
+          },
+          "protocol": "anp"
+        },
+        "protocol": "anp",
+        "response_time": 1.2172751426696777,
+        "success": true
+      }
+    },
+    {
+      "question_id": 27,
+      "question": "what is one role of the element phosphorus?",
+      "worker": "agent_1",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.2194018363952637,
+      "timestamp": 1760787421.0675993,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "",
+            "events": [
+              {
+                "contextId": null,
+                "extensions": null,
+                "kind": "message",
+                "messageId": "adeadf83-c2e9-46da-8e5a-1e64cac32323",
+                "metadata": null,
+                "parts": [
+                  {
+                    "kind": "text",
+                    "metadata": null,
+                    "text": "Error in local chat generation: Connection error."
+                  }
+                ],
+                "referenceTaskIds": null,
+                "role": "agent",
+                "taskId": null
+              }
+            ]
+          },
+          "protocol": "a2a"
+        },
+        "protocol": "a2a",
+        "response_time": 1.2193937301635742,
+        "success": true
+      }
+    },
+    {
+      "question_id": 26,
+      "question": "lewiston idaho fedex express phone number",
+      "worker": "agent_3",
+      "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+      "response_time": 1.379474401473999,
+      "timestamp": 1760787421.1091187,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "status": "success",
+            "text": "[Agora Enhanced] Error in local chat generation: Connection error."
+          },
+          "protocol": "agora"
+        },
+        "protocol": "agora",
+        "response_time": 1.379467248916626,
+        "success": true
+      }
+    },
+    {
+      "question_id": 28,
+      "question": "what is the empirical formula for phosphorus selenide",
+      "worker": "agent_2",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.3207852840423584,
+      "timestamp": 1760787421.1757698,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.",
+            "results": [
+              {
+                "type": "text",
+                "content": "Error in local chat generation: Connection error.",
+                "timestamp": 1760787421.1751678
+              }
+            ]
+          },
+          "protocol": "acp"
+        },
+        "protocol": "acp",
+        "response_time": 1.3207802772521973,
+        "success": true
+      }
+    },
+    {
+      "question_id": 29,
+      "question": "what is abbreviated dialing",
+      "worker": "agent_4",
+      "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787422]",
+      "response_time": 1.2243983745574951,
+      "timestamp": 1760787422.1536279,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787422]",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787422]"
+          },
+          "protocol": "anp"
+        },
+        "protocol": "anp",
+        "response_time": 1.2243924140930176,
+        "success": true
+      }
+    },
+    {
+      "question_id": 31,
+      "question": "what are the three monetary policy tools of the fed",
+      "worker": "agent_3",
+      "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+      "response_time": 1.2645022869110107,
+      "timestamp": 1760787422.373637,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "status": "success",
+            "text": "[Agora Enhanced] Error in local chat generation: Connection error."
+          },
+          "protocol": "agora"
+        },
+        "protocol": "agora",
+        "response_time": 1.2644948959350586,
+        "success": true
+      }
+    },
+    {
+      "question_id": 30,
+      "question": "fastest cell phone processor",
+      "worker": "agent_1",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.31046724319458,
+      "timestamp": 1760787422.3780892,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "",
+            "events": [
+              {
+                "contextId": null,
+                "extensions": null,
+                "kind": "message",
+                "messageId": "4d411d6e-72f2-4ed2-b8ea-b7857ce70a5e",
+                "metadata": null,
+                "parts": [
+                  {
+                    "kind": "text",
+                    "metadata": null,
+                    "text": "Error in local chat generation: Connection error."
+                  }
+                ],
+                "referenceTaskIds": null,
+                "role": "agent",
+                "taskId": null
+              }
+            ]
+          },
+          "protocol": "a2a"
+        },
+        "protocol": "a2a",
+        "response_time": 1.3104605674743652,
+        "success": true
+      }
+    },
+    {
+      "question_id": 32,
+      "question": "what did maria theresa do for the serfs",
+      "worker": "agent_2",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.204272985458374,
+      "timestamp": 1760787422.38006,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.",
+            "results": [
+              {
+                "type": "text",
+                "content": "Error in local chat generation: Connection error.",
+                "timestamp": 1760787422.37955
+              }
+            ]
+          },
+          "protocol": "acp"
+        },
+        "protocol": "acp",
+        "response_time": 1.2042675018310547,
+        "success": true
+      }
+    },
+    {
+      "question_id": 33,
+      "question": "what were the brothers grimm names",
+      "worker": "agent_4",
+      "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787423]",
+      "response_time": 1.2951560020446777,
+      "timestamp": 1760787423.44881,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787423]",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787423]"
+          },
+          "protocol": "anp"
+        },
+        "protocol": "anp",
+        "response_time": 1.2951369285583496,
+        "success": true
+      }
+    },
+    {
+      "question_id": 36,
+      "question": "where does spermatogenesis occur?",
+      "worker": "agent_2",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.2654492855072021,
+      "timestamp": 1760787423.6455407,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.",
+            "results": [
+              {
+                "type": "text",
+                "content": "Error in local chat generation: Connection error.",
+                "timestamp": 1760787423.6449158
+              }
+            ]
+          },
+          "protocol": "acp"
+        },
+        "protocol": "acp",
+        "response_time": 1.2654435634613037,
+        "success": true
+      }
+    },
+    {
+      "question_id": 34,
+      "question": "what is an insta pot?",
+      "worker": "agent_3",
+      "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+      "response_time": 1.3016135692596436,
+      "timestamp": 1760787423.675265,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "status": "success",
+            "text": "[Agora Enhanced] Error in local chat generation: Connection error."
+          },
+          "protocol": "agora"
+        },
+        "protocol": "agora",
+        "response_time": 1.301605463027954,
+        "success": true
+      }
+    },
+    {
+      "question_id": 35,
+      "question": "side effects for diclofenac topical",
+      "worker": "agent_1",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.340078353881836,
+      "timestamp": 1760787423.718187,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "",
+            "events": [
+              {
+                "contextId": null,
+                "extensions": null,
+                "kind": "message",
+                "messageId": "e2860588-6aef-4b22-a081-f9603aa01d02",
+                "metadata": null,
+                "parts": [
+                  {
+                    "kind": "text",
+                    "metadata": null,
+                    "text": "Error in local chat generation: Connection error."
+                  }
+                ],
+                "referenceTaskIds": null,
+                "role": "agent",
+                "taskId": null
+              }
+            ]
+          },
+          "protocol": "a2a"
+        },
+        "protocol": "a2a",
+        "response_time": 1.340071439743042,
+        "success": true
+      }
+    },
+    {
+      "question_id": 37,
+      "question": "where is baby beach hi",
+      "worker": "agent_4",
+      "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787424]",
+      "response_time": 1.3922984600067139,
+      "timestamp": 1760787424.8411314,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787424]",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787424]"
+          },
+          "protocol": "anp"
+        },
+        "protocol": "anp",
+        "response_time": 1.3922922611236572,
+        "success": true
+      }
+    },
+    {
+      "question_id": 40,
+      "question": "who is dakota meyer",
+      "worker": "agent_1",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.142343521118164,
+      "timestamp": 1760787424.860547,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "",
+            "events": [
+              {
+                "contextId": null,
+                "extensions": null,
+                "kind": "message",
+                "messageId": "a0d7fc17-1de9-495e-b4b6-578854806ee1",
+                "metadata": null,
+                "parts": [
+                  {
+                    "kind": "text",
+                    "metadata": null,
+                    "text": "Error in local chat generation: Connection error."
+                  }
+                ],
+                "referenceTaskIds": null,
+                "role": "agent",
+                "taskId": null
+              }
+            ]
+          },
+          "protocol": "a2a"
+        },
+        "protocol": "a2a",
+        "response_time": 1.1423370838165283,
+        "success": true
+      }
+    },
+    {
+      "question_id": 38,
+      "question": "what cleans your liver and kidneys",
+      "worker": "agent_2",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.2566964626312256,
+      "timestamp": 1760787424.9022565,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.",
+            "results": [
+              {
+                "type": "text",
+                "content": "Error in local chat generation: Connection error.",
+                "timestamp": 1760787424.9016235
+              }
+            ]
+          },
+          "protocol": "acp"
+        },
+        "protocol": "acp",
+        "response_time": 1.2566907405853271,
+        "success": true
+      }
+    },
+    {
+      "question_id": 39,
+      "question": "how many milligrams of ritalin should an adult take",
+      "worker": "agent_3",
+      "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+      "response_time": 1.4931070804595947,
+      "timestamp": 1760787425.168388,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "status": "success",
+            "text": "[Agora Enhanced] Error in local chat generation: Connection error."
+          },
+          "protocol": "agora"
+        },
+        "protocol": "agora",
+        "response_time": 1.4930996894836426,
+        "success": true
+      }
+    },
+    {
+      "question_id": 43,
+      "question": "where is wild creek reservoir",
+      "worker": "agent_2",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.214334487915039,
+      "timestamp": 1760787426.1166131,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.",
+            "results": [
+              {
+                "type": "text",
+                "content": "Error in local chat generation: Connection error.",
+                "timestamp": 1760787426.1160202
+              }
+            ]
+          },
+          "protocol": "acp"
+        },
+        "protocol": "acp",
+        "response_time": 1.2143285274505615,
+        "success": true
+      }
+    },
+    {
+      "question_id": 42,
+      "question": "who is the judge michael day district court of south dakota",
+      "worker": "agent_1",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.306013822555542,
+      "timestamp": 1760787426.166584,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "",
+            "events": [
+              {
+                "contextId": null,
+                "extensions": null,
+                "kind": "message",
+                "messageId": "12098a98-6779-45b6-bf18-69de83b8ea8b",
+                "metadata": null,
+                "parts": [
+                  {
+                    "kind": "text",
+                    "metadata": null,
+                    "text": "Error in local chat generation: Connection error."
+                  }
+                ],
+                "referenceTaskIds": null,
+                "role": "agent",
+                "taskId": null
+              }
+            ]
+          },
+          "protocol": "a2a"
+        },
+        "protocol": "a2a",
+        "response_time": 1.3060081005096436,
+        "success": true
+      }
+    },
+    {
+      "question_id": 41,
+      "question": "what county is mitchell south dakota in",
+      "worker": "agent_4",
+      "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787426]",
+      "response_time": 1.3449795246124268,
+      "timestamp": 1760787426.1861336,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787426]",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787426]"
+          },
+          "protocol": "anp"
+        },
+        "protocol": "anp",
+        "response_time": 1.3449723720550537,
+        "success": true
+      }
+    },
+    {
+      "question_id": 44,
+      "question": "what make up the pistil in the female flower",
+      "worker": "agent_3",
+      "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+      "response_time": 1.3558299541473389,
+      "timestamp": 1760787426.5242317,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "status": "success",
+            "text": "[Agora Enhanced] Error in local chat generation: Connection error."
+          },
+          "protocol": "agora"
+        },
+        "protocol": "agora",
+        "response_time": 1.3558225631713867,
+        "success": true
+      }
+    },
+    {
+      "question_id": 45,
+      "question": "where is metro ny distribution center",
+      "worker": "agent_2",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.3100292682647705,
+      "timestamp": 1760787427.426665,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.",
+            "results": [
+              {
+                "type": "text",
+                "content": "Error in local chat generation: Connection error.",
+                "timestamp": 1760787427.426074
+              }
+            ]
+          },
+          "protocol": "acp"
+        },
+        "protocol": "acp",
+        "response_time": 1.3100237846374512,
+        "success": true
+      }
+    },
+    {
+      "question_id": 46,
+      "question": "how to find device ip",
+      "worker": "agent_1",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.2828309535980225,
+      "timestamp": 1760787427.4494312,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "",
+            "events": [
+              {
+                "contextId": null,
+                "extensions": null,
+                "kind": "message",
+                "messageId": "f11c295f-18f3-4f09-a421-9e59da5cafa3",
+                "metadata": null,
+                "parts": [
+                  {
+                    "kind": "text",
+                    "metadata": null,
+                    "text": "Error in local chat generation: Connection error."
+                  }
+                ],
+                "referenceTaskIds": null,
+                "role": "agent",
+                "taskId": null
+              }
+            ]
+          },
+          "protocol": "a2a"
+        },
+        "protocol": "a2a",
+        "response_time": 1.282825231552124,
+        "success": true
+      }
+    },
+    {
+      "question_id": 47,
+      "question": "lakegirl address",
+      "worker": "agent_4",
+      "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787427]",
+      "response_time": 1.3908894062042236,
+      "timestamp": 1760787427.5770452,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787427]",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.\n[ANP:AUTH:1760787427]"
+          },
+          "protocol": "anp"
+        },
+        "protocol": "anp",
+        "response_time": 1.3908820152282715,
+        "success": true
+      }
+    },
+    {
+      "question_id": 48,
+      "question": "shopko kennewick address",
+      "worker": "agent_3",
+      "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+      "response_time": 1.482499361038208,
+      "timestamp": 1760787428.0067472,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "[Agora Enhanced] Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "status": "success",
+            "text": "[Agora Enhanced] Error in local chat generation: Connection error."
+          },
+          "protocol": "agora"
+        },
+        "protocol": "agora",
+        "response_time": 1.4824910163879395,
+        "success": true
+      }
+    },
+    {
+      "question_id": 50,
+      "question": "how do i find my Ip address",
+      "worker": "agent_1",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.3639214038848877,
+      "timestamp": 1760787428.8133686,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "",
+            "events": [
+              {
+                "contextId": null,
+                "extensions": null,
+                "kind": "message",
+                "messageId": "b9e0b6fd-41fe-4896-8b43-2f289e8ecf15",
+                "metadata": null,
+                "parts": [
+                  {
+                    "kind": "text",
+                    "metadata": null,
+                    "text": "Error in local chat generation: Connection error."
+                  }
+                ],
+                "referenceTaskIds": null,
+                "role": "agent",
+                "taskId": null
+              }
+            ]
+          },
+          "protocol": "a2a"
+        },
+        "protocol": "a2a",
+        "response_time": 1.3639144897460938,
+        "success": true
+      }
+    },
+    {
+      "question_id": 49,
+      "question": "how to change ip address on netgear router",
+      "worker": "agent_2",
+      "answer": "Error in local chat generation: Connection error.",
+      "response_time": 1.413797378540039,
+      "timestamp": 1760787428.8404834,
+      "status": "success",
+      "error": null,
+      "raw": {
+        "answer": "Error in local chat generation: Connection error.",
+        "raw": {
+          "response": {
+            "text": "Error in local chat generation: Connection error.",
+            "results": [
+              {
+                "type": "text",
+                "content": "Error in local chat generation: Connection error.",
+                "timestamp": 1760787428.839961
+              }
+            ]
+          },
+          "protocol": "acp"
+        },
+        "protocol": "acp",
+        "response_time": 1.4137918949127197,
+        "success": true
+      }
+    }
+  ]
+}

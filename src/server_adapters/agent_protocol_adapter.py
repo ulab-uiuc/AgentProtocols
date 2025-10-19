@@ -581,7 +581,8 @@ class AgentProtocolServerAdapter(BaseServerAdapter):
             app,
             host=host,
             port=port,
-            log_level="error"  # 最小化服务器日志
+            log_level="error",  # 最小化服务器日志
+            lifespan="off"      # 禁用lifespan避免CancelledError
         )
         server = uvicorn.Server(config)
         

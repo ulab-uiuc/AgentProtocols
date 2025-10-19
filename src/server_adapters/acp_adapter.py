@@ -39,15 +39,8 @@ class ACPStarletteApplication:
             Route("/acp/status", self.get_status, methods=["GET"]),
         ]
 
-        # Add lifespan handler to prevent startup issues
-        async def lifespan(app):
-            # Startup
-            logger.debug("ACP Starlette app starting up")
-            yield
-            # Shutdown
-            logger.debug("ACP Starlette app shutting down")
-
-        return Starlette(routes=routes, lifespan=lifespan)
+        # Don't use lifespan in Starlette app - it's disabled in uvicorn.Config
+        return Starlette(routes=routes)
 
     async def get_agent_card(self, request: Request) -> JSONResponse:
         """Return the public agent card."""

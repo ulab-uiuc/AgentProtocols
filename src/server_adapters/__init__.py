@@ -16,7 +16,6 @@ Available adapters:
 from .base_adapter import BaseServerAdapter
 from .a2a_adapter import A2AServerAdapter, A2AStarletteApplication
 from .agent_protocol_adapter import AgentProtocolServerAdapter, AgentProtocolStarletteApplication
-from .dummy_adapter import DummyServerAdapter
 
 # Import ANP server adapter directly
 from .anp_adapter import ANPServerAdapter, ANPExecutorWrapper, ANPSimpleNodeWrapper
@@ -24,20 +23,16 @@ from .anp_adapter import ANPServerAdapter, ANPExecutorWrapper, ANPSimpleNodeWrap
 # Import ACP server adapter
 from .acp_adapter import ACPServerAdapter
 
-# Import SimpleJSON server adapter
-from .simple_json_adapter import SimpleJSONServerAdapter
 
 # Always export all symbols, even if some are None
 __all__ = [
     "BaseServerAdapter",
     "A2AServerAdapter",
     "ACPServerAdapter",
-    "SimpleJSONServerAdapter",
     "A2AStarletteApplication",
     "AgentProtocolServerAdapter",
     "AgentProtocolStarletteApplication",
     "ANPServerAdapter",
     "ANPExecutorWrapper",
     "ANPSimpleNodeWrapper",
-    "DummyServerAdapter"
 ]

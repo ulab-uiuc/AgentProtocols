@@ -1,0 +1,155 @@
+{
+  "network_memory": [
+    {
+      "role": "user",
+      "content": "🎯 ORIGINAL TASK REQUIREMENT:\nAs of May 2023, how many stops are between South Station and Windsor Gardens on MBTA’s Franklin-Foxboro line (not included)?\n================================================================================\nStep 1 - Current Task Input:\nAs of May 2023, how many stops are between South Station and Windsor Gardens on MBTA’s Franklin-Foxboro line (not included)?\n\n⚠️  REMEMBER: All your work must contribute to answering the ORIGINAL TASK above!"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "call_dsmwelcruiAGQNtqqkoTHNrO",
+          "type": "function",
+          "function": {
+            "name": "browser_use",
+            "arguments": "{\"action\":\"web_search\",\"query\":\"MBTA Franklin-Foxboro line stops 2023\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'MBTA Franklin-Foxboro line stops 2023':\n\n1. MBTA-Massachusetts Bay Transportation Authority\n   URL: https://www.mbta.com/\n   Description: MBTA Fare Checks Starting September 8, 2025, the MBTA’s Fare Engagement department is conducting fare checks at subway stations and on board vehicles.\n   Content: MBTA - Massachusetts Bay Transportation Authority Skip to main content Green Line Green Line B Green Line C Green Line D Green Line E Mattapan Line Red Line blue line Orange Line subway Commuter Rail Bus Ferry Silver Line trolley subway train bus boat stop T map pin icon-map-pin current location marker stop marker station marker MBTA Homepage map Routes trip planner Trip Planner alert Alerts Commuter Rail Commuter Rail subway Subway Lines Bus Bus Routes Ferry Ferry Routes the ride The RIDE subway Subway Status RL Normal Service OL Normal Service GL Normal Service BL Normal Service From To Get trip suggestions Routes With High Priority Alerts Subway There are no high priority subway alerts at this time Bus 64 435 712 train Commuter Rail Fitchburg Line Framingham/Worcester Line Newburyport/Rockport Line Providence/Stoughton Line Ferry Quincy Ferry accessibility Station Accessibility Elevator Closures Chinatown East Taunton Haymarket Park Street Escalator Closures Alewife Andrew Assembly...\n\n2. Massachusetts Bay Transportation Authority-Wikipedia\n   URL: https://en.m.wikipedia.org/wiki/Massachusetts_Bay_Transportation_Authority\n   Description: The MTA was in turn succeeded in 1964 by the MBTA, with an expanded funding district to fund declining suburban commuter rail service. In its first two decades, the MBTA took over the …\n\n3. Massachusetts Bay Transportation Authority|Mass.gov\n   URL: https://www.mass.gov/orgs/massachusetts-bay-transportation-authority\n   Description: Mar 13, 2025· As a division of the Massachusetts Department of Transportation (MassDOT), the MBTA provides subway, bus, Co...<truncated>",
+      "name": "browser_use",
+      "tool_call_id": "call_dsmwelcruiAGQNtqqkoTHNrO"
+    },
+    {
+      "role": "assistant",
+      "content": "Tool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'MBTA Franklin-Foxboro line stops 2023':\n\n1. MBTA-Massachusetts Bay Transportation Authority\n   URL: https://www.mbta.com/\n   Description: MBTA Fare Checks Starting September 8, 2025, the MBTA’s Fare Engagement department is conducting fare checks at subway stations and on board vehicles.\n   Content: MBTA - Massachusetts Bay Transportation Authority Skip to main content Green Line Green Line B Green Line C Green Line D Green Line E Mattapan Line Red Line blue line Orange Line subway Commuter Rail Bus Ferry Silver Line trolley subway train bus boat stop T map pin icon-map-pin current location marker stop marker station marker MBTA Homepage map Routes trip planner Trip Planner alert Alerts Commuter Rail Commuter Rail subway Subway Lines Bus Bus Routes Ferry Ferry Routes the ride The RIDE subway Subway Status RL Normal Service OL Normal Service GL Normal Service BL Normal Service From To Get trip suggestions Routes With High Priority Alerts Subway There are no high priority subway alerts at this time Bus 64 435 712 train Commuter Rail Fitchburg Line Framingham/Worcester Line Newburyport/Rockport Line Providence/Stoughton Line Ferry Quincy Ferry accessibility Station Accessibility Elevator Closures Chinatown East Taunton Haymarket Park Street Escalator Closures Alewife Andrew Assembly...\n\n2. Massachusetts Bay Transportation Authority-Wikipedia\n   URL: https://en.m.wikipedia.org/wiki/Massachusetts_Bay_Transportation_Authority\n   Description: The MTA was in turn succeeded in 1964 by the MBTA, with an expanded funding district to fund declining suburban commuter rail service. In its first two decades, the MBTA took over the …\n\n3. Massachusetts Bay Transportation Authority|Mass.gov\n   URL: https://www.mass.gov/orgs/massachusetts-bay-transportation-authority\n   Description: Mar 13, 2025· As a division of the Massachusetts Department of Transportation (MassDOT), the MBTA provides su...<truncated>"
+    },
+    {
+      "role": "user",
+      "content": "🎯 ORIGINAL TASK REQUIREMENT:\nAs of May 2023, how many stops are between South Station and Windsor Gardens on MBTA’s Franklin-Foxboro line (not included)?\n================================================================================\nStep 2 - Current Task Input:\nTool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'MBTA Franklin-Foxboro line stops 2023':\n\n1. MBTA-Massachusetts Bay Transportation Authority\n   URL: https://www.mbta.com/\n   Description: MBTA Fare Checks Starting September 8, 2025, the MBTA’s Fare Engagement department is conducting fare checks at subway stations and on board vehicles.\n   Content: MBTA - Massachusetts Bay Transportation Authority Skip to main content Green Line Green Line B Green Line C Green Line D Green Line E Mattapan Line Red Line blue line Orange Line subway Commuter Rail Bus Ferry Silver Line trolley subway train bus boat stop T map pin icon-map-pin current location marker stop marker station marker MBTA Homepage map Routes trip planner Trip Planner alert Alerts Commuter Rail Commuter Rail subway Subway Lines Bus Bus Routes Ferry Ferry Routes the ride The RIDE subway Subway Status RL Normal Service OL Normal Service GL Normal Service BL Normal Service From To Get trip suggestions Routes With High Priority Alerts Subway There are no high priority subway alerts at this time Bus 64 435 712 train Commuter Rail Fitchburg Line Framingham/Worcester Line Newburyport/Rockport Line Providence/Stoughton Line Ferry Quincy Ferry accessibility Station Accessibility Elevator Closures Chinatown East Taunton Haymarket Park Street Escalator Closures Alewife Andrew Assembly...\n\n2. Massachusetts Bay Transportation Authority-Wikipedia\n   URL: https://en.m.wikipedia.org/wiki/Massachusetts_Bay_Transportation_Authority\n   Description: The MTA was in turn succeeded in 1964 by the MBTA, with an expanded funding district to fund declining suburban commuter rail service. In its first two decades, the MBTA took over ...<truncated>"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "call_W35Azm9UkBXPIDnXqienxYkl",
+          "type": "function",
+          "function": {
+            "name": "browser_use",
+            "arguments": "{\"action\":\"go_to_url\",\"url\":\"https://www.mbta.com/schedules/CR-Franklin/line\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "Observed output of cmd `browser_use` executed:\nFetched content from https://www.mbta.com/schedules/CR-Franklin/line:\n\n\n\n\n\n\n\n\nFranklin/Foxboro Line | Commuter Rail | MBTA\n\n\n\n\n\n\n\n\n\n\n\n[Skip to main content](#main)\n Green Line      Green Line B   Green Line C   Green Line D   Green Line E   Mattapan Line  \n Red Line       blue line    Orange Line     \n  subway        Commuter Rail       Bus   Ferry           Silver Line      \n  trolley         subway          train        bus        boat       \n  stop   T     \n\n\n\n\n  map pin               icon-map-pin      \n\n  current location marker    \n\n  stop marker      \n\n  station marker    \n\n\n\n[Menu](/menu)\nMenu\n\n[MBTA Home Page\n  \n    Massachusetts BayTransportation Authority](/)\n[Transit](/menu#Transit-section)\nModes of Transit\n\n[Subway](/schedules/subway)[Bus](/schedules/bus)[Commuter Rail](/schedules/commuter-rail)[Ferry](/schedules/ferry)[Paratransit (The RIDE)](/accessibility/the-ride)[All Schedules & Maps](/schedules)\n\nPlan Your Journey\n\n[Trip Planner](/trip-planner)[Service Alerts](/alerts)[Sign Up for Service Alerts](https://alerts.mbta.com/)[Parking](/parking)[Bikes](/bikes)[User Guides](/guides)[Holidays](/holidays)[Accessibility](/accessibility)\n\nFind a Location\n\n[MBTA Stations](/stops)[Destinations](/destinations)[Maps](/maps)\n\n\n\n\n\n[Fares](/menu#Fares-section)\nFares Info\n\n[Fares Overview](/fares)[Reduced Fares](/fares/reduced)[Transfers](/fares/transfers)[Fare Transformation](/fare-transformation)\n\nFares by Mode\n\n[Subway Fares](/fares/subway-fares)[Bus Fares](/fares/bus-fares)[Commuter Rail Fares](/fares/commuter-rail-fares)[Ferry Fares](/fares/ferry-fares)\n\nPay Your Fare\n\n[Charlie Service Center](/fares/charliecard-store)[Sign up for Auto-pay](https://mycharlie.mbta.com/)[Order Monthly Passes](https://commerce.mbta.com/)[Get a CharlieCard](/fares/charliecard#getacharliecard)[Retail Sales Locations](/fares/retail-sales-locations)\n\n### Most popular fares\n\nSubway One-Way\n$2.40\nLocal Bus One-Way\n$1.70\nMonthly LinkPass\n$90...<truncated>",
+      "name": "browser_use",
+      "tool_call_id": "call_W35Azm9UkBXPIDnXqienxYkl"
+    },
+    {
+      "role": "assistant",
+      "content": "Tool result: Observed output of cmd `browser_use` executed:\nFetched content from https://www.mbta.com/schedules/CR-Franklin/line:\n\n\n\n\n\n\n\n\nFranklin/Foxboro Line | Commuter Rail | MBTA\n\n\n\n\n\n\n\n\n\n\n\n[Skip to main content](#main)\n Green Line      Green Line B   Green Line C   Green Line D   Green Line E   Mattapan Line  \n Red Line       blue line    Orange Line     \n  subway        Commuter Rail       Bus   Ferry           Silver Line      \n  trolley         subway          train        bus        boat       \n  stop   T     \n\n\n\n\n  map pin               icon-map-pin      \n\n  current location marker    \n\n  stop marker      \n\n  station marker    \n\n\n\n[Menu](/menu)\nMenu\n\n[MBTA Home Page\n  \n    Massachusetts BayTransportation Authority](/)\n[Transit](/menu#Transit-section)\nModes of Transit\n\n[Subway](/schedules/subway)[Bus](/schedules/bus)[Commuter Rail](/schedules/commuter-rail)[Ferry](/schedules/ferry)[Paratransit (The RIDE)](/accessibility/the-ride)[All Schedules & Maps](/schedules)\n\nPlan Your Journey\n\n[Trip Planner](/trip-planner)[Service Alerts](/alerts)[Sign Up for Service Alerts](https://alerts.mbta.com/)[Parking](/parking)[Bikes](/bikes)[User Guides](/guides)[Holidays](/holidays)[Accessibility](/accessibility)\n\nFind a Location\n\n[MBTA Stations](/stops)[Destinations](/destinations)[Maps](/maps)\n\n\n\n\n\n[Fares](/menu#Fares-section)\nFares Info\n\n[Fares Overview](/fares)[Reduced Fares](/fares/reduced)[Transfers](/fares/transfers)[Fare Transformation](/fare-transformation)\n\nFares by Mode\n\n[Subway Fares](/fares/subway-fares)[Bus Fares](/fares/bus-fares)[Commuter Rail Fares](/fares/commuter-rail-fares)[Ferry Fares](/fares/ferry-fares)\n\nPay Your Fare\n\n[Charlie Service Center](/fares/charliecard-store)[Sign up for Auto-pay](https://mycharlie.mbta.com/)[Order Monthly Passes](https://commerce.mbta.com/)[Get a CharlieCard](/fares/charliecard#getacharliecard)[Retail Sales Locations](/fares/retail-sales-locations)\n\n### Most popular fares\n\nSubway One-Way\n$2.40\nLocal Bus One-Way\n$1.70\nMonthly...<truncated>"
+    }
+  ],
+  "workflow_progress": {
+    "total_steps": 2,
+    "completed_steps": 2,
+    "completion_rate": 1.0,
+    "status_breakdown": {
+      "pending": 0,
+      "processing": 0,
+      "success": 2,
+      "error": 0,
+      "timeout": 0
+    },
+    "step_details": {
+      "0": "success",
+      "1": "success"
+    }
+  },
+  "step_executions": {
+    "step_0": {
+      "step": 0,
+      "agent_id": "0",
+      "agent_name": "TransitDataGatherer",
+      "status": "success",
+      "start_time": 1758622438.3863578,
+      "end_time": 1758622449.0547273,
+      "duration": 10.66836953163147,
+      "messages": [
+        {
+          "role": "user",
+          "content": "🎯 ORIGINAL TASK REQUIREMENT:\nAs of May 2023, how many stops are between South Station and Windsor Gardens on MBTA’s Franklin-Foxboro line (not included)?\n================================================================================\nStep 1 - Current Task Input:\nAs of May 2023, how many stops are between South Station and Windsor Gardens on MBTA’s Franklin-Foxboro line (not included)?\n\n⚠️  REMEMBER: All your work must contribute to answering the ORIGINAL TASK above!"
+        },
+        {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "call_dsmwelcruiAGQNtqqkoTHNrO",
+              "type": "function",
+              "function": {
+                "name": "browser_use",
+                "arguments": "{\"action\":\"web_search\",\"query\":\"MBTA Franklin-Foxboro line stops 2023\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'MBTA Franklin-Foxboro line stops 2023':\n\n1. MBTA-Massachusetts Bay Transportation Authority\n   URL: https://www.mbta.com/\n   Description: MBTA Fare Checks Starting September 8, 2025, the MBTA’s Fare Engagement department is conducting fare checks at subway stations and on board vehicles.\n   Content: MBTA - Massachusetts Bay Transportation Authority Skip to main content Green Line Green Line B Green Line C Green Line D Green Line E Mattapan Line Red Line blue line Orange Line subway Commuter Rail Bus Ferry Silver Line trolley subway train bus boat stop T map pin icon-map-pin current location marker stop marker station marker MBTA Homepage map Routes trip planner Trip Planner alert Alerts Commuter Rail Commuter Rail subway Subway Lines Bus Bus Routes Ferry Ferry Routes the ride The RIDE subway Subway Status RL Normal Service OL Normal Service GL Normal Service BL Normal Service From To Get trip suggestions Routes With High Priority Alerts Subway There are no high priority subway alerts at this time Bus 64 435 712 train Commuter Rail Fitchburg Line Framingham/Worcester Line Newburyport/Rockport Line Providence/Stoughton Line Ferry Quincy Ferry accessibility Station Accessibility Elevator Closures Chinatown East Taunton Haymarket Park Street Escalator Closures Alewife Andrew Assembly...\n\n2. Massachusetts Bay Transportation Authority-Wikipedia\n   URL: https://en.m.wikipedia.org/wiki/Massachusetts_Bay_Transportation_Authority\n   Description: The MTA was in turn succeeded in 1964 by the MBTA, with an expanded funding district to fund declining suburban commuter rail service. In its first two decades, the MBTA took over the …\n\n3. Massachusetts Bay Transportation Authority|Mass.gov\n   URL: https://www.mass.gov/orgs/massachusetts-bay-transportation-authority\n   Description: Mar 13, 2025· As a division of the Massachusetts Department of Transportation (MassDOT), the MBTA provides subway, bus, Co...<truncated>",
+          "name": "browser_use",
+          "tool_call_id": "call_dsmwelcruiAGQNtqqkoTHNrO"
+        },
+        {
+          "role": "assistant",
+          "content": "Tool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'MBTA Franklin-Foxboro line stops 2023':\n\n1. MBTA-Massachusetts Bay Transportation Authority\n   URL: https://www.mbta.com/\n   Description: MBTA Fare Checks Starting September 8, 2025, the MBTA’s Fare Engagement department is conducting fare checks at subway stations and on board vehicles.\n   Content: MBTA - Massachusetts Bay Transportation Authority Skip to main content Green Line Green Line B Green Line C Green Line D Green Line E Mattapan Line Red Line blue line Orange Line subway Commuter Rail Bus Ferry Silver Line trolley subway train bus boat stop T map pin icon-map-pin current location marker stop marker station marker MBTA Homepage map Routes trip planner Trip Planner alert Alerts Commuter Rail Commuter Rail subway Subway Lines Bus Bus Routes Ferry Ferry Routes the ride The RIDE subway Subway Status RL Normal Service OL Normal Service GL Normal Service BL Normal Service From To Get trip suggestions Routes With High Priority Alerts Subway There are no high priority subway alerts at this time Bus 64 435 712 train Commuter Rail Fitchburg Line Framingham/Worcester Line Newburyport/Rockport Line Providence/Stoughton Line Ferry Quincy Ferry accessibility Station Accessibility Elevator Closures Chinatown East Taunton Haymarket Park Street Escalator Closures Alewife Andrew Assembly...\n\n2. Massachusetts Bay Transportation Authority-Wikipedia\n   URL: https://en.m.wikipedia.org/wiki/Massachusetts_Bay_Transportation_Authority\n   Description: The MTA was in turn succeeded in 1964 by the MBTA, with an expanded funding district to fund declining suburban commuter rail service. In its first two decades, the MBTA took over the …\n\n3. Massachusetts Bay Transportation Authority|Mass.gov\n   URL: https://www.mass.gov/orgs/massachusetts-bay-transportation-authority\n   Description: Mar 13, 2025· As a division of the Massachusetts Department of Transportation (MassDOT), the MBTA provides su...<truncated>"
+        }
+      ],
+      "error_message": null
+    },
+    "step_1": {
+      "step": 1,
+      "agent_id": "1",
+      "agent_name": "TransitInfoSynthesizer",
+      "status": "success",
+      "start_time": 1758622449.5558736,
+      "end_time": 1758622451.5628512,
+      "duration": 2.0069775581359863,
+      "messages": [
+        {
+          "role": "user",
+          "content": "🎯 ORIGINAL TASK REQUIREMENT:\nAs of May 2023, how many stops are between South Station and Windsor Gardens on MBTA’s Franklin-Foxboro line (not included)?\n================================================================================\nStep 2 - Current Task Input:\nTool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'MBTA Franklin-Foxboro line stops 2023':\n\n1. MBTA-Massachusetts Bay Transportation Authority\n   URL: https://www.mbta.com/\n   Description: MBTA Fare Checks Starting September 8, 2025, the MBTA’s Fare Engagement department is conducting fare checks at subway stations and on board vehicles.\n   Content: MBTA - Massachusetts Bay Transportation Authority Skip to main content Green Line Green Line B Green Line C Green Line D Green Line E Mattapan Line Red Line blue line Orange Line subway Commuter Rail Bus Ferry Silver Line trolley subway train bus boat stop T map pin icon-map-pin current location marker stop marker station marker MBTA Homepage map Routes trip planner Trip Planner alert Alerts Commuter Rail Commuter Rail subway Subway Lines Bus Bus Routes Ferry Ferry Routes the ride The RIDE subway Subway Status RL Normal Service OL Normal Service GL Normal Service BL Normal Service From To Get trip suggestions Routes With High Priority Alerts Subway There are no high priority subway alerts at this time Bus 64 435 712 train Commuter Rail Fitchburg Line Framingham/Worcester Line Newburyport/Rockport Line Providence/Stoughton Line Ferry Quincy Ferry accessibility Station Accessibility Elevator Closures Chinatown East Taunton Haymarket Park Street Escalator Closures Alewife Andrew Assembly...\n\n2. Massachusetts Bay Transportation Authority-Wikipedia\n   URL: https://en.m.wikipedia.org/wiki/Massachusetts_Bay_Transportation_Authority\n   Description: The MTA was in turn succeeded in 1964 by the MBTA, with an expanded funding district to fund declining suburban commuter rail service. In its first two decades, the MBTA took over ...<truncated>"
+        },
+        {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "call_W35Azm9UkBXPIDnXqienxYkl",
+              "type": "function",
+              "function": {
+                "name": "browser_use",
+                "arguments": "{\"action\":\"go_to_url\",\"url\":\"https://www.mbta.com/schedules/CR-Franklin/line\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Observed output of cmd `browser_use` executed:\nFetched content from https://www.mbta.com/schedules/CR-Franklin/line:\n\n\n\n\n\n\n\n\nFranklin/Foxboro Line | Commuter Rail | MBTA\n\n\n\n\n\n\n\n\n\n\n\n[Skip to main content](#main)\n Green Line      Green Line B   Green Line C   Green Line D   Green Line E   Mattapan Line  \n Red Line       blue line    Orange Line     \n  subway        Commuter Rail       Bus   Ferry           Silver Line      \n  trolley         subway          train        bus        boat       \n  stop   T     \n\n\n\n\n  map pin               icon-map-pin      \n\n  current location marker    \n\n  stop marker      \n\n  station marker    \n\n\n\n[Menu](/menu)\nMenu\n\n[MBTA Home Page\n  \n    Massachusetts BayTransportation Authority](/)\n[Transit](/menu#Transit-section)\nModes of Transit\n\n[Subway](/schedules/subway)[Bus](/schedules/bus)[Commuter Rail](/schedules/commuter-rail)[Ferry](/schedules/ferry)[Paratransit (The RIDE)](/accessibility/the-ride)[All Schedules & Maps](/schedules)\n\nPlan Your Journey\n\n[Trip Planner](/trip-planner)[Service Alerts](/alerts)[Sign Up for Service Alerts](https://alerts.mbta.com/)[Parking](/parking)[Bikes](/bikes)[User Guides](/guides)[Holidays](/holidays)[Accessibility](/accessibility)\n\nFind a Location\n\n[MBTA Stations](/stops)[Destinations](/destinations)[Maps](/maps)\n\n\n\n\n\n[Fares](/menu#Fares-section)\nFares Info\n\n[Fares Overview](/fares)[Reduced Fares](/fares/reduced)[Transfers](/fares/transfers)[Fare Transformation](/fare-transformation)\n\nFares by Mode\n\n[Subway Fares](/fares/subway-fares)[Bus Fares](/fares/bus-fares)[Commuter Rail Fares](/fares/commuter-rail-fares)[Ferry Fares](/fares/ferry-fares)\n\nPay Your Fare\n\n[Charlie Service Center](/fares/charliecard-store)[Sign up for Auto-pay](https://mycharlie.mbta.com/)[Order Monthly Passes](https://commerce.mbta.com/)[Get a CharlieCard](/fares/charliecard#getacharliecard)[Retail Sales Locations](/fares/retail-sales-locations)\n\n### Most popular fares\n\nSubway One-Way\n$2.40\nLocal Bus One-Way\n$1.70\nMonthly LinkPass\n$90...<truncated>",
+          "name": "browser_use",
+          "tool_call_id": "call_W35Azm9UkBXPIDnXqienxYkl"
+        },
+        {
+          "role": "assistant",
+          "content": "Tool result: Observed output of cmd `browser_use` executed:\nFetched content from https://www.mbta.com/schedules/CR-Franklin/line:\n\n\n\n\n\n\n\n\nFranklin/Foxboro Line | Commuter Rail | MBTA\n\n\n\n\n\n\n\n\n\n\n\n[Skip to main content](#main)\n Green Line      Green Line B   Green Line C   Green Line D   Green Line E   Mattapan Line  \n Red Line       blue line    Orange Line     \n  subway        Commuter Rail       Bus   Ferry           Silver Line      \n  trolley         subway          train        bus        boat       \n  stop   T     \n\n\n\n\n  map pin               icon-map-pin      \n\n  current location marker    \n\n  stop marker      \n\n  station marker    \n\n\n\n[Menu](/menu)\nMenu\n\n[MBTA Home Page\n  \n    Massachusetts BayTransportation Authority](/)\n[Transit](/menu#Transit-section)\nModes of Transit\n\n[Subway](/schedules/subway)[Bus](/schedules/bus)[Commuter Rail](/schedules/commuter-rail)[Ferry](/schedules/ferry)[Paratransit (The RIDE)](/accessibility/the-ride)[All Schedules & Maps](/schedules)\n\nPlan Your Journey\n\n[Trip Planner](/trip-planner)[Service Alerts](/alerts)[Sign Up for Service Alerts](https://alerts.mbta.com/)[Parking](/parking)[Bikes](/bikes)[User Guides](/guides)[Holidays](/holidays)[Accessibility](/accessibility)\n\nFind a Location\n\n[MBTA Stations](/stops)[Destinations](/destinations)[Maps](/maps)\n\n\n\n\n\n[Fares](/menu#Fares-section)\nFares Info\n\n[Fares Overview](/fares)[Reduced Fares](/fares/reduced)[Transfers](/fares/transfers)[Fare Transformation](/fare-transformation)\n\nFares by Mode\n\n[Subway Fares](/fares/subway-fares)[Bus Fares](/fares/bus-fares)[Commuter Rail Fares](/fares/commuter-rail-fares)[Ferry Fares](/fares/ferry-fares)\n\nPay Your Fare\n\n[Charlie Service Center](/fares/charliecard-store)[Sign up for Auto-pay](https://mycharlie.mbta.com/)[Order Monthly Passes](https://commerce.mbta.com/)[Get a CharlieCard](/fares/charliecard#getacharliecard)[Retail Sales Locations](/fares/retail-sales-locations)\n\n### Most popular fares\n\nSubway One-Way\n$2.40\nLocal Bus One-Way\n$1.70\nMonthly...<truncated>"
+        }
+      ],
+      "error_message": null
+    }
+  },
+  "timestamp": 1758622473.2358491
+}

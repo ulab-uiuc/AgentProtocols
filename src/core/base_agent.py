@@ -6,34 +6,25 @@ import asyncio
 import contextlib
 import json
 import socket
+import sys
 import time
 import warnings
+from pathlib import Path
 from typing import Any, Dict, Optional, Set, Union, List
 from urllib.parse import urlparse
 
 import httpx
 import uvicorn
 
-try:
-    # Try package-style imports first
-    from ..agent_adapters.base_adapter import BaseProtocolAdapter
-    from ..agent_adapters.a2a_adapter import A2AAdapter
-    from ..agent_adapters.agent_protocol_adapter import AgentProtocolAdapter
-    from ..agent_adapters.agora_adapter import AgoraClientAdapter
-    from .metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
-    from ..server_adapters import BaseServerAdapter, A2AServerAdapter, AgentProtocolServerAdapter, ANPServerAdapter, ACPServerAdapter, SimpleJSONServerAdapter
-    from .unified_message import UTE
-    from .protocol_converter import ENCODE_TABLE, DECODE_TABLE
-except ImportError:
-    # Fallback to direct imports for standalone execution
-    from agent_adapters.base_adapter import BaseProtocolAdapter
-    from agent_adapters.a2a_adapter import A2AAdapter
-    from agent_adapters.agent_protocol_adapter import AgentProtocolAdapter
-    from agent_adapters.agora_adapter import AgoraClientAdapter
-    from src.core.metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
-    from server_adapters import BaseServerAdapter, A2AServerAdapter, AgentProtocolServerAdapter, ANPServerAdapter, ACPServerAdapter, SimpleJSONServerAdapter
-    from src.core.unified_message import UTE
-    from src.core.protocol_converter import ENCODE_TABLE, DECODE_TABLE
+# Direct imports using relative paths - fail fast if dependencies are missing
+from ..agent_adapters.base_adapter import BaseProtocolAdapter
+from ..agent_adapters.a2a_adapter import A2AAdapter
+from ..agent_adapters.agent_protocol_adapter import AgentProtocolAdapter
+from ..agent_adapters.agora_adapter import AgoraClientAdapter
+from .metrics import REQUEST_LATENCY, REQUEST_FAILURES, MSG_BYTES, MetricsTimer
+from ..server_adapters import BaseServerAdapter, A2AServerAdapter, AgentProtocolServerAdapter, ANPServerAdapter, ACPServerAdapter
+from .unified_message import UTE
+from .protocol_converter import ENCODE_TABLE, DECODE_TABLE
 
 # Module-level constants for better reusability
 DEFAULT_SERVER_STARTUP_TIMEOUT = 10.0
@@ -407,11 +398,8 @@ class BaseAgent:
                 "async def execute(context: RequestContext, event_queue: EventQueue) -> None"
             )
 
-        # Import AgoraServerAdapter
-        try:
-            from ..server_adapters.agora_adapter import AgoraServerAdapter
-        except ImportError:
-            from server_adapters.agora_adapter import AgoraServerAdapter
+        # Import AgoraServerAdapter (relative import, fail fast if missing)
+        from ..server_adapters.agora_adapter import AgoraServerAdapter
 
         # Create BaseAgent instance with Agora server adapter
         agent = cls(
@@ -523,7 +511,7 @@ class BaseAgent:
         httpx_client : Optional[httpx.AsyncClient]
             Shared HTTP client for connection pooling
         server_adapter : Optional[BaseServerAdapter]
-            Server adapter (defaults to SimpleJSONServerAdapter)
+            Server adapter (defaults to None)
 
         Returns
         -------
@@ -536,7 +524,7 @@ class BaseAgent:
             host=host,
             port=port,
             httpx_client=httpx_client,
-            server_adapter=server_adapter or SimpleJSONServerAdapter()
+            server_adapter=server_adapter
         )
 
         # Start server with executor (can be None for simple JSON)
@@ -667,9 +655,6 @@ class BaseAgent:
         start_time = time.time()
         attempts = 0
 
-        # Use print for debugging since logger might not be available
-        print(f"DEBUG: Waiting for server at http://{self._host}:{self._port}/health to be ready...")
-
         while time.time() - start_time < timeout:
             attempts += 1
             try:
@@ -678,13 +663,9 @@ class BaseAgent:
                 url = f"http://{health_host}:{self._port}/health"
                 response = await self._httpx_client.get(url, timeout=2.0)
                 if response.status_code == 200:
-                    print(f"DEBUG: Server ready after {attempts} attempts in {time.time() - start_time:.2f}s")
                     return  # Server is ready
-                else:
-                    print(f"DEBUG: Attempt {attempts}: Health check returned {response.status_code}")
             except Exception as e:
-                if attempts % 20 == 0:  # Log every 2 seconds
-                    print(f"DEBUG: Attempt {attempts}: Health check failed: {e}")
+                pass  # Continue trying
 
             await asyncio.sleep(0.1)  # Short polling interval
 
@@ -842,16 +823,8 @@ class BaseAgent:
         ImportError
             If AgentConnect library is not available
         """
-        try:
-            from ..agent_adapters.anp_adapter import ANPAdapter
-        except ImportError:
-            try:
-                from agent_adapters.anp_adapter import ANPAdapter
-            except ImportError:
-                raise ImportError(
-                    "ANP adapter not available. "
-                    "Please install AgentConnect library to use ANP protocol."
-                )
+        # Relative import - fail fast if ANP adapter is missing
+        from ..agent_adapters.anp_adapter import ANPAdapter
         
         # Create client-only BaseAgent
         client = httpx_client or httpx.AsyncClient(timeout=30.0)

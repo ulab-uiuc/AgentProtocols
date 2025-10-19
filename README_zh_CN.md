@@ -40,7 +40,7 @@ OpenAI API密钥 (用于基于LLM的智能体)
 
 ```bash
 # 克隆仓库
-git clone https://github.com/your-org/Multiagent-Protocol.git
+git clone https://github.com/MultiagentBench/Multiagent-Protocol.git
 cd Multiagent-Protocol
 
 # 安装依赖

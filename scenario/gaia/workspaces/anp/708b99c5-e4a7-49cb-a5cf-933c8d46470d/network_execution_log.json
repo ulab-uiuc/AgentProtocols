@@ -1,0 +1,222 @@
+{
+  "network_memory": [
+    {
+      "role": "user",
+      "content": "🎯 ORIGINAL TASK REQUIREMENT:\nOn the DeepFruits fruit detection graph on Connected Papers from 2016, what feature caused the largest bubble to be the size it is?\n================================================================================\nStep 1 - Current Task Input:\nOn the DeepFruits fruit detection graph on Connected Papers from 2016, what feature caused the largest bubble to be the size it is?\n\n⚠️  REMEMBER: All your work must contribute to answering the ORIGINAL TASK above!"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "call_W942fbed1P5iDHo6FRaqZWaM",
+          "type": "function",
+          "function": {
+            "name": "browser_use",
+            "arguments": "{\"action\":\"web_search\",\"query\":\"DeepFruits fruit detection graph Connected Papers 2016\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. Fresh Keto Meals DeliveredAug 2025\n   URL: https://www.bing.com/ck/a?!&&p=7081dfed5399f934f3ba51ec17120f0e1df2c4a0b5eb6805e1842495f7b47076JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly9mcmVzaC1rZXRvLW1lYWxzLWRlbGl2ZXJlZC5kdHRpbWV0cS5jb20v&ntb=1\n   Description: Enjoy the convenience of fresh keto meals delivered to your door, offering delicious, healthy options that fit your lifestyle perfectly.\n   Content: Please click here if the page does not redirect automatically ...\n\n2. 7Best Keto Meal Delivery Servicesin 2025 -Healthline\n   URL: https://www.bing.com/ck/a?!&&p=1f4625bfffe41f50a89748eb225eb8ce78a652ddbd27fb61e1ce63a30670895fJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly93d3cuaGVhbHRobGluZS5jb20vbnV0cml0aW9uL2tldG8tbWVhbC1kZWxpdmVyeQ&ntb=1\n   Description: Aug 27, 2025· Factor, Sunbasket, and Trifecta win for their keto meal delivery services. See what else our testers liked for tasty, convenient keto meals delivered to your door.\n   Content: Please click here if the page does not redirect automatically ...\n\n3. Factor:Keto Meal Deliveryfor Weight Loss\n   URL: https://www.bing.com/ck/a?!&&p=e512e5967ee22f41a4da8b78d5431db7d1e02290afbbf4768fe750ff94eb3cf1JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly93d3cuZmFjdG9yNzUuY29tL2VhdC9wcmVwYXJlZC1rZXRvLW1lYWwtZGVsaXZlcnk&ntb=1\n   Description: Lose weight with Factor and our keto meal delivery service! Get a weekly delivery of chef-prepared, dietitian-approved premade keto meals. Never frozen!\n   Content: Please click here if the page does not redirect automatically ...\n\nMetadata:\n- Total results: 3\n- Language: en\n- Country: us\n\nFetched Content from https://www.bing.com/ck/a?!&&p=7081dfed5399f934f3ba51ec17120f0e1df2c4a0b5eb6805e1...<truncated>",
+      "name": "browser_use",
+      "tool_call_id": "call_W942fbed1P5iDHo6FRaqZWaM"
+    },
+    {
+      "role": "assistant",
+      "content": "Tool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. Fresh Keto Meals DeliveredAug 2025\n   URL: https://www.bing.com/ck/a?!&&p=7081dfed5399f934f3ba51ec17120f0e1df2c4a0b5eb6805e1842495f7b47076JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly9mcmVzaC1rZXRvLW1lYWxzLWRlbGl2ZXJlZC5kdHRpbWV0cS5jb20v&ntb=1\n   Description: Enjoy the convenience of fresh keto meals delivered to your door, offering delicious, healthy options that fit your lifestyle perfectly.\n   Content: Please click here if the page does not redirect automatically ...\n\n2. 7Best Keto Meal Delivery Servicesin 2025 -Healthline\n   URL: https://www.bing.com/ck/a?!&&p=1f4625bfffe41f50a89748eb225eb8ce78a652ddbd27fb61e1ce63a30670895fJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly93d3cuaGVhbHRobGluZS5jb20vbnV0cml0aW9uL2tldG8tbWVhbC1kZWxpdmVyeQ&ntb=1\n   Description: Aug 27, 2025· Factor, Sunbasket, and Trifecta win for their keto meal delivery services. See what else our testers liked for tasty, convenient keto meals delivered to your door.\n   Content: Please click here if the page does not redirect automatically ...\n\n3. Factor:Keto Meal Deliveryfor Weight Loss\n   URL: https://www.bing.com/ck/a?!&&p=e512e5967ee22f41a4da8b78d5431db7d1e02290afbbf4768fe750ff94eb3cf1JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly93d3cuZmFjdG9yNzUuY29tL2VhdC9wcmVwYXJlZC1rZXRvLW1lYWwtZGVsaXZlcnk&ntb=1\n   Description: Lose weight with Factor and our keto meal delivery service! Get a weekly delivery of chef-prepared, dietitian-approved premade keto meals. Never frozen!\n   Content: Please click here if the page does not redirect automatically ...\n\nMetadata:\n- Total results: 3\n- Language: en\n- Country: us\n\nFetched Content from https://www.bing.com/ck/a?!&&p=7081dfed5399f934f3ba51ec17120f0e1df2c...<truncated>"
+    },
+    {
+      "role": "user",
+      "content": "🎯 ORIGINAL TASK REQUIREMENT:\nOn the DeepFruits fruit detection graph on Connected Papers from 2016, what feature caused the largest bubble to be the size it is?\n================================================================================\nStep 2 - Current Task Input:\nTool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. Fresh Keto Meals DeliveredAug 2025\n   URL: https://www.bing.com/ck/a?!&&p=7081dfed5399f934f3ba51ec17120f0e1df2c4a0b5eb6805e1842495f7b47076JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly9mcmVzaC1rZXRvLW1lYWxzLWRlbGl2ZXJlZC5kdHRpbWV0cS5jb20v&ntb=1\n   Description: Enjoy the convenience of fresh keto meals delivered to your door, offering delicious, healthy options that fit your lifestyle perfectly.\n   Content: Please click here if the page does not redirect automatically ...\n\n2. 7Best Keto Meal Delivery Servicesin 2025 -Healthline\n   URL: https://www.bing.com/ck/a?!&&p=1f4625bfffe41f50a89748eb225eb8ce78a652ddbd27fb61e1ce63a30670895fJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly93d3cuaGVhbHRobGluZS5jb20vbnV0cml0aW9uL2tldG8tbWVhbC1kZWxpdmVyeQ&ntb=1\n   Description: Aug 27, 2025· Factor, Sunbasket, and Trifecta win for their keto meal delivery services. See what else our testers liked for tasty, convenient keto meals delivered to your door.\n   Content: Please click here if the page does not redirect automatically ...\n\n3. Factor:Keto Meal Deliveryfor Weight Loss\n   URL: https://www.bing.com/ck/a?!&&p=e512e5967ee22f41a4da8b78d5431db7d1e02290afbbf4768fe750ff94eb3cf1JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly93d3cuZmFjdG9yNzUuY29tL2VhdC9wcmVwYXJlZC1rZXRvLW1lYWwtZGVsaXZlcnk&ntb=1\n   Description: Lose weight with Factor and our keto meal delivery service! Get a weekly delivery of chef-prepared, dietitian...<truncated>"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "call_U0z8pbj5xkRC6gf188lJ2Vu8",
+          "type": "function",
+          "function": {
+            "name": "browser_use",
+            "arguments": "{\"action\":\"web_search\",\"query\":\"DeepFruits fruit detection graph Connected Papers 2016\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. ESPN+ is Terrible : r/ESPN - Reddit\n   URL: https://www.bing.com/ck/a?!&&p=e5e173cbdd49e396a4d2b99063473a41af3b76cf2650364ab69c7bd5c3ea39adJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL0VTUE4vY29tbWVudHMvMTd0MXppMC9lc3BuX2lzX3RlcnJpYmxlLw&ntb=1\n   Description: ESPN took over the NHL subscription and the video skips all the time. Customer support says uninstall the app, unplug the tv, wait ten seconds and reinstall the app. Problem comes back in …\n   Content: Please click here if the page does not redirect automatically ...\n\n2. Where can I watch sports streams? : r/Piracy - Reddit\n   URL: https://www.bing.com/ck/a?!&&p=7d5c59ddee8c5ed63b3eb564d13f4c29f7ec3f76b5a2f158851454e008ff9828JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL1BpcmFjeS9jb21tZW50cy8xYzh2b2IwL3doZXJlX2Nhbl9pX3dhdGNoX3Nwb3J0c19zdHJlYW1zLw&ntb=1\n   Description: Apr 20, 2024· I follow the Premier League, have some go-to sites to watch soccer but since about a month ago I cannot for the life of me find decent streams…\n   Content: Please click here if the page does not redirect automatically ...\n\n3. Stream2watch Alternatives: 17 Best Sites to Watch Live Sports\n   URL: https://www.bing.com/ck/a?!&&p=2ae2d98599d6392a7bfbbf8646a47a46b8359bbf7aa8d0712cdf4e79ca70b4c6JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL3N0cmVhbTJ3YXRjaC9jb21tZW50cy93cXYyZjAvc3RyZWFtMndhdGNoX2FsdGVybmF0aXZlc18xN19iZXN0X3NpdGVzX3RvX3dhdGNoLw&ntb=1\n   Description: Aug 17, 2022· 1.2K subscribers in the stream2watch community. Want to make something new? Message me.\n   Content: Please click here if the page does not redirect automatically ...\n\nMetadata:\n- Total results: 3\n- Lang...<truncated>",
+      "name": "browser_use",
+      "tool_call_id": "call_U0z8pbj5xkRC6gf188lJ2Vu8"
+    },
+    {
+      "role": "assistant",
+      "content": "Tool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. ESPN+ is Terrible : r/ESPN - Reddit\n   URL: https://www.bing.com/ck/a?!&&p=e5e173cbdd49e396a4d2b99063473a41af3b76cf2650364ab69c7bd5c3ea39adJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL0VTUE4vY29tbWVudHMvMTd0MXppMC9lc3BuX2lzX3RlcnJpYmxlLw&ntb=1\n   Description: ESPN took over the NHL subscription and the video skips all the time. Customer support says uninstall the app, unplug the tv, wait ten seconds and reinstall the app. Problem comes back in …\n   Content: Please click here if the page does not redirect automatically ...\n\n2. Where can I watch sports streams? : r/Piracy - Reddit\n   URL: https://www.bing.com/ck/a?!&&p=7d5c59ddee8c5ed63b3eb564d13f4c29f7ec3f76b5a2f158851454e008ff9828JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL1BpcmFjeS9jb21tZW50cy8xYzh2b2IwL3doZXJlX2Nhbl9pX3dhdGNoX3Nwb3J0c19zdHJlYW1zLw&ntb=1\n   Description: Apr 20, 2024· I follow the Premier League, have some go-to sites to watch soccer but since about a month ago I cannot for the life of me find decent streams…\n   Content: Please click here if the page does not redirect automatically ...\n\n3. Stream2watch Alternatives: 17 Best Sites to Watch Live Sports\n   URL: https://www.bing.com/ck/a?!&&p=2ae2d98599d6392a7bfbbf8646a47a46b8359bbf7aa8d0712cdf4e79ca70b4c6JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL3N0cmVhbTJ3YXRjaC9jb21tZW50cy93cXYyZjAvc3RyZWFtMndhdGNoX2FsdGVybmF0aXZlc18xN19iZXN0X3NpdGVzX3RvX3dhdGNoLw&ntb=1\n   Description: Aug 17, 2022· 1.2K subscribers in the stream2watch community. Want to make something new? Message me.\n   Content: Please click here if the page does not redirect automatically ...\n\nMetadata:\n- Total resu...<truncated>"
+    },
+    {
+      "role": "user",
+      "content": "🎯 ORIGINAL TASK REQUIREMENT:\nOn the DeepFruits fruit detection graph on Connected Papers from 2016, what feature caused the largest bubble to be the size it is?\n================================================================================\nStep 3 - Current Task Input:\nTool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. ESPN+ is Terrible : r/ESPN - Reddit\n   URL: https://www.bing.com/ck/a?!&&p=e5e173cbdd49e396a4d2b99063473a41af3b76cf2650364ab69c7bd5c3ea39adJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL0VTUE4vY29tbWVudHMvMTd0MXppMC9lc3BuX2lzX3RlcnJpYmxlLw&ntb=1\n   Description: ESPN took over the NHL subscription and the video skips all the time. Customer support says uninstall the app, unplug the tv, wait ten seconds and reinstall the app. Problem comes back in …\n   Content: Please click here if the page does not redirect automatically ...\n\n2. Where can I watch sports streams? : r/Piracy - Reddit\n   URL: https://www.bing.com/ck/a?!&&p=7d5c59ddee8c5ed63b3eb564d13f4c29f7ec3f76b5a2f158851454e008ff9828JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL1BpcmFjeS9jb21tZW50cy8xYzh2b2IwL3doZXJlX2Nhbl9pX3dhdGNoX3Nwb3J0c19zdHJlYW1zLw&ntb=1\n   Description: Apr 20, 2024· I follow the Premier League, have some go-to sites to watch soccer but since about a month ago I cannot for the life of me find decent streams…\n   Content: Please click here if the page does not redirect automatically ...\n\n3. Stream2watch Alternatives: 17 Best Sites to Watch Live Sports\n   URL: https://www.bing.com/ck/a?!&&p=2ae2d98599d6392a7bfbbf8646a47a46b8359bbf7aa8d0712cdf4e79ca70b4c6JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL3N0cmVhbTJ3YXRjaC9jb21tZW50cy93cXYyZjAvc3RyZWFtMndhdGNoX2Fsd...<truncated>"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "call_eBasS2OYh5DqUp9HJJKSN24c",
+          "type": "function",
+          "function": {
+            "name": "browser_use",
+            "arguments": "{\"action\":\"web_search\",\"query\":\"DeepFruits fruit detection graph Connected Papers 2016\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. Direxion Daily Junior Gold Miners Index Bull2X Shares (JNUG)\n   URL: https://www.bing.com/ck/a?!&&p=9cc54f1c973b3ca270f7bf094ac720ce12bb6006f3363d46741f5b4a862302d7JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=1b9acd4a-e25e-66a7-32f2-db3ae36767cc&u=a1aHR0cHM6Ly9maW5hbmNlLnlhaG9vLmNvbS9xdW90ZS9KTlVHLw&ntb=1\n   Description: Find the latest Direxion Daily Junior Gold Miners Index Bull 2X Shares (JNUG) stock quote, history, news and other vital information to help you with your stock trading and investing.\n   Content: Please click here if the page does not redirect automatically ...\n\n2. JNUG| Direxion Daily Junior Gold Miners Index Bull 2X ... -MarketWatch\n   URL: https://www.bing.com/ck/a?!&&p=5a01b9bfea11a42b9061a4dd83d6dc794510464468ed4cdcf3daf910327db377JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=1b9acd4a-e25e-66a7-32f2-db3ae36767cc&u=a1aHR0cHM6Ly93d3cubWFya2V0d2F0Y2guY29tL2ludmVzdGluZy9mdW5kL2pudWc&ntb=1\n   Description: 4 days ago· JNUG | A complete Direxion Daily Junior Gold Miners Index Bull 2X Shares exchange traded fund overview by MarketWatch. View the latest ETF prices and news for …\n   Content: Please click here if the page does not redirect automatically ...\n\n3. JNUGETFStockPrice & Overview\n   URL: https://www.bing.com/ck/a?!&&p=a52891833d9b784619c26bcece69252d219a08d7cb7252f62e5b4a4fa10698cfJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=1b9acd4a-e25e-66a7-32f2-db3ae36767cc&u=a1aHR0cHM6Ly9zdG9ja2FuYWx5c2lzLmNvbS9ldGYvam51Zy8&ntb=1\n   Description: 3 days ago· The Direxion Daily Junior Gold Miners Index Bull 2X Shares (JNUG) is an exchange-traded fund that is based on the MVIS Global Junior Gold Miners index. The fund provides …\n   Content: Please click here if the page does not redirect automatically ...\n\nMetadata:\n- Total results: 3\n- Language: en\n- Country: us\n\nFetched Content from https://www.bing.com/ck/a?!&&...<truncated>",
+      "name": "browser_use",
+      "tool_call_id": "call_eBasS2OYh5DqUp9HJJKSN24c"
+    },
+    {
+      "role": "assistant",
+      "content": "Tool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. Direxion Daily Junior Gold Miners Index Bull2X Shares (JNUG)\n   URL: https://www.bing.com/ck/a?!&&p=9cc54f1c973b3ca270f7bf094ac720ce12bb6006f3363d46741f5b4a862302d7JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=1b9acd4a-e25e-66a7-32f2-db3ae36767cc&u=a1aHR0cHM6Ly9maW5hbmNlLnlhaG9vLmNvbS9xdW90ZS9KTlVHLw&ntb=1\n   Description: Find the latest Direxion Daily Junior Gold Miners Index Bull 2X Shares (JNUG) stock quote, history, news and other vital information to help you with your stock trading and investing.\n   Content: Please click here if the page does not redirect automatically ...\n\n2. JNUG| Direxion Daily Junior Gold Miners Index Bull 2X ... -MarketWatch\n   URL: https://www.bing.com/ck/a?!&&p=5a01b9bfea11a42b9061a4dd83d6dc794510464468ed4cdcf3daf910327db377JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=1b9acd4a-e25e-66a7-32f2-db3ae36767cc&u=a1aHR0cHM6Ly93d3cubWFya2V0d2F0Y2guY29tL2ludmVzdGluZy9mdW5kL2pudWc&ntb=1\n   Description: 4 days ago· JNUG | A complete Direxion Daily Junior Gold Miners Index Bull 2X Shares exchange traded fund overview by MarketWatch. View the latest ETF prices and news for …\n   Content: Please click here if the page does not redirect automatically ...\n\n3. JNUGETFStockPrice & Overview\n   URL: https://www.bing.com/ck/a?!&&p=a52891833d9b784619c26bcece69252d219a08d7cb7252f62e5b4a4fa10698cfJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=1b9acd4a-e25e-66a7-32f2-db3ae36767cc&u=a1aHR0cHM6Ly9zdG9ja2FuYWx5c2lzLmNvbS9ldGYvam51Zy8&ntb=1\n   Description: 3 days ago· The Direxion Daily Junior Gold Miners Index Bull 2X Shares (JNUG) is an exchange-traded fund that is based on the MVIS Global Junior Gold Miners index. The fund provides …\n   Content: Please click here if the page does not redirect automatically ...\n\nMetadata:\n- Total results: 3\n- Language: en\n- Country: us\n\nFetched Content from https://www.bing...<truncated>"
+    }
+  ],
+  "workflow_progress": {
+    "total_steps": 3,
+    "completed_steps": 3,
+    "completion_rate": 1.0,
+    "status_breakdown": {
+      "pending": 0,
+      "processing": 0,
+      "success": 3,
+      "error": 0,
+      "timeout": 0
+    },
+    "step_details": {
+      "0": "success",
+      "1": "success",
+      "2": "success"
+    }
+  },
+  "step_executions": {
+    "step_0": {
+      "step": 0,
+      "agent_id": "0",
+      "agent_name": "GraphNavigator",
+      "status": "success",
+      "start_time": 1758620506.6542153,
+      "end_time": 1758620514.8877234,
+      "duration": 8.233508110046387,
+      "messages": [
+        {
+          "role": "user",
+          "content": "🎯 ORIGINAL TASK REQUIREMENT:\nOn the DeepFruits fruit detection graph on Connected Papers from 2016, what feature caused the largest bubble to be the size it is?\n================================================================================\nStep 1 - Current Task Input:\nOn the DeepFruits fruit detection graph on Connected Papers from 2016, what feature caused the largest bubble to be the size it is?\n\n⚠️  REMEMBER: All your work must contribute to answering the ORIGINAL TASK above!"
+        },
+        {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "call_W942fbed1P5iDHo6FRaqZWaM",
+              "type": "function",
+              "function": {
+                "name": "browser_use",
+                "arguments": "{\"action\":\"web_search\",\"query\":\"DeepFruits fruit detection graph Connected Papers 2016\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. Fresh Keto Meals DeliveredAug 2025\n   URL: https://www.bing.com/ck/a?!&&p=7081dfed5399f934f3ba51ec17120f0e1df2c4a0b5eb6805e1842495f7b47076JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly9mcmVzaC1rZXRvLW1lYWxzLWRlbGl2ZXJlZC5kdHRpbWV0cS5jb20v&ntb=1\n   Description: Enjoy the convenience of fresh keto meals delivered to your door, offering delicious, healthy options that fit your lifestyle perfectly.\n   Content: Please click here if the page does not redirect automatically ...\n\n2. 7Best Keto Meal Delivery Servicesin 2025 -Healthline\n   URL: https://www.bing.com/ck/a?!&&p=1f4625bfffe41f50a89748eb225eb8ce78a652ddbd27fb61e1ce63a30670895fJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly93d3cuaGVhbHRobGluZS5jb20vbnV0cml0aW9uL2tldG8tbWVhbC1kZWxpdmVyeQ&ntb=1\n   Description: Aug 27, 2025· Factor, Sunbasket, and Trifecta win for their keto meal delivery services. See what else our testers liked for tasty, convenient keto meals delivered to your door.\n   Content: Please click here if the page does not redirect automatically ...\n\n3. Factor:Keto Meal Deliveryfor Weight Loss\n   URL: https://www.bing.com/ck/a?!&&p=e512e5967ee22f41a4da8b78d5431db7d1e02290afbbf4768fe750ff94eb3cf1JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly93d3cuZmFjdG9yNzUuY29tL2VhdC9wcmVwYXJlZC1rZXRvLW1lYWwtZGVsaXZlcnk&ntb=1\n   Description: Lose weight with Factor and our keto meal delivery service! Get a weekly delivery of chef-prepared, dietitian-approved premade keto meals. Never frozen!\n   Content: Please click here if the page does not redirect automatically ...\n\nMetadata:\n- Total results: 3\n- Language: en\n- Country: us\n\nFetched Content from https://www.bing.com/ck/a?!&&p=7081dfed5399f934f3ba51ec17120f0e1df2c4a0b5eb6805e1...<truncated>",
+          "name": "browser_use",
+          "tool_call_id": "call_W942fbed1P5iDHo6FRaqZWaM"
+        },
+        {
+          "role": "assistant",
+          "content": "Tool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. Fresh Keto Meals DeliveredAug 2025\n   URL: https://www.bing.com/ck/a?!&&p=7081dfed5399f934f3ba51ec17120f0e1df2c4a0b5eb6805e1842495f7b47076JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly9mcmVzaC1rZXRvLW1lYWxzLWRlbGl2ZXJlZC5kdHRpbWV0cS5jb20v&ntb=1\n   Description: Enjoy the convenience of fresh keto meals delivered to your door, offering delicious, healthy options that fit your lifestyle perfectly.\n   Content: Please click here if the page does not redirect automatically ...\n\n2. 7Best Keto Meal Delivery Servicesin 2025 -Healthline\n   URL: https://www.bing.com/ck/a?!&&p=1f4625bfffe41f50a89748eb225eb8ce78a652ddbd27fb61e1ce63a30670895fJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly93d3cuaGVhbHRobGluZS5jb20vbnV0cml0aW9uL2tldG8tbWVhbC1kZWxpdmVyeQ&ntb=1\n   Description: Aug 27, 2025· Factor, Sunbasket, and Trifecta win for their keto meal delivery services. See what else our testers liked for tasty, convenient keto meals delivered to your door.\n   Content: Please click here if the page does not redirect automatically ...\n\n3. Factor:Keto Meal Deliveryfor Weight Loss\n   URL: https://www.bing.com/ck/a?!&&p=e512e5967ee22f41a4da8b78d5431db7d1e02290afbbf4768fe750ff94eb3cf1JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly93d3cuZmFjdG9yNzUuY29tL2VhdC9wcmVwYXJlZC1rZXRvLW1lYWwtZGVsaXZlcnk&ntb=1\n   Description: Lose weight with Factor and our keto meal delivery service! Get a weekly delivery of chef-prepared, dietitian-approved premade keto meals. Never frozen!\n   Content: Please click here if the page does not redirect automatically ...\n\nMetadata:\n- Total results: 3\n- Language: en\n- Country: us\n\nFetched Content from https://www.bing.com/ck/a?!&&p=7081dfed5399f934f3ba51ec17120f0e1df2c...<truncated>"
+        }
+      ],
+      "error_message": null
+    },
+    "step_1": {
+      "step": 1,
+      "agent_id": "1",
+      "agent_name": "FeatureAnalyzer",
+      "status": "success",
+      "start_time": 1758620515.3884258,
+      "end_time": 1758620523.836433,
+      "duration": 8.448007106781006,
+      "messages": [
+        {
+          "role": "user",
+          "content": "🎯 ORIGINAL TASK REQUIREMENT:\nOn the DeepFruits fruit detection graph on Connected Papers from 2016, what feature caused the largest bubble to be the size it is?\n================================================================================\nStep 2 - Current Task Input:\nTool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. Fresh Keto Meals DeliveredAug 2025\n   URL: https://www.bing.com/ck/a?!&&p=7081dfed5399f934f3ba51ec17120f0e1df2c4a0b5eb6805e1842495f7b47076JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly9mcmVzaC1rZXRvLW1lYWxzLWRlbGl2ZXJlZC5kdHRpbWV0cS5jb20v&ntb=1\n   Description: Enjoy the convenience of fresh keto meals delivered to your door, offering delicious, healthy options that fit your lifestyle perfectly.\n   Content: Please click here if the page does not redirect automatically ...\n\n2. 7Best Keto Meal Delivery Servicesin 2025 -Healthline\n   URL: https://www.bing.com/ck/a?!&&p=1f4625bfffe41f50a89748eb225eb8ce78a652ddbd27fb61e1ce63a30670895fJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly93d3cuaGVhbHRobGluZS5jb20vbnV0cml0aW9uL2tldG8tbWVhbC1kZWxpdmVyeQ&ntb=1\n   Description: Aug 27, 2025· Factor, Sunbasket, and Trifecta win for their keto meal delivery services. See what else our testers liked for tasty, convenient keto meals delivered to your door.\n   Content: Please click here if the page does not redirect automatically ...\n\n3. Factor:Keto Meal Deliveryfor Weight Loss\n   URL: https://www.bing.com/ck/a?!&&p=e512e5967ee22f41a4da8b78d5431db7d1e02290afbbf4768fe750ff94eb3cf1JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=0ba4d0ac-acfd-6b3c-067f-c6dcad2c6a80&u=a1aHR0cHM6Ly93d3cuZmFjdG9yNzUuY29tL2VhdC9wcmVwYXJlZC1rZXRvLW1lYWwtZGVsaXZlcnk&ntb=1\n   Description: Lose weight with Factor and our keto meal delivery service! Get a weekly delivery of chef-prepared, dietitian...<truncated>"
+        },
+        {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "call_U0z8pbj5xkRC6gf188lJ2Vu8",
+              "type": "function",
+              "function": {
+                "name": "browser_use",
+                "arguments": "{\"action\":\"web_search\",\"query\":\"DeepFruits fruit detection graph Connected Papers 2016\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. ESPN+ is Terrible : r/ESPN - Reddit\n   URL: https://www.bing.com/ck/a?!&&p=e5e173cbdd49e396a4d2b99063473a41af3b76cf2650364ab69c7bd5c3ea39adJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL0VTUE4vY29tbWVudHMvMTd0MXppMC9lc3BuX2lzX3RlcnJpYmxlLw&ntb=1\n   Description: ESPN took over the NHL subscription and the video skips all the time. Customer support says uninstall the app, unplug the tv, wait ten seconds and reinstall the app. Problem comes back in …\n   Content: Please click here if the page does not redirect automatically ...\n\n2. Where can I watch sports streams? : r/Piracy - Reddit\n   URL: https://www.bing.com/ck/a?!&&p=7d5c59ddee8c5ed63b3eb564d13f4c29f7ec3f76b5a2f158851454e008ff9828JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL1BpcmFjeS9jb21tZW50cy8xYzh2b2IwL3doZXJlX2Nhbl9pX3dhdGNoX3Nwb3J0c19zdHJlYW1zLw&ntb=1\n   Description: Apr 20, 2024· I follow the Premier League, have some go-to sites to watch soccer but since about a month ago I cannot for the life of me find decent streams…\n   Content: Please click here if the page does not redirect automatically ...\n\n3. Stream2watch Alternatives: 17 Best Sites to Watch Live Sports\n   URL: https://www.bing.com/ck/a?!&&p=2ae2d98599d6392a7bfbbf8646a47a46b8359bbf7aa8d0712cdf4e79ca70b4c6JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL3N0cmVhbTJ3YXRjaC9jb21tZW50cy93cXYyZjAvc3RyZWFtMndhdGNoX2FsdGVybmF0aXZlc18xN19iZXN0X3NpdGVzX3RvX3dhdGNoLw&ntb=1\n   Description: Aug 17, 2022· 1.2K subscribers in the stream2watch community. Want to make something new? Message me.\n   Content: Please click here if the page does not redirect automatically ...\n\nMetadata:\n- Total results: 3\n- Lang...<truncated>",
+          "name": "browser_use",
+          "tool_call_id": "call_U0z8pbj5xkRC6gf188lJ2Vu8"
+        },
+        {
+          "role": "assistant",
+          "content": "Tool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. ESPN+ is Terrible : r/ESPN - Reddit\n   URL: https://www.bing.com/ck/a?!&&p=e5e173cbdd49e396a4d2b99063473a41af3b76cf2650364ab69c7bd5c3ea39adJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL0VTUE4vY29tbWVudHMvMTd0MXppMC9lc3BuX2lzX3RlcnJpYmxlLw&ntb=1\n   Description: ESPN took over the NHL subscription and the video skips all the time. Customer support says uninstall the app, unplug the tv, wait ten seconds and reinstall the app. Problem comes back in …\n   Content: Please click here if the page does not redirect automatically ...\n\n2. Where can I watch sports streams? : r/Piracy - Reddit\n   URL: https://www.bing.com/ck/a?!&&p=7d5c59ddee8c5ed63b3eb564d13f4c29f7ec3f76b5a2f158851454e008ff9828JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL1BpcmFjeS9jb21tZW50cy8xYzh2b2IwL3doZXJlX2Nhbl9pX3dhdGNoX3Nwb3J0c19zdHJlYW1zLw&ntb=1\n   Description: Apr 20, 2024· I follow the Premier League, have some go-to sites to watch soccer but since about a month ago I cannot for the life of me find decent streams…\n   Content: Please click here if the page does not redirect automatically ...\n\n3. Stream2watch Alternatives: 17 Best Sites to Watch Live Sports\n   URL: https://www.bing.com/ck/a?!&&p=2ae2d98599d6392a7bfbbf8646a47a46b8359bbf7aa8d0712cdf4e79ca70b4c6JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL3N0cmVhbTJ3YXRjaC9jb21tZW50cy93cXYyZjAvc3RyZWFtMndhdGNoX2FsdGVybmF0aXZlc18xN19iZXN0X3NpdGVzX3RvX3dhdGNoLw&ntb=1\n   Description: Aug 17, 2022· 1.2K subscribers in the stream2watch community. Want to make something new? Message me.\n   Content: Please click here if the page does not redirect automatically ...\n\nMetadata:\n- Total resu...<truncated>"
+        }
+      ],
+      "error_message": null
+    },
+    "step_2": {
+      "step": 2,
+      "agent_id": "2",
+      "agent_name": "ReasoningSynthesizer",
+      "status": "success",
+      "start_time": 1758620524.3375242,
+      "end_time": 1758620528.0706458,
+      "duration": 3.733121633529663,
+      "messages": [
+        {
+          "role": "user",
+          "content": "🎯 ORIGINAL TASK REQUIREMENT:\nOn the DeepFruits fruit detection graph on Connected Papers from 2016, what feature caused the largest bubble to be the size it is?\n================================================================================\nStep 3 - Current Task Input:\nTool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. ESPN+ is Terrible : r/ESPN - Reddit\n   URL: https://www.bing.com/ck/a?!&&p=e5e173cbdd49e396a4d2b99063473a41af3b76cf2650364ab69c7bd5c3ea39adJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL0VTUE4vY29tbWVudHMvMTd0MXppMC9lc3BuX2lzX3RlcnJpYmxlLw&ntb=1\n   Description: ESPN took over the NHL subscription and the video skips all the time. Customer support says uninstall the app, unplug the tv, wait ten seconds and reinstall the app. Problem comes back in …\n   Content: Please click here if the page does not redirect automatically ...\n\n2. Where can I watch sports streams? : r/Piracy - Reddit\n   URL: https://www.bing.com/ck/a?!&&p=7d5c59ddee8c5ed63b3eb564d13f4c29f7ec3f76b5a2f158851454e008ff9828JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL1BpcmFjeS9jb21tZW50cy8xYzh2b2IwL3doZXJlX2Nhbl9pX3dhdGNoX3Nwb3J0c19zdHJlYW1zLw&ntb=1\n   Description: Apr 20, 2024· I follow the Premier League, have some go-to sites to watch soccer but since about a month ago I cannot for the life of me find decent streams…\n   Content: Please click here if the page does not redirect automatically ...\n\n3. Stream2watch Alternatives: 17 Best Sites to Watch Live Sports\n   URL: https://www.bing.com/ck/a?!&&p=2ae2d98599d6392a7bfbbf8646a47a46b8359bbf7aa8d0712cdf4e79ca70b4c6JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=246085ac-0e9c-67a3-1e2f-93dc0f6466d1&u=a1aHR0cHM6Ly93d3cucmVkZGl0LmNvbS9yL3N0cmVhbTJ3YXRjaC9jb21tZW50cy93cXYyZjAvc3RyZWFtMndhdGNoX2Fsd...<truncated>"
+        },
+        {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "call_eBasS2OYh5DqUp9HJJKSN24c",
+              "type": "function",
+              "function": {
+                "name": "browser_use",
+                "arguments": "{\"action\":\"web_search\",\"query\":\"DeepFruits fruit detection graph Connected Papers 2016\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. Direxion Daily Junior Gold Miners Index Bull2X Shares (JNUG)\n   URL: https://www.bing.com/ck/a?!&&p=9cc54f1c973b3ca270f7bf094ac720ce12bb6006f3363d46741f5b4a862302d7JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=1b9acd4a-e25e-66a7-32f2-db3ae36767cc&u=a1aHR0cHM6Ly9maW5hbmNlLnlhaG9vLmNvbS9xdW90ZS9KTlVHLw&ntb=1\n   Description: Find the latest Direxion Daily Junior Gold Miners Index Bull 2X Shares (JNUG) stock quote, history, news and other vital information to help you with your stock trading and investing.\n   Content: Please click here if the page does not redirect automatically ...\n\n2. JNUG| Direxion Daily Junior Gold Miners Index Bull 2X ... -MarketWatch\n   URL: https://www.bing.com/ck/a?!&&p=5a01b9bfea11a42b9061a4dd83d6dc794510464468ed4cdcf3daf910327db377JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=1b9acd4a-e25e-66a7-32f2-db3ae36767cc&u=a1aHR0cHM6Ly93d3cubWFya2V0d2F0Y2guY29tL2ludmVzdGluZy9mdW5kL2pudWc&ntb=1\n   Description: 4 days ago· JNUG | A complete Direxion Daily Junior Gold Miners Index Bull 2X Shares exchange traded fund overview by MarketWatch. View the latest ETF prices and news for …\n   Content: Please click here if the page does not redirect automatically ...\n\n3. JNUGETFStockPrice & Overview\n   URL: https://www.bing.com/ck/a?!&&p=a52891833d9b784619c26bcece69252d219a08d7cb7252f62e5b4a4fa10698cfJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=1b9acd4a-e25e-66a7-32f2-db3ae36767cc&u=a1aHR0cHM6Ly9zdG9ja2FuYWx5c2lzLmNvbS9ldGYvam51Zy8&ntb=1\n   Description: 3 days ago· The Direxion Daily Junior Gold Miners Index Bull 2X Shares (JNUG) is an exchange-traded fund that is based on the MVIS Global Junior Gold Miners index. The fund provides …\n   Content: Please click here if the page does not redirect automatically ...\n\nMetadata:\n- Total results: 3\n- Language: en\n- Country: us\n\nFetched Content from https://www.bing.com/ck/a?!&&...<truncated>",
+          "name": "browser_use",
+          "tool_call_id": "call_eBasS2OYh5DqUp9HJJKSN24c"
+        },
+        {
+          "role": "assistant",
+          "content": "Tool result: Observed output of cmd `browser_use` executed:\nSearch Results:\nSearch results for 'DeepFruits fruit detection graph Connected Papers 2016':\n\n1. Direxion Daily Junior Gold Miners Index Bull2X Shares (JNUG)\n   URL: https://www.bing.com/ck/a?!&&p=9cc54f1c973b3ca270f7bf094ac720ce12bb6006f3363d46741f5b4a862302d7JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=1b9acd4a-e25e-66a7-32f2-db3ae36767cc&u=a1aHR0cHM6Ly9maW5hbmNlLnlhaG9vLmNvbS9xdW90ZS9KTlVHLw&ntb=1\n   Description: Find the latest Direxion Daily Junior Gold Miners Index Bull 2X Shares (JNUG) stock quote, history, news and other vital information to help you with your stock trading and investing.\n   Content: Please click here if the page does not redirect automatically ...\n\n2. JNUG| Direxion Daily Junior Gold Miners Index Bull 2X ... -MarketWatch\n   URL: https://www.bing.com/ck/a?!&&p=5a01b9bfea11a42b9061a4dd83d6dc794510464468ed4cdcf3daf910327db377JmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=1b9acd4a-e25e-66a7-32f2-db3ae36767cc&u=a1aHR0cHM6Ly93d3cubWFya2V0d2F0Y2guY29tL2ludmVzdGluZy9mdW5kL2pudWc&ntb=1\n   Description: 4 days ago· JNUG | A complete Direxion Daily Junior Gold Miners Index Bull 2X Shares exchange traded fund overview by MarketWatch. View the latest ETF prices and news for …\n   Content: Please click here if the page does not redirect automatically ...\n\n3. JNUGETFStockPrice & Overview\n   URL: https://www.bing.com/ck/a?!&&p=a52891833d9b784619c26bcece69252d219a08d7cb7252f62e5b4a4fa10698cfJmltdHM9MTc1ODU4NTYwMA&ptn=3&ver=2&hsh=4&fclid=1b9acd4a-e25e-66a7-32f2-db3ae36767cc&u=a1aHR0cHM6Ly9zdG9ja2FuYWx5c2lzLmNvbS9ldGYvam51Zy8&ntb=1\n   Description: 3 days ago· The Direxion Daily Junior Gold Miners Index Bull 2X Shares (JNUG) is an exchange-traded fund that is based on the MVIS Global Junior Gold Miners index. The fund provides …\n   Content: Please click here if the page does not redirect automatically ...\n\nMetadata:\n- Total results: 3\n- Language: en\n- Country: us\n\nFetched Content from https://www.bing...<truncated>"
+        }
+      ],
+      "error_message": null
+    }
+  },
+  "timestamp": 1758620540.8961525
+}

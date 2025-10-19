@@ -1,0 +1,162 @@
+# GAIA 通用配置（由 config.example.toml 转换而来）
+# 说明：
+# - 下方 llm.* 对应原 TOML 中的 [llm] / [llm.vision]
+# - 可选块（browser / search / sandbox / runflow 等）以注释形式保留，按需启用
+# - 若集成到基于 AppConfig / Config 的加载逻辑，可再做键名调整
+planner:
+  reuse_plan: true  # 是否复用已有计划
+
+llm:
+  default:
+    model: "gpt-4o"          # 主模型
+    base_url: "https://api.openai.com/v1"     # 接口地址
+    api_key: "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"                 # 替换为真实 KEY
+    max_tokens: 8192                               # 最大输出 token
+    temperature: 0.0                               # 温度（随机性）
+    # api_type: ""                                 # 可选: aws / azure / ollama 等
+    # api_version: ""                              # Azure OpenAI 版本（仅 api_type=azure 时）
+
+  vision:
+    model: "gpt-4o"          # 视觉模型（如不需要可删除该块）
+    base_url: "https://api.openai.com/v1"
+    api_key: "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"
+    max_tokens: 8192
+    temperature: 0.0
+
+# ================== MCP 设置 (mcp) ==================
+# mcp:
+#   server_reference: "app.mcp.server"   # 模块入口（已在示例中启用）
+
+mcp:
+  server_reference: "app.mcp.server"
+
+# ================== Runflow 工作流扩展 (runflow) ==================
+runflow:
+  use_data_analysis_agent: false
+
+# ================== 兼容旧结构：原先简单 model 块（如无需可删除） ==================
+protocol: "dummy"
+mode: "debug" # debug or normal 
+
+# Runtime configuration
+runtime:
+  task_file: "scenario/gaia/dataset/2023/validation/metadata.jsonl"
+  output_file: "workspaces/gaia_dummy_results.json"
+  timeout: 300  # seconds per task
+
+# Framework configuration
+framework:
+  name: "multi-agent protocol framework for GAIA"
+  version: "1.0.0"
+
+network:
+  host: "127.0.0.1"
+  port_range:
+    start: 9000
+    end: 9100
+  timeout_seconds: 60
+  max_connections: 10
+
+agents:
+  default_max_tokens: 5000
+  default_priority: 1
+  workspace_base: "workspaces"
+  max_agent_num: 10
+  agent_timeout: 10000  # milliseconds
+  
+  # GAIA level-based agent recommendations
+  level_recommendations:
+    1: 2  # Level 1: Simple tasks, 2 agents recommended
+    2: 4  # Level 2: Medium tasks, 4 agents recommended  
+    3: 8  # Level 3: Complex tasks, 8 agents recommended
+  
+  complexity_thresholds:
+    low: 2000
+    medium: 4000
+    high: 8000
+
+performance:
+  max_execution_time: 300000  # milliseconds
+  target_accuracy: 0.8
+  max_total_tokens: 32768
+
+evaluation:
+  truth_file: "ground_truth.json"
+  metrics_file: "metrics.json"
+  artifacts_file: "run_artifacts.tar.gz"
+  judge_timeout: 30  # LLM judge evaluation timeout in seconds
+
+logging:
+  level: "INFO"
+  format: "[%(asctime)s] %(levelname)s: %(message)s"
+  agent_logs: true
+  packet_logs: true
+
+model:
+  name: "gpt-4o"
+  base_url: "https://api.openai.com/v1"
+  api_key: "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"
+  max_tokens: 4096
+  temperature: 0.0
+  timeout: 30
+  top_p: 1.0
+  frequency_penalty: 0.0
+  presence_penalty: 0.0
+
+# ================== 可选多供应商（示例，按需取消注释） ==================
+# llm:
+#   aws:
+#     api_type: "aws"
+#     model: "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+#     base_url: "bedrock-runtime.us-west-2.amazonaws.com"  # 当前未使用，可留空
+#     api_key: "bear"            # Bedrock 形式需要的占位
+#     max_tokens: 8192
+#     temperature: 1.0
+#   azure:
+#     api_type: "azure"
+#     model: "YOUR_MODEL_NAME"
+#     base_url: "https://<your-endpoint>/openai/deployments/<deployment-id>"
+#     api_key: "AZURE_API_KEY"
+#     api_version: "2024-08-01-preview"
+#     max_tokens: 8096
+#     temperature: 0.0
+#   ollama:
+#     api_type: "ollama"
+#     model: "llama3.2"
+#     base_url: "http://localhost:11434/v1"
+#     api_key: "ollama"
+#     max_tokens: 4096
+#     temperature: 0.0
+
+# ================== 浏览器设置 (browser) ==================
+# browser:
+#   headless: false              # 是否无头
+#   disable_security: true       # 关闭安全策略（默认 true）
+#   extra_chromium_args: []      # 额外启动参数
+#   chrome_instance_path: ""     # 指定本地 Chrome 可执行路径
+#   wss_url: ""                  # 通过 WebSocket 连接现有浏览器
+#   cdp_url: ""                  # 通过 CDP 连接
+#   proxy:                       # 代理（可选）
+#     server: "http://proxy:port"
+#     username: "user"
+#     password: "pass"
+
+# ================== 搜索设置 (search) ==================
+search:
+  engine: "google"                      # 首选搜索引擎
+  fallback_engines: ["bing", "duckduckgo", "baidu"]  # 回退顺序：先 Bing，再 DuckDuckGo，最后 Baidu
+  retry_delay: 60                        # 所有失败后整体重试延迟（秒）
+  max_retries: 3                         # 最大重试轮数
+  # 可选：默认语言与国家，不设置则分别为 en/us
+  # lang: "en"
+  # country: "us"
+
+# ================== 沙箱设置 (sandbox) ==================
+sandbox:
+  use_sandbox: false
+  image: "python:3.11-slim"
+  # work_dir: "/workspace"
+  memory_limit: "1g"
+  cpu_limit: 2.0
+  timeout: 300
+  network_enabled: true

@@ -1,0 +1,289 @@
+{
+  "network_memory": [
+    {
+      "role": "user",
+      "content": "🎯 ORIGINAL TASK REQUIREMENT:\nThe attached file lists accommodations in the resort town of Seahorse Island. Based on the information in this file, which seems like the better available place to stay for a family that enjoys swimming and wants a full house?\n================================================================================\nStep 1 - Current Task Input:\nThe attached file lists accommodations in the resort town of Seahorse Island. Based on the information in this file, which seems like the better available place to stay for a family that enjoys swimming and wants a full house?\n\n⚠️  REMEMBER: All your work must contribute to answering the ORIGINAL TASK above!"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "call_1CPLPSAyIDkzjMN8dAyqg99M",
+          "type": "function",
+          "function": {
+            "name": "sandbox_python_execute",
+            "arguments": "{\"code\":\"import os\\n\\n# Check if the file exists in the current directory\\nfile_exists = os.path.exists('366e2f2b-8632-4ef2-81eb-bc3877489217.pdf')\\nfile_exists\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized",
+      "name": "sandbox_python_execute",
+      "tool_call_id": "call_1CPLPSAyIDkzjMN8dAyqg99M"
+    },
+    {
+      "role": "assistant",
+      "content": "Tool result: Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized"
+    },
+    {
+      "role": "user",
+      "content": "🎯 ORIGINAL TASK REQUIREMENT:\nThe attached file lists accommodations in the resort town of Seahorse Island. Based on the information in this file, which seems like the better available place to stay for a family that enjoys swimming and wants a full house?\n================================================================================\nStep 2 - Current Task Input:\nTool result: Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized\n\nPrevious Steps Context:\nStep 1 (DataExtractor - success): Tool result: Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized\n\n⚠️  REMEMBER: All your work must contribute to answering the ORIGINAL TASK above!"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "call_kdH4EQLVk60gWj2W1UN3IpN7",
+          "type": "function",
+          "function": {
+            "name": "str_replace_editor",
+            "arguments": "{\"command\":\"view\",\"path\":\"366e2f2b-8632-4ef2-81eb-bc3877489217.pdf\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "Observed output of cmd `str_replace_editor` executed:\nHere's the result of running `cat -n` on /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf:\n     1\tFile content of /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf::\n     2\tversion https://git-lfs.github.com/spec/v1\n     3\toid sha256:3436d91663040f778b945de6df35552e5eefd54fecbfec755f599e88b841ac02\n     4\tsize 53956\n     5\t\n",
+      "name": "str_replace_editor",
+      "tool_call_id": "call_kdH4EQLVk60gWj2W1UN3IpN7"
+    },
+    {
+      "role": "assistant",
+      "content": "Tool result: Observed output of cmd `str_replace_editor` executed:\nHere's the result of running `cat -n` on /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf:\n     1\tFile content of /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf::\n     2\tversion https://git-lfs.github.com/spec/v1\n     3\toid sha256:3436d91663040f778b945de6df35552e5eefd54fecbfec755f599e88b841ac02\n     4\tsize 53956\n     5"
+    },
+    {
+      "role": "user",
+      "content": "🎯 ORIGINAL TASK REQUIREMENT:\nThe attached file lists accommodations in the resort town of Seahorse Island. Based on the information in this file, which seems like the better available place to stay for a family that enjoys swimming and wants a full house?\n================================================================================\nStep 3 - Current Task Input:\nTool result: Observed output of cmd `str_replace_editor` executed:\nHere's the result of running `cat -n` on /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf:\n     1\tFile content of /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf::\n     2\tversion https://git-lfs.github.com/spec/v1\n     3\toid sha256:3436d91663040f778b945de6df35552e5eefd54fecbfec755f599e88b841ac02\n     4\tsize 53956\n     5\n\nPrevious Steps Context:\nStep 1 (DataExtractor - success): Tool result: Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized\nStep 2 (DataFormatter - success): Tool result: Observed output of cmd `str_replace_editor` executed:\nHere's the result of running `cat -n` on /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf:\n     1\tFile content of /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf::\n     2\tversion https://git-lfs.github.com/spec/v1\n     3\toid sha256:3436d91663040f778b945de6df35552e5eefd54fecbfec755f599e88b841ac02\n     4\tsize 53956\n     5\n\n⚠️  REMEMBER: All your work must contribute to answering the ORIGINAL TASK above!"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "call_kR0B03IjcBHnSJptga1bRzRH",
+          "type": "function",
+          "function": {
+            "name": "browser_use",
+            "arguments": "{\"action\":\"parse_pdf\",\"url\":\"./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "Observed output of cmd `browser_use` executed:\nError: Failed to parse PDF from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Failed to fetch content from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Request URL is missing an 'http://' or 'https://' protocol.",
+      "name": "browser_use",
+      "tool_call_id": "call_kR0B03IjcBHnSJptga1bRzRH"
+    },
+    {
+      "role": "assistant",
+      "content": "Tool result: Observed output of cmd `browser_use` executed:\nError: Failed to parse PDF from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Failed to fetch content from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Request URL is missing an 'http://' or 'https://' protocol."
+    },
+    {
+      "role": "user",
+      "content": "🎯 ORIGINAL TASK REQUIREMENT:\nThe attached file lists accommodations in the resort town of Seahorse Island. Based on the information in this file, which seems like the better available place to stay for a family that enjoys swimming and wants a full house?\n================================================================================\nStep 4 - Current Task Input:\nTool result: Observed output of cmd `browser_use` executed:\nError: Failed to parse PDF from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Failed to fetch content from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Request URL is missing an 'http://' or 'https://' protocol.\n\nPrevious Steps Context:\nStep 1 (DataExtractor - success): Tool result: Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized\nStep 2 (DataFormatter - success): Tool result: Observed output of cmd `str_replace_editor` executed:\nHere's the result of running `cat -n` on /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf:\n     1\tFile content of /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf::\n     2\tversion https://git-lfs.github.com/spec/v1\n     3\toid sha256:3436d91663040f778b945de6df35552e5eefd54fecbfec755f599e88b841ac02\n     4\tsize 53956\n     5\nStep 3 (FeatureEvaluator - success): Tool result: Observed output of cmd `browser_use` executed:\nError: Failed to parse PDF from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Failed to fetch content from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Request URL is missing an 'http://' or 'https://' protocol.\n\n⚠️  REMEMBER: All your work must contribute to answering the ORIGINAL TASK above!"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "call_ZAwIbPbdti22uV50syTsE7Lq",
+          "type": "function",
+          "function": {
+            "name": "sandbox_python_execute",
+            "arguments": "{\"code\":\"import PyPDF2\\n\\n# Open the PDF file\\nwith open('366e2f2b-8632-4ef2-81eb-bc3877489217.pdf', 'rb') as file:\\n    # Create a PDF reader object\\n    pdf_reader = PyPDF2.PdfReader(file)\\n    \\n    # Initialize a string to store the text\\n    text = ''\\n    \\n    # Iterate through each page in the PDF\\n    for page in pdf_reader.pages:\\n        # Extract text from the page\\n        text += page.extract_text() + '\\\\n'\\n\\n# Print the extracted text\\nprint(text)\",\"packages\":[\"PyPDF2\"]}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized",
+      "name": "sandbox_python_execute",
+      "tool_call_id": "call_ZAwIbPbdti22uV50syTsE7Lq"
+    },
+    {
+      "role": "assistant",
+      "content": "Tool result: Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized"
+    }
+  ],
+  "workflow_progress": {
+    "total_steps": 4,
+    "completed_steps": 4,
+    "completion_rate": 1.0,
+    "status_breakdown": {
+      "pending": 0,
+      "processing": 0,
+      "success": 4,
+      "error": 0,
+      "timeout": 0
+    },
+    "step_details": {
+      "0": "success",
+      "1": "success",
+      "2": "success",
+      "3": "success"
+    }
+  },
+  "step_executions": {
+    "step_0": {
+      "step": 0,
+      "agent_id": "0",
+      "agent_name": "DataExtractor",
+      "status": "success",
+      "start_time": 1758618357.33164,
+      "end_time": 1758618359.8435552,
+      "duration": 2.5119152069091797,
+      "messages": [
+        {
+          "role": "user",
+          "content": "🎯 ORIGINAL TASK REQUIREMENT:\nThe attached file lists accommodations in the resort town of Seahorse Island. Based on the information in this file, which seems like the better available place to stay for a family that enjoys swimming and wants a full house?\n================================================================================\nStep 1 - Current Task Input:\nThe attached file lists accommodations in the resort town of Seahorse Island. Based on the information in this file, which seems like the better available place to stay for a family that enjoys swimming and wants a full house?\n\n⚠️  REMEMBER: All your work must contribute to answering the ORIGINAL TASK above!"
+        },
+        {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "call_1CPLPSAyIDkzjMN8dAyqg99M",
+              "type": "function",
+              "function": {
+                "name": "sandbox_python_execute",
+                "arguments": "{\"code\":\"import os\\n\\n# Check if the file exists in the current directory\\nfile_exists = os.path.exists('366e2f2b-8632-4ef2-81eb-bc3877489217.pdf')\\nfile_exists\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized",
+          "name": "sandbox_python_execute",
+          "tool_call_id": "call_1CPLPSAyIDkzjMN8dAyqg99M"
+        },
+        {
+          "role": "assistant",
+          "content": "Tool result: Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized"
+        }
+      ],
+      "error_message": null
+    },
+    "step_1": {
+      "step": 1,
+      "agent_id": "1",
+      "agent_name": "DataFormatter",
+      "status": "success",
+      "start_time": 1758618360.3440564,
+      "end_time": 1758618362.1526322,
+      "duration": 1.8085758686065674,
+      "messages": [
+        {
+          "role": "user",
+          "content": "🎯 ORIGINAL TASK REQUIREMENT:\nThe attached file lists accommodations in the resort town of Seahorse Island. Based on the information in this file, which seems like the better available place to stay for a family that enjoys swimming and wants a full house?\n================================================================================\nStep 2 - Current Task Input:\nTool result: Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized\n\nPrevious Steps Context:\nStep 1 (DataExtractor - success): Tool result: Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized\n\n⚠️  REMEMBER: All your work must contribute to answering the ORIGINAL TASK above!"
+        },
+        {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "call_kdH4EQLVk60gWj2W1UN3IpN7",
+              "type": "function",
+              "function": {
+                "name": "str_replace_editor",
+                "arguments": "{\"command\":\"view\",\"path\":\"366e2f2b-8632-4ef2-81eb-bc3877489217.pdf\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Observed output of cmd `str_replace_editor` executed:\nHere's the result of running `cat -n` on /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf:\n     1\tFile content of /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf::\n     2\tversion https://git-lfs.github.com/spec/v1\n     3\toid sha256:3436d91663040f778b945de6df35552e5eefd54fecbfec755f599e88b841ac02\n     4\tsize 53956\n     5\t\n",
+          "name": "str_replace_editor",
+          "tool_call_id": "call_kdH4EQLVk60gWj2W1UN3IpN7"
+        },
+        {
+          "role": "assistant",
+          "content": "Tool result: Observed output of cmd `str_replace_editor` executed:\nHere's the result of running `cat -n` on /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf:\n     1\tFile content of /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf::\n     2\tversion https://git-lfs.github.com/spec/v1\n     3\toid sha256:3436d91663040f778b945de6df35552e5eefd54fecbfec755f599e88b841ac02\n     4\tsize 53956\n     5"
+        }
+      ],
+      "error_message": null
+    },
+    "step_2": {
+      "step": 2,
+      "agent_id": "2",
+      "agent_name": "FeatureEvaluator",
+      "status": "success",
+      "start_time": 1758618362.6544821,
+      "end_time": 1758618364.3815377,
+      "duration": 1.727055549621582,
+      "messages": [
+        {
+          "role": "user",
+          "content": "🎯 ORIGINAL TASK REQUIREMENT:\nThe attached file lists accommodations in the resort town of Seahorse Island. Based on the information in this file, which seems like the better available place to stay for a family that enjoys swimming and wants a full house?\n================================================================================\nStep 3 - Current Task Input:\nTool result: Observed output of cmd `str_replace_editor` executed:\nHere's the result of running `cat -n` on /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf:\n     1\tFile content of /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf::\n     2\tversion https://git-lfs.github.com/spec/v1\n     3\toid sha256:3436d91663040f778b945de6df35552e5eefd54fecbfec755f599e88b841ac02\n     4\tsize 53956\n     5\n\nPrevious Steps Context:\nStep 1 (DataExtractor - success): Tool result: Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized\nStep 2 (DataFormatter - success): Tool result: Observed output of cmd `str_replace_editor` executed:\nHere's the result of running `cat -n` on /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf:\n     1\tFile content of /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf::\n     2\tversion https://git-lfs.github.com/spec/v1\n     3\toid sha256:3436d91663040f778b945de6df35552e5eefd54fecbfec755f599e88b841ac02\n     4\tsize 53956\n     5\n\n⚠️  REMEMBER: All your work must contribute to answering the ORIGINAL TASK above!"
+        },
+        {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "call_kR0B03IjcBHnSJptga1bRzRH",
+              "type": "function",
+              "function": {
+                "name": "browser_use",
+                "arguments": "{\"action\":\"parse_pdf\",\"url\":\"./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Observed output of cmd `browser_use` executed:\nError: Failed to parse PDF from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Failed to fetch content from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Request URL is missing an 'http://' or 'https://' protocol.",
+          "name": "browser_use",
+          "tool_call_id": "call_kR0B03IjcBHnSJptga1bRzRH"
+        },
+        {
+          "role": "assistant",
+          "content": "Tool result: Observed output of cmd `browser_use` executed:\nError: Failed to parse PDF from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Failed to fetch content from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Request URL is missing an 'http://' or 'https://' protocol."
+        }
+      ],
+      "error_message": null
+    },
+    "step_3": {
+      "step": 3,
+      "agent_id": "3",
+      "agent_name": "DecisionSynthesizer",
+      "status": "success",
+      "start_time": 1758618364.88221,
+      "end_time": 1758618369.8034887,
+      "duration": 4.921278715133667,
+      "messages": [
+        {
+          "role": "user",
+          "content": "🎯 ORIGINAL TASK REQUIREMENT:\nThe attached file lists accommodations in the resort town of Seahorse Island. Based on the information in this file, which seems like the better available place to stay for a family that enjoys swimming and wants a full house?\n================================================================================\nStep 4 - Current Task Input:\nTool result: Observed output of cmd `browser_use` executed:\nError: Failed to parse PDF from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Failed to fetch content from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Request URL is missing an 'http://' or 'https://' protocol.\n\nPrevious Steps Context:\nStep 1 (DataExtractor - success): Tool result: Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized\nStep 2 (DataFormatter - success): Tool result: Observed output of cmd `str_replace_editor` executed:\nHere's the result of running `cat -n` on /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf:\n     1\tFile content of /root/Multiagent-Protocol/script/gaia/workspaces/anp/366e2f2b-8632-4ef2-81eb-bc3877489217/366e2f2b-8632-4ef2-81eb-bc3877489217.pdf::\n     2\tversion https://git-lfs.github.com/spec/v1\n     3\toid sha256:3436d91663040f778b945de6df35552e5eefd54fecbfec755f599e88b841ac02\n     4\tsize 53956\n     5\nStep 3 (FeatureEvaluator - success): Tool result: Observed output of cmd `browser_use` executed:\nError: Failed to parse PDF from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Failed to fetch content from ./366e2f2b-8632-4ef2-81eb-bc3877489217.pdf: Request URL is missing an 'http://' or 'https://' protocol.\n\n⚠️  REMEMBER: All your work must contribute to answering the ORIGINAL TASK above!"
+        },
+        {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "call_ZAwIbPbdti22uV50syTsE7Lq",
+              "type": "function",
+              "function": {
+                "name": "sandbox_python_execute",
+                "arguments": "{\"code\":\"import PyPDF2\\n\\n# Open the PDF file\\nwith open('366e2f2b-8632-4ef2-81eb-bc3877489217.pdf', 'rb') as file:\\n    # Create a PDF reader object\\n    pdf_reader = PyPDF2.PdfReader(file)\\n    \\n    # Initialize a string to store the text\\n    text = ''\\n    \\n    # Iterate through each page in the PDF\\n    for page in pdf_reader.pages:\\n        # Extract text from the page\\n        text += page.extract_text() + '\\\\n'\\n\\n# Print the extracted text\\nprint(text)\",\"packages\":[\"PyPDF2\"]}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized",
+          "name": "sandbox_python_execute",
+          "tool_call_id": "call_ZAwIbPbdti22uV50syTsE7Lq"
+        },
+        {
+          "role": "assistant",
+          "content": "Tool result: Observed output of cmd `sandbox_python_execute` executed:\nError: Sandbox execution failed after 4 attempts: Sandbox not initialized"
+        }
+      ],
+      "error_message": null
+    }
+  },
+  "timestamp": 1758618378.067133
+}

@@ -48,7 +48,7 @@ except Exception:
     create_did_wba_document = None
     did_generate = None
     get_pem_from_private_key = None
-    raise ImportError("AgentConnect library not available. Please install it via 'pip install agent-connect'.")
+    raise ImportError("\033[91mAgentConnect library not available. Please install it via 'pip install agent-connect'.\033[0m")
 
 logger = logging.getLogger(__name__)
 
@@ -459,7 +459,8 @@ class ANPSimpleNodeWrapper:
             Route("/anp/message", anp_message_endpoint, methods=["POST"]),  # HTTP fallback
         ]
         
-        app = Starlette(routes=routes, lifespan=lifespan)
+        # Don't use lifespan in Starlette app - it's disabled in uvicorn.Config
+        app = Starlette(routes=routes)
         return app
         
     async def _setup_did_info(self) -> None:
@@ -566,7 +567,7 @@ class ANPSimpleNodeWrapper:
                 "did": did,
                 "did_document_json": json.dumps(did_document)
             }
-            logger.warning(f"DID service unavailable, fallback to did:wba generation: {did} (DID service not configured)")
+            logger.info(f"Using local did:wba generation (DID service not configured): {did}")
 
         # 写入 agent card 基本信息
         self.agent_card["id"] = self.did_info["did"]
@@ -672,39 +673,27 @@ class ANPSimpleNodeWrapper:
             logger.info(f"Creating SimpleNode with DID: {self.did_info.get('did', 'unknown')}")
             logger.info(f"SimpleNode WebSocket port: {ws_port}")
             
+            # Use alias format for SimpleNode to match client destinationDid
+            full_did = self.did_info.get('did')
+            bitcoin_address = full_did.split(':')[2] if full_did else "unknown"
+            alias_did = f"{bitcoin_address.split('@')[0]}@127.0.0.1:{self.host_port}"
+            
+            # Create SimpleNode for ANP communication (fail fast on error)
             try:
-                # Use alias format for SimpleNode to match client destinationDid
-                full_did = self.did_info.get('did')
-                bitcoin_address = full_did.split(':')[2] if full_did else "unknown"
-                alias_did = f"{bitcoin_address.split('@')[0]}@127.0.0.1:{self.host_port}"
-                
-                try:
-                    self.simple_node = SimpleNode(
-                        host_domain=self.host_domain,
-                        new_session_callback=self._on_new_session,
-                        host_port=str(ws_port),
-                        host_ws_path=self.host_ws_path,
-                        private_key_pem=self.did_info.get('private_key_pem'),
-                        did=alias_did,  # Use alias format to match client destinationDid
-                        did_document_json=self.did_info.get('did_document_json')
-                    )
-                except TypeError:
-                    # Backward compatibility: SimpleNode without new_session_callback
-                    logger.warning("SimpleNode does not accept new_session_callback, creating without it")
-                    self.simple_node = SimpleNode(
-                        host_domain=self.host_domain,
-                        host_port=str(ws_port),
-                        host_ws_path=self.host_ws_path,
-                        private_key_pem=self.did_info.get('private_key_pem'),
-                        did=alias_did,
-                        did_document_json=self.did_info.get('did_document_json')
-                    )
-                
+                self.simple_node = SimpleNode(
+                    host_domain=self.host_domain,
+                    new_session_callback=self._on_new_session,
+                    host_port=str(ws_port),
+                    host_ws_path=self.host_ws_path,
+                    private_key_pem=self.did_info.get('private_key_pem'),
+                    did=alias_did,  # Use alias format to match client destinationDid
+                    did_document_json=self.did_info.get('did_document_json')
+                )
                 logger.info(f"SimpleNode created with alias DID: {alias_did} (to match client destinationDid)")
                 logger.info("SimpleNode created successfully")
             except Exception as e:
                 logger.error(f"Failed to create SimpleNode: {e}")
-                self.simple_node = None
+                raise  # Re-raise to fail fast instead of continuing with None
             
             # Start SimpleNode in background
             simple_node_task = asyncio.create_task(self._run_simple_node())

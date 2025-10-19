@@ -54,14 +54,8 @@ class AgoraServerAdapter(BaseServerAdapter):
         # Create tools from A2A executor
         tools = self._create_agora_tools(executor, agent_id)
         
-        import sys
-        print(f"[DEBUG] Created {len(tools)} Agora tools: {[tool.__name__ for tool in tools]}", file=sys.stderr, flush=True)
-        print(f"[DEBUG] Executor type: {type(executor)}", file=sys.stderr, flush=True)
-        print(f"[DEBUG] Executor has agora_qa_worker: {hasattr(executor, 'agora_qa_worker')}", file=sys.stderr, flush=True)
-        
         # Create official Agora receiver
         receiver = agora.Receiver.make_default(toolformer, tools=tools)
-        print(f"[DEBUG] Created Agora receiver with {len(tools)} tools", file=sys.stderr, flush=True)
         
         # Create server wrapper
         server_wrapper = AgoraServerWrapper(
@@ -104,18 +98,16 @@ class AgoraServerAdapter(BaseServerAdapter):
         
         # 获取模型名称，默认是 'gpt-4o-mini'
         model_name = kwargs.get('model', 'gpt-4o-mini')
-        print(f"[DEBUG] Trying to create Toolformer with model: {model_name}")
 
         # 尝试使用 Camel 框架
         try:
             import camel.types
-            print("[DEBUG] Using CamelToolformer")
             return agora.toolformers.CamelToolformer(
                 camel.types.ModelPlatformType.OPENAI,
                 camel.types.ModelType.GPT_4O_MINI
             )
         except ImportError:
-            print("[WARN] Camel not available, falling back to LangChainToolformer again...")
+            pass  # Fall back to LangChain
 
         # 最后使用 LangChainToolformer 作为 fallback
         from langchain_openai import ChatOpenAI
@@ -211,9 +203,6 @@ class AgoraServerAdapter(BaseServerAdapter):
                 context: Additional context as JSON string
             """
             import sys
-            print(f"[DEBUG] general_service called with: {message[:50]}...", file=sys.stderr, flush=True)
-            print(f"[DEBUG] executor type: {type(executor)}", file=sys.stderr, flush=True)
-            print(f"[DEBUG] executor has agora_qa_worker: {hasattr(executor, 'agora_qa_worker')}", file=sys.stderr, flush=True)
             
             # Check if executor has agora_qa_worker for direct LLM call
             try:
@@ -485,7 +474,6 @@ class AgoraServerWrapper:
                 import sys
 
                 data = request.get_json()
-                print(f"[DEBUG] AgoraServerWrapper /message called with data: {data}", file=sys.stderr, flush=True)
 
                 # Extract message text from nested structure
                 text_data = data.get('text', data)
@@ -498,8 +486,6 @@ class AgoraServerWrapper:
                         message_text = str(message_obj)
                 else:
                     message_text = str(text_data)
-
-                print(f"[DEBUG] Extracted message_text: {message_text[:100]}...", file=sys.stderr, flush=True)
 
                 # Check if executor has agora_qa_worker for direct LLM call
                 if hasattr(self.executor, 'agora_qa_worker') and hasattr(self.executor.agora_qa_worker, 'answer'):
@@ -532,11 +518,9 @@ class AgoraServerWrapper:
 
                     if error_container[0]:
                         error_msg = str(error_container[0])
-                        print(f"[DEBUG] Agora execution error: {error_msg}", file=sys.stderr, flush=True)
                         return jsonify({"error": error_msg}), 500
                     elif result_container[0] is not None:
                         result = result_container[0]
-                        print(f"[DEBUG] Agora execution success: {type(result)}", file=sys.stderr, flush=True)
 
                         # Normalize return types to JSON
                         if isinstance(result, (dict, list)):
@@ -546,7 +530,6 @@ class AgoraServerWrapper:
                             # Return stringy results under 'text' key for compatibility
                             return jsonify({"text": str(result), "status": "success"}), 200
                     else:
-                        print(f"[DEBUG] Agora execution timeout or no result", file=sys.stderr, flush=True)
                         return jsonify({"text": "No result", "status": "timeout"}), 500
                 else:
                     # Non-LLM path: return structured JSON for compatibility

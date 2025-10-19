@@ -34,7 +34,8 @@ if str(AC_PATH) not in sys.path:
 
 # AgentConnect absolute imports
 from agent_connect.simple_node import SimpleNode, SimpleNodeSession
-from agent_connect.authentication import DIDAllClient, create_did_wba_document, generate_auth_header
+from agent_connect.authentication.didallclient import DIDAllClient  # Direct import from module
+from agent_connect.authentication import create_did_wba_document, generate_auth_header
 from agent_connect.utils.did_generate import did_generate
 from agent_connect.meta_protocol.meta_protocol import MetaProtocol, ProtocolType
 from agent_connect.app_protocols.protocol_container import ProtocolContainer
@@ -432,9 +433,10 @@ class ANPAdapter(BaseProtocolAdapter):
     async def _setup_simple_node(self) -> None:
         """Setup SimpleNode for AgentConnect WebSocket communication."""
         try:
-            # Create SimpleNode with proper configuration
+            # Create SimpleNode with proper configuration (including required new_session_callback)
             self.simple_node = SimpleNode(
                 host_domain=self.host_domain,
+                new_session_callback=self.new_session_callback or self._on_new_session,
                 host_port=self.host_port,
                 host_ws_path=self.host_ws_path,
                 private_key_pem=self.local_did_info.get('private_key_pem'),
