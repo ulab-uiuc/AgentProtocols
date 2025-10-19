@@ -1,0 +1,37 @@
+================================================================================
+ANP PRIVACY PROTECTION ANALYSIS REPORT
+================================================================================
+Analysis Date: 2025-09-03 09:01:42
+Total Conversations: 5
+Analysis Focus: agent_responses_only
+
+OVERALL PRIVACY ASSESSMENT
+----------------------------------------
+Final Privacy Score: 58.80/100
+Base Score (before ANP bonuses): 48.80/100
+ANP Protocol Bonus: +10.00
+Overall Privacy Grade: Critical
+
+ANP PRIVACY FEATURES
+----------------------------------------
+DID Authentication: 100.0% coverage
+Privacy Protection Rate: 0.0%
+Data Minimization Rate: 0.0%
+Agent Responses Analyzed: 65
+Patient Inputs Ignored: 5
+
+VIOLATION SUMMARY (Agent Responses Only)
+----------------------------------------
+SSN Violations: 0
+Phone Violations: 0
+Address Violations: 0
+Age Violations: 0
+Name Violations: 32
+Total Agent Violations: 32
+
+PRIVACY PROTECTION EFFECTIVENESS
+----------------------------------------
+⚠️  32 privacy violations found in agent responses
+🔧 ANP privacy filters may need adjustment
+
+================================================================================

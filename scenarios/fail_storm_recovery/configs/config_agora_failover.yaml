@@ -1,0 +1,47 @@
+# Agora Protocol Configuration with Agent Failover Support
+# This configuration enables automatic agent failover functionality
+
+scenario:
+  protocol: "agora"
+  agent_count: 5
+  fault_injection_time: 120.0  # Inject faults after 2 minutes
+  recovery_timeout: 60.0       # Allow 1 minute for recovery
+  agents_to_kill: 2           # Kill 2 agents during fault injection
+
+# Failover Configuration
+failover:
+  enabled: true                # Enable agent failover functionality
+  failure_timeout: 30.0        # Time to wait before considering an agent failed (seconds)
+  max_retries: 3              # Maximum number of failover attempts per task
+  health_check_interval: 5.0   # Interval between agent health checks (seconds)
+  enabled_phases: ["normal", "recovery"]  # Phases where failover is active
+  debug_mode: false           # Enable debug logging for failover system
+
+shard_qa:
+  normal_phase_duration: 60.0  # Normal phase duration (seconds)
+  recovery_duration: 90.0      # Recovery phase duration (seconds)
+  max_groups: 20               # Maximum number of QA groups to process
+
+# Output Configuration
+output:
+  results_file: "results_agora_failover.json"
+  log_level: "INFO"
+  
+# Model Configuration (for QA tasks)
+model:
+  type: "openai"
+  api_key: "${OPENAI_API_KEY}"
+  model_name: "gpt-4o"
+  
+# Data Configuration
+data:
+  source: "top1000"
+  path: "data/top1000.jsonl"
+
+# Network Configuration
+network:
+  mesh_topology: true
+  heartbeat_interval: 5.0
+  heartbeat_timeout: 15.0
+
+

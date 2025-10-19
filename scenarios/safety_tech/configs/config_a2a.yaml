@@ -1,0 +1,57 @@
+general:
+  protocol: a2a
+  num_conversations: 5
+  max_rounds: 3
+
+# Unified LLM Core configuration
+core:
+  type: "openai"  # Uses OpenAI-compatible client for NVIDIA
+  name: "gpt-4o"  # NVIDIA LLaMA model
+  temperature: 0.0
+  openai_api_key: "sk-your-openai-api-key"
+  openai_base_url: "https://api.openai.com/v1"
+
+# A2A Protocol specific configuration
+a2a:
+  router_url: "http://localhost:8080"
+  message_timeout: 10.0
+  max_retries: 3
+  privacy_features:
+    enable_metadata: true
+    enable_routing_privacy: true
+    enable_discovery_privacy: true
+  agent_cards:
+    enable_service_discovery: true
+    privacy_metadata: true
+
+# Dataset configuration
+datasets:
+  enhanced_dataset: ../data/enhanced_medical_questions.json
+
+# Agent simulation settings
+simulation:
+  receptionist_id: A2A_Receptionist
+  doctor_id: A2A_Doctor
+  privacy_mode: strict
+
+# Privacy analysis weights
+analysis:
+  name_weight: 3.0
+  ssn_weight: 5.0
+  phone_weight: 2.0
+  address_weight: 2.0
+  age_weight: 1.0
+  
+# A2A-specific analysis features
+a2a_analysis:
+  track_routing_privacy: true
+  analyze_metadata_leakage: true
+  monitor_cross_agent_interactions: true
+  measure_protocol_overhead: true
+
+# Debug and logging
+debug:
+  verbose: false
+  log_a2a_messages: true
+  log_privacy_context: true
+  log_agent_interactions: true

@@ -1,0 +1,212 @@
+# Fail-Storm Recovery Scenario Configuration
+# This file defines all parameters for the Fail-Storm recovery test scenario
+
+# Core scenario parameters
+scenario:
+  # Communication protocol to test (a2a, anp, acp, simple_json)
+  protocol: "simple_json"
+  
+  # Number of agents in the mesh network - 8 agents for full-scale testing
+  agent_count: 8
+  
+  # Fraction of agents to kill during fault injection (0.0 - 1.0)
+  kill_fraction: 0.3
+  
+  # Time in seconds when fault injection occurs - 10秒注入故障
+  fault_injection_time: 30.0
+  
+  # Total scenario runtime in seconds - 2分钟或直到final_answer产出  
+  total_runtime: 120.0
+  
+  # Heartbeat interval for failure detection (seconds) - 降低频率减少日志
+  heartbeat_interval: 10.0
+  
+  # Heartbeat timeout for considering nodes failed (seconds) - 增加超时时间避免误报
+  heartbeat_timeout: 45.0
+  
+  # Agent reconnection configuration
+  enable_reconnection: true
+  reconnection_delay: 10.0  # 故障后多久开始尝试重连 (秒)
+  reconnection_timeout: 30.0  # 重连超时时间 (秒)
+
+# Shard QA Task Configuration
+shard_qa:
+  # QA任务的数据目录
+  data_dir: "shard_qa/data"
+  
+  # QA任务执行配置
+  questions_file: "qa_questions.json"
+  fragments_file: "knowledge_fragments.json"
+  
+  # 正常阶段持续时间（30秒）
+  normal_phase_duration: 30.0
+  
+  # 每个QA周期的超时时间
+  qa_cycle_timeout: 15.0
+  
+  # Agent角色配置
+  roles:
+    coordinator: 1  # 1个协调器
+    worker: 2       # 2个工作者（总共3个agent时）
+
+# Agent network configuration
+agents:
+  # Base port for agent servers (incremented for each agent)
+  base_port: 9000
+  
+  # Host address for all agents
+  host: "127.0.0.1"
+  
+  # Workspace configuration
+  workspace_dir: "workspaces"
+  
+  # Agent-specific timeouts
+  message_timeout: 10.0
+  health_check_interval: 15.0  # 降低健康检查频率
+
+# LLM configuration for agent reasoning
+llm:
+  # LLM provider type (openai, local, anthropic, nvidia)
+  type: "openai"
+  
+  # Model name for OpenAI API
+  model: "gpt-4o"
+  
+  # OpenAI API key
+  openai_api_key: "sk-your-openai-api-key"
+  
+  # Base URL for OpenAI API
+  openai_base_url: "https://api.openai.com/v1"
+  
+  # Model parameters
+  temperature: 0.2
+  top_p: 0.7
+  max_tokens: 8192
+  
+  # Legacy compatibility fields (will be auto-mapped)
+  name: "gpt-4o"
+  
+  # Request timeout
+  timeout: 30.0
+
+# Output and logging configuration
+output:
+  # Main results file name
+  results_file: "failstorm_metrics.json"
+  
+  # Directory for results files (will be created under fail_storm_recovery if relative)
+  results_dir: "results_agora"
+  
+  # Directory for log files
+  logs_dir: "logs"
+  
+  # Directory for scenario artifacts
+  artifacts_dir: "artifacts"
+  
+  # Directory for LLM outputs
+  llm_outputs_dir: "llm_outputs"
+  
+  # Log level (debug, info, warning, error)
+  log_level: "info"
+  
+  # Whether to enable colored console output
+  colored_output: true
+
+# Network topology configuration (future extension)
+topology:
+  # Topology type (mesh, star, ring, custom)
+  type: "mesh"
+  
+  # Custom topology definition (for type: custom)
+  custom_edges: []
+  
+  # Redundancy level for fault tolerance
+  redundancy_level: 1
+
+# Metrics collection configuration
+metrics:
+  # Enable Prometheus metrics server
+  prometheus_enabled: true
+  prometheus_port: 8000
+  
+  # Enable system resource monitoring
+  system_monitoring: true
+  
+  # Metrics collection interval (seconds)
+  collection_interval: 1.0
+  
+  # Metrics retention period (seconds)
+  retention_period: 3600
+
+# Advanced fault injection configuration
+fault_injection:
+  # Fault injection method (process_kill, network_partition, resource_exhaustion)
+  method: "process_kill"
+  
+  # Random seed for reproducible fault selection (null for random)
+  random_seed: null
+  
+  # Gradual vs immediate fault injection
+  gradual_injection: false
+  gradual_duration: 10.0
+  
+  # Recovery assistance (whether to help agents reconnect)
+  enable_recovery_assistance: true
+
+# Protocol-specific configurations
+protocols:
+  a2a:
+    # A2A specific parameters
+    request_timeout: 10.0
+    max_concurrent_requests: 100
+    
+  anp:
+    # ANP specific parameters  
+    did_service_url: "https://did-service.example.com"
+    enable_encryption: true
+    protocol_negotiation: true
+    
+  acp:
+    # ACP specific parameters
+    streaming_enabled: true
+    max_message_size: 1048576  # 1MB
+
+# Tool schema configuration for TTL management
+tool_schema:
+  # Maximum TTL for message forwarding
+  max_ttl: 15
+  
+  # TTL decrement per hop
+  ttl_decrement: 1
+  
+  # Minimum TTL before exhaustion
+  min_ttl: 0
+
+# Validation and testing configuration
+validation:
+  # Pre-scenario validation checks
+  check_ports_available: true
+  check_dependencies: true
+  check_permissions: true
+  
+  # Scenario success criteria
+  min_recovery_time_ms: 1000
+  max_recovery_time_ms: 30000
+  min_success_rate: 0.7
+  max_duplicate_work_ratio: 0.3
+
+# Environment configuration
+environment:
+  # Working directory for the scenario
+  work_dir: "."
+  
+  # Temporary directory for scenario artifacts
+  temp_dir: "/tmp/failstorm"
+  
+  # Environment variables to set
+  env_vars:
+    PYTHONPATH: "src:agentconnect_src/agent_connect"
+    
+  # Resource limits
+  max_memory_mb: 4096
+  max_cpu_percent: 80

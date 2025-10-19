@@ -1,0 +1,33 @@
+core:
+  type: "openai"
+  name: "gpt-4o"
+  temperature: 0.0
+  base_url: "https://api.openai.com/v1"
+  port: 8000
+
+network:
+  topology: "star"
+  health_check_interval: 5
+  message_timeout: 30
+
+qa:
+  coordinator:
+    count: 1
+    start_port: 9999
+    data_file: "data/top1000_simplified.jsonl"
+    result_file: "scenario/streaming_queue/results/qa_results_acp.json"
+    batch_size: 50
+    first_50: false
+  worker:
+    count: 4
+    start_port: 10101
+  network:
+    topology: "star"
+  health_check_interval: 5
+  max_retries: 3
+  batch_size: 5
+  response_timeout: 60
+  metrics:
+    - latency
+    - accuracy
+    - throughput
