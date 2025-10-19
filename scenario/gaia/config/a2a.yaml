@@ -11,7 +11,7 @@ runtime:
 
 # Framework configuration
 framework:
-  name: "multi-agent protocol framework for GAIA"
+  name: "gpt-4o"
   version: "1.0.0"
 
 network:
@@ -54,7 +54,7 @@ logging:
 model:
   name: "gpt-4o"
   base_url: "https://api.openai.com/v1"
-  api_key: "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"
+  api_key: "sk-your-openai-api-key"
   max_tokens: 4096
   temperature: 0.0
   timeout: 30

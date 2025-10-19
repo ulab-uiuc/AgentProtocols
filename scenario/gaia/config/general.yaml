@@ -10,7 +10,7 @@ llm:
   default:
     model: "gpt-4o"          # 主模型
     base_url: "https://api.openai.com/v1"     # 接口地址
-    api_key: "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"                 # 替换为真实 KEY
+    api_key: "sk-your-openai-api-key"                 # 替换为真实 KEY
     max_tokens: 8192                               # 最大输出 token
     temperature: 0.0                               # 温度（随机性）
     # api_type: ""                                 # 可选: aws / azure / ollama 等
@@ -19,7 +19,7 @@ llm:
   vision:
     model: "gpt-4o"          # 视觉模型（如不需要可删除该块）
     base_url: "https://api.openai.com/v1"
-    api_key: "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"
+    api_key: "sk-your-openai-api-key"
     max_tokens: 8192
     temperature: 0.0
 
@@ -46,7 +46,7 @@ runtime:
 
 # Framework configuration
 framework:
-  name: "multi-agent protocol framework for GAIA"
+  name: "gpt-4o"
   version: "1.0.0"
 
 network:
@@ -95,7 +95,7 @@ logging:
 model:
   name: "gpt-4o"
   base_url: "https://api.openai.com/v1"
-  api_key: "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"
+  api_key: "sk-your-openai-api-key"
   max_tokens: 4096
   temperature: 0.0
   timeout: 30
@@ -138,7 +138,7 @@ model:
 #   cdp_url: ""                  # 通过 CDP 连接
 #   proxy:                       # 代理（可选）
 #     server: "http://proxy:port"
-#     username: "user"
+#     username: "gpt-4o"
 #     password: "pass"
 
 # ================== 搜索设置 (search) ==================

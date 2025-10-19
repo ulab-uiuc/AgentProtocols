@@ -1,8 +1,8 @@
 core:
-  type: "local"  # "local" or "openai"
-  name: "Qwen2.5-VL-72B-Instruct"
+  type: "openai"  # "local" or "openai"
+  name: "gpt-4o"
   temperature: 0.0
-  base_url: "http://localhost:8000/v1"
+  base_url: "https://api.openai.com/v1"
   port: 8000
 
 network:

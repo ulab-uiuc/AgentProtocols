@@ -1,5 +1,5 @@
 scenario:
-  name: "fail_storm_recovery_a2a_scale_up"
+  name: "gpt-4o"
   protocol: "a2a"
   agent_count: 8
   total_runtime: 1800.0  # Large runtime to support long run (e.g., ~33.3h for 1000 cycles of 120s)
@@ -15,10 +15,10 @@ scenario:
   max_groups: 1000  # Run 1000 groups
 
 llm:
-  type: "local"
+  type: "openai"
   model: "Qwen2.5-VL-72B-Instruct"
   openai_api_key: "dummy-key"
-  openai_base_url: "http://127.0.0.1:8000/v1"  # Local OpenAI-compatible endpoint
+  openai_base_url: "https://api.openai.com/v1"  # Local OpenAI-compatible endpoint
   temperature: 0.2
   max_tokens: 8192
   timeout: 30.0
