@@ -356,7 +356,7 @@ class AgoraProtocolBackend(BaseProtocolBackend):
             
             # 捕获stderr用于调试
             proc = subprocess.Popen(
-                [sys.executable, '-m', 'script.safety_tech.protocol_backends.agora.server'], 
+                [sys.executable, '-m', 'scenario.safety_tech.protocol_backends.agora.server'], 
                 env=env,
                 cwd=str(project_root),
                 stdout=subprocess.PIPE, 

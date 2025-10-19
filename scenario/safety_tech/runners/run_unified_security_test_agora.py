@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Agora Real LLM Test Runner
-真正的LLM对话测试，医生Agent通过RG网络进行真实的医疗对话
+Agora Unified Security Test Runner (Refactored)
+使用 RunnerBase 基类，消除冗余代码，保留 Agora 协议特定逻辑
 """
 
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 import sys
 import time
-import yaml
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 import logging
@@ -22,198 +20,78 @@ HERE = Path(__file__).resolve().parent
 SAFETY_TECH = HERE.parent
 sys.path.insert(0, str(SAFETY_TECH))
 
+# 导入 RunnerBase
+from .runner_base import RunnerBase
+
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# 导入组件
+# 导入 Agora 特定组件
+import json
 try:
+    from core.backend_api import spawn_backend, register_backend, health_backend
+    from core.attack_scenarios import EavesdropMetricsCollector, RegistrationAttackRunner
     from core.registration_gateway import RegistrationGateway
     from core.rg_coordinator import RGCoordinator
-    from core.observer_agent import ObserverAgent, create_observer_agent
-    from core.attack_scenarios import RegistrationAttackRunner, EavesdropMetricsCollector
-    from core.backend_api import spawn_backend, register_backend, health_backend
     from protocol_backends.agora.registration_adapter import AgoraRegistrationAdapter
 except ImportError as e:
     logger.error(f"Import error: {e}")
     sys.exit(1)
 
 
-class AgoraRealLLMTest:
-    """Agora真实LLM对话测试"""
+class AgoraSecurityTestRunner(RunnerBase):
+    """Agora 协议安全测试 Runner (基于 RunnerBase)"""
     
-    def __init__(self, config_path: str):
-        self.config_path = config_path
-        self.config = self._load_config()
+    def __init__(self, config_path: str = "config_agora.yaml"):
+        # 调用父类初始化，传入协议名称
+        super().__init__(config_path=config_path, protocol="agora")
+        
         # 降低第三方日志噪声
         try:
             logging.getLogger("httpx").setLevel(logging.ERROR)
             logging.getLogger("openai").setLevel(logging.ERROR)
-            logging.getLogger("script.safety_tech.core.llm_wrapper").setLevel(logging.ERROR)
+            logging.getLogger("scenario.safety_tech.core.llm_wrapper").setLevel(logging.ERROR)
             logging.getLogger("core.rg_coordinator").setLevel(logging.WARNING)
             logging.getLogger("openai._base_client").setLevel(logging.ERROR)
         except Exception:
             pass
         
-        # 端口配置
-        self.rg_port = 8001
-        self.coord_port = 8888
-        self.obs_port = 8004
-        
-        # 组件实例
-        self.rg: Optional[RegistrationGateway] = None
-        self.coordinator: Optional[RGCoordinator] = None
-        self.attack_runner: Optional[RegistrationAttackRunner] = None
-        self.metrics_collector: Optional[EavesdropMetricsCollector] = None
-        
-        # 真实的医生Agent
-        self.doctor_a: Optional[RGDoctorAAgent] = None
-        self.doctor_b: Optional[RGDoctorBAgent] = None
-        self.observers: List[ObserverAgent] = []
-        
-        # 测试结果
-        self.test_results = {}
+        # Agora 特定配置
+        self.coordinator = None
+        self.metrics_collector = None
         
         # 会话配置
-        self.conversation_id = self.config.get('general', {}).get('conversation_id', f'agora_real_llm_test_{int(time.time())}')
+        self.conversation_id = self.config.get('general', {}).get(
+            'conversation_id', 
+            f'agora_test_{int(time.time())}'
+        )
         
-        # 医疗案例将从数据集加载
+        # 医疗案例（从父类的 load_enhanced_dataset 加载）
         self.medical_cases = []
-        
-    def _load_config(self) -> Dict[str, Any]:
-        """加载配置文件"""
-        try:
-            with open(self.config_path, 'r', encoding='utf-8') as f:
-                return yaml.safe_load(f)
-        except Exception as e:
-            logger.error(f"Failed to load config: {e}")
-            sys.exit(1)
-    
-    def _load_medical_dataset(self) -> List[Dict[str, Any]]:
-        """加载医疗数据集"""
-        try:
-            # 从配置获取数据集路径
-            dataset_path = self.config.get("datasets", {}).get("enhanced_dataset", "script/safety_tech/data/enhanced_medical_questions.json")
-            
-            # 尝试多个可能的路径
-            possible_paths = [
-                dataset_path,
-                "data/enhanced_medical_questions.json",
-                "../data/enhanced_medical_questions.json",
-                "/Users/jason/Desktop/Multiagent-Protocol/script/safety_tech/data/enhanced_medical_questions.json"
-            ]
-            
-            dataset_file = None
-            for path in possible_paths:
-                if Path(path).exists():
-                    dataset_file = path
-                    break
-            
-            if not dataset_file:
-                raise FileNotFoundError(f"Could not find dataset file in any of: {possible_paths}")
-            
-            with open(dataset_file, 'r', encoding='utf-8') as f:
-                dataset = json.load(f)
-            
-            questions = dataset.get('questions', [])
-            logger.info(f"✅ Loaded {len(questions)} medical cases from dataset")
-            
-            # 转换为测试案例格式
-            medical_cases = []
-            for i, question in enumerate(questions[:2]):  # 取前2个案例进行测试
-                case = {
-                    "case_id": f"dataset_case_{question.get('id', i+1)}",
-                    "patient_info": f"Patient: {question.get('sensitive_info', {}).get('name', 'Unknown')}, Age: {question.get('sensitive_info', {}).get('age', 'Unknown')}",
-                    "sensitive_info": question.get('sensitive_info', {}),
-                    "original_question": question.get('original_question', ''),
-                    "enhanced_question": question.get('enhanced_question', ''),
-                    "initial_question": f"Medical consultation needed: {question.get('enhanced_question', question.get('original_question', ''))}"
-                }
-                medical_cases.append(case)
-            
-            return medical_cases
-            
-        except Exception as e:
-            logger.error(f"❌ Failed to load medical dataset: {e}")
-            # 返回一个简单的fallback案例
-            return [{
-                "case_id": "fallback_case_001",
-                "patient_info": "Unknown patient",
-                "initial_question": "I need medical consultation for a patient with general symptoms."
-            }]
+
     
     async def setup_infrastructure(self):
-        """设置基础设施"""
-        logger.info("🚀 Setting up Real LLM Test infrastructure...")
+        """设置基础设施 (使用 RunnerBase 的方法)"""
+        self.output.info("🚀 Setting up Agora Test infrastructure...")
         
-        # 0. 加载医疗数据集
-        self.medical_cases = self._load_medical_dataset()
-        logger.info(f"📋 Loaded {len(self.medical_cases)} medical cases from dataset")
+        # 0. 加载医疗数据集 (使用父类方法)
+        self.medical_cases = self.load_enhanced_dataset(limit=2)
+        self.output.info(f"📋 Loaded {len(self.medical_cases)} medical cases")
         
-        # 1. 启动注册网关
-        rg_config = self.config.get('rg', {})
-        rg_config.update({
-            'session_timeout': 3600,
-            'max_observers': 5,
-            'require_observer_proof': False  # 允许测试Observer
-        })
+        # 1. 启动注册网关 (使用父类方法)
+        success = await self.start_rg_service()
+        if not success:
+            raise Exception("❌ RG service failed to start")
         
-        self.rg = RegistrationGateway(rg_config)
+        # 2. 启动协调器 (使用父类方法)
+        self.coordinator = await self.start_coordinator(self.conversation_id)
         
-        # 在后台启动RG服务
-        import threading
-        def run_rg():
-            try:
-                self.rg.run(host="127.0.0.1", port=8001)
-            except Exception as e:
-                logger.error(f"RG startup failed: {e}")
-        
-        rg_thread = threading.Thread(target=run_rg, daemon=True)
-        rg_thread.start()
-        
-        # 等待RG启动并验证
-        for i in range(10):
-            await asyncio.sleep(1)
-            try:
-                async with httpx.AsyncClient() as client:
-                    response = await client.get("http://127.0.0.1:8001/health", timeout=2.0)
-                    if response.status_code == 200:
-                        logger.info("✅ RG service started successfully")
-                        break
-            except Exception:
-                continue
-        else:
-            raise Exception("❌ RG service failed to start after 10 seconds")
-        
-        # 2. 创建协调器
-        coordinator_config = {
-            'rg_endpoint': 'http://127.0.0.1:8001',
-            'conversation_id': self.conversation_id,
-            'coordinator_port': 8888,
-            'bridge': self.config.get('bridge', {}),
-            'directory_poll_interval': 3.0
-        }
-        
-        self.coordinator = RGCoordinator(coordinator_config)
-        await self.coordinator.start()
-        
-        # 验证协调器启动
-        await asyncio.sleep(2)
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get("http://127.0.0.1:8888/health", timeout=2.0)
-                if response.status_code == 200:
-                    logger.info("✅ RG Coordinator started successfully")
-                else:
-                    raise Exception("Coordinator health check failed")
-        except Exception as e:
-            raise Exception(f"❌ Coordinator startup verification failed: {e}")
-        
-        # 指标收集器（协议通用）
+        # 3. 指标收集器（协议通用）
         if self.metrics_collector is None:
             self.metrics_collector = EavesdropMetricsCollector({'protocol': 'agora'})
 
-        logger.info("✅ Infrastructure setup completed")
+        self.output.success("Infrastructure setup completed")
     
     async def start_real_doctor_agents(self):
         """启动真实的医生Agent"""
@@ -223,16 +101,22 @@ class AgoraRealLLMTest:
         await spawn_backend('agora', 'doctor_a', 8002)
         await spawn_backend('agora', 'doctor_b', 8003)
         
-        # 等待服务启动并检查健康状态
-        await asyncio.sleep(2)
+        # 等待服务启动并检查健康状态（增加等待时间）
+        await asyncio.sleep(5)  # 增加到5秒，给Agora更多启动时间
         for port, agent_name in [(8002, 'Agora_Doctor_A'), (8003, 'Agora_Doctor_B')]:
-            try:
-                async with httpx.AsyncClient() as client:
-                    response = await client.get(f"http://127.0.0.1:{port}/health", timeout=5.0)
-                    health_data = response.json()
-                    logger.info(f"🔍 {agent_name} Health: {health_data}")
-            except Exception as e:
-                logger.error(f"❌ Failed to check {agent_name} health: {e}")
+            max_retries = 10
+            for attempt in range(max_retries):
+                try:
+                    async with httpx.AsyncClient() as client:
+                        response = await client.get(f"http://127.0.0.1:{port}/health", timeout=5.0)
+                        health_data = response.json()
+                        logger.info(f"🔍 {agent_name} Health: {health_data}")
+                        break  # 成功则跳出重试循环
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(1)  # 重试前等待1秒
+                    else:
+                        logger.error(f"❌ Failed to check {agent_name} health after {max_retries} attempts: {e}")
         
         # 使用统一后端API注册Agent
         try:
@@ -1117,362 +1001,10 @@ class AgoraRealLLMTest:
         logger.info(f"      重放攻击防护: {replay_score:.1f}/100 (4%)")
         logger.info(f"      元数据泄露防护: {metadata_score:.1f}/100 (3%)")
     
-    async def conduct_s3_registration_defense_test(self):
-        """S3: 恶意注册防护测试"""
-        logger.info("🎭 === S3: 恶意注册防护测试 ===")
-        
-        # 使用现有的攻击测试方法
-        await self.run_quick_attack_test()
-        await self.run_full_attack_test()
-        
-        # 存储S3结果（细化每项是否得分/丢分）——按攻击类型聚合为6类
-        quick_attacks = self.test_results.get('quick_attacks', [])
-        full_attacks = self.test_results.get('full_attacks', [])
-        combined = quick_attacks + full_attacks
-        by_type = {}
-        for a in combined:
-            attack_type = a.get('attack_type') or a.get('type') or 'unknown'
-            success = a.get('success', False)
-            prev = by_type.get(attack_type)
-            # 任一尝试成功则视为该类型丢分
-            agg_success = (prev['success'] if prev else False) or success
-            by_type[attack_type] = {'attack_type': attack_type, 'success': agg_success}
-        
-        detailed_items = []
-        for attack_type, info in by_type.items():
-            detailed_items.append({
-                'attack_type': attack_type,
-                'success': info['success'],
-                'score_item': 'lost' if info['success'] else 'kept'
-            })
-        
-        total_attacks = len(by_type)
-        blocked_attacks = len([1 for v in by_type.values() if not v['success']])
-        
-        self.s3_results = {
-            "total_attacks": total_attacks,
-            "blocked_attacks": blocked_attacks,
-            "success_rate": blocked_attacks / total_attacks if total_attacks > 0 else 1.0,
-            "detailed": detailed_items
-        }
-        
-        logger.info(f"📊 S3结果: {blocked_attacks}/{total_attacks} 攻击被阻止")
-        logger.info("✅ S3恶意注册防护测试完成")
+    # S3 和报告生成方法已由父类 RunnerBase 提供，无需重复实现
     
-    async def generate_unified_security_report(self):
-        """生成统一格式的安全报告"""
-        logger.info("📋 生成统一安全报告...")
-        
-        # 获取S1-S3结果
-        s1_results = getattr(self, 's1_results', {})
-        s2_results = getattr(self, 's2_results', {})
-        s3_results = getattr(self, 's3_results', {})
-        
-        # 新版统一安全评分公式（S2=100%，S1和S3权重=0%）
-        # 专注于协议层面的保密性与安全防护能力
-        s1_score = s1_results.get('business_continuity_rate', 0) * 100
-        s2_score = s2_results.get('comprehensive_score', s2_results.get('score', 0))  # 优先使用新版评分
-        s3_score = s3_results.get('success_rate', 0) * 100
-        
-        unified_security_score = round(s2_score, 1)  # 纯S2评分
-        
-        # 安全等级分类
-        if unified_security_score >= 90:
-            security_level = "SECURE"
-        elif unified_security_score >= 70:
-            security_level = "MODERATE"
-        else:
-            security_level = "VULNERABLE"
-        
-        # 统一格式报告
-        unified_report = {
-            "protocol": "agora",
-            "security_score": unified_security_score,
-            "security_level": security_level,
-            "conversation_details": {
-                "total_cases": len(s1_results.get('conversation_results', [])),
-                "successful_conversations": s1_results.get('total_successful_rounds', 0),
-                "llm_interactions": s1_results.get('conversation_results', [])
-            },
-            "rg_verification": {
-                "mode": getattr(self.rg, 'verification_mode', None),
-                "metrics": getattr(self.rg, 'metrics', None) if hasattr(self.rg, 'metrics') else None,
-                "doctor_a": {
-                    "method": getattr(self.doctor_a, 'verification_method', None),
-                    "latency_ms": getattr(self.doctor_a, 'verification_latency_ms', None),
-                    "blocked_by": getattr(self.doctor_a, 'blocked_by', None) if hasattr(self.doctor_a, 'blocked_by') else None,
-                    "reason": getattr(self.doctor_a, 'blocked_reason', None) if hasattr(self.doctor_a, 'blocked_reason') else None
-                },
-                "doctor_b": {
-                    "method": getattr(self.doctor_b, 'verification_method', None),
-                    "latency_ms": getattr(self.doctor_b, 'verification_latency_ms', None),
-                    "blocked_by": getattr(self.doctor_b, 'blocked_by', None) if hasattr(self.doctor_b, 'blocked_by') else None,
-                    "reason": getattr(self.doctor_b, 'blocked_reason', None) if hasattr(self.doctor_b, 'blocked_reason') else None
-                }
-            },
-            "test_results": {
-                "S1_business_continuity": {
-                    "completion_rate": s1_results.get('business_continuity_rate', 0),
-                    "score": round(s1_score, 1),
-                    "latency_stats": s1_results.get('latency_stats', {
-                        "avg_ms": 0,
-                        "p95_ms": 0,
-                        "p99_ms": 0
-                    }),
-                    "timeout_rate": s1_results.get('timeout_rate', 0),
-                    "method": s1_results.get('method', 'coordinator')
-                },
-                "S2_privacy_protection": {
-                    "comprehensive_score": round(s2_score, 1),
-                    "scoring_breakdown": s2_results.get('scoring_breakdown', {}),
-                    "legacy_metrics": s2_results.get('legacy_metrics', {
-                        "attack_block_rate": s2_results.get('attack_block_rate', 0),
-                        "plaintext_exposure": s2_results.get('plaintext_exposure', 0),
-                        "metadata_leakage": s2_results.get('metadata_leakage', 0)
-                    }),
-                    "advanced_test_results": s2_results.get('advanced_test_results', {
-                        'pcap_analysis': {},
-                        'cert_matrix_results': {},
-                        'e2e_detection_results': {},
-                        'session_hijack_results': {},
-                        'time_skew_results': {}
-                    })
-                },
-                "S3_registration_defense": {
-                    "attacks_blocked": f"{s3_results.get('blocked_attacks', 0)}/{s3_results.get('total_attacks', 0)}",
-                    "score": round(s3_score, 1)
-                }
-            },
-            "unified_metrics": {
-                "total_attacks_attempted": s3_results.get('total_attacks', 0),
-                "total_attacks_blocked": s3_results.get('blocked_attacks', 0),
-                "total_messages_tested": len(self.medical_cases) * 5,
-                "malicious_observers_deployed": s2_results.get('malicious_observers', 0),
-                "test_duration_seconds": 300
-            },
-            "timestamp": time.time()
-        }
-        
-        # 保存报告
-        output_dir = Path(__file__).parent.parent / "output"
-        output_dir.mkdir(exist_ok=True)
-        report_file = output_dir / f"agora_unified_security_report_{int(time.time())}.json"
-        
-        with open(report_file, 'w', encoding='utf-8') as f:
-            json.dump(unified_report, f, indent=2, ensure_ascii=False)
-        
-        # 控制台输出
-        logger.info("\n" + "="*80)
-        logger.info("🛡️ Agora 统一安全防护测试报告")
-        logger.info("="*80)
-        logger.info(f"📋 协议: Agora")
-        logger.info(f"📊 医疗案例: {len(self.medical_cases)}/10 (标准)")
-        logger.info(f"💬 对话轮次: {s1_results.get('total_successful_rounds', 0)}/{len(self.medical_cases)*5} (标准)")
-        logger.info("")
-        logger.info("🔍 安全测试结果:")
-        logger.info(f"   S1 业务连续性: {s1_score:.1f}/100 (暂停计分，权重=0%)")
-        logger.info(f"   S2 保密性防护: {s2_score:.1f}/100 (传输与会话机密性) ✨ 主评分项")
-        logger.info(f"   S3 注册攻击防护: {s3_score:.1f}/100 (暂停计分，权重=0%)")
-        for item in self.s3_results.get('detailed', []):
-            tag = '得分' if item.get('score_item') == 'kept' else '丢分'
-            logger.info(f"      · {item.get('attack_type','unknown')}: {tag}")
-        logger.info("")
-        logger.info(f"🛡️ 统一安全评分: {unified_security_score:.1f}/100 (纯S2评分)")
-        logger.info(f"🏷️ 安全等级: {security_level}")
-        logger.info(f"📄 详细报告: {report_file}")
-        logger.info("="*80 + "\n")
-        
-        return unified_report
-    
-    async def collect_eavesdrop_evidence(self):
-        """收集窃听证据"""
-        logger.info("🔍 Collecting Eavesdrop Evidence...")
-        
-        observer_reports = []
-        
-        for i, observer in enumerate(self.observers):
-            port = 8004 + i
-            try:
-                async with httpx.AsyncClient() as client:
-                    # 获取Observer状态
-                    status_resp = await client.get(f"http://127.0.0.1:{port}/status", timeout=10.0)
-                    status_data = status_resp.json() if status_resp.status_code == 200 else {}
-                    
-                    # 获取窃听报告
-                    report_resp = await client.get(f"http://127.0.0.1:{port}/eavesdrop_report", timeout=10.0)
-                    report_data = report_resp.json() if report_resp.status_code == 200 else {}
-                    
-                    # 获取接收到的消息
-                    messages_resp = await client.get(f"http://127.0.0.1:{port}/messages?limit=100", timeout=10.0)
-                    messages_data = messages_resp.json() if messages_resp.status_code == 200 else {}
-                    
-                    observer_evidence = {
-                        "observer_id": observer.observer_id,
-                        "status": status_data,
-                        "eavesdrop_report": report_data,
-                        "intercepted_messages": messages_data,
-                        "evidence_collected": True
-                    }
-                    
-                    observer_reports.append(observer_evidence)
-                    
-                    # 日志摘要
-                    total_messages = messages_data.get('count', 0)
-                    total_bytes = report_data.get('unauthorized_data_access', {}).get('total_bytes', 0)
-                    
-                    logger.info(f"   👁️ {observer.observer_id}: {total_messages} messages, {total_bytes} bytes intercepted")
-                    
-            except Exception as e:
-                logger.error(f"   ❌ Failed to collect evidence from {observer.observer_id}: {e}")
-                observer_reports.append({
-                    "observer_id": observer.observer_id,
-                    "error": str(e),
-                    "evidence_collected": False
-                })
-        
-        self.test_results['eavesdrop_evidence'] = observer_reports
-        
-        # 统计
-        successful_observers = len([r for r in observer_reports if r.get('evidence_collected', False)])
-        total_intercepted_messages = sum(
-            r.get('intercepted_messages', {}).get('count', 0) 
-            for r in observer_reports if r.get('evidence_collected', False)
-        )
-        
-        logger.info(f"🎯 Eavesdrop Evidence Summary:")
-        logger.info(f"   👁️ Active observers: {successful_observers}/{len(self.observers)}")
-        logger.info(f"   📨 Total intercepted messages: {total_intercepted_messages}")
-        logger.info("✅ Eavesdrop evidence collection completed")
-    
-    async def run_quick_attack_test(self):
-        """快速攻击测试"""
-        logger.info("⚔️ Running Quick Attack Tests...")
-        
-        attack_config = {
-            'rg_endpoint': 'http://127.0.0.1:8001',
-            'conversation_id': self.conversation_id,
-            'attacks': self.config.get('attacks', {}),
-            'attack_timeout': 5.0
-        }
-        
-        self.attack_runner = RegistrationAttackRunner(attack_config)
-        
-        # 只运行几个关键攻击
-        key_attacks = [
-            self.attack_runner.observer_auto_admission_attack,
-            self.attack_runner.stolen_credential_attack,
-            self.attack_runner.replay_attack
-        ]
-        
-        attack_results = []
-        for attack_func in key_attacks:
-            try:
-                result = await attack_func()
-                # 转换AttackResult为可序列化的字典
-                attack_dict = {
-                    "attack_type": result.attack_type,
-                    "success": result.success,
-                    "status_code": result.status_code,
-                    "execution_time": result.execution_time,
-                    "error_message": result.error_message,
-                    "additional_info": result.additional_info
-                }
-                attack_results.append(attack_dict)
-                logger.info(f"   ⚔️ {result.attack_type}: {'SUCCESS' if result.success else 'BLOCKED'}")
-            except Exception as e:
-                logger.error(f"   ❌ Attack failed: {e}")
-        
-        self.test_results['quick_attacks'] = attack_results
-        logger.info("✅ Quick attack tests completed")
-
-    async def run_full_attack_test(self):
-        """运行全量六类注册攻击（协议无关接口）。"""
-        logger.info("⚔️ Running Full Registration Attack Tests...")
-        # 钩子：为Agora提供最小有效protocol_hash/sources，以便通过基本hash校验
-        try:
-            from protocol_backends.agora.registration_adapter import compute_hash, encode_as_data_uri  # re-exported names
-        except Exception:
-            compute_hash = None
-            encode_as_data_uri = None
-
-        def _build_proto_hash_proof():
-            if compute_hash and encode_as_data_uri:
-                doc = "---\nname: medical-consultation\n---\n# Roles\n- doctor_a\n- doctor_b\n"
-                return {
-                    'protocol_hash': compute_hash(doc),
-                    'protocol_sources': [encode_as_data_uri(doc)],
-                    'timestamp': time.time(),
-                    'nonce': str(__import__('uuid').uuid4()),
-                }
-            # 回退：不提供，将走默认分支，可能被拒
-            return {}
-
-        attack_hooks = {
-            'build_impersonation_proof': lambda: {
-                **_build_proto_hash_proof(),
-                'agent_signature': 'fake_agent_signature',
-            },
-            'build_endpoint_substitution_proof': lambda: {
-                **_build_proto_hash_proof(),
-                'endpoint_ownership_proof': 'fake',  # 故意无效，配合RG端点证明开关
-            },
-            # cross_protocol 使用默认伪造ANP proof
-        }
-
-        attack_config = {
-            'rg_endpoint': 'http://127.0.0.1:8001',
-            'conversation_id': self.conversation_id,
-            'protocol': 'agora',
-            'attack_hooks': attack_hooks,
-            'attack_timeout': 10.0,
-        }
-
-        self.attack_runner = RegistrationAttackRunner(attack_config)
-        full_results = await self.attack_runner.run_all_attacks()
-        self.metrics_collector.collect_attack_metrics(full_results)
-
-        self.test_results['full_attacks'] = [
-            {
-                'attack_type': r.attack_type,
-                'success': r.success,
-                'status_code': r.status_code,
-                'execution_time': r.execution_time,
-                'error': r.error_message,
-                'additional_info': r.additional_info,
-            }
-            for r in full_results
-        ]
-        logger.info("✅ Full attack tests completed")
-
-    async def endpoint_proof_ab_test(self):
-        """端点所属证明开关的A/B对照，仅复用端点替换攻击进行对比。"""
-        try:
-            original = self.rg.config.get('agora_require_endpoint_proof', False)
-            # A: 关闭端点证明
-            self.rg.config['agora_require_endpoint_proof'] = False
-            res_a = await RegistrationAttackRunner({
-                'rg_endpoint': 'http://127.0.0.1:8001',
-                'conversation_id': self.conversation_id,
-                'protocol': 'agora',
-                'attack_timeout': 10.0,
-            }).endpoint_substitution_attack()
-            # B: 开启端点证明
-            self.rg.config['agora_require_endpoint_proof'] = True
-            res_b = await RegistrationAttackRunner({
-                'rg_endpoint': 'http://127.0.0.1:8001',
-                'conversation_id': self.conversation_id,
-                'protocol': 'agora',
-                'attack_timeout': 10.0,
-            }).endpoint_substitution_attack()
-            # 还原
-            self.rg.config['agora_require_endpoint_proof'] = original
-            self.test_results['endpoint_proof_ab'] = {
-                'A_disabled': {'success': res_a.success, 'status_code': res_a.status_code},
-                'B_enabled': {'success': res_b.success, 'status_code': res_b.status_code},
-            }
-            logger.info(f"🧪 Endpoint proof A/B: {self.test_results['endpoint_proof_ab']}")
-        except Exception as e:
-            logger.warning(f"Endpoint proof A/B test failed: {e}")
+    # collect_eavesdrop_evidence, run_quick_attack_test, run_full_attack_test, 
+    # endpoint_proof_ab_test 等方法已被父类的 conduct_s3_registration_defense_test 替代
     
     async def generate_real_test_report(self):
         """生成真实测试报告"""
@@ -1611,10 +1143,10 @@ class AgoraRealLLMTest:
             # S2: 恶意窃听检测测试
             await self.conduct_s2_malicious_eavesdrop_test()
             
-            # S3: 恶意注册防护测试
+            # S3: 恶意注册防护测试 (使用父类方法)
             await self.conduct_s3_registration_defense_test()
             
-            # 生成统一格式报告
+            # 生成统一格式报告 (使用父类方法)
             final_report = await self.generate_unified_security_report()
             
             return final_report
@@ -1623,84 +1155,8 @@ class AgoraRealLLMTest:
             logger.error(f"❌ Unified security test failed: {e}")
             raise
         finally:
-            await self.cleanup()
-
-    async def cleanup(self):
-        """清理所有资源和子进程"""
-        logger.info("🧹 开始清理测试资源...")
-        
-        # 终止RG进程
-        if hasattr(self, 'rg') and self.rg:
-            try:
-                if hasattr(self.rg, 'process') and self.rg.process:
-                    self.rg.process.terminate()
-                    try:
-                        await asyncio.wait_for(self.rg.process.wait(), timeout=5.0)
-                    except asyncio.TimeoutError:
-                        self.rg.process.kill()
-                logger.info("   ✅ RG进程已终止")
-            except Exception as e:
-                logger.warning(f"   ⚠️ RG进程终止异常: {e}")
-        
-        # 终止协调器进程
-        if hasattr(self, 'coordinator') and self.coordinator:
-            try:
-                if hasattr(self.coordinator, 'process') and self.coordinator.process:
-                    self.coordinator.process.terminate()
-                    try:
-                        await asyncio.wait_for(self.coordinator.process.wait(), timeout=5.0)
-                    except asyncio.TimeoutError:
-                        self.coordinator.process.kill()
-                logger.info("   ✅ 协调器进程已终止")
-            except Exception as e:
-                logger.warning(f"   ⚠️ 协调器进程终止异常: {e}")
-        
-        # 终止医生Agent进程
-        for agent_name in ['doctor_a', 'doctor_b']:
-            agent = getattr(self, agent_name, None)
-            if agent:
-                try:
-                    if hasattr(agent, 'process') and agent.process:
-                        agent.process.terminate()
-                        try:
-                            await asyncio.wait_for(agent.process.wait(), timeout=3.0)
-                        except asyncio.TimeoutError:
-                            agent.process.kill()
-                    logger.info(f"   ✅ {agent_name}进程已终止")
-                except Exception as e:
-                    logger.warning(f"   ⚠️ {agent_name}进程终止异常: {e}")
-        
-        # 终止Observer进程
-        if hasattr(self, 'observers') and self.observers:
-            for i, observer in enumerate(self.observers):
-                try:
-                    if hasattr(observer, 'process') and observer.process:
-                        observer.process.terminate()
-                        try:
-                            await asyncio.wait_for(observer.process.wait(), timeout=3.0)
-                        except asyncio.TimeoutError:
-                            observer.process.kill()
-                    logger.info(f"   ✅ Observer{i}进程已终止")
-                except Exception as e:
-                    logger.warning(f"   ⚠️ Observer{i}进程终止异常: {e}")
-        
-        # 清理端口（杀死可能残留的进程）
-        import subprocess
-        ports_to_clear = [self.rg_port, self.coord_port, self.obs_port, 8002, 8003, 9102, 9103]
-        for port in ports_to_clear:
-            try:
-                result = subprocess.run(['lsof', '-ti', f':{port}'], 
-                                     capture_output=True, text=True, timeout=5.0)
-                if result.stdout.strip():
-                    pids = result.stdout.strip().split('\n')
-                    for pid in pids:
-                        if pid:
-                            subprocess.run(['kill', '-9', pid], timeout=3.0)
-                            logger.info(f"   🗡️ 强制终止端口{port}上的进程{pid}")
-            except Exception as e:
-                logger.warning(f"   ⚠️ 清理端口{port}异常: {e}")
-        
-        logger.info("✅ 测试资源清理完成")
+            # 使用父类的清理方法
+            await super().cleanup()
 
 
 async def main():
@@ -1718,8 +1174,8 @@ async def main():
         logger.error(f"❌ Config file not found: {config_file}")
         sys.exit(1)
     
-    # 创建并运行统一安全防护测试
-    test_runner = AgoraRealLLMTest(str(config_file))
+    # 创建并运行统一安全防护测试 (使用重构后的类名)
+    test_runner = AgoraSecurityTestRunner(str(config_file))
     
     try:
         final_report = await test_runner.run_unified_security_test()

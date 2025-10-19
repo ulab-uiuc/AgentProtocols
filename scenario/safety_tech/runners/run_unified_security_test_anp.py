@@ -64,9 +64,10 @@ except ImportError:
 # 原生ANP（AgentConnect）导入
 AGENTCONNECT_OK = False
 try:
-    # 允许多路径
+    # 允许多路径，AgentConnect SDK 内部使用 'agent_connect' 导入，所以需要添加 agentconnect_src 到 sys.path
     candidates = [
         PROJECT_ROOT,
+        PROJECT_ROOT / 'agentconnect_src',  # 添加这个路径以支持 'from agent_connect.xxx' 导入
     ]
     for p in candidates:
         if p.exists() and str(p) not in sys.path:
@@ -91,7 +92,7 @@ def _load_medical_dataset() -> List[Dict[str, Any]]:
     try:
         possible_paths = [
             SAFETY_TECH / 'data' / 'enhanced_medical_questions.json',
-            Path('script/safety_tech/data/enhanced_medical_questions.json'),
+            Path('scenario/safety_tech/data/enhanced_medical_questions.json'),
         ]
         dataset_file = None
         for p in possible_paths:
@@ -146,9 +147,9 @@ def _spawn(cmd: List[str], env: Optional[Dict[str, str]] = None) -> subprocess.P
 
 
 async def main():
-    # 端口配置
+    # 端口配置（注意：8888 已被 Docker 占用，使用 8889）
     rg_port = 8001
-    coord_port = 8888
+    coord_port = 8889  # 修改为 8889 避免与 Docker 冲突
     obs_port = 8004
     a_port = 9102
     b_port = 9103
@@ -160,7 +161,7 @@ async def main():
         proc = subprocess.Popen([
             sys.executable, "-c",
             f"import sys; sys.path.insert(0, '{PROJECT_ROOT}'); "
-            "from script.safety_tech.core.registration_gateway import RegistrationGateway; "
+            "from scenario.safety_tech.core.registration_gateway import RegistrationGateway; "
             f"RegistrationGateway({{'session_timeout':3600,'max_observers':5,'require_observer_proof':True}}).run(host='127.0.0.1', port={rg_port})"
         ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         procs.append(proc)

@@ -197,7 +197,7 @@ class A2AProtocolBackend(BaseProtocolBackend):
             
             code = (
                 f"import sys; sys.path.insert(0, '{project_root}');"
-                "from script.safety_tech.protocol_backends.a2a.server import run_server;"
+                "from scenario.safety_tech.protocol_backends.a2a.server import run_server;"
                 f"run_server('A2A_Doctor_A' if '{role.lower()}'=='doctor_a' else 'A2A_Doctor_B', {port})"
             )
             

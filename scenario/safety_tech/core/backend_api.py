@@ -18,14 +18,30 @@ def _get_backend(protocol: str):
     from scenario.safety_tech.protocol_backends.common.interfaces import get_registry
     
     # 确保所有协议后端都被导入，触发它们的注册代码
-    try:
-        import scenario.safety_tech.protocol_backends.anp
-        import scenario.safety_tech.protocol_backends.acp  
-        import scenario.safety_tech.protocol_backends.a2a
-        import scenario.safety_tech.protocol_backends.agora
-    except ImportError as e:
-        # 如果某个协议后端导入失败，记录但不阻断其他协议
-        print(f"Warning: Failed to import protocol backend: {e}")
+    # 每个协议单独 try-catch，避免一个失败影响其他协议
+    protocols_to_import = [
+        ('anp', 'scenario.safety_tech.protocol_backends.anp'),
+        ('acp', 'scenario.safety_tech.protocol_backends.acp'),
+        ('a2a', 'scenario.safety_tech.protocol_backends.a2a'),
+        ('agora', 'scenario.safety_tech.protocol_backends.agora'),
+    ]
+    
+    for proto_name, module_path in protocols_to_import:
+        try:
+            __import__(module_path)
+        except ImportError as e:
+            # 只在请求该协议时才报错，否则仅警告
+            if protocol == proto_name:
+                print(f"Error: Cannot load {proto_name} backend: {e}")
+                raise RuntimeError(f"Protocol backend '{proto_name}' is not available. Missing dependency: {e}")
+            else:
+                # 其他协议导入失败只是警告，不影响当前协议
+                pass
+        except Exception as e:
+            # 其他异常也类似处理
+            if protocol == proto_name:
+                print(f"Error: Cannot initialize {proto_name} backend: {e}")
+                raise RuntimeError(f"Protocol backend '{proto_name}' failed to initialize: {e}")
     
     registry = get_registry()
     backend = registry.get(protocol)

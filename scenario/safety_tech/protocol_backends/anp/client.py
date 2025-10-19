@@ -220,7 +220,7 @@ class ANPProtocolBackend(BaseProtocolBackend):
             
             code = (
                 f"import sys; sys.path.insert(0, '{project_root}');"
-                "from script.safety_tech.protocol_backends.anp.server import create_doctor_a_server, create_doctor_b_server;"
+                "from scenario.safety_tech.protocol_backends.anp.server import create_doctor_a_server, create_doctor_b_server;"
                 f"server = create_doctor_a_server({port}) if '{role_l}'=='doctor_a' else create_doctor_b_server({port});"
                 "server.run()"
             )

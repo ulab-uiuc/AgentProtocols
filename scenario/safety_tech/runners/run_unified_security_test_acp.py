@@ -47,10 +47,9 @@ def _load_medical_dataset() -> List[Dict[str, Any]]:
     try:
         # 尝试多个可能的路径
         possible_paths = [
-            "script/safety_tech/data/enhanced_medical_questions.json",
+            "scenario/safety_tech/data/enhanced_medical_questions.json",
             "data/enhanced_medical_questions.json",
             "../data/enhanced_medical_questions.json",
-            "/Users/jason/Desktop/Multiagent-Protocol/script/safety_tech/data/enhanced_medical_questions.json"
         ]
         
         dataset_file = None
@@ -206,9 +205,9 @@ def _spawn(cmd: List[str], env: Optional[Dict[str, str]] = None) -> subprocess.P
 
 
 async def main():
-    # 端口配置
+    # 端口配置（注意：8888 已被 Docker 占用，使用 8889）
     rg_port = 8001
-    coord_port = 8888
+    coord_port = 8889  # 修改为 8889 避免与 Docker 冲突
     obs_port = 8004
     a_port = 9002
     b_port = 9003
@@ -220,7 +219,7 @@ async def main():
         proc = subprocess.Popen([
             sys.executable, "-c",
             f"import sys; sys.path.insert(0, '{PROJECT_ROOT}'); "
-            "from script.safety_tech.core.registration_gateway import RegistrationGateway; "
+            "from scenario.safety_tech.core.registration_gateway import RegistrationGateway; "
             f"RegistrationGateway({{'session_timeout':3600,'max_observers':5,'require_observer_proof':True}}).run(host='127.0.0.1', port={rg_port})"
         ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         procs.append(proc)
@@ -239,7 +238,7 @@ async def main():
         coord_code = f"""
 import sys
 sys.path.insert(0, '{PROJECT_ROOT}')
-from script.safety_tech.core.rg_coordinator import RGCoordinator
+from scenario.safety_tech.core.rg_coordinator import RGCoordinator
 import asyncio
 
 async def run():
