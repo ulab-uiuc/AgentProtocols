@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Meta Protocol Specific Performance Metrics
-专门为Meta协议设计的性能指标收集和分析系统
+Performance metrics collection and analysis system specifically designed for the Meta protocol.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class MetaWorkerMetrics:
-    """Meta协议Worker的性能指标"""
+    """Performance metrics for a Meta protocol worker"""
     worker_id: str
     protocol: str
     
@@ -39,7 +39,7 @@ class MetaWorkerMetrics:
 
 @dataclass  
 class MetaProtocolMetrics:
-    """Meta协议级别的聚合指标"""
+    """Aggregated metrics at the Meta protocol level"""
     protocol_name: str
     
     # 聚合统计
@@ -61,7 +61,7 @@ class MetaProtocolMetrics:
 
 
 class MetaPerformanceMetricsCollector:
-    """Meta协议专用性能指标收集器"""
+    """Performance metrics collector specialized for the Meta protocol"""
     
     def __init__(self):
         self.worker_metrics: Dict[str, MetaWorkerMetrics] = {}
@@ -77,7 +77,7 @@ class MetaPerformanceMetricsCollector:
         self.response_timeout: float = 60.0
         
     def register_worker(self, worker_id: str, protocol: str) -> None:
-        """注册一个Meta Worker"""
+        """Register a Meta worker"""
         self.worker_metrics[worker_id] = MetaWorkerMetrics(
             worker_id=worker_id,
             protocol=protocol
@@ -90,22 +90,22 @@ class MetaPerformanceMetricsCollector:
         self.protocol_mix_stats[protocol] += 1
     
     def start_test(self) -> None:
-        """开始测试计时"""
+        """Start test timer"""
         self.test_start_time = time.time()
     
     def end_test(self) -> None:
-        """结束测试计时"""
+        """End test timer"""
         self.test_end_time = time.time()
     
     def record_task_start(self, worker_id: str) -> float:
-        """记录任务开始时间，返回开始时间戳"""
+        """Record task start time and return the start timestamp"""
         if worker_id in self.worker_metrics:
             self.worker_metrics[worker_id].total_requests += 1
         return time.time()
     
     def record_task_completion(self, worker_id: str, start_time: float, 
                              success: bool, error: Optional[str] = None) -> None:
-        """记录任务完成"""
+        """Record task completion"""
         if worker_id not in self.worker_metrics:
             return
             
@@ -131,12 +131,12 @@ class MetaPerformanceMetricsCollector:
                 protocol.total_failed += 1
     
     def record_cross_protocol_call(self, src_worker: str, dst_worker: str) -> None:
-        """记录跨协议调用"""
+        """Record a cross-protocol call"""
         if src_worker in self.worker_metrics:
             self.worker_metrics[src_worker].cross_protocol_calls += 1
     
     def record_llm_routing_decision(self, decision: Dict[str, Any]) -> None:
-        """记录LLM路由决策"""
+        """Record an LLM routing decision"""
         self.routing_decisions.append({
             **decision,
             "timestamp": time.time()
@@ -147,27 +147,27 @@ class MetaPerformanceMetricsCollector:
             worker.llm_routing_decisions += 1
     
     def record_connection_retry(self, worker_id: str) -> None:
-        """记录连接重试"""
+        """Record a connection retry"""
         if worker_id in self.worker_metrics:
             self.worker_metrics[worker_id].connection_retries += 1
             protocol = self.worker_metrics[worker_id].protocol
             self.protocol_metrics[protocol].total_retries += 1
     
     def record_network_error(self, worker_id: str, error_type: str) -> None:
-        """记录网络错误"""
+        """Record a network error"""
         if worker_id in self.worker_metrics:
             self.worker_metrics[worker_id].network_errors += 1
             protocol = self.worker_metrics[worker_id].protocol
             self.protocol_metrics[protocol].total_network_errors += 1
     
     def get_worker_statistics(self, worker_id: str) -> Dict[str, Any]:
-        """Get单个Worker的统计信息"""
+        """Get statistics for a single worker"""
         if worker_id not in self.worker_metrics:
             return {}
             
         worker = self.worker_metrics[worker_id]
         
-        # CalculateResponse时间统计
+        # Calculate response time statistics
         response_stats = {}
         if worker.response_times:
             response_stats = {
@@ -178,11 +178,11 @@ class MetaPerformanceMetricsCollector:
                 "median_response_time": statistics.median(worker.response_times)
             }
         
-        # Calculate成功率
+        # Calculate success rate
         total_tasks = worker.completed_tasks + worker.failed_tasks + worker.timeout_tasks
         success_rate = (worker.completed_tasks / total_tasks) if total_tasks > 0 else 0.0
         
-        # Calculate网络错误率
+        # Calculate network error rate
         network_error_rate = (worker.network_errors / worker.total_requests) if worker.total_requests > 0 else 0.0
         
         return {
@@ -203,13 +203,13 @@ class MetaPerformanceMetricsCollector:
         }
     
     def get_protocol_statistics(self, protocol: str) -> Dict[str, Any]:
-        """Get协议级别的统计信息"""
+        """Get statistics at the protocol level"""
         if protocol not in self.protocol_metrics:
             return {}
             
         proto = self.protocol_metrics[protocol]
         
-        # Calculate协议级Response时间统计
+        # Calculate protocol-level response time statistics
         response_stats = {}
         if proto.all_response_times:
             response_stats = {
@@ -220,11 +220,11 @@ class MetaPerformanceMetricsCollector:
                 "median_response_time": statistics.median(proto.all_response_times)
             }
         
-        # CalculateWorker负载均衡方差
+        # Calculate worker load-balance variance
         completion_counts = list(proto.worker_completion_counts.values())
         load_balance_variance = statistics.variance(completion_counts) if len(completion_counts) > 1 else 0.0
         
-        # Calculate总体统计
+        # Calculate overall statistics
         total_tasks = proto.total_completed + proto.total_failed + proto.total_timeout
         success_rate = (proto.total_completed / total_tasks) if total_tasks > 0 else 0.0
         
@@ -243,7 +243,7 @@ class MetaPerformanceMetricsCollector:
         }
     
     def get_meta_specific_report(self) -> Dict[str, Any]:
-        """GetMeta协议特有的性能报告"""
+        """Get a Meta-protocol-specific performance report"""
         return {
             "protocol_mix": dict(self.protocol_mix_stats),
             "total_routing_decisions": len(self.routing_decisions),
@@ -253,13 +253,13 @@ class MetaPerformanceMetricsCollector:
         }
     
     def _calculate_cross_protocol_efficiency(self) -> float:
-        """Calculate跨协议通信效率"""
+        """Calculate cross-protocol communication efficiency"""
         total_cross_calls = sum(w.cross_protocol_calls for w in self.worker_metrics.values())
         total_tasks = sum(w.completed_tasks + w.failed_tasks for w in self.worker_metrics.values())
         return (total_cross_calls / total_tasks) if total_tasks > 0 else 0.0
     
     def _get_protocol_distribution(self) -> Dict[str, float]:
-        """Get协议分布百分比"""
+        """Get protocol distribution percentages"""
         total_workers = len(self.worker_metrics)
         if total_workers == 0:
             return {}
@@ -270,7 +270,7 @@ class MetaPerformanceMetricsCollector:
         return distribution
     
     def get_comprehensive_report(self) -> Dict[str, Any]:
-        """Get完整的Meta协议性能报告"""
+        """Get a comprehensive Meta protocol performance report"""
         report = {
             "test_duration": (self.test_end_time - self.test_start_time) if (self.test_start_time and self.test_end_time) else None,
             "test_start_time": self.test_start_time,
@@ -281,22 +281,22 @@ class MetaPerformanceMetricsCollector:
             "summary": {}
         }
         
-        # 收集协议统计
+        # Collect protocol statistics
         for protocol in self.protocol_metrics:
             report["protocols"][protocol] = self.get_protocol_statistics(protocol)
         
-        # 收集Worker统计
+        # Collect worker statistics
         for worker_id in self.worker_metrics:
             report["workers"][worker_id] = self.get_worker_statistics(worker_id)
         
-        # 生成总结
+        # Produce summary
         total_completed = sum(p["total_completed"] for p in report["protocols"].values())
         total_failed = sum(p["total_failed"] for p in report["protocols"].values())
         total_timeout = sum(p["total_timeout"] for p in report["protocols"].values())
         total_retries = sum(p["total_retries"] for p in report["protocols"].values())
         total_network_errors = sum(p["total_network_errors"] for p in report["protocols"].values())
         
-        # Calculate所有Response时间的全局统计
+        # Calculate global statistics for all response times
         all_response_times = []
         for proto in self.protocol_metrics.values():
             all_response_times.extend(proto.all_response_times)

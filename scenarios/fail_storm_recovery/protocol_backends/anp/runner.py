@@ -1058,11 +1058,11 @@ class ANPRunner(FailStormRunnerBase):
     # ========================== Simple Failover Implementation ==========================
     
     def get_next_available_agent(self, exclude_agents: set = None) -> Optional[str]:
-        """Get下一个可用的agent，跳过失败的agent"""
+        """Get the next available agent, skipping failed agents"""
         if exclude_agents is None:
             exclude_agents = set()
-        
-        # Get所有可用的agent（排除已kill的和要排除的）
+
+        # Get all available agents (exclude killed and explicitly excluded)
         available_agents = []
         for agent_id in self.shard_workers.keys():
             if (agent_id not in self.killed_agents and 
@@ -1071,27 +1071,27 @@ class ANPRunner(FailStormRunnerBase):
                 available_agents.append(agent_id)
         
         if available_agents:
-            return available_agents[0]  # Return第一个可用的
+            return available_agents[0]  # Return the first available agent
         return None
     
     async def _run_qa_task_for_agent_with_failover(self, original_agent_id: str, original_worker, duration: float):
-        """RunQA任务，如果原agent失败则自动切换到下一个可用agent"""
+        """Run a QA task with automatic failover to the next available agent if the original agent fails"""
         start_time = time.time()
         task_count = 0
         max_groups = self.config.get("shard_qa", {}).get("max_groups", 50)
         group_id = 0
-        
-        # Try的agent列表，从原始agent开始
+
+        # List of tried agents, starting from the original agent
         tried_agents = set()
         current_agent_id = original_agent_id
         current_worker = original_worker
         
         while time.time() - start_time < duration and group_id < max_groups:
             try:
-                # Check当前agent是否还可用
+                # Check whether the current agent is still available
                 if (current_agent_id in self.killed_agents or 
                     current_agent_id not in self.agents):
-                    # When前agent不可用，寻找下一个
+                    # If the previous agent is unavailable, search for the next one
                     tried_agents.add(current_agent_id)
                     next_agent = self.get_next_available_agent(tried_agents)
                     
@@ -1099,18 +1099,18 @@ class ANPRunner(FailStormRunnerBase):
                         self.output.warning(f"🚨 [ANP] No available agents for task, original: {original_agent_id}")
                         break
                     
-                    # 切换到新的agent
+                    # Switch to the new agent
                     current_agent_id = next_agent
                     current_worker = self.shard_workers[next_agent]
                     self.output.info(f"🔄 [ANP] Switched from {original_agent_id} to {current_agent_id}")
                 
-                # Execute任务
+                # Execute the task
                 task_start_time = time.time()
                 result = await current_worker.worker.start_task(group_id)
                 task_end_time = time.time()
                 task_count += 1
                 
-                # Record任务执行
+                # Record task execution
                 if self.metrics_collector:
                     current_phase = self._get_current_phase()
                     task_type = f"qa_{current_phase}"
@@ -1133,33 +1133,33 @@ class ANPRunner(FailStormRunnerBase):
                         group_id=group_id
                     )
                 
-                # 下一个组
+                # Move to next group
                 group_id = (group_id + 1) % max_groups
                 
-                # 短暂延迟避免过载
+                # Short sleep to avoid overload
                 await asyncio.sleep(0.1)
                 
             except Exception as e:
-                # 任务执行失败，尝试下一个agent
+                # Task execution failed, try next agent
                 self.output.warning(f"⚠️ [ANP] Task failed on {current_agent_id}: {e}")
                 tried_agents.add(current_agent_id)
                 
-                # 标记当前agent为失败
+                # Mark current agent as failed
                 if current_agent_id not in self.killed_agents:
                     self.killed_agents.add(current_agent_id)
                 
-                # 寻找下一个可用agent
+                # Find the next available agent
                 next_agent = self.get_next_available_agent(tried_agents)
                 if next_agent is None:
                     self.output.error(f"❌ [ANP] No more available agents, stopping task for {original_agent_id}")
                     break
                 
-                # 切换到新agent
+                # Switch to the new agent
                 current_agent_id = next_agent
                 current_worker = self.shard_workers[next_agent]
                 self.output.info(f"🔄 [ANP] Failover: {original_agent_id} -> {current_agent_id}")
         
-        # Updateworker的任务计数
+        # Update worker's task count
         if hasattr(current_worker.worker, 'task_count'):
             current_worker.worker.task_count = getattr(current_worker.worker, 'task_count', 0) + task_count
         else:

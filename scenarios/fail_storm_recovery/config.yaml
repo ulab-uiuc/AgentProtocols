@@ -12,21 +12,21 @@ scenario:
   # Fraction of agents to kill during fault injection (0.0 - 1.0)
   kill_fraction: 0.3
   
-  # Time in seconds when fault injection occurs - 10秒注入故障
+  # Time in seconds when fault injection occurs - e.g. 10 seconds for fault injection
   fault_injection_time: 30.0
   
-  # Total scenario runtime in seconds - 2分钟或直到final_answer产出  
+  # Total scenario runtime in seconds - e.g. 2 minutes or until final_answer is produced
   total_runtime: 120.0
   
-  # Heartbeat interval for failure detection (seconds) - 降低频率减少日志
+  # Heartbeat interval for failure detection (seconds) - lower frequency reduces logs
   heartbeat_interval: 10.0
   
-  # Heartbeat timeout for considering nodes failed (seconds) - 增加超时时间避免误报
+  # Heartbeat timeout for considering nodes failed (seconds) - increase timeout to avoid false positives
   heartbeat_timeout: 45.0
   
   # Agent reconnection configuration
   enable_reconnection: true
-  reconnection_delay: 10.0  # 故障后多久开始尝试重连 (秒)
+  reconnection_delay: 10.0  # How long to wait before attempting reconnection after failure (seconds)
   reconnection_timeout: 30.0  # 重连超时时间 (秒)
 
 # Shard QA Task Configuration
@@ -34,7 +34,7 @@ shard_qa:
   # QA任务的数据目录
   data_dir: "shard_qa/data"
   
-  # QA任务执行配置
+  # QA task execution configuration
   questions_file: "qa_questions.json"
   fragments_file: "knowledge_fragments.json"
   
@@ -44,7 +44,7 @@ shard_qa:
   # 每个QA周期的超时时间
   qa_cycle_timeout: 15.0
   
-  # Agent角色配置
+  # Agent role configuration
   roles:
     coordinator: 1  # 1个协调器
     worker: 2       # 2个工作者（总共3个agent时）
@@ -62,7 +62,7 @@ agents:
   
   # Agent-specific timeouts
   message_timeout: 10.0
-  health_check_interval: 15.0  # 降低健康检查频率
+  health_check_interval: 15.0  # Reduce health check frequency
 
 # LLM configuration for agent reasoning
 llm:

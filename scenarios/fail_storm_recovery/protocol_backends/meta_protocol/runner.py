@@ -752,11 +752,10 @@ class MetaProtocolRunner(FailStormRunnerBase):
             raise RuntimeError("No Meta Protocol agents available for broadcast")
 
         self.output.progress("📡 [META] Broadcasting document using LLM-routed protocols...")
-
-        # 用在 intelligent_network 上已注册的任意一个 BaseAgent 作为 broadcaster
+        # Use any BaseAgent already registered on the intelligent_network as the broadcaster
         broadcaster_id = next(iter(self.meta_agents.keys()))
 
-        # ✅ 统一走 intelligent_network（与注册/拓扑一致）
+        # ✅ Route uniformly through the intelligent_network (consistent with registration/topology)
         results = await self.intelligent_network.network.broadcast_message(broadcaster_id, self.document)
 
         successful_deliveries = sum(1 for r in results.values() if "error" not in str(r))
@@ -800,11 +799,11 @@ class MetaProtocolRunner(FailStormRunnerBase):
             raise
 
     async def _setup_acp_connections(self, agent_ids: List[str]) -> None:
-        # 在使用统一 outbound adapters 的情况下，可以直接 no-op
+        # When using unified outbound adapters, this can be a no-op
         return
 
     async def _setup_agora_connections(self, agent_ids: List[str]) -> None:
-        # 同上
+        # Same as ACP: no special setup required when using unified adapters
         return
 
     async def send_message_to_agent(self, src_agent: BaseAgent, dst_agent_id: str, message: Dict[str, Any]):
@@ -813,7 +812,7 @@ class MetaProtocolRunner(FailStormRunnerBase):
             if dst_agent_id not in self.meta_agents:
                 return {"status": "error", "error": f"Agent {dst_agent_id} not found"}
 
-            # 选择一个"路由器"BaseAgent来发（优先 A2A，否则任意一个）
+            # Choose a "router" BaseAgent to send from (prefer A2A, otherwise any agent)
             router_id = None
             for aid, proto in self.protocol_types.items():
                 if proto == "a2a":
@@ -836,7 +835,7 @@ class MetaProtocolRunner(FailStormRunnerBase):
             ba = self.meta_agents[agent_id]
             if hasattr(ba, 'health_check'):
                 return await ba.health_check()
-            # 回退：能拿到监听地址就认为活着
+            # Fallback: if a listening address is available, consider the agent healthy
             return bool(ba.get_listening_address())
         except Exception:
             return False
@@ -938,7 +937,7 @@ class MetaProtocolRunner(FailStormRunnerBase):
         try:
             print(f"🔄 [META] Reconnecting agent {agent_id} with cross-protocol support...")
 
-            # CRITICAL: 先从 IntelligentNetwork 中注销被kill的agent
+            # CRITICAL: first unregister the killed agent from the IntelligentNetwork
             if agent_id in self.meta_agents:
                 try:
                     await self.intelligent_network.network.unregister_agent(agent_id)
@@ -946,7 +945,7 @@ class MetaProtocolRunner(FailStormRunnerBase):
                 except Exception as e:
                     print(f"⚠️  Failed to unregister {agent_id}: {e}")
 
-            # 重新创建（create_agent 内部会把 BaseAgent 注册回 intelligent_network）
+            # Recreate the agent (create_agent will internally register the BaseAgent back to intelligent_network)
             import socket
             def _free_port():
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -954,21 +953,21 @@ class MetaProtocolRunner(FailStormRunnerBase):
                     return s.getsockname()[1]
 
             port = _free_port()
-            # 注意：Meta 跑法的 create_agent 并不依赖 executor，这里传 None
+            # Note: The Meta runmode's create_agent does not depend on an executor, so pass None here
             new_agent = await self.create_agent(agent_id, "127.0.0.1", port, executor=None)
 
-            # 维护local字典
+            # Maintain local agent dictionary
             self.agents[agent_id] = new_agent
             self.killed_agents.discard(agent_id)
 
-            # 🔗 把重连的 BaseAgent 与其它 BaseAgent 在 intelligent_network 上建立双向连边
+            # 🔗 Connect the reconnected BaseAgent with other BaseAgents in the intelligent_network (both directions)
             for other_id in self.meta_agents.keys():
                 if other_id == agent_id:
                     continue
                 await self.intelligent_network.network.connect_agents(agent_id, other_id)
                 await self.intelligent_network.network.connect_agents(other_id, agent_id)
 
-            # ♻️ 重装跨协议适配器（双向）
+            # ♻️ Reinstall cross-protocol adapters for the agent (both directions)
             await self._reinstall_outbound_adapters_for_agent(agent_id)
 
             print(f"✅ [META] Agent {agent_id} successfully reconnected & reattached to routing graph!")

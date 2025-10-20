@@ -1,8 +1,8 @@
 """
 Agora Coordinator:
-- 继承 QACoordinatorBase
-- 用 Agora 原生 SDK 实现 send_to_worker()
-- 使用真正的Agora SDK功能：Sender, Receiver, Protocol
+- Inherits QACoordinatorBase
+- Implements send_to_worker() using Agora native SDK
+- Uses real Agora SDK features: Sender, Receiver, Protocol
 """
 
 from __future__ import annotations
@@ -20,24 +20,25 @@ from core.qa_coordinator_base import QACoordinatorBase
 import agora
 
 class AgoraQACoordinator(QACoordinatorBase):
-    """
-    使用 Agora 协议与 worker 通信。
-    约定 self.agent_network 暴露一个协议信道方法：
+    """Communicate with workers using the Agora protocol.
+
+    Assumes self.agent_network exposes a channel routing method::
         await agent_network.route_message(src_id, dst_id, payload) -> Dict
-    其中 payload 为 Agora 的标准消息（见实现）。
+
+    Where payload follows Agora's standard message structure (see implementation).
     """
 
     async def send_to_worker(self, worker_id: str, question: str) -> Dict[str, Any]:
         if not self.agent_network:
             raise RuntimeError("No Agora network/router set. Call set_network() first.")
 
-        # Agora 用户消息（最简 text）
+        # Agora user message (simple text)
         payload = {
             "protocolHash": None,
             "body": question
         }
 
-        # 通过 agent_network 路由消息，只使用官方SDK
+        # Route the message via agent_network, using only the official SDK
         response = await self.agent_network.route_message(
             src_id=self.coordinator_id,
             dst_id=worker_id,
@@ -71,9 +72,9 @@ class AgoraQACoordinator(QACoordinatorBase):
         }
     
 class AgoraCoordinatorExecutor:
-    """
-    Agora 原生 Executor，用于对话式控制协调器。
-    支持命令：
+    """Agora native Executor used for conversational coordinator control.
+
+    Supported commands:
       - "dispatch" / "start_dispatch"
       - "status"
       - "setup_network Worker-1,Worker-2,Worker-3,Worker-4"
@@ -84,9 +85,9 @@ class AgoraCoordinatorExecutor:
 
     async def execute(self, input_data: Dict) -> Dict:
         """
-        处理Agora消息并执行协调器命令
+        Handle Agora messages and execute coordinator commands
         """
-        # 从输入中提取命令文本
+        # Extract command text from input
         user_text = ""
         if isinstance(input_data, dict):
             if "content" in input_data:
@@ -104,7 +105,7 @@ class AgoraCoordinatorExecutor:
             user_text = str(input_data)
 
         cmd = user_text.strip().lower()
-        original_text = user_text.strip()  # 保留原始大小写用于worker IDs
+        original_text = user_text.strip()  # Preserve original case for worker IDs
         
 
 
@@ -124,7 +125,7 @@ class AgoraCoordinatorExecutor:
                     worker_list = original_text.split(" ", 1)[1] if " " in original_text else ""
                     worker_ids = [w.strip() for w in worker_list.split(",") if w.strip()]
 
-                    # Setup协调器网络访问
+                    # Setup coordinator network access
                     self.coordinator.worker_ids = worker_ids
                     self.coordinator.coordinator_id = "Coordinator-1"
 

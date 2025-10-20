@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ANP Protocol Runner for Streaming Queue
-真正的ANP协议实现，使用AgentConnect SDK，支持DID认证、E2E加密和WebSocket通信
+Real ANP protocol implementation using the AgentConnect SDK, supporting DID authentication, E2E encryption and WebSocket communication
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
-# ================= Path Setup =================
+# ================= Path setup =================
 HERE = Path(__file__).resolve()
 STREAMING_Q = HERE.parents[1]  # .../streaming_queue
 PROJECT_ROOT = STREAMING_Q.parent.parent  # .../Multiagent-Protocol
@@ -23,7 +23,7 @@ sys.path.insert(0, str(STREAMING_Q))
 sys.path.insert(0, str(HERE.parent))   # runner/
 sys.path.insert(0, str(ANP_DIR))
 
-# ================= AgentConnect Imports =================
+# ================= AgentConnect imports =================
 agentconnect_path = PROJECT_ROOT / "agentconnect_src"
 sys.path.insert(0, str(agentconnect_path))
 
@@ -45,12 +45,12 @@ from protocol_backend.anp.worker import ANPWorkerExecutor
 class ANPRunner(RunnerBase):
     """
     ANP Protocol Runner for Streaming Queue
-    
+
     Features:
-    - Real DID authentication using AgentConnect SDK
+    - Real DID authentication using the AgentConnect SDK
     - E2E encryption support
     - Dual HTTP/WebSocket communication
-    - Full compatibility with streaming_queue framework
+    - Full compatibility with the streaming_queue framework
     - True ANP protocol implementation (no mocks)
     """
 
@@ -76,8 +76,8 @@ class ANPRunner(RunnerBase):
 
     # ================= Protocol-Specific Implementation =================
     async def create_network(self) -> NetworkBase:
-        """Create ANP network with real AgentConnect backend"""
-        
+        """Create the ANP network with a real AgentConnect backend."""
+
         self.output.info("Creating ANP network with AgentConnect backend...")
         
         # Create ANP communication backend with proper timeout
@@ -90,7 +90,7 @@ class ANPRunner(RunnerBase):
         return network
 
     async def setup_agents(self) -> List[str]:
-        """Setup ANP agents with real DID authentication"""
+        """Set up ANP agents with real DID authentication."""
         self.output.info("Setting up ANP agents with DID authentication...")
         
         if not self._backend:
@@ -98,20 +98,19 @@ class ANPRunner(RunnerBase):
         
         # Convert config for ANP agents
         anp_config = self._convert_config_for_anp_agents(self.config)
-        
         # ================= Setup Coordinator =================
         coordinator_port = int(self.config.get("qa", {}).get("coordinator", {}).get("start_port", 9998))
         coordinator_websocket_port = coordinator_port + 1000
-        
+
         # Generate DID identity for coordinator
         service_endpoint = f"http://localhost:{coordinator_port}"
         private_key, public_key, did_id, did_doc = await asyncio.to_thread(
             did_generate, service_endpoint
         )
-        
+
         # Serialize public key properly
         from cryptography.hazmat.primitives import serialization
-        
+
         if public_key:
             public_key_pem = public_key.public_bytes(
                 encoding=serialization.Encoding.PEM,
@@ -119,27 +118,27 @@ class ANPRunner(RunnerBase):
             ).decode('utf-8')
         else:
             public_key_pem = "-----BEGIN PUBLIC KEY-----\nSTUB_KEY\n-----END PUBLIC KEY-----"
-        
+
         coordinator_did = {
             "id": did_id,
             "public_key_pem": public_key_pem,
             "service_endpoint": service_endpoint
         }
         coordinator_keys = {"private_key": private_key}
-        
+
         self._coordinator_identity = {
             "did_document": coordinator_did,
             "private_keys": coordinator_keys
         }
         self.anp_metrics["did_identities_generated"] += 1
-        
+
         self.output.info(f"Generated DID for Coordinator: {coordinator_did.get('id', 'Unknown')}")
-        
+
         # Create coordinator executor
         # Use full self.config to preserve coordinator.result_file path
         coordinator_executor = ANPCoordinatorExecutor(self.config, self.output)
         coordinator_executor.coordinator.set_anp_identity(coordinator_did, coordinator_keys)
-        
+
         # Spawn ANP coordinator
         coord_handle = await self._backend.spawn_local_agent(
             agent_id="Coordinator-1",
@@ -149,33 +148,33 @@ class ANPRunner(RunnerBase):
             websocket_port=coordinator_websocket_port
         )
         self._anp_handles.append(coord_handle)
-        
+
         # Register coordinator with NetworkBase
         await self.network.register_agent("Coordinator-1", coord_handle.base_url)
-        
+
         self.anp_metrics["agents_created"] += 1
         self.anp_metrics["http_endpoints"] += 1
         self.anp_metrics["websocket_endpoints"] += 1
         self.anp_metrics["encrypted_connections"] += 1
-        
+
         self.output.success(f"Coordinator-1 started @ {coord_handle.base_url} (WS: {coord_handle.websocket_url})")
-        
+
         # ================= Setup Workers =================
         worker_count = int(self.config.get("qa", {}).get("worker", {}).get("count", 4))
         start_port = int(self.config.get("qa", {}).get("worker", {}).get("start_port", 10001))
         worker_ids: List[str] = []
-        
+
         for i in range(worker_count):
             worker_id = f"Worker-{i+1}"
             worker_port = start_port + i
             worker_websocket_port = worker_port + 1000
-            
+
             # Generate DID identity for worker
             worker_service_endpoint = f"http://localhost:{worker_port}"
             worker_private_key, worker_public_key, worker_did_id, worker_did_doc = await asyncio.to_thread(
                 did_generate, worker_service_endpoint
             )
-            
+
             # Serialize worker public key properly
             if worker_public_key:
                 worker_public_key_pem = worker_public_key.public_bytes(
@@ -184,61 +183,61 @@ class ANPRunner(RunnerBase):
                 ).decode('utf-8')
             else:
                 worker_public_key_pem = f"-----BEGIN PUBLIC KEY-----\nSTUB_WORKER_{i+1}_KEY\n-----END PUBLIC KEY-----"
-            
+
             worker_did = {
                 "id": worker_did_id,
                 "public_key_pem": worker_public_key_pem,
                 "service_endpoint": worker_service_endpoint
             }
             worker_keys = {"private_key": worker_private_key}
-            
+
             self._worker_identities[worker_id] = {
                 "did_document": worker_did,
                 "private_keys": worker_keys
             }
             self.anp_metrics["did_identities_generated"] += 1
-            
+
             self.output.info(f"Generated DID for {worker_id}: {worker_did.get('id', 'Unknown')}")
-            
+
             # Create worker executor
             worker_executor = ANPWorkerExecutor(anp_config, self.output)
             worker_executor.set_anp_identity(worker_did, worker_keys)
-            
+
             # Spawn ANP worker
             worker_handle = await self._backend.spawn_local_agent(
                 agent_id=worker_id,
-                host="localhost", 
+                host="localhost",
                 http_port=worker_port,
                 executor=worker_executor,
                 websocket_port=worker_websocket_port
             )
             self._anp_handles.append(worker_handle)
             worker_ids.append(worker_id)
-            
+
             # Register worker with NetworkBase
             await self.network.register_agent(worker_id, worker_handle.base_url)
-            
+
             self.anp_metrics["agents_created"] += 1
             self.anp_metrics["http_endpoints"] += 1
             self.anp_metrics["websocket_endpoints"] += 1
             self.anp_metrics["encrypted_connections"] += 1
-            
+
             self.output.success(f"{worker_id} started @ {worker_handle.base_url} (WS: {worker_handle.websocket_url})")
-        
+
         # ================= Configure Coordinator =================
-        # Set network and worker list for coordinator
+        # Set network and worker list for the coordinator
         coordinator_executor.coordinator.set_network(self.network, worker_ids, "anp")
         # Set metrics collector to communication backend
         if hasattr(self._backend, 'set_metrics_collector') and hasattr(coordinator_executor.coordinator, 'metrics_collector'):
             self._backend.set_metrics_collector(coordinator_executor.coordinator.metrics_collector)
-        
+
         # Display ANP summary
         self._display_anp_summary()
-        
+
         return worker_ids
 
     async def send_command_to_coordinator(self, command: str) -> Optional[Dict[str, Any]]:
-        """Send command to ANP coordinator with DID authentication"""
+        """Send a command to the ANP coordinator using DID authentication."""
         coordinator_port = int(self.config.get("qa", {}).get("coordinator", {}).get("start_port", 9998))
         url = f"http://localhost:{coordinator_port}/message"
         
@@ -261,7 +260,7 @@ class ANPRunner(RunnerBase):
         try:
             # Use ANP backend's HTTP client with DID auth headers
             import httpx
-            # 使用无读超时，避免长时间调度过程中请求超时导致 Runner 提前清理资源
+            # Use no read timeout to avoid premature Runner cleanup during long-running dispatch
             timeout = httpx.Timeout(connect=10.0, read=None, write=60.0, pool=None)
             async with httpx.AsyncClient(timeout=timeout) as client:
                 

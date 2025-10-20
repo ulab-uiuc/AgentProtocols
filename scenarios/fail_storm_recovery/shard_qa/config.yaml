@@ -91,6 +91,6 @@ shard_qa:
     start_port: 10001
 system:
   agents_per_group: 8
-  dataset_name: 2WikiMultiHopQA版「8-Agent Ring 分片检索基准 v2.0」
-  description: 基于2WikiMultiHopQA的多跳推理环形协议测试，snippet已打乱
+  dataset_name: 2WikiMultiHopQA - 8-Agent Ring Sharded Retrieval Benchmark v2.0
+  description: Ring protocol test for multi-hop reasoning based on 2WikiMultiHopQA. Snippets have been shuffled.
   total_groups: 24075

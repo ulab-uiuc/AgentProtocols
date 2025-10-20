@@ -113,12 +113,12 @@ class AgoraCommBackend(BaseCommBackend):
         return value
     
     async def register_endpoint(self, agent_id: str, address: str) -> None:
-        """注册Agora agent的endpoint"""
+        """Register an Agora agent's endpoint."""
         self._endpoints[agent_id] = address
         self._clients[agent_id] = httpx.AsyncClient(base_url=address, timeout=30.0)
 
     async def connect(self, src_id: str, dst_id: str) -> None:
-        """Agora协议不需要显式连接建立"""
+        """Agora protocol does not require an explicit connection setup."""
         pass
 
     async def send(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Any:
@@ -170,7 +170,7 @@ class AgoraCommBackend(BaseCommBackend):
                 srv.shutdown()
 
     async def spawn_local_agent(self, agent_id: str, host: str, port: int, executor: Any) -> Any:
-        """启动localAgora Agent的HTTP服务"""
+        """Start a local Agora Agent HTTP service."""
         
         # 1. Create Toolformer
         try:

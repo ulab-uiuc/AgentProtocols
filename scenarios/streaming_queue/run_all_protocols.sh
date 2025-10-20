@@ -1,39 +1,39 @@
 #!/usr/bin/env bash
 
-# 简化版：顺序跑五个协议，每个使用独立配置文件
+# Simplified version: run protocols sequentially, each using its own configuration file
 set -e
 
-# 切换到仓库根目录  
+# Change to repository root directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${REPO_ROOT}"
 export PYTHONPATH="${REPO_ROOT}:${PYTHONPATH-}"
 
-# 要运行的协议列表
+# Protocols to run
 # PROTOCOLS=(a2a acp agora anp meta)
 PROTOCOLS=(anp agora meta)
 if [[ $# -gt 0 ]]; then
     PROTOCOLS=("$@")
 fi
 
-echo "开始运行协议: ${PROTOCOLS[*]}"
-echo "工作目录: ${REPO_ROOT}"
+echo "Starting protocols: ${PROTOCOLS[*]}"
+echo "Working directory: ${REPO_ROOT}"
 echo
 
-# 清理函数，退出时清除状态行
+# Cleanup function: clear status line on exit
 cleanup() {
-    printf "\r\033[K"  # 清除状态行
+    printf "\r\033[K"  # Clear status line
 }
 trap cleanup EXIT
 
-# 运行每个协议
+# Run each protocol
 for i in "${!PROTOCOLS[@]}"; do
     protocol="${PROTOCOLS[$i]}"
     num=$((i + 1))
     total=${#PROTOCOLS[@]}
     
-    # 在底部显示当前状态
-    printf "\r\033[K🔄 正在运行 [$num/$total]: %s 协议..." "$protocol" >&2
+    # Show current status on the bottom
+    printf "\r\033[K🔄 Running [$num/$total]: %s protocol..." "$protocol" >&2
     
     case "$protocol" in
         # a2a)   python3 -m script.streaming_queue.runner.run_a2a ;;
@@ -41,11 +41,11 @@ for i in "${!PROTOCOLS[@]}"; do
         agora) python3 -m script.streaming_queue.runner.run_anp ;;
         anp)   python3 -m script.streaming_queue.runner.run_agora ;;
         meta)  python3 -m script.streaming_queue.runner.run_meta_network ;;
-        *)     printf "\r\033[K❌ 错误: 未知协议 %s\n" "$protocol"; exit 1 ;;
+    *)     printf "\r\033[K❌ Error: unknown protocol %s\n" "$protocol"; exit 1 ;;
     esac
     
-    # 清除状态行，显示完成信息
-    printf "\r\033[K✅ [$num/$total] %s 协议完成\n" "$protocol"
+    # Clear status line and show completion message
+    printf "\r\033[K✅ [$num/$total] %s protocol completed\n" "$protocol"
 done
 
-echo "🎉 所有协议运行完成！"
+echo "🎉 All protocols finished!"

@@ -697,10 +697,10 @@ class MetaProtocolCoordinator:
             import json
             import time
             
-            # If是相对路径，相对于 fail_storm_recovery 目录
+            # If path is relative, resolve it relative to the fail_storm_recovery directory
             if not Path(self.result_file).is_absolute():
                 current_file = Path(__file__).resolve()
-                fail_storm_dir = current_file.parent.parent.parent  # 从 meta_protocol 回到 fail_storm_recovery
+                fail_storm_dir = current_file.parent.parent.parent  # from meta_protocol back to fail_storm_recovery
                 p = fail_storm_dir / self.result_file
             else:
                 p = Path(self.result_file)

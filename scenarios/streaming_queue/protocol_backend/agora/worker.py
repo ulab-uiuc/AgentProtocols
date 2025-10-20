@@ -4,8 +4,8 @@
 # """
 # Agora Worker (protocol-specific)
 
-# - 继承 QAWorkerBase，使用 Agora 协议包装成可执行的 Agent
-# - 仅responsible for"通信适配层"：提取用户输入文本 → 调用基类 answer() → 通过 Agora 返回
+# - Inherits QAWorkerBase, wraps Agora protocol into an executable Agent
+# - Responsible only for the "communication adapter" layer: extract user input text -> call base answer() -> return via Agora
 # """
 from __future__ import annotations
 import asyncio
@@ -15,7 +15,7 @@ from functools import wraps
 # Import Agora native SDK
 import agora
 
-# 允许多种导入相对路径（避免运行root directory不同导致的导入失败）
+# Allow multiple relative import paths (avoid import failures when running from different root directories)
 import sys
 from pathlib import Path
 
@@ -60,7 +60,7 @@ def _sender(func):
 
 
 class AgoraQAWorker(QAWorkerBase):
-    """Agora专用的QA Worker，使用Agora原生SDK功能。"""
+    """Agora-specific QA Worker that uses Agora's native SDK features."""
     
     def __init__(self, config=None, output=None):
         super().__init__(config, output)
@@ -81,7 +81,7 @@ class AgoraQAWorker(QAWorkerBase):
             self.agora_protocol = None
     
     async def answer(self, question: str) -> str:
-        """Override answer method to use Agora native SDK"""
+        """Override the answer method to use Agora native SDK."""
         try:
             # Use base QAWorkerBase for LLM call first
             base_answer = await super().answer(question)
@@ -105,29 +105,29 @@ class AgoraQAWorker(QAWorkerBase):
 
 
 class AgoraWorkerExecutor:
-    """
-    Agora 原生 Executor 外壳：
-      - 从 input_data 中抽取文本（支持 Agora 结构或简单文本）
-      - 调用 AgoraQAWorker.answer()
-      - 返回文本结果
+    """Agora native Executor wrapper:
+    - Extract text from input_data (supports Agora structure or plain text)
+    - Call AgoraQAWorker.answer()
+    - Return the textual result
     """
 
     def __init__(self, config: Optional[Dict] = None, output=None):
         self.worker = AgoraQAWorker(config=config, output=output)
 
     async def execute(self, input_data: Dict) -> Dict:
-        """
-        处理Agora消息并返回答案
-        输入格式: {
+        """Handle Agora messages and return an answer.
+
+        Input format:
+        {
             "protocolHash": None,
             "body": command,
             "protocolSources": []
         }
 
-        输出格式: {"status": ..., "body": ...}
+        Output format: {"status": ..., "body": ...}
         """
         try:
-            # Extractagora格式内容
+            # Extract Agora-formatted content
             text = ""
             if isinstance(input_data, dict):
                 if "body" in input_data:
@@ -144,7 +144,7 @@ class AgoraWorkerExecutor:
                 raise ValueError("No input text provided")
             answer = await asyncio.wait_for(self.worker.answer(text), timeout=30.0)
 
-            # Returnagora格式
+            # Return in Agora format
             return {"status": "success", "body": answer}
 
         except asyncio.TimeoutError:

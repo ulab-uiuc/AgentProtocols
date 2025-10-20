@@ -604,7 +604,7 @@ class MetaProtocolCoordinator(QACoordinatorBase):
             # If the path is relative, treat it as relative to the streaming_queue directory
             if not Path(self.result_file).is_absolute():
                 current_file = Path(__file__).resolve()
-                streaming_queue_dir = current_file.parent.parent.parent  # 从 meta_protocol 回到 streaming_queue
+                streaming_queue_dir = current_file.parent.parent.parent  # from meta_protocol back to streaming_queue
                 p = streaming_queue_dir / self.result_file
             else:
                 p = Path(self.result_file)

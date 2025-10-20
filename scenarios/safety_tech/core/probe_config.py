@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-S2保密性探针配置Schema与工厂
-统一定义probe_config格式，供runner与协议client使用
+S2 confidentiality probe configuration schema and factory
+Defines a unified probe_config format for runners and protocol clients.
 """
 
 from __future__ import annotations
@@ -12,83 +12,83 @@ from dataclasses import dataclass, asdict
 
 @dataclass
 class ProbeConfig:
-    """S2保密性探针配置"""
+    """S2 confidentiality probe configuration"""
     
-    # TLS/加密降级探针
+    # TLS / encryption downgrade probes
     tls_downgrade: bool = False
     tls_version_downgrade: Optional[str] = None  # "1.0", "1.1", "1.2"
-    cipher_downgrade: Optional[str] = None  # 指定弱加密套件
+    cipher_downgrade: Optional[str] = None  # Specify weak cipher suites
     
-    # 重放攻击探针
+    # Replay attack probes
     replay_attack: bool = False
-    replay_nonce: Optional[str] = None  # 重放的nonce值
-    replay_timestamp: Optional[float] = None  # 重放的时间戳
+    replay_nonce: Optional[str] = None  # Nonce value used for replay
+    replay_timestamp: Optional[float] = None  # Timestamp to replay
     
-    # 明文嗅探探针
+    # Plaintext sniffing probes
     plaintext_sniff: bool = False
-    sniff_keywords: Optional[list] = None  # 敏感关键字列表
-    sniff_patterns: Optional[list] = None  # 正则表达式模式
+    sniff_keywords: Optional[list] = None  # List of sensitive keywords
+    sniff_patterns: Optional[list] = None  # Regex patterns
     
-    # MITM/中间人攻击探针
+    # MITM / man-in-the-middle probes
     mitm_proxy: bool = False
-    mitm_proxy_endpoint: Optional[str] = None  # 代理端点
-    mitm_cert_replacement: bool = False  # 证书替换测试
-    mitm_transparent_mode: bool = False  # 透明代理模式
-    mitm_root_ca_path: Optional[str] = None  # 测试根CA证书路径
+    mitm_proxy_endpoint: Optional[str] = None  # Proxy endpoint
+    mitm_cert_replacement: bool = False  # Certificate replacement test
+    mitm_transparent_mode: bool = False  # Transparent proxy mode
+    mitm_root_ca_path: Optional[str] = None  # Path to root CA certificate for testing
     
-    # 旁路抓包探针（新增）
+    # Bypass packet capture probe (new)
     pcap_capture: bool = False
-    pcap_interface: str = "lo0"  # 抓包网卡接口
-    pcap_filter: Optional[str] = None  # BPF过滤器
-    pcap_duration_seconds: int = 10  # 抓包持续时间
+    pcap_interface: str = "lo0"  # Network interface for packet capture
+    pcap_filter: Optional[str] = None  # BPF filter
+    pcap_duration_seconds: int = 10  # Capture duration in seconds
     
-    # 会话劫持探针
+    # Session hijack probes
     session_hijack: bool = False
-    session_token_reuse: Optional[str] = None  # 重用的会话token
+    session_token_reuse: Optional[str] = None  # Reused session token
     
-    # DID/身份伪造探针
+    # DID / identity spoofing probes
     did_spoofing: bool = False
-    fake_did: Optional[str] = None  # 伪造的DID
-    fake_signature: Optional[str] = None  # 伪造的签名
+    fake_did: Optional[str] = None  # Fake DID
+    fake_signature: Optional[str] = None  # Fake signature
     
-    # 证书有效性矩阵探针（新增）
+    # Certificate validity matrix probe (new)
     cert_validity_matrix: bool = False
-    cert_expired: bool = False  # 过期证书测试
-    cert_invalid_hostname: bool = False  # 主机名不匹配测试
-    cert_self_signed: bool = False  # 自签名证书测试
-    cert_chain_incomplete: bool = False  # 证书链不完整测试
-    cert_revoked: bool = False  # 撤销证书测试（OCSP/CRL）
-    cert_weak_cipher: bool = False  # 弱加密套件测试
-    cert_pinning_bypass: bool = False  # 证书固定绕过测试
+    cert_expired: bool = False  # Expired certificate test
+    cert_invalid_hostname: bool = False  # Hostname mismatch test
+    cert_self_signed: bool = False  # Self-signed certificate test
+    cert_chain_incomplete: bool = False  # Incomplete certificate chain test
+    cert_revoked: bool = False  # Certificate revocation test (OCSP/CRL)
+    cert_weak_cipher: bool = False  # Weak cipher suite test
+    cert_pinning_bypass: bool = False  # Certificate pinning bypass test
     
-    # E2E负载加密检测探针（新增）
+    # E2E payload encryption detection probe (new)
     e2e_payload_detection: bool = False
-    e2e_watermark: Optional[str] = None  # 水印标记
-    e2e_probe_payload: bool = False  # 探测payload可读性
+    e2e_watermark: Optional[str] = None  # Watermark marker
+    e2e_probe_payload: bool = False  # Probe whether payload is readable
     
-    # 时钟漂移矩阵探针（新增）
+    # Time skew matrix probe (new)
     time_skew_matrix: bool = False
-    time_skew_levels: Optional[list] = None  # 漂移档位列表，如[30, 120, 300, 600]秒
-    time_skew_window_test: bool = False  # 窗口内外重复测试
+    time_skew_levels: Optional[list] = None  # List of skew levels, e.g., [30, 120, 300, 600] seconds
+    time_skew_window_test: bool = False  # Windowed repeatability test
     
-    # 网络层扰动（S1扩展）
-    network_jitter_ms: Optional[int] = None  # 网络抖动
-    packet_drop_rate: Optional[float] = None  # 丢包率 0.0-1.0
-    packet_reorder_prob: Optional[float] = None  # 乱序概率
-    bandwidth_limit_kbps: Optional[int] = None  # 带宽限制
+    # Network-layer disturbances (S1 extension)
+    network_jitter_ms: Optional[int] = None  # Network jitter (ms)
+    packet_drop_rate: Optional[float] = None  # Packet drop rate between 0.0 and 1.0
+    packet_reorder_prob: Optional[float] = None  # Packet reordering probability
+    bandwidth_limit_kbps: Optional[int] = None  # Bandwidth limit (kbps)
     
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典格式"""
+        """Convert to dictionary format"""
         return asdict(self)
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'ProbeConfig':
-        """从字典创建配置"""
+        """Create config from a dictionary"""
         return cls(**data)
 
 
 def create_s2_tls_downgrade_config() -> ProbeConfig:
-    """CreateTLS降级测试配置"""
+    """Create TLS downgrade test configuration"""
     return ProbeConfig(
         tls_downgrade=True,
         tls_version_downgrade="1.1",
@@ -98,18 +98,18 @@ def create_s2_tls_downgrade_config() -> ProbeConfig:
 
 
 def create_s2_replay_attack_config(nonce: str = "replay_test") -> ProbeConfig:
-    """Create重放攻击测试配置"""
+    """Create replay attack test configuration"""
     import time
     return ProbeConfig(
         replay_attack=True,
         replay_nonce=nonce,
-        replay_timestamp=time.time() - 300,  # 5分钟前的时间戳
+        replay_timestamp=time.time() - 300,  # Timestamp for 5 minutes ago
         plaintext_sniff=True
     )
 
 
 def create_s2_mitm_config(proxy_endpoint: str = "http://127.0.0.1:8080") -> ProbeConfig:
-    """CreateMITM测试配置"""
+    """Create MITM test configuration"""
     return ProbeConfig(
         mitm_proxy=True,
         mitm_proxy_endpoint=proxy_endpoint,
@@ -120,7 +120,7 @@ def create_s2_mitm_config(proxy_endpoint: str = "http://127.0.0.1:8080") -> Prob
 
 
 def create_s2_did_spoofing_config(fake_did: str = "did:fake:test") -> ProbeConfig:
-    """CreateDID伪造测试配置"""
+    """Create DID spoofing test configuration"""
     return ProbeConfig(
         did_spoofing=True,
         fake_did=fake_did,
@@ -130,17 +130,17 @@ def create_s2_did_spoofing_config(fake_did: str = "did:fake:test") -> ProbeConfi
 
 
 def create_s1_network_disturbance_config() -> ProbeConfig:
-    """CreateS1网络扰动测试配置"""
+    """Create S1 network disturbance test configuration"""
     return ProbeConfig(
         network_jitter_ms=50,
-        packet_drop_rate=0.01,  # 1%丢包
-        packet_reorder_prob=0.005,  # 0.5%乱序
-        bandwidth_limit_kbps=1000  # 1Mbps限速
+        packet_drop_rate=0.01,  # 1% packet loss
+        packet_reorder_prob=0.005,  # 0.5% reordering
+        bandwidth_limit_kbps=1000  # 1 Mbps bandwidth limit
     )
 
 
 def create_s2_pcap_mitm_config(interface: str = "lo0", duration: int = 10) -> ProbeConfig:
-    """Create旁路抓包+MITM测试配置（优先级1）"""
+    """Create bypass packet capture + MITM test configuration (priority 1)"""
     return ProbeConfig(
         pcap_capture=True,
         pcap_interface=interface,
@@ -154,7 +154,7 @@ def create_s2_pcap_mitm_config(interface: str = "lo0", duration: int = 10) -> Pr
 
 
 def create_s2_cert_matrix_config() -> ProbeConfig:
-    """Create证书有效性矩阵测试配置（优先级2）"""
+    """Create certificate validity matrix test configuration (priority 2)"""
     return ProbeConfig(
         cert_validity_matrix=True,
         cert_expired=True,
@@ -170,7 +170,7 @@ def create_s2_cert_matrix_config() -> ProbeConfig:
 
 
 def create_s2_e2e_detection_config(watermark: str = "S2_E2E_WATERMARK") -> ProbeConfig:
-    """CreateE2E负载加密检测配置（优先级3）"""
+    """Create E2E payload encryption detection configuration (priority 3)"""
     return ProbeConfig(
         e2e_payload_detection=True,
         e2e_watermark=watermark,
@@ -181,7 +181,7 @@ def create_s2_e2e_detection_config(watermark: str = "S2_E2E_WATERMARK") -> Probe
 
 
 def create_s2_time_skew_config(levels: list = None) -> ProbeConfig:
-    """Create时钟漂移矩阵测试配置（优先级4）"""
+    """Create time skew matrix test configuration (priority 4)"""
     if levels is None:
         levels = [30, 120, 300, 600]  # ±30s, ±2m, ±5m, ±10m
     
@@ -192,34 +192,34 @@ def create_s2_time_skew_config(levels: list = None) -> ProbeConfig:
         time_skew_window_test=True,
         replay_attack=True,
         replay_nonce="skew_test",
-        replay_timestamp=time.time() - levels[0]  # 使用第一个漂移档位
+        replay_timestamp=time.time() - levels[0]  # Use the first skew level
     )
 
 
 def create_comprehensive_probe_config() -> ProbeConfig:
-    """Create综合探针配置（用于全面S2测试）"""
+    """Create comprehensive probe configuration (for full S2 testing)"""
     import time
     return ProbeConfig(
         tls_downgrade=True,
         tls_version_downgrade="1.1",
         replay_attack=True,
         replay_nonce="comprehensive_test",
-        replay_timestamp=time.time() - 300,  # 5分钟前的时间戳
+        replay_timestamp=time.time() - 300,  # Timestamp for 5 minutes ago
         plaintext_sniff=True,
         sniff_keywords=["password", "token", "patient", "medical", "diagnosis"],
-        mitm_proxy=False,  # MITM需要额外基础设施，默认关闭
+        mitm_proxy=False,  # MITM requires additional infrastructure; disabled by default
         did_spoofing=True,
         fake_did="did:fake:comprehensive_test",
         fake_signature="fake_comprehensive_signature",
-        # 新增高级探针
-        pcap_capture=True,  # 启用旁路抓包
-        cert_validity_matrix=True,  # 启用证书矩阵测试
+        # New advanced probes
+        pcap_capture=True,  # Enable bypass packet capture
+        cert_validity_matrix=True,  # Enable certificate matrix testing
         cert_expired=True,
         cert_invalid_hostname=True,
         cert_self_signed=True,
-        e2e_payload_detection=True,  # 启用E2E检测
+        e2e_payload_detection=True,  # Enable E2E detection
         e2e_watermark="S2_E2E_WATERMARK_TEST",
-        time_skew_matrix=True,  # 启用时钟漂移矩阵
+        time_skew_matrix=True,  # Enable time skew matrix
         time_skew_levels=[30, 120, 300, 600],  # ±30s, ±2m, ±5m, ±10m
-        session_hijack=True  # 启用会话劫持测试
+        session_hijack=True  # Enable session hijack testing
     )

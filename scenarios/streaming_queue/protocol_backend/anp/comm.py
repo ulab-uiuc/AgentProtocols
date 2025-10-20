@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 ANP Communication Backend for Streaming Queue
-真正的ANP协议实现，基于AgentConnect SDK，支持DID认证、E2E加密和WebSocket通信
+Real ANP protocol implementation based on the AgentConnect SDK, supporting DID authentication,
+end-to-end encryption, and WebSocket communication.
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ from pathlib import Path
 import sys
 import uuid
 
-# ================= AgentConnect ANP SDK 导入 =================
+# ================= AgentConnect ANP SDK Imports =================
 # Add AgentConnect to path
 current_file = Path(__file__).resolve()
 streaming_queue_path = current_file.parent.parent.parent  # streaming_queue/
@@ -113,14 +114,14 @@ class ANPAgentHandle:
 
 async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_port: int, executor: Any) -> ANPAgentHandle:
     """
-    启动完整的ANP Host，包含：
-    1. HTTP REST API (兼容streaming_queue接口)
-    2. WebSocket通信 (ANP原生)
-    3. DID身份认证
-    4. E2E加密支持
+    Start a full ANP host including:
+    1. HTTP REST API (compatible with streaming_queue interface)
+    2. WebSocket communication (native ANP)
+    3. DID identity authentication
+    4. End-to-end encryption support
     """
     
-    # ================= DID认证Setup =================
+    # ================= DID authentication setup =================
     try:
         # Generate DID and private keys for authentication
         service_endpoint = f"http://{host}:{http_port}"
@@ -148,7 +149,7 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
         print(f"[ANP] Failed to generate DID for {agent_id}: {e}")
         raise
     
-    # ================= SimpleNodeSetup =================
+    # ================= SimpleNode setup =================
     try:
         # Create SimpleNode with correct parameters based on SafetyTech implementation
         private_key_pem = get_pem_from_private_key(private_keys["private_key"])
@@ -183,7 +184,7 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
         # Continue without SimpleNode if it fails
         simple_node = None
     
-    # ================= HTTP Server (兼容streaming_queue) =================
+    # ================= HTTP Server (compatible with streaming_queue) =================
     from starlette.applications import Starlette
     from starlette.responses import JSONResponse
     from starlette.requests import Request
@@ -202,8 +203,8 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
 
     async def message_endpoint(request: Request):
         """
-        ANP message endpoint - 兼容streaming_queue的消息格式
-        同时支持ANP原生DID认证和加密
+        ANP message endpoint - compatible with streaming_queue message formats.
+        Also supports native ANP DID authentication and encryption.
         """
         try:
             # Get request payload
@@ -212,7 +213,7 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
             # Extract message content (compatible with multiple formats)
             message_content = _extract_message_content(payload)
             
-            # DID Authentication (if available)
+            # DID authentication (if available)
             auth_success = False
             if "authorization" in request.headers:
                 try:
@@ -283,7 +284,7 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
             return JSONResponse(response_data)
             
         except asyncio.CancelledError:
-            # 优雅退出时的预期异常，避免噪音
+            # Expected during graceful shutdown, avoid noisy logs
             return JSONResponse({"status": "cancelled"}, status_code=499)
         except Exception as e:
             print(f"[ANP] Message processing error for {agent_id}: {e}")
@@ -316,7 +317,7 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
     # Wait for HTTP server to start
     await asyncio.sleep(0.5)
     
-    # ================= WebSocket Server (ANP原生) =================
+    # ================= WebSocket Server (native ANP) =================
     websocket_server = None
     if simple_node is None:
         import websockets
@@ -427,14 +428,14 @@ async def _verify_did_auth(auth_header: str, did_document: Dict[str, Any]) -> bo
         token = auth_header[7:].strip()  # Remove "Bearer "
         expected_did = did_document.get("id")
         
-        # 1) 支持最简单的 DID 直传：Bearer did:<DID> 或 did:did:<DID>
+    # 1) Support the simplest DID direct pass-through: 'Bearer did:<DID>' or 'did:did:<DID>'
         if token.startswith("did:"):
-            # 兼容形如 did:did:<...> 的前缀重复
+            # Handle potential duplicated 'did:did:' prefix
             simple = token[4:]
             token_did = simple if simple.startswith("did:") else token
             return token_did == expected_did
         
-        # 2) 若像 JWT（含有两个点），仅按 JWT 流程处理，不再尝试 base64 回退
+    # 2) If it looks like a JWT (contains two dots), treat it as JWT and do not attempt base64 fallback
         if token.count(".") == 2:
             try:
                 import jwt
@@ -460,10 +461,10 @@ async def _verify_did_auth(auth_header: str, did_document: Dict[str, Any]) -> bo
             except Exception:
                 return False
         
-        # 3) Base64(JSON) 回退：仅在非 JWT 且非 did: 情况下尝试
+    # 3) Base64(JSON) fallback: only attempt when not JWT and not a did: token
         import base64
         try:
-            # 允许 urlsafe base64，并修正 padding
+            # Allow urlsafe base64 and fix padding
             padding = '=' * ((4 - len(token) % 4) % 4)
             raw = base64.urlsafe_b64decode((token + padding).encode())
             try:
@@ -574,7 +575,7 @@ class ANPCommBackend(BaseCommBackend):
         """
         dst_url = self._addr.get(dst_id)
         if not dst_url:
-            # Try自愈：等待短时并检查是否刚注册
+            # Self-heal: wait briefly and check if the endpoint was just registered
             await asyncio.sleep(0.1)
             dst_url = self._addr.get(dst_id)
             if not dst_url:
@@ -619,7 +620,7 @@ class ANPCommBackend(BaseCommBackend):
             
         except Exception as e:
             print(f"[ANP] Send error {src_id} -> {dst_id}: {e}")
-            # 简单重试一次
+            # Simple retry once
             try:
                 await asyncio.sleep(0.1)
                 response = await self._client.post(
@@ -652,9 +653,9 @@ class ANPCommBackend(BaseCommBackend):
             return False
     
     async def close(self) -> None:
-        """Close ANP backend and cleanup resources"""
+        """Close ANP backend and clean up resources"""
         print("[ANP] Closing ANP communication backend...")
-        
+
         # Stop all local agents gracefully
         for agent_id in list(self._handles.keys()):
             try:
@@ -664,39 +665,37 @@ class ANPCommBackend(BaseCommBackend):
             except Exception as e:
                 # Suppress cleanup errors
                 pass
-        
+
         # Close HTTP client
         if self._own_client:
             await self._client.aclose()
-        
+
         # Close WebSocket connections
         for ws in self._websocket_connections.values():
             try:
                 await ws.close()
             except Exception:
                 pass
-        
+
         print("[ANP] ANP backend closed")
     
     # ================= ANP-Specific Methods =================
     async def spawn_local_agent(self, agent_id: str, host: str, http_port: int, executor: Any, websocket_port: Optional[int] = None) -> ANPAgentHandle:
-        """
-        Spawn a local ANP agent with dual HTTP/WebSocket support
-        """
+        """Spawn a local ANP agent with dual HTTP/WebSocket support."""
         if agent_id in self._handles:
             raise RuntimeError(f"[ANP] Agent {agent_id} already exists")
-        
+
         if websocket_port is None:
             websocket_port = http_port + 1000  # Default WebSocket port offset
-        
+
         print(f"[ANP] Spawning local agent {agent_id} on HTTP:{http_port}, WS:{websocket_port}")
-        
+
         handle = await _start_anp_host(agent_id, host, http_port, websocket_port, executor)
         self._handles[agent_id] = handle
-        
+
         # Auto-register the endpoint
         await self.register_endpoint(agent_id, handle.base_url)
-        
+
         print(f"[ANP] Local agent {agent_id} spawned successfully")
         return handle
     

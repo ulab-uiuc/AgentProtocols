@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-A2A 协议专用 Runner
-  - 复用 RunnerBase 的通用流程
-  - 通过 A2ACommBackend.spawn_local_agent 启动 A2A executor 的 HTTP 服务
-  - NetworkBase 仅登记 (agent_id, address)
+A2A-specific Runner
+    - Reuses RunnerBase's generic flow
+    - Starts A2A executor HTTP services using A2ACommBackend.spawn_local_agent
+    - NetworkBase only registers (agent_id, address)
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ from runner_base import RunnerBase, ColoredOutput  # type: ignore
 if str(STREAMING_Q) not in sys.path:
     sys.path.insert(0, str(STREAMING_Q))
 
-# --------- NetworkBase / CommBackend 导入 ---------
+# --------- NetworkBase / CommBackend imports ---------
 from core.network_base import NetworkBase  # type: ignore
 from protocol_backend.a2a.comm import A2ACommBackend  # type: ignore
 from protocol_backend.a2a.coordinator import QACoordinatorExecutor    # type: ignore
@@ -41,18 +41,18 @@ from protocol_backend.a2a.worker import QAAgentExecutor            # type: ignor
 class A2ARunner(RunnerBase):
     def __init__(self, config_path: str = "config/a2a.yaml"):
         super().__init__(config_path)
-        # 复用一个全局 httpx client（也交给 backend 使用，避免重复连接池）
+        # Reuse a global httpx client (also provided to the backend to avoid duplicate connection pools)
         self.httpx_client = httpx.AsyncClient(timeout=30.0)
-        self._handles: List[Any] = []          # 本进程启动的 A2A Host 句柄（可选）
-        self._backend: Optional[A2ACommBackend] = None  # 保存 backend 以便 spawn / close
+        self._handles: List[Any] = []          # Handles for A2A Hosts started in this process (optional)
+        self._backend: Optional[A2ACommBackend] = None  # Keep a reference to the backend for spawn/close
 
-    # ---------- 协议注入：创建网络 ----------
+    # ---------- Protocol injection: create network ----------
     async def create_network(self) -> NetworkBase:
-        # 显式使用 A2ACommBackend，这样我们能用 spawn_local_agent
+        # Explicitly use A2ACommBackend so we can call spawn_local_agent
         self._backend = A2ACommBackend(httpx_client=self.httpx_client)
         return NetworkBase(comm_backend=self._backend)
 
-    # ---------- 协议注入：创建/注册 agent ----------
+    # ---------- Protocol injection: create/register agents ----------
     async def setup_agents(self) -> List[str]:
         out = self.output
         out.info("Initializing NetworkBase and A2A Agents...")
@@ -85,7 +85,7 @@ class A2ARunner(RunnerBase):
             worker_ids.append(wid)
             out.success(f"{wid} started @ {w_handle.base_url}")
 
-        # 告知协调者网络与 worker 集合（用于它的内部调度）
+        # Inform coordinator about the network and worker list (used for its internal scheduling)
         if hasattr(coordinator_executor, "coordinator"):
             coordinator_executor.coordinator.set_network(self.network, worker_ids, "a2a")
             # Set metrics collector to communication backend
@@ -94,7 +94,7 @@ class A2ARunner(RunnerBase):
 
         return worker_ids
 
-    # ---------- 协议注入：向协调者发指令 ----------
+    # ---------- Protocol injection: send command to coordinator ----------
     async def send_command_to_coordinator(self, command: str) -> Optional[Dict[str, Any]]:
         coord_port = int(self.config.get("qa", {}).get("coordinator", {}).get("port", 9998))
         url = f"http://localhost:{coord_port}/message"
@@ -114,7 +114,7 @@ class A2ARunner(RunnerBase):
             resp = await self.httpx_client.post(url, json=payload, timeout=60.0)
             resp.raise_for_status()
             data = resp.json()
-            # 兼容两种事件格式
+            # Support two possible event formats
             if "events" in data and data["events"]:
                 for ev in data["events"]:
                     if ev.get("type") == "agent_text_message":
@@ -130,7 +130,7 @@ class A2ARunner(RunnerBase):
             self.output.error(f"HTTP request to coordinator failed: {e}")
             return None
 
-    # ---------- 工具：转换 QA 配置 ----------
+    # ---------- Utilities: convert QA config ----------
     def _convert_config_for_qa_agent(self, config: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         if not config:
             return None
@@ -157,17 +157,17 @@ class A2ARunner(RunnerBase):
             }
         return None
 
-    # ---------- 清理 ----------
+    # ---------- Cleanup ----------
     async def cleanup(self) -> None:
         try:
-            # RunnerBase 会调用 self.network.close()，A2ACommBackend.close() 会停止local hosts
+            # RunnerBase will call self.network.close(); A2ACommBackend.close() will stop local hosts
             await super().cleanup()
         finally:
             try:
                 await self.httpx_client.aclose()
             except Exception:
                 pass
-            # 双保险（network.close processed，一般不会再剩）
+            # Extra safety: stop any remaining handles (usually none after network.close)
             for h in self._handles:
                 try:
                     await h.stop()
@@ -175,7 +175,7 @@ class A2ARunner(RunnerBase):
                     pass
 
 
-# 直接运行
+# Direct execution
 async def _main():
     runner = A2ARunner()
     await runner.run()
