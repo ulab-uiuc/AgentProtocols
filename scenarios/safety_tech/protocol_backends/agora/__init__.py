@@ -25,7 +25,7 @@ __all__ = [
     "analyze_agora_privacy"
 ]
 
-# 自动注册发送后端
+# Auto-register发送后端
 try:
     from scenarios.safety_tech.protocol_backends.common.interfaces import register_backend
     from .client import AgoraProtocolBackend

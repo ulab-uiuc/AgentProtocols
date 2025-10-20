@@ -138,17 +138,17 @@ class AgoraCommBackend(BaseCommBackend):
         
         def privacy_agent_service(message: str, context: str = "") -> str:
             """
-            隐私测试智能体服务工具
-            这是Agora Protocol的标准工具接口
+            Privacy testing agent service tool.
+            This is the standard tool interface for the Agora Protocol.
             """
             try:
-                # Agora工具函数是同步的，但executor是异步的
-                # 需要在主线程的事件循环中运行异步函数
+                # Agora tool functions are synchronous, but the executor is async.
+                # We must schedule the coroutine on the main thread's event loop.
                 coro = executor.execute(message)
                 future = asyncio.run_coroutine_threadsafe(coro, loop)
                 result = future.result(timeout=30.0)
                 
-                # 确保返回字符串
+                # Ensure we always return a string
                 if isinstance(result, str):
                     return result
                 else:

@@ -592,24 +592,24 @@ class A2ARunner(FailStormRunnerBase):
     # ========================== Simple Failover Implementation ==========================
     
     def get_next_available_agent(self, exclude_agents: set = None) -> Optional[str]:
-        """获取下一个可用的agent，跳过失败的agent"""
+        """Get the next available agent, skipping failed agents."""
         if exclude_agents is None:
             exclude_agents = set()
         
-        # 获取所有可用的agent（排除已kill的和要排除的）
+        # Get all available agents (exclude killed and excluded ones)
         available_agents = []
         for agent_id in self.shard_workers.keys():
             if (agent_id not in self.killed_agents and 
                 agent_id not in exclude_agents and
-                agent_id in self.agents):  # 确保agent还存在
+                agent_id in self.agents):  # Ensure the agent still exists
                 available_agents.append(agent_id)
         
         if available_agents:
-            return available_agents[0]  # 返回第一个可用的
+            return available_agents[0]  # Return the first available one
         return None
     
     async def _run_qa_task_for_agent_with_failover(self, original_agent_id: str, original_worker, duration: float):
-        """运行QA任务，如果原agent失败则自动切换到下一个可用agent"""
+        """Run QA task; if the original agent fails, automatically switch to the next available one."""
         start_wall = time.perf_counter()  # high-resolution timer
         task_count = 0
         max_groups = self.config.get("shard_qa", {}).get("max_groups", 50)
@@ -619,17 +619,17 @@ class A2ARunner(FailStormRunnerBase):
             self._next_group_for_agent = {}
         group_id = self._next_group_for_agent.get(original_agent_id, 0) % max_groups
         
-        # 尝试的agent列表，从原始agent开始
+    # List of tried agents, starting from the original agent
         tried_agents = set()
         current_agent_id = original_agent_id
         current_worker = original_worker
         
         while (time.perf_counter() - start_wall) < duration and group_id < max_groups:
             try:
-                # 检查当前agent是否还可用
+                # Check whether the current agent is still available
                 if (current_agent_id in self.killed_agents or 
                     current_agent_id not in self.agents):
-                    # 当前agent不可用，寻找下一个
+                    # When the current agent becomes unavailable, find the next
                     tried_agents.add(current_agent_id)
                     next_agent = self.get_next_available_agent(tried_agents)
                     
@@ -637,12 +637,12 @@ class A2ARunner(FailStormRunnerBase):
                         self.output.warning(f"🚨 [A2A] No available agents for task, original: {original_agent_id}")
                         break
                     
-                    # 切换到新的agent
+                    # Switch to the new agent
                     current_agent_id = next_agent
                     current_worker = self.shard_workers[next_agent]
                     self.output.info(f"🔄 [A2A] Switched from {original_agent_id} to {current_agent_id}")
                 
-                # 执行任务 - 高精度计时
+                # Execute the task with high-precision timing
                 start_t = time.perf_counter()
                 result = await current_worker.worker.start_task(group_id)
                 end_t = time.perf_counter()
@@ -651,7 +651,7 @@ class A2ARunner(FailStormRunnerBase):
                 # Update group tracking
                 self._next_group_for_agent[original_agent_id] = (group_id + 1) % max_groups
                 
-                # 记录任务执行
+                # Record task execution
                 if self.metrics_collector:
                     result_str = str(result).lower() if result else ""
                     answer_found = (result and 
@@ -678,39 +678,39 @@ class A2ARunner(FailStormRunnerBase):
                         group_id=group_id
                     )
                 
-                # 下一个组
+                # Next group
                 group_id = (group_id + 1) % max_groups
                 
-                # 短暂延迟避免过载
+                # Short delay to avoid overload
                 await asyncio.sleep(0.002)
                 
             except Exception as e:
-                # 任务执行失败，尝试下一个agent
+                # Task execution failed; try the next agent
                 self.output.warning(f"⚠️ [A2A] Task failed on {current_agent_id}: {e}")
                 tried_agents.add(current_agent_id)
                 
-                # 标记当前agent为失败
+                # Mark the current agent as failed
                 if current_agent_id not in self.killed_agents:
                     self.killed_agents.add(current_agent_id)
                 
-                # 寻找下一个可用agent
+                # Find the next available agent
                 next_agent = self.get_next_available_agent(tried_agents)
                 if next_agent is None:
                     self.output.error(f"❌ [A2A] No more available agents, stopping task for {original_agent_id}")
                     break
                 
-                # 切换到新agent
+                # Switch to a new agent
                 current_agent_id = next_agent
                 current_worker = self.shard_workers[next_agent]
                 self.output.info(f"🔄 [A2A] Failover: {original_agent_id} -> {current_agent_id}")
         
-        # 更新worker的任务计数
+        # Update worker's task count
         if hasattr(current_worker.worker, 'task_count'):
             current_worker.worker.task_count = getattr(current_worker.worker, 'task_count', 0) + task_count
         else:
             current_worker.worker.task_count = task_count
         
-        elapsed = time.time() - start_time
+        elapsed = time.perf_counter() - start_wall
         if current_agent_id != original_agent_id:
             self.output.success(f"✅ [A2A] Agent {original_agent_id} -> {current_agent_id}: {task_count} tasks in {elapsed:.1f}s")
         else:

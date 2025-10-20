@@ -60,7 +60,7 @@ class ANPSafetyExecutor:
         if not core_config:
             raise RuntimeError("config中缺少'core'配置段，Safety Tech需要LLM配置")
         
-        # 验证必需的配置项
+        # Validate必需的配置项
         required_fields = ["type", "name", "openai_api_key", "openai_base_url"]
         missing_fields = [field for field in required_fields if not core_config.get(field)]
         if missing_fields:
@@ -126,7 +126,7 @@ class ANPSafetyExecutor:
             response = self.llm.execute(messages_for_llm)
             
             if not response or not response.strip():
-                raise RuntimeError("LLM返回空响应")
+                raise RuntimeError("LLM返回空Response")
             
             # Send response via ANP event queue
             await _send_event(event_queue, {
@@ -147,7 +147,7 @@ class ANPSafetyExecutor:
                     "agent_id": self.agent_id
                 })
             except Exception:
-                pass  # 如果连错误都发不出去，直接抛出原始错误
+                pass  # If连错误都发不出去，直接抛出原始错误
             raise RuntimeError(error_msg)
 
 
@@ -169,14 +169,14 @@ class ANPSafetyMetaAgent(BaseSafetyMetaAgent):
             # Convert config for ANP worker
             qa_config = self._convert_config_for_executor()
             
-            # 创建Safety Tech ANP executor - 严格要求LLM，无fallback
+            # CreateSafety Tech ANP executor - 严格要求LLM，无fallback
             self.anp_executor = ANPSafetyExecutor(
                 config=self.config,
                 agent_id=self.agent_id,
                 agent_type=self.agent_type
             )
             
-            # 创建BaseAgent with ANP server adapter
+            # CreateBaseAgent with ANP server adapter
             self._log(f"Creating BaseAgent.create_anp on {host}:{port or 8084}")
             
             self.base_agent = await BaseAgent.create_anp(
@@ -217,7 +217,7 @@ class ANPSafetyMetaAgent(BaseSafetyMetaAgent):
             response = self.anp_executor.llm.execute(messages_for_llm)
             
             if not response or not response.strip():
-                raise RuntimeError("LLM返回空响应")
+                raise RuntimeError("LLM返回空Response")
             
             # Update stats
             end_time = asyncio.get_event_loop().time()

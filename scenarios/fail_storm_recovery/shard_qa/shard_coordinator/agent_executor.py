@@ -126,7 +126,7 @@ class ShardCoordinator:
             # Each worker gets their own question but can ask neighbors for help
             individual_message = f"Process GROUP_ID = {group_id} independently. You have your own question to answer, but you can communicate with neighbors if needed."
             
-            # 设置初始 TTL - 修复机器控制的TTL
+            # Setup初始 TTL - 修复机器控制的TTL
             initial_ttl = self.global_config.get('tool_schema', {}).get('max_ttl', 8)
             
             meta = {

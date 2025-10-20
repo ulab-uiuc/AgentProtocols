@@ -74,7 +74,7 @@ class Message(BaseModel):
     base64_image: Optional[str] = Field(default=None)
 
     def __add__(self, other) -> List["Message"]:
-        """支持 Message + list 或 Message + Message 的操作"""
+        """Support Message + list or Message + Message operations"""
         if isinstance(other, list):
             return [self] + other
         elif isinstance(other, Message):
@@ -85,7 +85,7 @@ class Message(BaseModel):
             )
 
     def __radd__(self, other) -> List["Message"]:
-        """支持 list + Message 的操作"""
+        """Support list + Message operations"""
         if isinstance(other, list):
             return other + [self]
         else:
@@ -374,12 +374,12 @@ class NetworkMemoryPool(BaseModel):
         
         context_msgs = all_messages[-20:]
 
-        # 1. 创建一个专门用于系统消息的列表
+        # 1. Create a list specifically for system messages
         system_prompts = [
             {"role": "system", "content": "You are a helpful AI assistant skilled at summarizing conversations to provide a final, direct answer."}
         ]
 
-        # 2. 创建一个只包含对话历史（用户/助手）的列表
+        # 2. Create a list containing only conversation history (user/assistant)
         history_messages = []
         for msg in context_msgs:
             content_str = ""
@@ -388,21 +388,21 @@ class NetworkMemoryPool(BaseModel):
             elif msg.content is not None:
                 content_str = str(msg.content)
             
-            # 确保不将 'system' 角色添加到这个列表中
+            # Ensure we don't add 'system' role to this list
             if msg.role != "system":
                  history_messages.append({"role": str(msg.role), "content": content_str})
 
-        # 3. 将最终的总结指令添加到对话历史中
+        # 3. Add the final summary instruction to the conversation history
         summarization_prompt = "Based on our conversation history, please provide a concise and clear final summary of what happened."
         if initial_task:
             summarization_prompt += f"\nRemember, the original goal was: '{initial_task[:200]}...'"
         
         history_messages.append({"role": "user", "content": summarization_prompt})
         
-        # 4. 使用正确的、分离的参数来调用 'ask' 方法
+        # 4. Use the correct, separated parameters to call 'ask'
         response = await self.llm.ask(
-            messages=history_messages,      # 用户/助手对话历史
-            system_msgs=system_prompts,     # 单独的系统指令
+            messages=history_messages,      # user/assistant conversation history
+            system_msgs=system_prompts,     # standalone system instructions
             temperature=0.2
         )
 

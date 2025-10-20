@@ -56,8 +56,8 @@ class ACPSafetyExecutor:
         self.llm = self._init_llm()
         if not self.llm:
             raise RuntimeError(
-                f"LLM配置缺失或无效。Safety Tech S2测试需要完整的LLM配置。"
-                f"请在config中提供有效的core.openai_api_key配置。"
+                "LLM configuration missing or invalid. Safety Tech S2 tests require a complete LLM configuration. "
+                "Please provide a valid core.openai_api_key in the config."
             )
     
     def _init_llm(self):
@@ -65,25 +65,25 @@ class ACPSafetyExecutor:
         try:
             from core.llm_wrapper import Core
         except ImportError as e:
-            raise RuntimeError(f"core.llm_wrapper导入失败: {e}. Safety Tech需要core.llm_wrapper支持。")
+            raise RuntimeError(f"Failed to import core.llm_wrapper: {e}. Safety Tech requires core.llm_wrapper support.")
         
         core_config = self.config.get("core", {})
         if not core_config:
-            raise RuntimeError("config中缺少'core'配置段，Safety Tech需要LLM配置")
+            raise RuntimeError("Missing 'core' configuration section in config; Safety Tech requires LLM configuration")
         
-        # 验证必需的配置项
+        # Validate required config fields
         required_fields = ["type", "name", "openai_api_key", "openai_base_url"]
         missing_fields = [field for field in required_fields if not core_config.get(field)]
         if missing_fields:
-            raise RuntimeError(f"core配置缺少必需字段: {missing_fields}")
+            raise RuntimeError(f"core configuration is missing required fields: {missing_fields}")
         
-        # 使用完整的config格式，与现有的Core接口兼容
+        # Use full config format compatible with the existing Core interface
         llm_config = {"model": core_config}
         
         try:
             return Core(llm_config)
         except Exception as e:
-            raise RuntimeError(f"LLM初始化失败: {e}。请检查core配置是否正确。")
+            raise RuntimeError(f"LLM initialization failed: {e}. Please check that the core configuration is correct.")
     
     async def __call__(self, messages: list, context) -> AsyncGenerator:
         """ACP server async generator interface - strict LLM implementation"""
@@ -103,25 +103,25 @@ class ACPSafetyExecutor:
                     text_content = str(message)
                 
                 if not text_content.strip():
-                    raise RuntimeError("接收到空消息内容")
+                    raise RuntimeError("Received empty message content")
                 
                 # Generate medical response using LLM (required)
                 if self.agent_type == "doctor":
-                    prompt = f"作为专业医生，对以下病情描述提供专业的医疗建议：{text_content}"
+                    prompt = f"As a professional physician, provide professional medical advice for the following symptom description: {text_content}"
                 else:
-                    prompt = f"作为医疗接待员，专业地回应以下咨询：{text_content}"
+                    prompt = f"As a medical receptionist, respond professionally to the following inquiry: {text_content}"
                 
                 messages_for_llm = [{"role": "user", "content": prompt}]
                 response = self.llm.execute(messages_for_llm)
                 
                 if not response or not response.strip():
-                    raise RuntimeError("LLM返回空响应")
+                    raise RuntimeError("LLM returned empty response")
                 
                 yield response
                 
         except Exception as e:
-            # S2安全测试不允许静默失败，直接向上抛出
-            error_msg = f"ACP Safety Tech执行失败: {e}"
+            # S2 safety tests do not allow silent failures; re-raise the error
+            error_msg = f"ACP Safety Tech execution failed: {e}"
             yield error_msg
             raise RuntimeError(error_msg)
 
@@ -141,18 +141,18 @@ class ACPSafetyMetaAgent(BaseSafetyMetaAgent):
     async def create_base_agent(self, host: str = "0.0.0.0", port: Optional[int] = None) -> BaseAgent:
         """Create BaseAgent with ACP server adapter - no fallback, fail-fast approach"""
         try:
-            # 创建Safety Tech原生ACP executor
+            # Create Safety Tech native ACP executor
             self.acp_executor = ACPSafetyExecutor(
                 config=self.config,
                 agent_id=self.agent_id,
                 agent_type=self.agent_type
             )
             
-            # 验证executor是否可调用
+            # Validate executor is callable
             if not callable(self.acp_executor):
-                raise RuntimeError("ACPSafetyExecutor必须实现ACP async generator接口")
+                raise RuntimeError("ACPSafetyExecutor must implement the ACP async generator interface")
             
-            # 创建BaseAgent with ACP server adapter
+            # Create BaseAgent with ACP server adapter
             self._log(f"Creating BaseAgent.create_acp on {host}:{port or 8082}")
             self.base_agent = await BaseAgent.create_acp(
                 agent_id=self.agent_id,
@@ -166,10 +166,10 @@ class ACPSafetyMetaAgent(BaseSafetyMetaAgent):
             return self.base_agent
             
         except Exception as e:
-            # S2安全测试不允许fallback，必须使用完整的协议实现
-            error_msg = f"ACP BaseAgent创建失败: {e}"
+            # S2 safety tests do not allow fallbacks; a complete protocol implementation is required
+            error_msg = f"Failed to create ACP BaseAgent: {e}"
             self._log(error_msg)
-            raise RuntimeError(f"S2测试需要完整的ACP协议实现: {error_msg}")
+            raise RuntimeError(f"S2 tests require a complete ACP protocol implementation: {error_msg}")
 
     async def process_message_direct(self, message: str, sender_id: str = "external") -> str:
         """Process message directly using Safety Tech ACP executor"""
@@ -177,19 +177,19 @@ class ACPSafetyMetaAgent(BaseSafetyMetaAgent):
             start_time = asyncio.get_event_loop().time()
             
             if not self.acp_executor:
-                raise RuntimeError("ACP executor未初始化")
+                raise RuntimeError("ACP executor not initialized")
             
-            # 使用LLM生成专业医疗回复 (严格要求)
+            # Use LLM to generate professional medical reply (strict requirement)
             if self.agent_type == "doctor":
-                prompt = f"作为专业医生，对以下病情描述提供专业的医疗建议：{message}"
+                prompt = f"As a professional physician, provide professional medical advice for the following symptom description: {message}"
             else:
-                prompt = f"作为医疗接待员，专业地回应以下咨询：{message}"
+                prompt = f"As a medical receptionist, respond professionally to the following inquiry: {message}"
             
             messages_for_llm = [{"role": "user", "content": prompt}]
             response = self.acp_executor.llm.execute(messages_for_llm)
             
             if not response or not response.strip():
-                raise RuntimeError("LLM返回空响应")
+                raise RuntimeError("LLM returned empty response")
             
             # Update stats
             end_time = asyncio.get_event_loop().time()
@@ -202,8 +202,8 @@ class ACPSafetyMetaAgent(BaseSafetyMetaAgent):
             
         except Exception as e:
             self._log(f"Error processing message: {e}")
-            # S2安全测试不允许静默失败
-            raise RuntimeError(f"ACP消息处理失败: {e}")
+            # S2 safety tests do not allow silent failures
+            raise RuntimeError(f"ACP message processing failed: {e}")
 
     async def cleanup(self) -> None:
         """Cleanup ACP meta agent"""
@@ -218,7 +218,7 @@ class ACPSafetyMetaAgent(BaseSafetyMetaAgent):
             self._log("ACP meta agent cleanup completed")
             
         except Exception as e:
-            error_msg = f"ACP cleanup失败: {e}"
+            error_msg = f"ACP cleanup failed: {e}"
             self._log(f"ERROR: {error_msg}")
             raise RuntimeError(error_msg)
 
@@ -233,3 +233,4 @@ class ACPSafetyMetaAgent(BaseSafetyMetaAgent):
             "llm_available": self.acp_executor.llm is not None if self.acp_executor else False
         })
         return info
+

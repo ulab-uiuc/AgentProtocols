@@ -163,7 +163,7 @@ class AgoraAgent(MeshAgent):
             import logging
             app = getattr(server, "app", None)
             if app:
-                # 禁用Flask/Werkzeug的访问日志来避免健康检查刷屏
+                # Disable Flask/Werkzeug access logs to avoid health-check spam
                 werkzeug_logger = logging.getLogger('werkzeug')
                 werkzeug_logger.setLevel(logging.ERROR)
                 

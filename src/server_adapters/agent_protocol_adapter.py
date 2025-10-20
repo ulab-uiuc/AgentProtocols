@@ -1,5 +1,5 @@
 """
-Agent Protocol Server Adapter - A2A 框架的 Agent Protocol 服务器适配器
+Agent Protocol Server Adapter - Agent Protocol server adapter for A2A framework
 """
 
 import asyncio
@@ -14,7 +14,7 @@ from starlette.responses import JSONResponse, Response, FileResponse
 from starlette.routing import Route
 from starlette.requests import Request
 
-# 导入基础适配器
+# Import base adapter
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -22,7 +22,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 try:
     from server_adapters.base_adapter import BaseServerAdapter
 except ImportError:
-    # 如果无法导入，创建一个简单的基类
+    # If import fails, define a minimal base class
     class BaseServerAdapter:
         def build(self, agent_card: Dict[str, Any], executor: Any) -> Starlette:
             raise NotImplementedError
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 class AgentProtocolTask:
-    """Agent Protocol Task 数据结构"""
+    """Agent Protocol Task data structure"""
     
     def __init__(self, task_id: str, input_text: str, additional_input: Optional[Dict[str, Any]] = None):
         self.task_id = task_id
@@ -46,7 +46,7 @@ class AgentProtocolTask:
 
 
 class AgentProtocolStep:
-    """Agent Protocol Step 数据结构"""
+    """Agent Protocol Step data structure"""
     
     def __init__(self, step_id: str, task_id: str, name: str = "", input_text: str = "", 
                  additional_input: Optional[Dict[str, Any]] = None):
@@ -63,18 +63,18 @@ class AgentProtocolStep:
 
 
 class AgentProtocolStarletteApplication:
-    """Agent Protocol 服务器实现，兼容 Agent Protocol v1 规范"""
+    """Agent Protocol server implementation compatible with Agent Protocol v1"""
     
     def __init__(self, agent_card: Dict[str, Any], executor: Any):
         """
-        初始化 Agent Protocol 服务器应用
+        Initialize the Agent Protocol server application.
         
         Parameters
         ----------
         agent_card : Dict[str, Any]
-            智能体卡片信息
+            Agent card information
         executor : Any
-            智能体执行器实例
+            Agent executor instance
         """
         self.agent_card = agent_card
         self.executor = executor
@@ -83,13 +83,13 @@ class AgentProtocolStarletteApplication:
 
         
     def build(self) -> Starlette:
-        """构建 Starlette 应用"""
+        """Build Starlette application"""
         routes = [
-            # 标准智能体端点
+            # Standard agent endpoints
             Route("/.well-known/agent.json", self.get_agent_card, methods=["GET"]),
             Route("/health", self.health_check, methods=["GET"]),
             
-            # Agent Protocol v1 端点
+            # Agent Protocol v1 endpoints
             Route("/ap/v1/agent/tasks", self.create_task, methods=["POST"]),
             Route("/ap/v1/agent/tasks/{task_id}", self.get_task, methods=["GET"]),
             Route("/ap/v1/agent/tasks/{task_id}/steps", self.create_step, methods=["POST"]),
@@ -98,33 +98,33 @@ class AgentProtocolStarletteApplication:
             Route("/ap/v1/agent/tasks/{task_id}/artifacts", self.list_artifacts, methods=["GET"]),
             Route("/ap/v1/agent/tasks/{task_id}/artifacts/{artifact_id}", self.get_artifact, methods=["GET"]),
             
-            # A2A 兼容端点（可选）
+            # A2A compatible endpoint (optional)
             Route("/message", self.handle_a2a_message, methods=["POST"]),
         ]
         
         return Starlette(routes=routes)
     
     async def get_agent_card(self, request: Request) -> JSONResponse:
-        """返回智能体卡片"""
+        """Return the agent card"""
         return JSONResponse(self.agent_card)
     
     async def health_check(self, request: Request) -> Response:
-        """健康检查端点"""
+        """Health check endpoint"""
         return Response("OK", status_code=200)
     
     async def create_task(self, request: Request) -> JSONResponse:
-        """创建新任务 - POST /ap/v1/agent/tasks"""
+        """Create new task - POST /ap/v1/agent/tasks"""
         try:
             task_data = await request.json()
             
-            # 验证必要字段
+            # Validate required fields
             if "input" not in task_data:
                 return JSONResponse(
                     {"error": "Missing required field: input"}, 
                     status_code=400
                 )
             
-            # 创建任务
+            # Create task
             task_id = str(uuid4())
             task = AgentProtocolTask(
                 task_id=task_id,
@@ -134,14 +134,14 @@ class AgentProtocolStarletteApplication:
             
             self.tasks[task_id] = task
             
-            # 如果有执行器，调用任务处理逻辑
+            # If an executor is available, call task handling logic
             if hasattr(self.executor, 'handle_task_creation'):
                 try:
                     await self.executor.handle_task_creation(task)
                 except Exception as e:
                     logger.warning(f"Executor task creation failed: {e}")
             
-            # 返回任务信息
+            # Return task information
             return JSONResponse({
                 "task_id": task.task_id,
                 "input": task.input,
@@ -164,7 +164,7 @@ class AgentProtocolStarletteApplication:
             )
     
     async def get_task(self, request: Request) -> JSONResponse:
-        """获取任务信息 - GET /ap/v1/agent/tasks/{task_id}"""
+        """Get task information - GET /ap/v1/agent/tasks/{task_id}"""
         try:
             task_id = request.path_params["task_id"]
             task = self.tasks.get(task_id)
@@ -192,12 +192,12 @@ class AgentProtocolStarletteApplication:
             )
     
     async def create_step(self, request: Request) -> JSONResponse:
-        """创建并执行步骤 - POST /ap/v1/agent/tasks/{task_id}/steps"""
+        """Create and execute step - POST /ap/v1/agent/tasks/{task_id}/steps"""
         try:
             task_id = request.path_params["task_id"]
             step_data = await request.json()
             
-            # 验证任务存在
+            # Validate task exists
             task = self.tasks.get(task_id)
             if not task:
                 return JSONResponse(
@@ -205,7 +205,7 @@ class AgentProtocolStarletteApplication:
                     status_code=404
                 )
             
-            # 创建步骤
+            # Create step
             step_id = str(uuid4())
             step = AgentProtocolStep(
                 step_id=step_id,
@@ -217,7 +217,7 @@ class AgentProtocolStarletteApplication:
             
             self.steps[step_id] = step
             
-            # 执行步骤
+            # Execute step
             if hasattr(self.executor, 'execute_step'):
                 try:
                     result = await self.executor.execute_step(step)
@@ -232,11 +232,11 @@ class AgentProtocolStarletteApplication:
                     step.status = "failed"
                     step.output = f"Execution error: {str(e)}"
             else:
-                # 默认处理
+                # Default handling
                 step.status = "completed"
                 step.output = f"Step {step.name} executed"
             
-            # 更新任务的步骤列表
+            # Update the task's step list
             step_summary = {
                 "step_id": step.step_id,
                 "name": step.name,
@@ -246,7 +246,7 @@ class AgentProtocolStarletteApplication:
             }
             task.steps.append(step_summary)
             
-            # 如果是最后一步，更新任务状态
+            # If it's the last step, update task status
             if step.is_last:
                 task.status = "completed"
             
@@ -276,11 +276,11 @@ class AgentProtocolStarletteApplication:
             )
     
     async def list_steps(self, request: Request) -> JSONResponse:
-        """列出任务的所有步骤 - GET /ap/v1/agent/tasks/{task_id}/steps"""
+        """List all steps of a task - GET /ap/v1/agent/tasks/{task_id}/steps"""
         try:
             task_id = request.path_params["task_id"]
             
-            # 验证任务存在
+            # Validate task exists
             task = self.tasks.get(task_id)
             if not task:
                 return JSONResponse(
@@ -288,7 +288,7 @@ class AgentProtocolStarletteApplication:
                     status_code=404
                 )
             
-            # 获取任务的所有步骤
+            # Get all steps for the task
             task_steps = [
                 {
                     "step_id": step.step_id,
@@ -316,7 +316,7 @@ class AgentProtocolStarletteApplication:
             )
     
     async def get_step(self, request: Request) -> JSONResponse:
-        """获取特定步骤 - GET /ap/v1/agent/tasks/{task_id}/steps/{step_id}"""
+        """Get a specific step - GET /ap/v1/agent/tasks/{task_id}/steps/{step_id}"""
         try:
             task_id = request.path_params["task_id"]
             step_id = request.path_params["step_id"]
@@ -350,11 +350,11 @@ class AgentProtocolStarletteApplication:
             )
     
     async def list_artifacts(self, request: Request) -> JSONResponse:
-        """列出任务的所有工件 - GET /ap/v1/agent/tasks/{task_id}/artifacts"""
+        """List all artifacts for a task - GET /ap/v1/agent/tasks/{task_id}/artifacts"""
         try:
             task_id = request.path_params["task_id"]
             
-            # 验证任务存在
+            # Validate task exists
             task = self.tasks.get(task_id)
             if not task:
                 return JSONResponse(
@@ -362,11 +362,11 @@ class AgentProtocolStarletteApplication:
                     status_code=404
                 )
             
-            # 收集所有工件
+            # Collect all artifacts
             all_artifacts = []
             all_artifacts.extend(task.artifacts)
             
-            # 从步骤中收集工件
+            # Collect artifacts from steps
             for step in self.steps.values():
                 if step.task_id == task_id:
                     all_artifacts.extend(step.artifacts)
@@ -381,12 +381,12 @@ class AgentProtocolStarletteApplication:
             )
     
     async def get_artifact(self, request: Request) -> Response:
-        """下载特定工件 - GET /ap/v1/agent/tasks/{task_id}/artifacts/{artifact_id}"""
+        """Download a specific artifact - GET /ap/v1/agent/tasks/{task_id}/artifacts/{artifact_id}"""
         try:
             task_id = request.path_params["task_id"]
             artifact_id = request.path_params["artifact_id"]
             
-            # 验证任务存在
+            # Validate task exists
             task = self.tasks.get(task_id)
             if not task:
                 return JSONResponse(
@@ -394,16 +394,16 @@ class AgentProtocolStarletteApplication:
                     status_code=404
                 )
             
-            # 查找工件
+            # Find artifact
             artifact = None
             
-            # 在任务工件中查找
+            # Search in task artifacts
             for art in task.artifacts:
                 if art.get("artifact_id") == artifact_id:
                     artifact = art
                     break
             
-            # 在步骤工件中查找
+            # Search in step artifacts
             if not artifact:
                 for step in self.steps.values():
                     if step.task_id == task_id:
@@ -420,15 +420,15 @@ class AgentProtocolStarletteApplication:
                     status_code=404
                 )
             
-            # 返回工件内容
+            # Return artifact content
             if "file_path" in artifact:
-                # 文件工件
+                # File artifact
                 return FileResponse(
                     artifact["file_path"],
                     filename=artifact.get("file_name", "artifact")
                 )
             elif "content" in artifact:
-                # 内容工件
+                # Content artifact
                 return Response(
                     content=artifact["content"],
                     media_type=artifact.get("content_type", "text/plain")
@@ -444,31 +444,31 @@ class AgentProtocolStarletteApplication:
             )
     
     async def handle_a2a_message(self, request: Request) -> JSONResponse:
-        """处理 A2A 消息（兼容性端点）- 直接执行LLM并返回响应"""
+        """Handle A2A message (compatibility endpoint) - directly execute LLM and return response"""
         try:
             message_data = await request.json()
             
-            # 从 A2A 消息中提取内容
+            # Extract content from A2A message
             message_content = message_data.get("params", {}).get("message", {})
             
-            # 提取文本内容
+            # Extract text content
             if isinstance(message_content, dict):
-                # 尝试多种格式
+                # Try multiple formats
                 if "parts" in message_content and message_content["parts"]:
-                    # A2A格式：{"parts": [{"type": "text", "text": "question"}]}
+                    # A2A format: {"parts": [{"type": "text", "text": "question"}]}
                     input_text = message_content["parts"][0].get("text", str(message_content))
                 else:
-                    # 直接格式：{"input": "question"} 或其他
+                    # Direct format: {"input": "question"} or other
                     input_text = message_content.get("input", str(message_content))
                 additional_input = message_content.get("additional_input", {})
             else:
                 input_text = str(message_content)
                 additional_input = {}
             
-            # 如果有执行器，直接调用LLM进行回答
+            # If an executor is available, directly invoke LLM for answering
             if hasattr(self.executor, 'execute_step'):
                 try:
-                    # 创建临时步骤对象
+                    # Create a temporary step object
                     class TempStep:
                         def __init__(self, input_text):
                             self.input = input_text
@@ -476,13 +476,13 @@ class AgentProtocolStarletteApplication:
                     
                     step = TempStep(input_text)
                     
-                    # 直接执行步骤获取LLM响应
+                    # Directly execute step to get LLM response
                     result = await self.executor.execute_step(step)
                     
-                    # 提取输出文本
+                    # Extract output text
                     output_text = result.get("output", "No response") if isinstance(result, dict) else str(result)
                     
-                    # 返回 Agent Protocol 格式响应，包含LLM的回答
+                    # Return Agent Protocol formatted response with the LLM answer
                     return JSONResponse({
                         "id": message_data.get("id", str(uuid4())),
                         "result": {
@@ -494,7 +494,7 @@ class AgentProtocolStarletteApplication:
                     
                 except Exception as e:
                     logger.error(f"Error executing LLM: {e}")
-                    # 如果LLM执行失败，返回错误信息
+                    # If LLM execution fails, return error info
                     return JSONResponse({
                         "id": message_data.get("id", str(uuid4())),
                         "result": {
@@ -504,7 +504,7 @@ class AgentProtocolStarletteApplication:
                         }
                     })
             
-            # 如果没有执行器，创建任务（保持原有逻辑作为后备）
+            # If no executor, create task (keep original logic as fallback)
             task_id = str(uuid4())
             task = AgentProtocolTask(
                 task_id=task_id,
@@ -514,7 +514,7 @@ class AgentProtocolStarletteApplication:
             
             self.tasks[task_id] = task
             
-            # 返回 Agent Protocol 格式响应
+            # Return Agent Protocol formatted response
             return JSONResponse({
                 "id": message_data.get("id", str(uuid4())),
                 "result": {
@@ -534,7 +534,7 @@ class AgentProtocolStarletteApplication:
 
 
 class AgentProtocolServerAdapter(BaseServerAdapter):
-    """Agent Protocol 服务器适配器"""
+    """Agent Protocol server adapter"""
     
     protocol_name = "AgentProtocol"
     
@@ -547,42 +547,42 @@ class AgentProtocolServerAdapter(BaseServerAdapter):
         **kwargs
     ) -> Tuple[uvicorn.Server, Dict[str, Any]]:
         """
-        构建 Agent Protocol 服务器实例
+        Build an Agent Protocol server instance.
         
         Parameters
         ----------
         host : str
-            服务器主机地址
+            Server host address
         port : int
-            服务器端口
+            Server port
         agent_id : str
-            智能体ID
+            Agent ID
         executor : Any
-            智能体执行器
+            Agent executor
         **kwargs : dict
-            额外的配置参数
+            Additional configuration parameters
             
         Returns
         -------
         Tuple[uvicorn.Server, Dict[str, Any]]
-            服务器实例和智能体卡片
+            Server instance and agent card
         """
         import uvicorn
         
-        # 生成默认智能体卡片
+        # Generate default agent card
         agent_card = self.get_default_agent_card(agent_id, host, port)
         
-        # 创建 Agent Protocol Starlette 应用
+        # Create Agent Protocol Starlette application
         app_builder = AgentProtocolStarletteApplication(agent_card, executor)
         app = app_builder.build()
         
-        # 配置 uvicorn 服务器
+        # Configure uvicorn server
         config = uvicorn.Config(
             app,
             host=host,
             port=port,
-            log_level="error",  # 最小化服务器日志
-            lifespan="off"      # 禁用lifespan避免CancelledError
+            log_level="error",  # Minimize server logs
+            lifespan="off"      # Disable lifespan to avoid CancelledError
         )
         server = uvicorn.Server(config)
         
@@ -590,21 +590,21 @@ class AgentProtocolServerAdapter(BaseServerAdapter):
     
     def get_default_agent_card(self, agent_id: str, host: str, port: int) -> Dict[str, Any]:
         """
-        获取默认智能体卡片
+        Get default agent card.
         
         Parameters
         ----------
         agent_id : str
-            智能体ID
+            Agent ID
         host : str
-            主机地址
+            Host address
         port : int
-            端口号
+            Port number
             
         Returns
         -------
         Dict[str, Any]
-            默认智能体卡片
+            Default agent card
         """
         return {
             "id": agent_id,

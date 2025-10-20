@@ -17,7 +17,7 @@ from .base import BaseTool, ToolResult
 from .exceptions import ToolError
 from .file_path_resolver import get_file_path_resolver
 from .utils.logger import logger
-from .utils.config import PROJECT_ROOT as GAIA_ROOT_DEFAULT  # 新增：用于默认回退
+from .utils.config import PROJECT_ROOT as GAIA_ROOT_DEFAULT  # Added: used for default fallback
 
 
 class FileOperators(BaseTool):

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 QA Coordinator Base:
-- 负责：配置/加载题目/动态调度/结果汇总与落盘
-- 不关心：具体通信协议
-- 留出抽象方法 send_to_worker() 由具体协议实现（如 A2A、HTTP、gRPC 等）
+- Responsible for: configuration, loading questions, dynamic scheduling, results aggregation and persistence
+- Not concerned with: specific communication protocols
+- Provides abstract method send_to_worker() to be implemented by concrete protocols (e.g., A2A, HTTP, gRPC)
 
-使用方式：
+Usage:
     from qa_coordinator_base import QACoordinatorBase
 
     class MyCoordinator(QACoordinatorBase):
@@ -53,7 +53,7 @@ except ImportError:
 
 
 class QACoordinatorBase(ABC):
-    """QA Coordinator 抽象基类：调度逻辑完整，通信交给子类实现。"""
+    """QA Coordinator abstract base class: scheduling logic is complete here; communication is implemented by subclasses."""
 
     def __init__(self, config: Optional[dict] = None, output=None):
         self.config = config or {}
@@ -68,7 +68,7 @@ class QACoordinatorBase(ABC):
 
         self.coordinator_id: str = coordinator_cfg.get("coordinator_id", "Coordinator-1")
         self.worker_ids: List[str] = []
-        self.agent_network: Any = None  # 仅作为存放"网络/路由器/客户端"的容器，含义由子类定义
+        self.agent_network: Any = None  # Container for "network/router/client"; semantics defined by subclasses
         self.output = output
         
         # Initialize performance metrics collector
@@ -76,9 +76,9 @@ class QACoordinatorBase(ABC):
         self.response_timeout = float(network_cfg.get("response_timeout", 60))
         self.metrics_collector.response_timeout = self.response_timeout
 
-    # --------------- 基础开关 ---------------
+    # --------------- Basic setup ---------------
     def set_network(self, network: Any, worker_ids: List[str], protocol_name: str = "unknown") -> None:
-        """设置网络/路由器与可用 worker 列表。network 的具体类型由子类解释。"""
+        """Setup network/router and the available worker list. The concrete type of 'network' is interpreted by subclasses."""
         self.agent_network = network
         self.worker_ids = list(worker_ids)
         
@@ -86,7 +86,7 @@ class QACoordinatorBase(ABC):
         for worker_id in worker_ids:
             self.metrics_collector.register_worker(worker_id, protocol_name)
 
-    # --------------- I/O 工具 ---------------
+    # --------------- I/O helpers ---------------
     def _o(self, level: str, msg: str) -> None:
         if not self.output:
             return
@@ -97,16 +97,16 @@ class QACoordinatorBase(ABC):
         except Exception:
             pass
 
-    # --------------- 题库读取 ---------------
+    # --------------- Question loading ---------------
     async def load_questions(self) -> List[Dict[str, str]]:
-        """从 JSONL 读取题目，返回 [{'id':..., 'question':...}, ...]"""
+        """Load questions from a JSONL file; returns a list like [{'id':..., 'question':...}, ...]"""
         questions: List[Dict[str, str]] = []
         
-        # 如果是相对路径，相对于 streaming_queue 目录
+        # If path is relative, resolve relative to the streaming_queue directory
         if not Path(self.data_path).is_absolute():
-            # 找到 streaming_queue 目录
+            # Locate the streaming_queue directory
             current_file = Path(__file__).resolve()
-            streaming_queue_dir = current_file.parent.parent  # 从 core 目录回到 streaming_queue
+            streaming_queue_dir = current_file.parent.parent  # From core dir back to streaming_queue
             p = streaming_queue_dir / self.data_path
         else:
             p = Path(self.data_path)
@@ -134,20 +134,20 @@ class QACoordinatorBase(ABC):
         self._o("system", f"Loaded {len(questions)} questions")
         return questions
 
-    # --------------- 抽象通信 ---------------
+    # --------------- Abstract communication ---------------
     @abstractmethod
     async def send_to_worker(self, worker_id: str, question: str) -> Dict[str, Any]:
         """
-        抽象：把 question 发给指定 worker，并返回一个标准化结果字典：
+        Abstract: send the question to the specified worker and return a standardized result dict:
             {
-                "answer": <str 或 None>,
-                "raw": <协议原始返回，可选>,
+                "answer": <str or None>,
+                "raw": <protocol-native response, optional>,
             }
-        子类必须实现（例如：A2A、HTTP、gRPC 等）。
+        Must be implemented by subclasses (e.g., A2A, HTTP, gRPC).
         """
         raise NotImplementedError
 
-    # --------------- 调度：动态负载 ---------------
+    # --------------- Scheduling: dynamic load ---------------
     async def dispatch_questions_dynamically(self, questions: List[Dict[str, str]]) -> List[Dict[str, Any]]:
         if not self.worker_ids:
             self._o("warning", "No workers configured.")
@@ -175,7 +175,7 @@ class QACoordinatorBase(ABC):
         results = await collector
         await asyncio.gather(*workers, return_exceptions=True)
         
-        # End performance tracking
+    # End performance tracking
         self.metrics_collector.end_test()
         
         return results
@@ -246,7 +246,7 @@ class QACoordinatorBase(ABC):
         self._o("success", f"Result collection completed, collected {got} results")
         return out
 
-    # --------------- 一键执行并落盘 ---------------
+    # --------------- One-click execute and persist ---------------
     async def dispatch_round(self) -> str:
         questions = await self.load_questions()
         if not questions:
@@ -279,10 +279,10 @@ class QACoordinatorBase(ABC):
 
     async def save_results(self, results: List[Dict[str, Any]]) -> None:
         try:
-            # 如果是相对路径，相对于 streaming_queue 目录
+            # If path is relative, resolve relative to the streaming_queue directory
             if not Path(self.result_file).is_absolute():
                 current_file = Path(__file__).resolve()
-                streaming_queue_dir = current_file.parent.parent  # 从 core 目录回到 streaming_queue
+                streaming_queue_dir = current_file.parent.parent  # From core dir back to streaming_queue
                 p = streaming_queue_dir / self.result_file
             else:
                 p = Path(self.result_file)
@@ -327,7 +327,7 @@ class QACoordinatorBase(ABC):
         self._o("system", f"Total Retries: {summary.get('total_retries', 0)}")
         self._o("system", f"Network Errors: {summary.get('total_network_errors', 0)}")
         
-        # Response time statistics
+    # Response time statistics
         if "global_average_response_time" in summary:
             self._o("info", "=== Response Time Analysis ===")
             self._o("progress", f"Average: {summary.get('global_average_response_time', 0):.2f}s")
@@ -336,7 +336,7 @@ class QACoordinatorBase(ABC):
             self._o("progress", f"Std Dev: {summary.get('global_response_time_std', 0):.2f}s")
             self._o("progress", f"Median: {summary.get('global_median_response_time', 0):.2f}s")
         
-        # Protocol-level statistics
+    # Protocol-level statistics
         protocols = performance_report.get("protocols", {})
         if protocols:
             self._o("info", "=== Protocol Performance ===")
@@ -349,7 +349,7 @@ class QACoordinatorBase(ABC):
                 self._o("progress", f"  Network Errors: {stats.get('total_network_errors', 0)}")
                 self._o("progress", f"  Retries: {stats.get('total_retries', 0)}")
         
-        # Worker-level statistics
+    # Worker-level statistics
         workers = performance_report.get("workers", {})
         if workers:
             self._o("info", "=== Worker Performance ===")
@@ -361,7 +361,7 @@ class QACoordinatorBase(ABC):
                 self._o("progress", f"  Network Error Rate: {stats.get('network_error_rate', 0):.2%}")
                 self._o("progress", f"  Avg Response: {stats.get('average_response_time', 0):.2f}s")
 
-    # --------------- 状态查询 ---------------
+    # --------------- Status query ---------------
     async def get_status(self) -> str:
         net = "Connected" if self.agent_network else "Not connected"
         return (

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Enhanced MeshNetwork - 完整的MeshNetwork功能，但不依赖src/组件
+Enhanced MeshNetwork - Full MeshNetwork functionality without dependency on src/ components
 
 This module provides the full MeshNetwork functionality:
 1. Heartbeat mechanism for fault detection

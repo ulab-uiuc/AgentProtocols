@@ -52,7 +52,7 @@ class ANPPrivacyAgent:
     did: Optional[str] = None
     private_key_pem: Optional[str] = None
     did_document_json: Optional[str] = None
-    # 使用前向引用以避免在AgentConnect SDK缺失时报NameError
+    # Use forward reference to avoid NameError if AgentConnect SDK is missing at import time
     simple_node: Optional["SimpleNode"] = None
     host: str = "127.0.0.1"
     port: int = 9000

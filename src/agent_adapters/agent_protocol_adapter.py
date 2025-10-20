@@ -1,5 +1,5 @@
 """
-AgentProtocolAdapter - Agent Protocol 适配器实现
+AgentProtocolAdapter - Agent Protocol adapter implementation
 """
 
 import json

@@ -13,9 +13,9 @@ from pathlib import Path
 
 # Add project paths
 HERE = Path(__file__).resolve().parent
-PROJECT_ROOT = HERE.parent.parent.parent  # 从runners到script到Multiagent-Protocol
+PROJECT_ROOT = HERE.parent.parent.parent  # From runners/ to project root (Multiagent-Protocol)
 sys.path.insert(0, str(PROJECT_ROOT))
-sys.path.insert(0, str(HERE.parent))  # 加入safety_tech目录
+sys.path.insert(0, str(HERE.parent))  # Include safety_tech directory in sys.path
 
 from protocol_backends.meta_protocol.s2_meta_runner import S2MetaProtocolRunner, main
 

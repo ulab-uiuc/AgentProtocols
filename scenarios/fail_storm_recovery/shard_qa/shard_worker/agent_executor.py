@@ -74,7 +74,7 @@ TOOL_SCHEMA = [
         "type": "function",
         "function": {
             "name": "lookup_fragment",
-            "description": "检查本地 snippet 是否包含答案；TTL和路径由系统自动管理",
+            "description": "检查local snippet 是否包含答案；TTL和路径由系统自动管理",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -84,7 +84,7 @@ TOOL_SCHEMA = [
                     },
                     "found": {
                         "type": "boolean",
-                        "description": "是否在本地找到答案"
+                        "description": "是否在local找到答案"
                     }
                 },
                 "required": ["question", "found"]
@@ -182,11 +182,11 @@ class ShardWorker:
             }
         }
         
-        # 如果config为空，返回默认配置
+        # Ifconfig为空，返回默认配置
         if not self.config:
             return default_config
         
-        # 尝试从'llm'字段读取（新格式）
+        # Try从'llm'字段读取（新格式）
         llm_config = self.config.get('llm')
         if llm_config:
             return {
@@ -200,10 +200,10 @@ class ShardWorker:
                 }
             }
         
-        # 检查是否已经是 model 格式 (base_runner 传递的格式: {"model": {...llm_config...}})
+        # Check是否已经是 model 格式 (base_runner 传递的格式: {"model": {...llm_config...}})
         if 'model' in self.config:
             model_data = self.config['model']
-            # 如果 model 字段是一个字典，需要转换字段名
+            # If model 字段是一个字典，需要转换字段名
             if isinstance(model_data, dict):
                 return {
                     "model": {
@@ -551,7 +551,7 @@ Fragment: "Car manufacturing processes..."
                 content=request_content,
                 ttl=search_request['ttl'],
                 path=search_request['path'],
-                timeout=18.0  # 单个邻居搜索：LLM(4s) + 转发(12s) + 响应(2s)
+                timeout=18.0  # 单个邻居搜索：LLM(4s) + 转发(12s) + Response(2s)
             )
             
             if response and "SEARCH_RESPONSE:" in response:
@@ -968,7 +968,7 @@ Remember: It's better to find partial information than to miss relevant content.
         sender = meta.get("sender", sender) if meta else sender
         reply_to = meta.get("reply_to") if meta else None
         
-        # 设置机器控制的 TTL 和 path 上下文
+        # Setup机器控制的 TTL 和 path 上下文
         # 重要：从邻居收到消息时，TTL 应该继续递减
         self.current_ttl = max(0, ttl - 1) if ttl > 0 else 0
         self.current_path = path + [self.shard_id] if path else [sender, self.shard_id]
@@ -1034,7 +1034,7 @@ Remember: It's better to find partial information than to miss relevant content.
             )
             
             # TTL现在完全由机器控制，不需要任何篡改
-            response = raw_resp  # 直接使用LLM产生的响应
+            response = raw_resp  # 直接使用LLM产生的Response
             
             # Track LLM token usage if available
             await self._track_llm_usage(response)
@@ -1074,7 +1074,7 @@ Remember: It's better to find partial information than to miss relevant content.
                 from collections import deque
                 self.history[group_id] = deque(maxlen=self.max_history)
             
-            # 设置初始任务的 TTL 和 path 上下文
+            # Setup初始任务的 TTL 和 path 上下文
             max_ttl = self.global_config.get('tool_schema', {}).get('max_ttl', 8)
             self.current_ttl = max_ttl
             self.current_path = [self.shard_id]
@@ -1103,7 +1103,7 @@ If you don't find relevant information locally, then use send_message to ask nei
             
             # Call Core with function calling
 
-            # 添加force_llm flag来控制是否强制使用LLM
+            # Addforce_llm flag来控制是否强制使用LLM
             force_llm = getattr(self, 'force_llm', False)
             
             # Debug: Check actual model type configuration
@@ -1151,7 +1151,7 @@ If you don't find relevant information locally, then use send_message to ask nei
                         if not is_recovery:
                             self.output.progress(f"   🤖 [{self.shard_id}] LLM response received")
                     
-                    # 处理LLM的tool calling响应
+                    # ProcessLLM的tool callingResponse
                     result = await self._handle_core_response(response)
                     return result
                     
@@ -1294,7 +1294,7 @@ If you don't find relevant information locally, then use send_message to ask nei
                     continue
             
             if function_name == "lookup_fragment":
-                # 添加调试输出
+                # Add调试输出
                 if self.output:
                     self.output.progress(f"🔍 [{self.shard_id}] DEBUG: LLM returned arguments: {arguments}")
                 # 传递机器控制的 TTL 和 path 上下文
@@ -1310,20 +1310,20 @@ If you don't find relevant information locally, then use send_message to ask nei
         """Handle lookup_fragment function call - v3 (Machine-controlled TTL)"""
 
         question = args.get('question', '')
-        found = args.get('found', False)  # LLM 只负责判断是否找到答案
+        found = args.get('found', False)  # LLM 只responsible for判断是否找到答案
         
         # TTL 和 path 由机器控制，不再依赖 LLM
         if context_ttl is not None:
             ttl = context_ttl  # 使用调用方传入的 TTL
         else:
-            # 如果是 start_task 第一次调用，设置初始 TTL
+            # If是 start_task 第一次调用，Setup初始 TTL
             max_ttl = self.global_config.get('tool_schema', {}).get('max_ttl', 8)
             ttl = max_ttl
         
         if context_path is not None:
             path = context_path.copy()  # 使用调用方传入的路径
         else:
-            # 如果是第一次调用，初始化路径
+            # If是第一次调用，初始化路径
             path = [self.shard_id]
         
         if self.output:
@@ -1334,7 +1334,7 @@ If you don't find relevant information locally, then use send_message to ask nei
                 self.output.progress(f"   [TTL_TRACE] {self.shard_id} ttl={ttl} path={path} found={found} [MACHINE_CONTROLLED]")
             # Silent during recovery phase
         
-        # 处理 LLM 判断结果 - v2 with fallback
+        # Process LLM 判断结果 - v2 with fallback
         if found is None:
             # Fallback: LLM 没有提供 found 参数，使用简化匹配
             if self.output:
@@ -1365,7 +1365,7 @@ If you don't find relevant information locally, then use send_message to ask nei
                 self.output.progress(f"📄 [{self.shard_id}] Answer: '{self.current_answer}'")
                 self.output.progress(f"📄 [{self.shard_id}] Snippet: '{self.current_snippet[:100]}...'")
                 
-                # 检查答案是否在snippet中
+                # Check答案是否在snippet中
                 answer_lower = self.current_answer.lower()
                 snippet_lower = self.current_snippet.lower()
                 if answer_lower in snippet_lower:
@@ -1380,7 +1380,7 @@ If you don't find relevant information locally, then use send_message to ask nei
                 self.output.success(f"   Answer: {self.current_answer}")
                 self.output.success(f"   Source: Local document fragment")
             
-            # 记录任务执行成功
+            # Record任务执行成功
             if hasattr(self, 'metrics_collector') and self.metrics_collector:
                 self.metrics_collector.record_task_execution(
                     task_id=f"{self.current_group_id}-{self.shard_id}",
@@ -1396,7 +1396,7 @@ If you don't find relevant information locally, then use send_message to ask nei
             # 使用实际答案
             answer_text = self.current_answer
             
-            # 创建增强的本地答案回传信息
+            # Create增强的local答案回传信息
             local_response = {
                 "type": "LOCAL_ANSWER_FOUND",
                 "original_question": self.current_question,
@@ -1409,7 +1409,7 @@ If you don't find relevant information locally, then use send_message to ask nei
                 "group_id": self.current_group_id
             }
             
-            # 发送增强的本地答案信息
+            # Send增强的local答案信息
             try:
                 import json
                 enhanced_message = f"LOCAL_ANSWER: {json.dumps(local_response)}"
@@ -1733,11 +1733,11 @@ class ShardWorkerExecutor(AgentExecutor):
             if ttl_match:
                 parsed_ttl = int(ttl_match.group(1))
                 meta['ttl'] = parsed_ttl
-                sender = "neighbor"  # 来自邻居的消息
+                sender = "neighbor"  # from邻居的消息
                 if self.output:
                     self.output.warning(f"[{self.shard_id}] 🔄 A2A meta failed, parsed from content: ttl={parsed_ttl}")
         
-        # 方案3: 如果还是没有TTL，但是消息来自外部，设为0
+        # 方案3: 如果还是没有TTL，但是消息from外部，设为0
         if not meta.get('ttl') and sender == "unknown":
             meta['ttl'] = 0
             sender = "external"

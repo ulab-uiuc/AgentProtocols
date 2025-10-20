@@ -8,28 +8,28 @@ import sys
 from pathlib import Path
 from typing import Dict, Any
 
-# 路径设置
+# PathSetup
 HERE = Path(__file__).resolve().parent
 GAIA_ROOT = HERE.parent
 sys.path.insert(0, str(GAIA_ROOT))
 
-# 协议网络导入
+# Protocol network import
 from protocol_backends.meta_protocol.network import MetaProtocolNetwork
 
-# 基类 Runner
+# Base runner
 from runners.runner_base import RunnerBase
 
 
 class MetaProtocolRunner(RunnerBase):
-    """Meta Protocol Runner，实现 create_network 钩子。"""
+    """Meta Protocol runner implementing the create_network hook."""
     
     def __init__(self, config_path: str = "meta_protocol.yaml") -> None:
         super().__init__(config_path, protocol_name="meta_protocol")
 
     def create_network(self, general_config: Dict[str, Any]) -> MetaProtocolNetwork:
         """
-        创建并返回 Meta Protocol 网络实例。
-        集成智能协议选择和跨协议通信能力。
+        Create and return a Meta Protocol network instance.
+        Integrates intelligent protocol selection and cross-protocol communication.
         """
         try:
             print("ℹ️  Initializing Meta Protocol Network with intelligent routing...")
@@ -58,13 +58,13 @@ async def main():
     """Main execution for Meta Protocol runner."""
     import sys
     
-    # 确定配置文件路径
+    # Determine config path
     if len(sys.argv) > 1:
         config_path = sys.argv[1]
     else:
         config_path = GAIA_ROOT / "config" / "meta_protocol.yaml"
     
-    # 确定日志文件名
+    # Determine log file name
     if len(sys.argv) > 2:
         log_file_name = sys.argv[2]
     else:
@@ -74,7 +74,7 @@ async def main():
     print(f"📋 Config: {config_path}")
     print(f"📊 Meta Protocol: Intelligent routing enabled")
     
-    # 创建并运行
+    # Create and run
     runner = MetaProtocolRunner(str(config_path))
     await runner.run()
 

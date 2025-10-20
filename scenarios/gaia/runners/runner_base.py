@@ -13,7 +13,7 @@ from datetime import datetime
 from tqdm import tqdm
 from omegaconf import OmegaConf
 
-# GAIA 根目录 (script/gaia)
+# GAIA root directory (script/gaia)
 GAIA_ROOT = Path(__file__).resolve().parent.parent
 
 # Add parent directory to path for imports
@@ -75,14 +75,14 @@ class RunnerBase(abc.ABC):
         self.setup_logging()
 
     def _resolve_output_file(self, runtime_config: Dict[str, Any]) -> str:
-        """解析结果输出文件路径。
-        规则:
-          - 默认: GAIA_ROOT/workspaces/<protocol_name>/gaia_<protocol_name>_results.json
-          - 若 runtime.output_file 提供:
-              * 绝对路径: 原样使用
-              * 相对路径:
-                  - 以 workspaces 开头: GAIA_ROOT/<path>
-                  - 否则: GAIA_ROOT/workspaces/<protocol_name>/<path>
+        """Resolve the output file path for results.
+        Rules:
+          - Default: GAIA_ROOT/workspaces/<protocol_name>/gaia_<protocol_name>_results.json
+          - If runtime.output_file is provided:
+              * Absolute path: use as-is
+              * Relative path:
+                  - If starts with 'workspaces': GAIA_ROOT/<path>
+                  - Otherwise: GAIA_ROOT/workspaces/<protocol_name>/<path>
         """
         default_output = GAIA_ROOT / 'workspaces' / self.protocol_name / f'gaia_{self.protocol_name}_results.json'
         cfg_output = runtime_config.get('output_file')
@@ -106,40 +106,40 @@ class RunnerBase(abc.ABC):
                 return str(_append_mode_suffix(cfg_path))
             first_part = cfg_path.parts[0] if cfg_path.parts else ''
             if first_part == 'workspaces':
-                return str(_append_mode_suffix(GAIA_ROOT / cfg_path))  # 避免重复 workspaces/workspaces
+                return str(_append_mode_suffix(GAIA_ROOT / cfg_path))  # avoid duplicate workspaces/workspaces
             return str(_append_mode_suffix(GAIA_ROOT / 'workspaces' / self.protocol_name / cfg_path))
         return str(_append_mode_suffix(default_output))
 
     def _setup_task_workspace(self, task_id: str, task: Dict[str, Any]) -> Path:
         """
-        创建并设置任务专用的工作区目录，复制所需文件到工作区。
+        Create and set up a task-specific workspace directory and copy required files into it.
         
         Args:
-            task_id: 任务ID
-            task: 任务数据字典
+            task_id: Task ID
+            task: Task data dictionary
             
         Returns:
-            Path: 任务工作区路径 (workspaces/<protocol_name>/<task_id>)
+            Path: Task workspace path (workspaces/<protocol_name>/<task_id>)
         """
-        # 创建任务工作区目录
+        # Create the task workspace directory
         workspace_dir = GAIA_ROOT / 'workspaces' / self.protocol_name / task_id
         workspace_dir.mkdir(parents=True, exist_ok=True)
         
-        # 复制任务所需文件到工作区并设置环境变量
+        # Copy required task files into the workspace and set up environment variables
         file_name = task.get("file_name")
         copied_files = []
         
         if file_name and isinstance(file_name, str) and file_name.strip():
-            # 排除不需要复制的文件
+            # Exclude files that should not be copied
             if file_name not in ['multimodal.jsonl', 'metadata.jsonl']:
-                # 解析源文件路径 (相对于数据集目录)
+                # Parse the source file path (relative to the dataset directory)
                 dataset_dir = Path(self._task_file_path).parent
                 source_file = dataset_dir / file_name
                 
                 if source_file.exists():
-                    # 保持文件名，复制到工作区
+                    # Keep the filename and copy it to the workspace
                     dest_file = workspace_dir / file_name
-                    dest_file.parent.mkdir(parents=True, exist_ok=True)  # 创建子目录如果需要
+                    dest_file.parent.mkdir(parents=True, exist_ok=True)  # Create subdirectories if needed
                     
                     try:
                         shutil.copy2(source_file, dest_file)
@@ -152,16 +152,16 @@ class RunnerBase(abc.ABC):
             else:
                 print(f"📋 Skipping system file: {file_name} (not copied to workspace)")
         
-        # 设置文件名环境变量，供agent prompt使用
+        # Set up filename environment variables for agent prompts
         if copied_files:
             os.environ["GAIA_TASK_FILE_NAMES"] = ",".join(copied_files)
-            os.environ["GAIA_PRIMARY_FILE_NAME"] = copied_files[0]  # 主要文件名
+            os.environ["GAIA_PRIMARY_FILE_NAME"] = copied_files[0]  # primary filename
         else:
             os.environ.pop("GAIA_TASK_FILE_NAMES", None)
             os.environ.pop("GAIA_PRIMARY_FILE_NAME", None)
         
-        # 不再复制数据集通用文件（multimodal.jsonl, metadata.jsonl）
-        # 这些文件保留在原始数据集目录中，通过环境变量访问
+        # No longer copy dataset-wide files (multimodal.jsonl, metadata.jsonl)
+        # These remain in the original dataset directory and are accessed via environment variables
         
         return workspace_dir
 
@@ -203,11 +203,11 @@ class RunnerBase(abc.ABC):
             sys.stdout = tee_stdout
             sys.stderr = tee_stderr
             
-            print(f"🎯 {self.protocol_name.upper()} Runner 启动 - {timestamp}")
-            print(f"📝 日志文件: {log_file_path}")
+            print(f"🎯 {self.protocol_name.upper()} Runner started - {timestamp}")
+            print(f"📝 Log file: {log_file_path}")
             
         except Exception as e:
-            print(f"❌ 无法设置日志重定向: {e}")
+            print(f"❌ Failed to setup log redirection: {e}")
             self.restore_logging()
             raise
     
@@ -471,12 +471,12 @@ class RunnerBase(abc.ABC):
         Returns:
             Path: Agent configuration file path (GAIA_ROOT/workspaces/agent_config.<task_id>.json)
         """
-        # 将当前 Runner 的协议名和工作区路径传入 Planner
+    # Pass the current Runner's protocol name and workspace path to the Planner
         # Pass through the runner's actual config path so the planner loads the
         # exact same configuration file instead of falling back to defaults.
         planner_cfg_path = str(self._config_path) if getattr(self, '_config_path', None) else None
         planner = TaskPlanner(config_path=planner_cfg_path, task_id=task_id, level=level, protocol_name=self.protocol_name)
-        # 让 planner 在该目录下工作并返回其生成的配置（路径或内容）
+    # Let the planner work in this directory and return the generated config (path or content)
         planner_result = await planner.plan_agents(task_doc, workspace_dir=workspace_dir)
 
         # Ensure top-level workspaces dir exists and write unified config there
@@ -556,10 +556,10 @@ class RunnerBase(abc.ABC):
             }
 
         try:
-            # 设置任务专用工作区并复制所需文件
+            # Setup a task-specific workspace and copy required files
             workspace_dir = self._setup_task_workspace(task_id, task)
             
-            # Plan -> Config (使用工作区路径)
+            # Plan -> Config (using the workspace path)
             config_path = await self.plan(task_id, level, task_doc, workspace_dir)
             general_config = self.load_planned_config(config_path)
 
@@ -578,9 +578,9 @@ class RunnerBase(abc.ABC):
 
             # Expose workspace and dataset dirs to tools via environment variables
             try:
-                # 使用任务专用的工作区目录
+                # Use the task-specific workspace directory
                 os.environ["GAIA_AGENT_WORKSPACE_DIR"] = str(workspace_dir)
-                os.environ["GAIA_WORKSPACE_DIR"] = str(workspace_dir)  # 向后兼容
+                os.environ["GAIA_WORKSPACE_DIR"] = str(workspace_dir)  # backward compatible
                 print(f"📁 Task workspace created at {workspace_dir}")
             except Exception:
                 pass
@@ -793,15 +793,15 @@ class RunnerBase(abc.ABC):
             if isinstance(tasks, list) and tasks:
                 tasks = tasks[:2]
             else:
-                print(f"[WARN] Debug 模式下任务结构异常，tasks 类型: {type(tasks).__name__}")
+                print(f"[WARN] Unexpected task structure in Debug mode, tasks type: {type(tasks).__name__}")
                 tasks = [] if tasks is None else ([tasks] if isinstance(tasks, dict) else [])
         elif self.mode == "mm":
             # Multimodal mode: only run first 2 tasks
             if isinstance(tasks, list) and tasks:
                 tasks = tasks[:2]
-                print("🎯 MM 模式：仅运行前 2 条任务 (multimodal.jsonl)")
+                print("🎯 MM mode: run only the first 2 tasks (multimodal.jsonl)")
             else:
-                print(f"[WARN] MM 模式下任务结构异常，tasks 类型: {type(tasks).__name__}")
+                print(f"[WARN] Unexpected task structure in MM mode, tasks type: {type(tasks).__name__}")
                 tasks = [] if tasks is None else ([tasks] if isinstance(tasks, dict) else [])
         elif max_tasks and isinstance(max_tasks, int) and max_tasks > 0:
             # Normal mode with max_tasks limit
@@ -809,7 +809,7 @@ class RunnerBase(abc.ABC):
                 tasks = tasks[:max_tasks]
                 print(f"📊 Limited to {max_tasks} tasks for batch testing")
 
-        # 额外类型校验，确保后续逻辑安全
+        # Extra type check to ensure subsequent logic safety
         if not isinstance(tasks, list):
             raise TypeError(f"Tasks must be a list of dicts, got {type(tasks).__name__}")
 
@@ -960,7 +960,7 @@ class RunnerBase(abc.ABC):
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(output_data, f, indent=2, ensure_ascii=False)
 
-        # 调用封装的结果展示函数
+    # Call the encapsulated result display function
         avg_quality = output_data.get('metadata', {}).get('avg_quality_score')
         total_tool_time = output_data.get('metadata', {}).get('total_toolcall_time')
         # Pass average quality, total execution time and communication overhead for display

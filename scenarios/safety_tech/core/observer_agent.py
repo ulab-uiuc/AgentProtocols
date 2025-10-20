@@ -76,7 +76,7 @@ class ObserverAgent:
         self.eavesdrop_detector = EavesdropDetector(config.get('eavesdrop_detection', {}))
         
     def setup_routes(self):
-        """设置FastAPI路由"""
+        """SetupFastAPI路由"""
         
         @self.app.post("/message")
         async def receive_message(payload: Dict[str, Any]):
@@ -99,7 +99,7 @@ class ObserverAgent:
         
         @self.app.get("/status")
         async def get_status():
-            """获取Observer状态"""
+            """GetObserver状态"""
             return {
                 "observer_id": self.observer_id,
                 "conversation_id": self.conversation_id,
@@ -116,7 +116,7 @@ class ObserverAgent:
         
         @self.app.get("/messages")
         async def get_messages(message_type: str = "all", limit: int = 100):
-            """获取接收到的消息"""
+            """Get接收到的消息"""
             if message_type == "mirror":
                 messages = self.mirror_messages[-limit:]
                 return {
@@ -132,7 +132,7 @@ class ObserverAgent:
                     "messages": [self._serialize_backfill_message(msg) for msg in messages]
                 }
             else:
-                # 返回所有消息，按时间排序
+                # Return所有消息，按时间排序
                 all_messages = []
                 
                 for msg in self.mirror_messages:
@@ -151,11 +151,11 @@ class ObserverAgent:
         
         @self.app.get("/eavesdrop_report")
         async def get_eavesdrop_report():
-            """获取窃听报告"""
+            """Get窃听报告"""
             return self.eavesdrop_detector.generate_report()
     
     async def _handle_mirror_message(self, payload: Dict[str, Any]):
-        """处理镜像消息"""
+        """Handle镜像消息"""
         original_message = payload.get('original_message', {})
         
         mirror_msg = MirrorMessage(
@@ -171,7 +171,7 @@ class ObserverAgent:
         # 存储消息
         self._store_mirror_message(mirror_msg)
         
-        # 更新统计
+        # Update统计
         self._update_stats(mirror_msg)
         
         # 窃听检测
@@ -184,7 +184,7 @@ class ObserverAgent:
         logger.debug(f"Received mirror message from {mirror_msg.sender_id}")
     
     async def _handle_backfill(self, payload: Dict[str, Any]):
-        """处理历史回填"""
+        """Handle历史回填"""
         messages = payload.get('messages', [])
         
         for msg_data in messages:
@@ -263,15 +263,15 @@ class ObserverAgent:
         }
     
     def set_mirror_callback(self, callback: Callable):
-        """设置镜像消息回调"""
+        """Setup镜像消息回调"""
         self.on_mirror_message = callback
     
     def set_backfill_callback(self, callback: Callable):
-        """设置回填回调"""
+        """Setup回填回调"""
         self.on_backfill_received = callback
     
     def run(self, host: str = "127.0.0.1", port: int = 8000):
-        """运行Observer服务"""
+        """RunObserver服务"""
         logger.info(f"Starting Observer Agent {self.observer_id} on {host}:{port}")
         uvicorn.run(self.app, host=host, port=port, log_level="warning", access_log=False, lifespan="off", loop="asyncio", http="h11")
 
@@ -304,7 +304,7 @@ class EavesdropDetector:
         
     def analyze_mirror_message(self, message: MirrorMessage, payload: Dict[str, Any]):
         """分析镜像消息以检测窃听"""
-        # 记录第一次泄露时间
+        # Record第一次泄露时间
         if self.first_message_time is None:
             self.first_message_time = message.mirror_received_at
             self.metrics['time_to_first_leak'] = message.mirror_received_at
@@ -314,10 +314,10 @@ class EavesdropDetector:
         self.metrics['unauthorized_bytes'] += content_bytes
         self.metrics['unauthorized_turns'] += 1
         
-        # 记录实时镜像启用
+        # Record实时镜像启用
         self.metrics['live_mirror_enabled'] = True
         
-        # 记录参与者
+        # Record参与者
         self.metrics['unique_conversation_participants'].add(message.sender_id)
         
         # 检测敏感数据
@@ -340,7 +340,7 @@ class EavesdropDetector:
             # 检测敏感数据
             self._detect_sensitive_data(content)
             
-            # 记录参与者
+            # Record参与者
             sender_id = msg_data.get('sender_id', '')
             if sender_id:
                 self.metrics['unique_conversation_participants'].add(sender_id)
@@ -373,19 +373,19 @@ class EavesdropDetector:
             self.metrics['sensitive_data_exposed']['medical_records'] += 1
     
     def get_metrics(self) -> Dict[str, Any]:
-        """获取窃听指标"""
+        """Get窃听指标"""
         metrics = self.metrics.copy()
         metrics['unique_conversation_participants'] = list(metrics['unique_conversation_participants'])
         return metrics
     
     def generate_report(self) -> Dict[str, Any]:
-        """生成窃听报告"""
+        """Generate窃听报告"""
         metrics = self.get_metrics()
         
-        # 计算窃听成功率
+        # Calculate窃听成功率
         eavesdrop_success_rate = 1.0 if (metrics['live_mirror_enabled'] or metrics['backfill_received']) else 0.0
         
-        # 计算数据泄露严重程度
+        # Calculate数据泄露严重程度
         total_sensitive_items = sum(metrics['sensitive_data_exposed'].values())
         
         report = {
@@ -417,7 +417,7 @@ class EavesdropDetector:
 
 # 便利函数
 async def create_observer_agent(observer_id: str, config: Dict[str, Any], port: int) -> ObserverAgent:
-    """创建并启动Observer Agent"""
+    """Create并启动Observer Agent"""
     observer = ObserverAgent(observer_id, config)
     
     # 在后台启动服务
@@ -428,7 +428,7 @@ async def create_observer_agent(observer_id: str, config: Dict[str, Any], port: 
     server_thread = threading.Thread(target=run_server, daemon=True)
     server_thread.start()
     
-    # 等待服务启动
+    # Wait服务启动
     await asyncio.sleep(1)
     
     return observer

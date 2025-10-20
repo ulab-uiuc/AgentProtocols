@@ -132,7 +132,7 @@ class ACPRegistrationAdapter:
             return resp.json()
 
     def _extract_agent_names(self, agents_payload: Any) -> List[str]:
-        """从 /agents 响应中提取 agent 名称列表（兼容 acp_sdk 的模型结构）"""
+        """从 /agents Response中提取 agent 名称列表（兼容 acp_sdk 的模型结构）"""
         try:
             # acp_sdk /agents 返回形如 {"agents":[{"name": "...", ...}, ...]}
             agents = agents_payload.get("agents", []) if isinstance(agents_payload, dict) else []

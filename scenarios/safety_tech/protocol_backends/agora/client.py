@@ -23,7 +23,7 @@ except Exception:
 _SENDER = None  # type: ignore
 _SEND_TEXT_TASK = None  # type: ignore
 
-# 定义在模块级，避免SDK在构建JSON Schema时找不到类型
+# 定义在module级，避免SDK在构建JSON Schema时找不到类型
 class AgoraTextResponse(TypedDict):
     text: str
 
@@ -51,7 +51,7 @@ def _ensure_sender() -> None:
                 self._role = role_hint
 
             def invoke(self, messages: Any, config: Any = None, **kwargs: Any):  # noqa: ANN401
-                # 提取用户侧文本（容错拼接）
+                # Extract用户侧文本（容错拼接）
                 try:
                     texts = []
                     for m in messages or []:
@@ -68,7 +68,7 @@ def _ensure_sender() -> None:
                     prompt = str(messages)
 
                 reply = generate_doctor_reply(self._role, prompt)
-                # 返回LangChain兼容的消息对象
+                # ReturnLangChain兼容的消息对象
                 return AIMessage(content=reply)
 
             # Agora Toolformer 可能会调用底层模型的 bind_tools
@@ -108,7 +108,7 @@ def _ensure_sender() -> None:
         from agora.toolformers.langchain import LangChainToolformer  # type: ignore
         toolformer = LangChainToolformer(_LLMWrapperModel())
     except Exception as e:
-        # 尝试备用导入路径
+        # Try备用导入路径
         try:
             from agora import toolformers  # type: ignore
             toolformer = toolformers.LangChainToolformer(_LLMWrapperModel())
@@ -176,7 +176,7 @@ class AgoraProtocolBackend(BaseProtocolBackend):
 
         probe_results = {}
         
-        # 处理探针配置
+        # Process探针配置
         if probe_config:
             # TLS降级探针（Agora原生通信）
             if probe_config.get('tls_downgrade'):
@@ -257,7 +257,7 @@ class AgoraProtocolBackend(BaseProtocolBackend):
                 modified_payload = e2e_detector.inject_watermark_payload(original_payload)
                 text = modified_payload.get('text', text)
                 
-                # 创建明文探测payload
+                # Create明文探测payload
                 if probe_config.get('e2e_probe_payload'):
                     probe_payload = e2e_detector.create_plaintext_probe_payload()
                     text += f" [PROBE_PAYLOAD: {probe_payload['probe_markers']['credit_card']}]"
@@ -315,7 +315,7 @@ class AgoraProtocolBackend(BaseProtocolBackend):
             else:
                 response_text = str(raw_result)
             
-            # 返回标准格式
+            # Return标准格式
             return {
                 "status": "success", 
                 "data": {
@@ -346,7 +346,7 @@ class AgoraProtocolBackend(BaseProtocolBackend):
             import subprocess, sys, os
             from pathlib import Path
             
-            # 设置工作目录为项目根目录
+            # Setup工作目录为项目root directory
             current_file = Path(__file__).resolve()
             project_root = current_file.parent.parent.parent.parent.parent  # 5级向上
             
@@ -364,7 +364,7 @@ class AgoraProtocolBackend(BaseProtocolBackend):
                 text=True
             )
             
-            # 检查进程是否立即退出（表示启动失败）
+            # Check进程是否立即退出（表示启动失败）
             try:
                 stdout, stderr = proc.communicate(timeout=1.0)
                 if proc.returncode != 0:

@@ -29,7 +29,7 @@ class AgentRunRequest(BaseModel):
 
 
 class AgentRunResponse(BaseModel):
-    """ACP Agent执行响应"""
+    """ACP Agent执行Response"""
     output: Dict[str, Any]
     status: str = "success"
     agent_name: Optional[str] = None
@@ -46,11 +46,11 @@ class ACPServer:
         self.setup_routes()
     
     def setup_routes(self):
-        """设置HTTP路由"""
+        """SetupHTTP路由"""
         
         @self.app.get("/agents")
         async def get_agents():
-            """获取可用代理列表"""
+            """Get可用代理列表"""
             return {
                 "agents": [
                     {
@@ -86,13 +86,13 @@ class ACPServer:
         
         @self.app.post("/runs", response_model=AgentRunResponse)
         async def run_agent(request: AgentRunRequest):
-            """执行代理任务"""
+            """Execute代理任务"""
             try:
-                # 提取输入内容 - 支持多种格式
+                # Extract输入内容 - 支持多种格式
                 input_data = request.input
                 text = ""
                 
-                # 处理不同的输入格式
+                # Process不同的输入格式
                 if isinstance(input_data, dict):
                     # 格式1: {"content": [{"type": "text", "text": "..."}]}
                     if "content" in input_data:
@@ -116,7 +116,7 @@ class ACPServer:
                 if not text:
                     raise HTTPException(status_code=400, detail="No text content found in input")
                 
-                # 提取correlation_id前缀 [CID:...]
+                # Extractcorrelation_id前缀 [CID:...]
                 correlation_id = None
                 if text.startswith('[CID:'):
                     try:
@@ -134,7 +134,7 @@ class ACPServer:
                 reply = generate_doctor_reply(f'doctor_{role}', text)
                 print(f"[ACP-{self.agent_name}] 生成回复: '{reply[:100]}...'")
                 
-                # 检查LLM回复是否包含错误信息 - 防止伪装成功
+                # CheckLLM回复是否包含错误信息 - 防止伪装成功
                 if reply and ("Error in OpenAI chat generation" in reply or "Error in " in reply or "医生回复暂不可用" in reply):
                     print(f"[ACP-{self.agent_name}] 检测到LLM错误，返回error状态")
                     raise HTTPException(status_code=500, detail=f"LLM generation failed: {reply}")
@@ -145,7 +145,7 @@ class ACPServer:
                 else:
                     print(f"[ACP-{self.agent_name}] 警告: 无correlation_id，跳过回执投递")
                 
-                # 返回ACP标准格式响应
+                # ReturnACP标准格式Response
                 return AgentRunResponse(
                     output={
                         "content": [
@@ -189,12 +189,12 @@ class ACPServer:
 
 
 def create_doctor_a_server(port: int = 8010) -> ACPServer:
-    """创建Doctor A服务器"""
+    """CreateDoctor A服务器"""
     return ACPServer("ACP_Doctor_A", port)
 
 
 def create_doctor_b_server(port: int = 8011) -> ACPServer:
-    """创建Doctor B服务器"""
+    """CreateDoctor B服务器"""
     return ACPServer("ACP_Doctor_B", port)
 
 

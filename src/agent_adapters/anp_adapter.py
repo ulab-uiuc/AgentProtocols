@@ -1,5 +1,5 @@
 """
-ANP (Agent Network Protocol) Adapter - AgentConnect协议适配器实现
+ANP (Agent Network Protocol) Adapter - AgentConnect protocol adapter implementation
 """
 
 # --- imports (absolute) ---
@@ -88,14 +88,14 @@ class ANPAdapter(BaseProtocolAdapter):
 
     def _build_simplenode_alias(self, remote_did: str, server_card: Optional[dict]) -> str:
         """
-        构造 SimpleNode 支持的"别名 DID"：<did_id>@<http_host>:<http_port>
-        端口必须是对外的 HTTP 端口（例如 10002），不能用 WS 端口 11002。
+        Build the SimpleNode-supported "alias DID": <did_id>@<http_host>:<http_port>
+        The port must be the external HTTP port (e.g., 10002), not the WS port (e.g., 11002).
         """
         from urllib.parse import urlparse
-        # 提取比特币地址（第3段，不是末段）
+        # Extract Bitcoin address (3rd segment, not the last)
         try:
             if remote_did.startswith("did:wba:"):
-                # did:wba:bitcoin_address:path -> 提取bitcoin_address
+                # did:wba:bitcoin_address:path -> extract bitcoin_address
                 did_parts = remote_did.split(":")
                 did_id = did_parts[2] if len(did_parts) > 2 else remote_did
             else:
@@ -107,7 +107,7 @@ class ANPAdapter(BaseProtocolAdapter):
         http_port = 10002
 
         if server_card:
-            base_url = server_card.get("url")  # 例如 "http://127.0.0.1:10002/"
+            base_url = server_card.get("url")  # e.g., "http://127.0.0.1:10002/"
             if base_url:
                 u = urlparse(base_url)
                 if u.hostname:
@@ -115,7 +115,8 @@ class ANPAdapter(BaseProtocolAdapter):
                 if u.port:
                     http_port = u.port
             else:
-                # 兜底：如果只有 WS 端点，则把 WS 端口 -1000 作为 HTTP 端口（你的服务就是 10002/11002 这样的配对）
+                # Fallback: if only WS endpoint exists, derive HTTP port by subtracting 1000
+                # (e.g., your service uses a 10002/11002 pairing)
                 ws = (server_card.get("endpoints") or {}).get("websocket")
                 if ws:
                     w = urlparse(ws)
@@ -940,7 +941,7 @@ Capability Assessment:
 
                 session = None
 
-                # 情况 A：配置了 DID 服务，先常规尝试
+                # Case A: DID service configured, try standard connection first
                 if self.did_service_url:
                     try:
                         logger.info(f"Connecting to target DID via AgentConnect: {self.target_did}")
@@ -948,11 +949,11 @@ Capability Assessment:
                     except Exception as e:
                         logger.warning(f"connect_to_did({self.target_did}) via DID service failed: {e}")
 
-                # 情况 B：无 DID 服务，使用简化HTTP连接 fallback
+                # Case B: No DID service, use simplified HTTP connection as fallback
                 if session is None:
                     logger.info("Using simplified HTTP fallback for ANP communication")
                     
-                    # 创建简化的session wrapper，直接通过HTTP与ANP服务器通信
+                    # Create a simplified session wrapper to communicate with the ANP server over HTTP directly
                     class SimplifiedANPSession:
                         def __init__(self, httpx_client, target_url):
                             self.httpx_client = httpx_client
@@ -962,7 +963,7 @@ Capability Assessment:
                         async def send_message(self, message_data):
                             """Send message via HTTP to ANP server"""
                             try:
-                                # 直接发送到ANP服务器的HTTP端点
+                                # Send directly to the ANP server's HTTP endpoint
                                 response = await self.httpx_client.post(
                                     f"{self.target_url}/anp/message",
                                     json=message_data,
@@ -975,14 +976,14 @@ Capability Assessment:
                             except Exception as e:
                                 return {"error": str(e)}
                     
-                    # 使用HTTP fallback session
+                    # Use HTTP fallback session
                     session = SimplifiedANPSession(self.httpx_client, "http://127.0.0.1:10002")
                     logger.info("Created simplified ANP HTTP session")
 
                 if not session:
                     raise ConnectionError("Failed to establish session with target")
 
-                # 成功：登记 session 并启动消息处理
+                # Success: register session and start message processing
                 self.node_session = session
                 self._sessions[self.target_did] = session
                 self._connected = True
@@ -995,14 +996,14 @@ Capability Assessment:
                 self._connecting = False
 
     def _get_remote_ws_endpoint(self) -> Optional[str]:
-        """从已缓存的 server card 推导 WS 端点，并规范化 0.0.0.0 -> 127.0.0.1。"""
+        """Derive WS endpoint from cached server card and normalize 0.0.0.0 -> 127.0.0.1."""
         from urllib.parse import urlparse
         
         card = getattr(self, "_server_card", None) or {}
         eps = card.get("endpoints") or {}
         ws = eps.get("websocket")
         if not ws:
-            # 尝试从 http 基址推导（http 端口 + 1000）
+            # Try to derive from HTTP base (HTTP port + 1000)
             base_url = card.get("url")
             if base_url:
                 u = urlparse(base_url)
@@ -1011,7 +1012,7 @@ Capability Assessment:
                 host = "127.0.0.1" if u.hostname in ("0.0.0.0", "::") else u.hostname
                 return f"ws://{host}:{port}{path}"
             return None
-        # 规范 host
+        # Normalize host
         try:
             u = urlparse(ws)
             host = "127.0.0.1" if u.hostname in ("0.0.0.0", "::") else u.hostname
@@ -1059,7 +1060,7 @@ Capability Assessment:
                     response = await client.get(f"{base_url}/.well-known/agent.json")
                     if response.status_code == 200:
                         agent_info = response.json()
-                        # 缓存 server card，供 WS 端点直连 fallback 使用
+                        # Cache server card for direct WS endpoint fallback
                         self._server_card = agent_info
                         if "id" in agent_info:
                             dst_id = agent_info["id"]
@@ -1075,7 +1076,7 @@ Capability Assessment:
         self.target_did = dst_id
         
         try:
-            # 创建ANP消息载荷
+            # Create ANP message payload
             request_id = str(uuid.uuid4())
             anp_payload = {
                 "type": "anp_message", 
@@ -1114,7 +1115,7 @@ Capability Assessment:
             if not base_url:
                 raise RuntimeError("Target ANP server base URL unknown (no base_url provided nor discovered)")
             
-            # 通过HTTP发送到ANP服务器正确的端点
+            # Send to the correct ANP server HTTP endpoint
             response = await self.httpx_client.post(
                 f"{base_url}/anp/message",
                 json=anp_payload,

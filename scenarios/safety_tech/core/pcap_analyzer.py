@@ -24,7 +24,7 @@ class PcapAnalyzer:
         
     async def start_capture(self, bpf_filter: Optional[str] = None) -> str:
         """启动网络包捕获"""
-        # 创建临时pcap文件
+        # Create临时pcap文件
         temp_dir = Path(tempfile.gettempdir())
         self.pcap_file = temp_dir / f"s2_capture_{int(time.time())}.pcap"
         
@@ -44,7 +44,7 @@ class PcapAnalyzer:
             cmd.append("tcp port 8001 or tcp port 8888 or tcp port 9102 or tcp port 9103")
         
         try:
-            # 启动后台捕获进程
+            # Start后台捕获进程
             self.capture_process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.DEVNULL,
@@ -62,7 +62,7 @@ class PcapAnalyzer:
         """停止捕获并分析结果"""
         if self.capture_process:
             try:
-                # 等待捕获完成或超时
+                # Wait捕获完成或超时
                 await asyncio.sleep(self.duration + 2)
                 
                 # 强制终止进程
@@ -76,7 +76,7 @@ class PcapAnalyzer:
             except Exception as e:
                 print(f"⚠️ 停止捕获进程时出错: {e}")
         
-        # 等待文件系统同步
+        # Wait文件系统同步
         await asyncio.sleep(1)
         
         # 分析捕获的包
@@ -89,10 +89,10 @@ class PcapAnalyzer:
                 "status": "no_capture",
                 "plaintext_bytes": 0,
                 "sensitive_keywords": [],
-                "error": "未设置捕获文件路径"
+                "error": "未Setup捕获文件路径"
             }
             
-        # 等待文件创建，最多等待5秒
+        # Wait文件创建，最多等待5秒
         max_wait = 5
         wait_count = 0
         while not self.pcap_file.exists() and wait_count < max_wait:
@@ -100,7 +100,7 @@ class PcapAnalyzer:
             wait_count += 1
             
         if not self.pcap_file.exists():
-            # 检查文件权限和目录
+            # Check文件权限和目录
             temp_dir = self.pcap_file.parent
             return {
                 "status": "no_capture",
@@ -109,7 +109,7 @@ class PcapAnalyzer:
                 "error": f"捕获文件不存在: {self.pcap_file}, 目录可写: {temp_dir.is_dir() and temp_dir.stat().st_mode & 0o200}"
             }
         
-        # 检查文件大小
+        # Check文件大小
         try:
             file_size = self.pcap_file.stat().st_size
             if file_size == 0:
@@ -147,7 +147,7 @@ class PcapAnalyzer:
             content = result.stdout
             analysis = self._analyze_content(content)
             
-            # 清理临时文件
+            # Cleanup临时文件
             try:
                 self.pcap_file.unlink()
             except:
@@ -219,14 +219,14 @@ class MitmProxyController:
     async def start_transparent_proxy(self) -> bool:
         """启动透明代理模式"""
         try:
-            # 检查mitmproxy是否可用
+            # Checkmitmproxy是否可用
             result = subprocess.run(["which", "mitmproxy"], 
                                   capture_output=True, text=True)
             if result.returncode != 0:
                 print("⚠️ mitmproxy未安装，跳过MITM测试")
                 return False
             
-            # 启动mitmdump透明代理
+            # Startmitmdump透明代理
             cmd = [
                 "mitmdump",
                 "--mode", "transparent",
@@ -240,7 +240,7 @@ class MitmProxyController:
                 stderr=subprocess.DEVNULL
             )
             
-            # 等待代理启动
+            # Wait代理启动
             await asyncio.sleep(2)
             
             print(f"🔓 启动透明MITM代理: 端口 {self.port}")
@@ -265,7 +265,7 @@ class MitmProxyController:
                 print(f"⚠️ 停止MITM代理时出错: {e}")
     
     def get_ca_cert_path(self) -> Optional[Path]:
-        """获取MITM根CA证书路径"""
+        """GetMITM根CA证书路径"""
         ca_cert = self.cert_dir / "mitmproxy-ca-cert.pem"
         if ca_cert.exists():
             return ca_cert
@@ -302,7 +302,7 @@ async def run_pcap_mitm_test(
     duration: int = 10,
     enable_mitm: bool = False
 ) -> Dict[str, Any]:
-    """运行旁路抓包+MITM综合测试"""
+    """Run旁路抓包+MITM综合测试"""
     
     results = {
         "pcap_analysis": {},
@@ -311,7 +311,7 @@ async def run_pcap_mitm_test(
         "timestamp": time.time()
     }
     
-    # 启动MITM代理（如果启用）
+    # StartMITM代理（如果启用）
     mitm_controller = None
     if enable_mitm:
         mitm_controller = MitmProxyController()
@@ -323,7 +323,7 @@ async def run_pcap_mitm_test(
             results["mitm_results"]["ca_cert_available"] = ca_cert_path is not None
             results["mitm_results"]["ca_cert_path"] = str(ca_cert_path) if ca_cert_path else None
     
-    # 启动网络包捕获
+    # Start网络包捕获
     pcap_analyzer = PcapAnalyzer(interface, duration)
     pcap_file = await pcap_analyzer.start_capture()
     
@@ -331,14 +331,14 @@ async def run_pcap_mitm_test(
         results["pcap_analysis"]["capture_started"] = True
         results["pcap_analysis"]["pcap_file"] = pcap_file
         
-        # 等待捕获完成并分析
+        # Wait捕获完成并分析
         analysis = await pcap_analyzer.stop_capture()
         results["pcap_analysis"].update(analysis)
     else:
         results["pcap_analysis"]["capture_started"] = False
         results["pcap_analysis"]["error"] = "无法启动网络包捕获"
     
-    # 停止MITM代理
+    # StopMITM代理
     if mitm_controller:
         await mitm_controller.stop_proxy()
     

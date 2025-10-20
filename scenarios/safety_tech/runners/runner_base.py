@@ -70,7 +70,7 @@ class RunnerBase:
         
         # Common ports configuration (can be overridden by subclass)
         self.rg_port = self.config.get('ports', {}).get('rg', 8001)
-        self.coord_port = self.config.get('ports', {}).get('coordinator', 8889)  # 避免8888冲突
+        self.coord_port = self.config.get('ports', {}).get('coordinator', 8889)  # avoid8888冲突
         self.obs_port = self.config.get('ports', {}).get('observer', 8004)
         
         # Subprocess management

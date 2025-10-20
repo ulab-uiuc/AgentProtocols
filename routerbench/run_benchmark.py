@@ -1,5 +1,5 @@
 """
-ProtoRouter Benchmark 主运行脚本
+ProtoRouter Benchmark main runner script
 """
 
 import json
@@ -17,9 +17,9 @@ from evaluator import RouterBenchmarkEvaluator
 
 
 def load_config(config_path: str) -> Dict[str, Any]:
-    """加载配置文件"""
+    """Load configuration file"""
     if not os.path.exists(config_path):
-        # 创建默认配置
+        # Create default configuration
         default_config = {
             "model": {
                 "type": "openai",  # or "local"
@@ -33,8 +33,8 @@ def load_config(config_path: str) -> Dict[str, Any]:
         with open(config_path, 'w', encoding='utf-8') as f:
             yaml.dump(default_config, f, default_flow_style=False, allow_unicode=True)
         
-        print(f"已创建默认配置文件: {config_path}")
-        print("请编辑配置文件并设置正确的API密钥")
+        print(f"Default configuration file created: {config_path}")
+        print("Please edit the configuration file and set the correct API key")
         sys.exit(1)
     
     with open(config_path, 'r', encoding='utf-8') as f:
@@ -42,7 +42,7 @@ def load_config(config_path: str) -> Dict[str, Any]:
 
 
 def load_dataset(data_path: str) -> list:
-    """加载数据集"""
+    """Load dataset"""
     with open(data_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 

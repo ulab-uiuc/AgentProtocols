@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ANP Protocol Registration Adapter
-使用原生 ANP 服务器接口进行注册配合（无 mock / 无 fallback）
+Use native ANP server endpoints for registration (no mocks, no fallbacks).
 """
 
 from __future__ import annotations
@@ -14,12 +14,12 @@ import httpx
 
 
 class ANPRegistrationAdapter:
-    """ANP 协议注册适配器（配合 RegistrationGateway）
+    """ANP protocol registration adapter (works with RegistrationGateway)
     
-    设计目标：
-    - 使用原生 ANP 服务接口进行端点探测与证明构造（/health, /registration_proof）
-    - 不使用任何 mock、fallback 或虚拟模式
-    - 与其他协议适配器提供一致的外部方法签名
+    Design goals:
+    - Use native ANP service endpoints for endpoint probing and proof construction (/health, /registration_proof)
+    - Do not use any mocks, fallbacks, or simulation modes
+    - Provide consistent external method signatures with other protocol adapters
     """
 
     def __init__(self, config: Dict[str, Any]):
@@ -33,30 +33,30 @@ class ANPRegistrationAdapter:
         conversation_id: str,
         role: str = "doctor",
     ) -> Dict[str, Any]:
-        """注册 ANP Agent 到 RG
+        """Register an ANP agent to the RG.
         
-        要求：endpoint 必须是原生 ANP 服务器根地址（可直接访问 /health, /registration_proof）
+        Requirements: endpoint must be the native ANP server base URL (must allow direct access to /health and /registration_proof).
         """
-        # 探测 ANP 端点健康状态
+        # Probe ANP endpoint health
         base = endpoint.rstrip("/")
         async with httpx.AsyncClient() as client:
             health_resp = await client.get(f"{base}/health", timeout=10.0)
             if health_resp.status_code != 200:
                 raise RuntimeError(f"ANP /health probe failed: {health_resp.status_code}")
             
-            # 获取 ANP 原生 DID 证明
+            # Get native ANP DID proof
             proof_resp = await client.get(f"{base}/registration_proof", timeout=10.0)
             if proof_resp.status_code != 200:
                 raise RuntimeError(f"ANP /registration_proof failed: {proof_resp.status_code}")
             
             native_proof = proof_resp.json()
             
-        # 构造完整的 ANP 注册证明
+        # Build a complete ANP registration proof
         proof = {
             "timestamp": time.time(),
             "nonce": str(uuid.uuid4()),
             "endpoint_health": True,
-            **native_proof  # 包含 DID、签名等原生证明
+            **native_proof  # Include DID, signature, and other native fields
         }
 
         registration_request = {
@@ -88,7 +88,7 @@ class ANPRegistrationAdapter:
         conversation_id: str,
         endpoint: str = "",
     ) -> Dict[str, Any]:
-        """订阅 Observer 到 RG（独立于 ANP 服务器）"""
+        """Subscribe an observer to the RG (independent of the ANP server)."""
         proof = {
             "timestamp": time.time(),
             "nonce": str(uuid.uuid4()),

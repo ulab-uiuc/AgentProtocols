@@ -426,24 +426,24 @@ Make sure the fixed code is complete and self-contained. If the error is about m
                 if packages:
                     install_output = await self._install_packages(packages)
 
-                # =================== START: 新增的智能修复“安全网”逻辑 ===================
+                # =================== START: Added intelligent fix "safety net" logic ===================
                 
                 modified_code = current_code.strip()
                 lines = [line for line in modified_code.splitlines() if line.strip()]
 
-                # 检查代码是否已经包含了 print 语句
+                # Check whether the code already contains a print statement
                 has_print_statement = 'print(' in modified_code
 
-                # 如果代码不为空且没有 print 语句，则尝试自动添加
+                # If code is non-empty and has no print statement, try to add one automatically
                 if lines and not has_print_statement:
                     last_line = lines[-1].strip()
-                    # 检查最后一行是否可能是一个旨在输出的表达式
-                    # (不是赋值、定义、导入或控制流语句)
+                    # Check whether the last line is likely an output expression
+                    # (i.e., not an assignment, definition, import, or control-flow statement)
                     keywords_that_are_not_expressions = ('=', 'import ', 'from ', 'def ', 'class ', 'if ', 'for ', 'while ', 'try:', 'except:')
                     if not last_line.startswith(keywords_that_are_not_expressions):
                         logger.info(f"🔧 Safety Net: No 'print' statement found. Auto-wrapping the last line: '{last_line}'")
                         
-                        # 修改代码，将最后一行包裹在 print() 中
+                        # Modify the code to wrap the last line in print()
                         code_to_wrap = "\n".join(lines[:-1])
                         wrapped_last_line = f"print({last_line})"
                         
@@ -458,12 +458,12 @@ import sys
 import traceback
 import os
 from io import StringIO
-import pandas
+    # Prepare the complete code to execute
 
 # Store original stdout for final output
 original_stdout = sys.stdout
 
-# Capture stdout for user code
+    # First, try treating the code as a single expression with eval to capture its return value (e.g., DataFrame.head())
 captured_output = StringIO()
 
 # Add dataset directory to sys.path if available
@@ -471,31 +471,31 @@ if os.path.exists('/dataset'):
     sys.path.insert(0, '/dataset')
     os.environ['DATASET_DIR'] = '/dataset'
 
-# Add workspace directory to sys.path
+            # Single expression: use eval to get the return value and try to print in a user-friendly way
 if os.path.exists('/workspace'):
     sys.path.insert(0, '/workspace')
-    os.environ['WORKSPACE_DIR'] = '/workspace'
+                # Friendly printing for pandas DataFrame / Series
     # Set working directory to workspace
     os.chdir('/workspace')
-
+                # For numpy arrays or other objects with a shape attribute, prefer repr
 # Import file path resolver functionality
 def resolve_dataset_file(filename):
     \"\"\"Helper function to resolve dataset file paths.\"\"\"
-    if os.path.exists('/dataset'):
+                        # Try to limit output length (fallback to repr)
         candidate = os.path.join('/dataset', filename)
         if os.path.exists(candidate):
             return candidate
         # Try case-insensitive search
         for f in os.listdir('/dataset'):
             if f.lower() == filename.lower():
-                return os.path.join('/dataset', f)
+                # Even if formatting fails, ensure there is still output
     return filename
 
-# Make resolve_dataset_file available globally (with error handling)
+            # Not an expression: execute as a regular script (retain original behavior)
 try:
     # Try different ways to make function globally available
     if isinstance(__builtins__, dict):
-        __builtins__['resolve_dataset_file'] = resolve_dataset_file
+        # Raise to outer layer so it can catch and trigger the intelligent fix flow
     elif hasattr(__builtins__, '__dict__'):
         __builtins__.__dict__['resolve_dataset_file'] = resolve_dataset_file
     else:
@@ -518,12 +518,12 @@ try:
     # Create namespace for execution
     exec_globals = globals().copy()
     
-    # 准备要执行的完整代码
+    # Prepare the full code to execute
     full_code = '''
 {modified_code}
 '''.strip()
 
-    # 尝试先将代码作为表达式进行 eval，以便捕获表达式的返回值（例如 DataFrame.head())
+    # First, try evaluating the code as a single expression to capture its return value (e.g., DataFrame.head())
     try:
         try:
             compiled_expr = compile(full_code, '<string>', 'eval')
@@ -531,31 +531,31 @@ try:
             compiled_expr = None
 
         if compiled_expr is not None:
-            # 是单个表达式，使用 eval 获取返回值并尝试以友好形式打印
+            # Single expression: use eval to get the return value and print it in a friendly way
             result_value = eval(compiled_expr, exec_globals)
             try:
-                # pandas DataFrame / Series 的友好打印
+                # Friendly printing for pandas DataFrame / Series
                 if hasattr(result_value, 'to_string'):
                     print(result_value.to_string())
-                # numpy arrays 或其他有 shape 的对象，尽量用 repr
+                # For numpy arrays or other objects with a shape attribute, prefer repr
                 elif hasattr(result_value, '__array__') or hasattr(result_value, 'shape'):
                     try:
                         import numpy as _np
-                        # 尝试限制输出长度
+                        # Try to limit the output length
                         print(repr(result_value))
                     except Exception:
                         print(repr(result_value))
                 else:
                     print(repr(result_value))
             except Exception:
-                # 即使格式化失败，也确保有输出
+                # Ensure there is still output even if formatting fails
                 print(repr(result_value))
         else:
-            # 不是表达式，作为普通脚本执行（保留原有行为）
+            # Not an expression: execute as a regular script (retain original behavior)
             exec(compile(full_code, '<string>', 'exec'), exec_globals)
 
     except Exception:
-        # 抛出异常以便外层捕获并触发智能修复流程
+    # Re-raise so the outer layer can catch it and trigger the intelligent fix flow
         raise
 
     # Restore stdout and get captured output

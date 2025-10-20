@@ -25,7 +25,7 @@ class ACPProtocolBackend(BaseProtocolBackend):
     async def send(self, endpoint: str, payload: Dict[str, Any], correlation_id: Optional[str] = None, probe_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         endpoint = (endpoint or '').rstrip('/')
 
-        # 提取文本与关联ID，按ACP SDK RunCreateRequest(messages)格式
+        # Extract文本与关联ID，按ACP SDK RunCreateRequest(messages)格式
         text = _extract_text(payload)
         corr = correlation_id or payload.get('correlation_id')
         if isinstance(corr, str) and corr:
@@ -34,10 +34,10 @@ class ACPProtocolBackend(BaseProtocolBackend):
         probe_results = {}
         client_kwargs = {}
         
-        # 导入必要的模块
+        # Import必要的module
         import time
         
-        # 处理探针配置
+        # Process探针配置
         if probe_config:
             # TLS降级探针
             if probe_config.get('tls_downgrade'):
@@ -117,7 +117,7 @@ class ACPProtocolBackend(BaseProtocolBackend):
                 modified_payload = e2e_detector.inject_watermark_payload(original_payload)
                 text = modified_payload.get('text', text)
                 
-                # 创建明文探测payload
+                # Create明文探测payload
                 if probe_config.get('e2e_probe_payload'):
                     probe_payload = e2e_detector.create_plaintext_probe_payload()
                     text += f" [PROBE_PAYLOAD: {probe_payload['probe_markers']['credit_card']}]"
@@ -207,8 +207,8 @@ class ACPProtocolBackend(BaseProtocolBackend):
             async with httpx.AsyncClient(**client_kwargs) as client:
                 resp = await client.post(f"{endpoint}/runs", json=req, timeout=30.0)
                 
-                print(f"[ACP-DEBUG] HTTP响应: {resp.status_code}")
-                print(f"[ACP-DEBUG] 响应内容预览: {resp.text[:200]}...")
+                print(f"[ACP-DEBUG] HTTPResponse: {resp.status_code}")
+                print(f"[ACP-DEBUG] Response内容预览: {resp.text[:200]}...")
                 
                 if resp.status_code in (200, 202):
                     try:
@@ -219,7 +219,7 @@ class ACPProtocolBackend(BaseProtocolBackend):
                             "data": result,
                             "probe_results": probe_results
                         }
-                        print(f"[ACP-DEBUG] 返回成功响应: status={return_val['status']}")
+                        print(f"[ACP-DEBUG] 返回成功Response: status={return_val['status']}")
                         return return_val
                     except Exception as json_ex:
                         print(f"[ACP-DEBUG] JSON解析失败: {json_ex}")
@@ -228,7 +228,7 @@ class ACPProtocolBackend(BaseProtocolBackend):
                             "data": {"status": "ok"},
                             "probe_results": probe_results
                         }
-                        print(f"[ACP-DEBUG] 返回备用成功响应: status={return_val['status']}")
+                        print(f"[ACP-DEBUG] 返回备用成功Response: status={return_val['status']}")
                         return return_val
                 else:
                     error_resp = {
@@ -236,7 +236,7 @@ class ACPProtocolBackend(BaseProtocolBackend):
                         "error": f"ACP endpoint returned {resp.status_code}: {resp.text}",
                         "probe_results": probe_results
                     }
-                    print(f"[ACP-DEBUG] 返回错误响应: {error_resp['error']}")
+                    print(f"[ACP-DEBUG] 返回错误Response: {error_resp['error']}")
                     return error_resp
         except Exception as e:
             error_resp = {
@@ -245,7 +245,7 @@ class ACPProtocolBackend(BaseProtocolBackend):
                 "probe_results": probe_results
             }
             print(f"[ACP-DEBUG] 捕获异常: {e}")
-            print(f"[ACP-DEBUG] 返回异常响应: {error_resp['error']}")
+            print(f"[ACP-DEBUG] 返回异常Response: {error_resp['error']}")
             return error_resp
 
     async def spawn(self, role: str, port: int, **kwargs: Any) -> Dict[str, Any]:
@@ -261,24 +261,24 @@ class ACPProtocolBackend(BaseProtocolBackend):
             for key in (
                 'NVIDIA_API_KEY', 'NVIDIA_BASE_URL', 'NVIDIA_MODEL', 'NVIDIA_TEMPERATURE',
                 'OPENAI_API_KEY', 'OPENAI_BASE_URL', 'OPENAI_MODEL', 'OPENAI_TEMPERATURE',
-                'OPENAI_REQUEST_TIMEOUT', 'AGORA_S1_TEST_MODE',  # 用于S1快速失败/降超时
+                'OPENAI_REQUEST_TIMEOUT', 'AGORA_S1_TEST_MODE',  # forS1快速失败/降超时
             ):
                 if key in os.environ:
                     env[key] = os.environ[key]
-            # 设置NVIDIA默认值（如环境变量未设置）
+            # SetupNVIDIA默认值（如环境变量未Setup）
             env.setdefault('NVIDIA_API_KEY', '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')
             env.setdefault('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1')
             env.setdefault('NVIDIA_MODEL', 'meta/llama-3.2-1b-instruct')
             env.setdefault('NVIDIA_TEMPERATURE', '0.3')
-            # 如果未设置S1快速模式，为测试稳定性默认启用轻量模式
+            # If未SetupS1快速模式，为测试稳定性默认启用轻量模式
             env.setdefault('AGORA_S1_TEST_MODE', 'light')
             role_l = role.lower()
             if role_l not in ('doctor_a', 'doctor_b'):
                 return {"status": "error", "error": f"unknown role: {role}"}
-            # 计算项目根目录路径
+            # Calculate项目root directory路径
             from pathlib import Path
             current_file = Path(__file__).resolve()
-            project_root = current_file.parent.parent.parent.parent.parent  # 5级向上到项目根目录
+            project_root = current_file.parent.parent.parent.parent.parent  # 5级向上到项目root directory
             
             if role_l == 'doctor_a':
                 code = (

@@ -12,7 +12,7 @@ from .base import SearchItem, WebSearchEngine
 
 ABSTRACT_MAX_LENGTH = 300
 
-# 更新的用户代理列表，使用更现代的浏览器版本
+# Updated user-agent list using more modern browser versions
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",

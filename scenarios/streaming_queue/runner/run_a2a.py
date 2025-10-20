@@ -16,7 +16,7 @@ from typing import Dict, List, Any, Optional
 
 import httpx
 
-# 路径设置
+# PathSetup
 HERE = Path(__file__).resolve()
 STREAMING_Q = HERE.parents[1]  # .../streaming_queue
 A2A_DIR = STREAMING_Q / "protocol_backend" / "a2a"
@@ -160,14 +160,14 @@ class A2ARunner(RunnerBase):
     # ---------- 清理 ----------
     async def cleanup(self) -> None:
         try:
-            # RunnerBase 会调用 self.network.close()，A2ACommBackend.close() 会停止本地 hosts
+            # RunnerBase 会调用 self.network.close()，A2ACommBackend.close() 会停止local hosts
             await super().cleanup()
         finally:
             try:
                 await self.httpx_client.aclose()
             except Exception:
                 pass
-            # 双保险（network.close 已处理，一般不会再剩）
+            # 双保险（network.close processed，一般不会再剩）
             for h in self._handles:
                 try:
                     await h.stop()

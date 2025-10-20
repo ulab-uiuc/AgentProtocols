@@ -114,11 +114,11 @@ class Core:
         
         elif self.config["model"]["type"] == "openai":
             rounds = 0
-            # S1快速失败：根据环境变量加速（默认light）
+            # S1 fast-fail: speed up based on environment variable (default: light)
             s1_mode = os.environ.get('AGORA_S1_TEST_MODE', '').lower()
             fast_fail = s1_mode != 'skip' and s1_mode != ''
             threshold = 1 if fast_fail else 3
-            # NVIDIA API需要更长的超时时间
+            # NVIDIA API requires a longer timeout
             request_timeout = 10.0 if fast_fail else float(os.environ.get('NVIDIA_REQUEST_TIMEOUT', '30'))
             wait_on_error = 0.2 if fast_fail else 10
             while True:
@@ -259,7 +259,7 @@ class Core:
                             model=self.config["model"]["name"],
                             messages=truncated_messages,
                             tools=tools,
-                            tool_choice="auto",  # 回退到自动模式
+                            tool_choice="auto",  # Fall back to auto mode
                             temperature=self.config["model"]["temperature"],
                             n=1,
                             timeout=request_timeout,
@@ -329,10 +329,10 @@ def _build_doctor_context(role: str) -> str:
 
 
 def _read_env_model_config() -> dict:
-    """统一的NVIDIA LLaMA配置读取"""
+    """Unified NVIDIA LLaMA configuration reader."""
     import os as _os
     
-    # NVIDIA LLaMA配置 - 统一默认值
+    # NVIDIA LLaMA configuration - unified defaults
     api_key = _os.environ.get('NVIDIA_API_KEY', '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')
     base_url = _os.environ.get('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1')
     model_name = _os.environ.get('NVIDIA_MODEL', 'meta/llama-3.3-70b-instruct')
@@ -344,7 +344,7 @@ def _read_env_model_config() -> dict:
     
     return {
         'model': {
-            'type': 'openai',  # 使用OpenAI兼容库连接NVIDIA
+            'type': 'openai',  # Use OpenAI-compatible client to connect to NVIDIA
             'name': model_name,
             'temperature': temperature,
             'openai_api_key': api_key,
@@ -364,62 +364,62 @@ def generate_doctor_reply(role: str, text: str, model_config: dict | None = None
     Returns:
         str reply content
     """
-    # 限制输入文本长度以防止上下文溢出
-    # 粗略估算：1 token ≈ 4 characters，128K tokens ≈ 512K characters
-    # 保留一些空间给system prompt和响应，限制为400K characters
+    # Limit input text length to avoid context overflow
+    # Rough estimate: 1 token ≈ 4 characters, 128K tokens ≈ 512K characters
+    # Reserve space for system prompt and response, cap at 400K characters
     max_chars = 400000
     if text and len(text) > max_chars:
         text = text[:max_chars] + "...[truncated due to length limit]"
         print(f"🔄 [LLM] Input text truncated from {len(text)} to {max_chars} characters")
     
-    # 使用统一的LLM调用接口
+    # Use the unified LLM call interface
     context = _build_doctor_context(role)
     messages = [{"role": "user", "content": text or ""}]
     
     result = unified_llm_call(messages, system_prompt=context)
     
-    # 如果统一调用失败，返回友好提示
-    if result in ("[LLM暂不可用]", "[LLM调用失败]"):
+    # If the unified call failed, return a friendly message
+    if result in ("[LLM temporarily unavailable]", "[LLM call failed]"):
         return "I apologize, but I'm unable to provide a response at this time."
     
     return result
 
 
-# ===================== 统一LLM调用接口 =====================
+# ===================== Unified LLM Call Interface =====================
 
 def unified_llm_call(messages: list, system_prompt: str = None, temperature: float = None) -> str:
-    """统一的LLM调用接口 - 所有Safety Tech模块都应使用此函数
-    
+    """Unified LLM call interface — all Safety Tech modules should use this function.
+
     Args:
-        messages: 消息列表，格式: [{"role": "user", "content": "..."}]
-        system_prompt: 可选的系统提示词，会自动插入到消息开头
-        temperature: 可选的温度参数，覆盖默认值
-    
+        messages: List of messages, e.g., [{"role": "user", "content": "..."}]
+        system_prompt: Optional system prompt automatically inserted at the beginning
+        temperature: Optional temperature parameter overriding the default
+
     Returns:
-        LLM回复的文本内容
-        
+        The text content replied by the LLM
+
     Example:
-        reply = unified_llm_call([{"role": "user", "content": "Hello"}], 
-                               system_prompt="You are a helpful assistant")
+        reply = unified_llm_call([{"role": "user", "content": "Hello"}],
+                                 system_prompt="You are a helpful assistant")
     """
     import logging
     logger = logging.getLogger(__name__)
     
     try:
-        # 获取统一配置
+        # Get unified configuration
         config = _read_env_model_config()
         
-        # 覆盖温度参数
+        # Override temperature if provided
         if temperature is not None:
             config['model']['temperature'] = temperature
         
-        # 构造完整消息
+        # Construct full message list
         full_messages = []
         if system_prompt:
             full_messages.append({"role": "system", "content": system_prompt})
         full_messages.extend(messages)
         
-        # 创建Core实例并调用，带重试机制
+        # Create Core instance and call with retry
         core = Core(config)
         
         max_retries = 2
@@ -427,7 +427,7 @@ def unified_llm_call(messages: list, system_prompt: str = None, temperature: flo
             try:
                 result = core.execute(full_messages)
                 
-                if result and not any(err in result for err in ["Error in", "医生回复暂不可用", "Request timed out"]):
+                if result and not any(err in result for err in ["Error in", "Doctor reply temporarily unavailable", "Request timed out"]):
                     return result
                 else:
                     if attempt < max_retries - 1:
@@ -435,15 +435,15 @@ def unified_llm_call(messages: list, system_prompt: str = None, temperature: flo
                         continue
                     else:
                         logger.warning(f"[LLM] All attempts failed, last result: {result}")
-                        return "[LLM暂不可用]"
+                        return "[LLM temporarily unavailable]"
             except Exception as e:
                 if attempt < max_retries - 1:
                     logger.warning(f"[LLM] Attempt {attempt + 1} exception: {e}, retrying...")
                     continue
                 else:
                     logger.error(f"[LLM] Final attempt failed: {e}")
-                    return "[LLM调用失败]"
+                    return "[LLM call failed]"
             
     except Exception as e:
         logger.error(f"[LLM] Unified call failed: {e}")
-        return "[LLM调用失败]"
+        return "[LLM call failed]"

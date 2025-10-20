@@ -170,7 +170,7 @@ class AgoraCommBackend(BaseCommBackend):
                 srv.shutdown()
 
     async def spawn_local_agent(self, agent_id: str, host: str, port: int, executor: Any) -> Any:
-        """启动本地Agora Agent的HTTP服务"""
+        """启动localAgora Agent的HTTP服务"""
         
         # 1. Create Toolformer
         try:

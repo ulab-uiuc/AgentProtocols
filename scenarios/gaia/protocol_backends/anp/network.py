@@ -260,7 +260,7 @@ class ANPNetwork(MeshNetwork):
         agent_configs = self.config.get('agents', [])
         agent_prompts = self.config.get('agent_prompts', {})
         
-        print(f"📝 准备创建 {len(agent_configs)} 个ANP Agent")
+        print(f"📝 Preparing to create {len(agent_configs)} ANP agents")
         
         for agent_info in agent_configs:
             try:
@@ -275,13 +275,13 @@ class ANPNetwork(MeshNetwork):
                 # Register agent to network
                 self.register_agent(agent)
                 
-                print(f"✅ ANP Agent {agent_info['name']} (ID: {agent_info['id']}) 已创建并注册")
+                print(f"✅ ANP Agent {agent_info['name']} (ID: {agent_info['id']}) created and registered")
                 
             except Exception as e:
-                print(f"❌ 创建和注册ANP Agent {agent_info.get('name', 'unknown')} 失败: {e}")
+                print(f"❌ Failed to create and register ANP Agent {agent_info.get('name', 'unknown')}: {e}")
                 raise
         
-        print(f"🎉 总共成功注册了 {len(agent_configs)} 个ANP Agent")
+        print(f"🎉 Successfully registered {len(agent_configs)} ANP agents in total")
     
     # ==================== Communication Methods ====================
 

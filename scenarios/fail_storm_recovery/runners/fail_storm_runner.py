@@ -151,7 +151,7 @@ class FailStormRunner:
         self.killed_agents: Set[str] = set()  # Currently killed (removed on reconnect)
         self.temporarily_killed_agents: Set[str] = set()  # Ever killed during scenario
         self.permanently_failed_agents: Set[str] = set()  # Failed to reconnect
-        self.killed_agent_configs: Dict[str, Dict[str, Any]] = {}  # 保存被杀死agent的配置用于重连
+        self.killed_agent_configs: Dict[str, Dict[str, Any]] = {}  # Save killed agent configs for reconnection
         
         # Timing control
         self.phase_timers: Dict[str, float] = {}
@@ -169,7 +169,7 @@ class FailStormRunner:
         default_config = {
             "scenario": {
                 "protocol": "simple_json",
-                "agent_count": 3,  # 从config文件读取，这里只是默认值
+                "agent_count": 3,  # Read from config file normally; default value here
                 "kill_fraction": 0.3,
                 "fault_injection_time": 60.0,
                 "total_runtime": 120.0,
@@ -239,20 +239,20 @@ class FailStormRunner:
         self.shutdown_event.set()
 
     def _is_port_available(self, host: str, port: int) -> bool:
-        """检查端口是否可用."""
+        """Check if the port is available."""
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.settimeout(1)
                 result = sock.connect_ex((host, port))
-                return result != 0  # 如果连接失败，端口可用
+                return result != 0  # If connection fails, the port is available
         except Exception:
             return False
 
     def _find_available_ports(self, host: str, base_port: int, count: int) -> List[int]:
-        """查找连续的可用端口."""
+        """Find a sequence of available ports."""
         available_ports = []
         port = base_port
-        max_attempts = 1000  # 最多尝试1000个端口
+        max_attempts = 1000  # Try at most 1000 ports
         
         while len(available_ports) < count and port < base_port + max_attempts:
             if self._is_port_available(host, port):
@@ -260,7 +260,7 @@ class FailStormRunner:
             port += 1
         
         if len(available_ports) < count:
-            raise RuntimeError(f"无法找到 {count} 个可用端口，从 {base_port} 开始")
+            raise RuntimeError(f"Unable to find {count} available ports starting from {base_port}")
         
         return available_ports
 
@@ -415,7 +415,7 @@ class FailStormRunner:
         host = self.config["agents"]["host"]
         protocol = self.config["scenario"]["protocol"]
         
-        # 查找可用端口
+        # Find available ports
         try:
             available_ports = self._find_available_ports(host, base_port, agent_count)
             self.output.success(f"Found available ports: {available_ports}")
@@ -437,7 +437,7 @@ class FailStormRunner:
         # Create agents with ShardWorkerExecutor using real QA data
         for i in range(agent_count):
             agent_id = f"shard{i}"
-            port = available_ports[i]  # 使用分配的可用端口
+            port = available_ports[i]  # Use the assigned available port
             
             # Define neighbors (ring topology)
             neighbors = {
@@ -466,10 +466,10 @@ class FailStormRunner:
                 data_file=str(shard_data_file),
                 neighbors=neighbors,
                 output=self.output,
-                force_llm=True  # 强制使用LLM模式
+                force_llm=True  # Force LLM mode
             )
             
-            # 为worker添加metrics收集器引用
+            # Add a reference to the metrics collector for the worker
             executor.worker.metrics_collector = self.metrics_collector
             
             # Store the executor
@@ -514,7 +514,7 @@ class FailStormRunner:
             # Track agent for fault injection (using in-process simulation)
             # Note: We simulate process failure by stopping agents, not actual SIGKILL
             
-            # 显示协议特定信息
+            # Show protocol-specific information
             if protocol.lower() == "anp":
                 self.output.progress(f"🚀 [ANP] Created {agent_id} - HTTP: {port}, WebSocket: {port + 1000}")
                 self.output.progress(f"📄 [ANP] Shard data: {shard_data_file.name}")
@@ -556,8 +556,8 @@ class FailStormRunner:
         self.output.success(f"Document broadcast: {successful_deliveries}/{total_targets} deliveries successful")
 
     async def _execute_normal_phase(self) -> None:
-        """Execute normal Shard QA collaborative retrieval task for 30 seconds."""
-        # 使用配置的正常阶段持续时间，如果没有配置则使用30秒
+        """Execute normal Shard QA collaborative retrieval task for the configured duration."""
+        # Use configured normal phase duration; default to 30 seconds if not set
         normal_phase_duration = self.config.get("shard_qa", {}).get("normal_phase_duration", 30.0)
         
         self.output.progress(f"Running Shard QA collaborative retrieval for {normal_phase_duration}s...")
@@ -684,7 +684,7 @@ class FailStormRunner:
             try:
                 agent = self.agents[agent_id]
                 
-                # 保存agent配置用于重连
+                # Save agent configuration for reconnection
                 agent_config = {
                     "agent_id": agent_id,
                     "host": agent.host,
@@ -706,7 +706,7 @@ class FailStormRunner:
                 
                 # Remove from active tracking but keep worker
                 del self.agents[agent_id]
-                # 不删除shard_workers，重连时需要
+                # Do not remove shard_workers; needed for reconnection
                 killed_agents.add(agent_id)
                 
                 # Update agent state in metrics
@@ -854,12 +854,13 @@ class FailStormRunner:
                     for group_id in [0, 1]:
                         result = await worker.worker.start_task(group_id)
                         task_count += 1
-                        
                         # Fix logic: distinguish between finding answer vs not finding answer  
-                    result_str = str(result).lower() if result else ""
-                    if (result and 
-                        ("document search success" in result_str or "answer_found:" in result_str) and 
-                        "no answer" not in result_str):
+                        result_str = str(result).lower() if result else ""
+                        if (
+                            result
+                            and ("document search success" in result_str or "answer_found:" in result_str)
+                            and "no answer" not in result_str
+                        ):
                             # Show minimal search result from agent
                             if "DOCUMENT SEARCH SUCCESS" in result:
                                 self.output.progress(f"🔍 [{agent_id}] Found answer")
@@ -938,7 +939,7 @@ class FailStormRunner:
             host = config["host"]
             original_port = config["port"]
             
-            # 查找新的可用端口，而不是重用原端口
+            # Find a new available port instead of reusing the original
             try:
                 available_ports = self._find_available_ports(host, original_port, 1)
                 port = available_ports[0]
@@ -948,13 +949,13 @@ class FailStormRunner:
                 self.output.error(f"No available ports found for reconnecting {agent_id}")
                 return False
             
-            # 重新获取shard worker
+            # Retrieve the shard worker again
             shard_worker = config["shard_worker"]
             if not shard_worker:
                 self.output.error(f"No shard worker found for {agent_id}")
                 return False
             
-            # 重新创建agent
+            # Recreate the agent
             if protocol.lower() == "a2a":
                 agent = await BaseAgent.create_a2a(
                     agent_id=agent_id,
@@ -987,18 +988,18 @@ class FailStormRunner:
                 self.output.error(f"Unsupported protocol for reconnection: {protocol}")
                 return False
             
-            # 重新注册到mesh网络
+            # Re-register to the mesh network
             await self.mesh_network.register_agent_async(agent)
             self.agents[agent_id] = agent
             
-            # 重新建立连接
+            # Re-establish connections
             await self._reestablish_agent_connections(agent_id)
             
-            # 验证ANP协议连接
+            # Validate ANP protocol connection
             protocol_name = protocol.upper()
             self.output.success(f"🔗 [{protocol_name}] Agent {agent_id} RECONNECTED on port {port}")
             
-            # 验证ANP特有功能
+            # Validate ANP-specific features
             if protocol.lower() == "anp":
                 self.output.success(f"📡 [ANP] WebSocket endpoint: ws://127.0.0.1:{port + 1000}")
                 self.output.success(f"🌐 [ANP] HTTP REST API: http://127.0.0.1:{port}")
@@ -1011,9 +1012,9 @@ class FailStormRunner:
             return False
     
     async def _reestablish_agent_connections(self, agent_id: str) -> None:
-        """重新建立agent与其他节点的连接."""
+        """Re-establish connections between the agent and other nodes."""
         try:
-            # 连接到所有存活的agent
+            # Connect to all live agents
             for other_agent_id in self.agents.keys():
                 if other_agent_id != agent_id:
                     try:
@@ -1195,7 +1196,7 @@ async def main():
     total_runtime = runner.config["scenario"]["total_runtime"]
     fault_injection_time = runner.config["scenario"]["fault_injection_time"]
     
-    # 确保total_runtime足够长以容纳标准的故障注入时间
+    # Ensure total_runtime is long enough to include the standard fault injection time
     if total_runtime < 120:
         print(f"⚠️  Warning: Runtime {total_runtime}s is shorter than recommended 120s for proper fail-storm testing")
         print("   Consider using --runtime 120 for standard Gaia Fail-Storm evaluation")

@@ -2,8 +2,8 @@
 """
 A2A Worker (protocol-specific)
 
-- 继承 QAWorkerBase，使用 A2A 原生 SDK 将其包装成一个可执行的 Agent
-- 仅负责“通信适配层”：提取用户输入文本 → 调用基类 answer() → 通过 A2A 事件返回
+- Inherits QAWorkerBase and wraps it using the native A2A SDK into an executable Agent
+- Responsible only for the "communication adapter layer": extract user input text -> call base class answer() -> return via A2A events
 """
 
 from __future__ import annotations
@@ -26,23 +26,23 @@ if str(core_path) not in sys.path:
     sys.path.insert(0, str(core_path))
 from qa_worker_base import QAWorkerBase
 
-# A2A SDK（必需依赖）
+# A2A SDK (required dependency)
 from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events import EventQueue
 from a2a.utils import new_agent_text_message
 
 
 class A2AQAWorker(QAWorkerBase):
-    """目前不需要额外逻辑，保留扩展点。"""
+    """No additional logic is needed at the moment; kept as an extension point."""
     pass
 
 
 class QAAgentExecutor(AgentExecutor):
     """
-    A2A 原生 Executor 外壳：
-      - 从 RequestContext 中抽取文本（支持多种 A2A 结构）
-      - 调用 A2AQAWorker.answer()
-      - 通过 EventQueue 返回文本消息
+    A2A native Executor wrapper:
+      - Extract text from RequestContext (supports multiple A2A shapes)
+      - Call A2AQAWorker.answer()
+      - Return text messages via EventQueue
     """
 
     def __init__(self, config: Optional[dict] = None, output=None):

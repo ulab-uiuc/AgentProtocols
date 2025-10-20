@@ -434,7 +434,7 @@ class MetaProtocolRunner(FailStormRunnerBase):
                         else:
                             continue
                         
-                        # 初始化统一加超时（所有协议都建议加）
+                        # Initialize统一加超时（所有协议都建议加）
                         try:
                             await asyncio.wait_for(adapter.initialize(), timeout=10.0)
                         except asyncio.TimeoutError:
@@ -957,7 +957,7 @@ class MetaProtocolRunner(FailStormRunnerBase):
             # 注意：Meta 跑法的 create_agent 并不依赖 executor，这里传 None
             new_agent = await self.create_agent(agent_id, "127.0.0.1", port, executor=None)
 
-            # 维护本地字典
+            # 维护local字典
             self.agents[agent_id] = new_agent
             self.killed_agents.discard(agent_id)
 

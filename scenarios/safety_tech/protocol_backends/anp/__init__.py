@@ -26,7 +26,7 @@ __all__ = [
     "analyze_anp_privacy"
 ]
 
-# 自动注册发送后端
+# Auto-register sending backend
 try:
     from scenarios.safety_tech.protocol_backends.common.interfaces import register_backend
     from .client import ANPProtocolBackend

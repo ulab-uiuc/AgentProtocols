@@ -1,5 +1,5 @@
 """
-A2AAdapter - A2A协议适配器实现
+A2AAdapter - A2A protocol adapter implementation
 """
 
 import json

@@ -321,7 +321,7 @@ class ACPServerAdapter(BaseServerAdapter):
             host=host,
             port=port,
             log_level="error",  # Minimize server logs
-            lifespan="off"     # 禁用lifespan避免CancelledError
+            lifespan="off"     # Disable lifespan to avoid CancelledError
         )
         server = uvicorn.Server(config)
 

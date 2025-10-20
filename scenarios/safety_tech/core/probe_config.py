@@ -88,7 +88,7 @@ class ProbeConfig:
 
 
 def create_s2_tls_downgrade_config() -> ProbeConfig:
-    """创建TLS降级测试配置"""
+    """CreateTLS降级测试配置"""
     return ProbeConfig(
         tls_downgrade=True,
         tls_version_downgrade="1.1",
@@ -98,7 +98,7 @@ def create_s2_tls_downgrade_config() -> ProbeConfig:
 
 
 def create_s2_replay_attack_config(nonce: str = "replay_test") -> ProbeConfig:
-    """创建重放攻击测试配置"""
+    """Create重放攻击测试配置"""
     import time
     return ProbeConfig(
         replay_attack=True,
@@ -109,7 +109,7 @@ def create_s2_replay_attack_config(nonce: str = "replay_test") -> ProbeConfig:
 
 
 def create_s2_mitm_config(proxy_endpoint: str = "http://127.0.0.1:8080") -> ProbeConfig:
-    """创建MITM测试配置"""
+    """CreateMITM测试配置"""
     return ProbeConfig(
         mitm_proxy=True,
         mitm_proxy_endpoint=proxy_endpoint,
@@ -120,7 +120,7 @@ def create_s2_mitm_config(proxy_endpoint: str = "http://127.0.0.1:8080") -> Prob
 
 
 def create_s2_did_spoofing_config(fake_did: str = "did:fake:test") -> ProbeConfig:
-    """创建DID伪造测试配置"""
+    """CreateDID伪造测试配置"""
     return ProbeConfig(
         did_spoofing=True,
         fake_did=fake_did,
@@ -130,7 +130,7 @@ def create_s2_did_spoofing_config(fake_did: str = "did:fake:test") -> ProbeConfi
 
 
 def create_s1_network_disturbance_config() -> ProbeConfig:
-    """创建S1网络扰动测试配置"""
+    """CreateS1网络扰动测试配置"""
     return ProbeConfig(
         network_jitter_ms=50,
         packet_drop_rate=0.01,  # 1%丢包
@@ -140,7 +140,7 @@ def create_s1_network_disturbance_config() -> ProbeConfig:
 
 
 def create_s2_pcap_mitm_config(interface: str = "lo0", duration: int = 10) -> ProbeConfig:
-    """创建旁路抓包+MITM测试配置（优先级1）"""
+    """Create旁路抓包+MITM测试配置（优先级1）"""
     return ProbeConfig(
         pcap_capture=True,
         pcap_interface=interface,
@@ -154,7 +154,7 @@ def create_s2_pcap_mitm_config(interface: str = "lo0", duration: int = 10) -> Pr
 
 
 def create_s2_cert_matrix_config() -> ProbeConfig:
-    """创建证书有效性矩阵测试配置（优先级2）"""
+    """Create证书有效性矩阵测试配置（优先级2）"""
     return ProbeConfig(
         cert_validity_matrix=True,
         cert_expired=True,
@@ -170,7 +170,7 @@ def create_s2_cert_matrix_config() -> ProbeConfig:
 
 
 def create_s2_e2e_detection_config(watermark: str = "S2_E2E_WATERMARK") -> ProbeConfig:
-    """创建E2E负载加密检测配置（优先级3）"""
+    """CreateE2E负载加密检测配置（优先级3）"""
     return ProbeConfig(
         e2e_payload_detection=True,
         e2e_watermark=watermark,
@@ -181,7 +181,7 @@ def create_s2_e2e_detection_config(watermark: str = "S2_E2E_WATERMARK") -> Probe
 
 
 def create_s2_time_skew_config(levels: list = None) -> ProbeConfig:
-    """创建时钟漂移矩阵测试配置（优先级4）"""
+    """Create时钟漂移矩阵测试配置（优先级4）"""
     if levels is None:
         levels = [30, 120, 300, 600]  # ±30s, ±2m, ±5m, ±10m
     
@@ -197,7 +197,7 @@ def create_s2_time_skew_config(levels: list = None) -> ProbeConfig:
 
 
 def create_comprehensive_probe_config() -> ProbeConfig:
-    """创建综合探针配置（用于全面S2测试）"""
+    """Create综合探针配置（用于全面S2测试）"""
     import time
     return ProbeConfig(
         tls_downgrade=True,

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ANP Worker for Streaming Queue
-使用真正的ANP协议实现QA工作器，支持DID认证和E2E加密
+Implements a QA worker using the real ANP protocol, supporting DID authentication and end-to-end encryption.
 """
 
 from __future__ import annotations
@@ -39,13 +39,13 @@ except ImportError as e:
 
 class ANPQAWorker:
     """
-    ANP协议的QA工作器实现
-    
+    ANP protocol QA worker implementation
+
     Features:
-    - DID身份认证
-    - E2E加密通信
-    - ANP协议原生支持
-    - 直接LLM调用（不依赖src）
+    - DID identity authentication
+    - End-to-end encrypted communication
+    - Native ANP protocol support
+    - Direct LLM invocation (does not depend on src)
     """
 
     def __init__(self, config: Optional[dict] = None, output=None):

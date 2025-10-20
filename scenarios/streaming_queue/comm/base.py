@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Comm Backend Base
-抽象出网络通信层，AgentNetwork 不再直接依赖具体协议/HTTP。
+Abstract the network communication layer so AgentNetwork no longer directly depends on specific protocols/HTTP.
 """
 
 from __future__ import annotations
@@ -11,13 +11,13 @@ from typing import Any, Dict, Optional
 
 class BaseCommBackend(abc.ABC):
     """
-    抽象通信后端：
-      - register_endpoint: 注册一个 agent 的服务地址（或者 inproc 句柄）
-      - connect: （可选）建立连接/预热
-      - send: 从 src 向 dst 发送一条消息，返回协议原生响应
-      - health_check: 探活
-      - close: 关闭资源
-      - record_retry/record_error: 记录连接重试和网络错误（可选实现）
+        Abstract communication backend:
+            - register_endpoint: Register the service address of an agent (or an inproc handle)
+            - connect: (optional) establish connections/warm-up
+            - send: Send a message from src to dst, return the protocol-native Response
+            - health_check: Liveness probe
+            - close: Close resources
+            - record_retry/record_error: Record connection retries and network errors (optional)
     """
     
     def __init__(self):
@@ -33,7 +33,7 @@ class BaseCommBackend(abc.ABC):
         ...
 
     async def connect(self, src_id: str, dst_id: str) -> None:
-        """某些协议需要显式建连；默认 no-op。"""
+        """Some protocols require explicit connection setup; default to no-op."""
         return None
 
     @abc.abstractmethod
@@ -45,7 +45,7 @@ class BaseCommBackend(abc.ABC):
         ...
 
     async def close(self) -> None:
-        """关闭底层资源（HTTP 客户端、socket 等）。默认 no-op。"""
+        """Close underlying resources (HTTP clients, sockets, etc.). Default to no-op."""
         return None
     
     def record_retry(self, agent_id: str) -> None:

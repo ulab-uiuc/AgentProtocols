@@ -77,7 +77,7 @@ class S2MetaProtocolRunner(RunnerBase):
             self.test_results = await self.coordinator.run_s2_security_test()
             
             # Display results with detailed S2 analysis
-            # 尝试获取详细的S2分析结果
+            # Try获取详细的S2分析结果
             s2_detailed_results = getattr(self.coordinator, '_last_s2_detailed_results', None)
             self.coordinator.display_results(self.test_results, s2_detailed_results)
             

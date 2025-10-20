@@ -14,13 +14,13 @@ from .agents import (
 )
 from .analyzer import ACPPrivacyAnalyzer, analyze_acp_privacy
 
-# 自动注册发送后端
+# Auto-register发送后端
 try:
     from scenarios.safety_tech.protocol_backends.common.interfaces import register_backend
     from .client import ACPProtocolBackend
     register_backend('acp', ACPProtocolBackend())
 except Exception:
-    # 注册失败不应阻塞模块导入；运行时会显式报错
+    # 注册失败不应阻塞module导入；运行时会显式报错
     pass
 
 __all__ = [

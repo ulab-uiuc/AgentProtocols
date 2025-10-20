@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-ANP 原生客户端：Safety-Tech 中通过本地 HTTP shim 的 /message 入站，
+ANP 原生客户端：Safety-Tech 中通过local HTTP shim 的 /message 入站，
 内部由 SimpleNode 使用原生 WS 通道向对端传递并回投 /deliver。
 禁止 mock/fallback；仅按真实部署调用。
 """
@@ -35,7 +35,7 @@ class ANPProtocolBackend(BaseProtocolBackend):
         probe_results = {}
         client_kwargs = {}
         
-        # 处理探针配置
+        # Process探针配置
         if probe_config:
             # TLS降级探针
             if probe_config.get('tls_downgrade'):
@@ -115,7 +115,7 @@ class ANPProtocolBackend(BaseProtocolBackend):
                 modified_payload = e2e_detector.inject_watermark_payload(original_payload)
                 txt = modified_payload.get('text', txt)
                 
-                # 创建明文探测payload
+                # Create明文探测payload
                 if probe_config.get('e2e_probe_payload'):
                     probe_payload = e2e_detector.create_plaintext_probe_payload()
                     txt += f" [PROBE_PAYLOAD: {probe_payload['probe_markers']['credit_card']}]"
@@ -167,7 +167,7 @@ class ANPProtocolBackend(BaseProtocolBackend):
         
         try:
             async with httpx.AsyncClient(**client_kwargs) as client:
-                # 如果有correlation_id，优先发送到/message端点（兼容现有逻辑）
+                # If有correlation_id，优先发送到/message端点（兼容现有逻辑）
                 if isinstance(corr, str) and corr:
                     message_payload = {
                         "text": txt,
@@ -210,13 +210,13 @@ class ANPProtocolBackend(BaseProtocolBackend):
         try:
             role_l = role.lower()
             
-            # 使用Python直接启动服务器，需要设置正确的路径
+            # 使用Python直接启动服务器，需要Setup正确的路径
             import os
             from pathlib import Path
             
-            # 找到项目根目录（包含script目录的地方）
+            # 找到项目root directory（包含script目录的地方）
             current_file = Path(__file__).resolve()
-            project_root = current_file.parent.parent.parent.parent.parent  # 从protocol_backends/anp/client.py回到项目根目录
+            project_root = current_file.parent.parent.parent.parent.parent  # 从protocol_backends/anp/client.py回到项目root directory
             
             code = (
                 f"import sys; sys.path.insert(0, '{project_root}');"
@@ -225,7 +225,7 @@ class ANPProtocolBackend(BaseProtocolBackend):
                 "server.run()"
             )
             
-            # 设置环境变量和工作目录为项目根目录
+            # Setup环境变量和工作目录为项目root directory
             env = os.environ.copy()
             
             proc = subprocess.Popen(

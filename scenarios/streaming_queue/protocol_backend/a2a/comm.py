@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-A2A Comm Backend (HTTP + 原生事件格式)
-放置位置：agent_network/script/streaming_queue/protocol_backend/a2a/comm.py
+A2A Comm Backend (HTTP + native event format)
+Location: agent_network/script/streaming_queue/protocol_backend/a2a/comm.py
 
-说明：
-- 直接走 A2A Server 的 /message 接口与事件流结构
-- 集成“轻量 Host”，可在本进程内启动一个 FastAPI + Uvicorn 服务来承载任意 AgentExecutor
-- 不再使用自定义 adapter
+Notes:
+- Directly uses the A2A Server's /message endpoint and event stream structure
+- Integrates a lightweight host that can start a FastAPI + Uvicorn service in-process to host any AgentExecutor
+- No longer uses a custom adapter
 """
 
 from __future__ import annotations
@@ -18,10 +18,10 @@ from typing import Any, Dict, Optional
 
 import httpx
 
-# A2A 的执行器接口（必需依赖）
+# A2A executor interface (required dependency)
 from a2a.server.agent_execution import AgentExecutor  # type: ignore
 
-# ------------------- Comm Base 引用 -------------------
+# ------------------- Comm Base import -------------------
 import sys
 from pathlib import Path
 
@@ -38,13 +38,13 @@ except ImportError as e:
 
 
 # ==========================
-# 内嵌 Host (FastAPI/Uvicorn)
+# Embedded Host (FastAPI/Uvicorn)
 # ==========================
 
-# 为了最小依赖/快速启动，我们把 FastAPI、Uvicorn 的导入放在用到时再做（延迟导入）。
-# 这样不用 Host 功能也不会强依赖它们。
+# To minimize dependencies/fast startup, delay importing FastAPI and Uvicorn until they are needed.
+# This way the Host functionality does not force heavy dependencies when not used.
 
-# 移除简化类，使用真正的 A2A 组件
+# Remove simplified class, use the real A2A components
 
 @dataclass
 class A2AAgentHandle:
@@ -67,10 +67,10 @@ class A2AAgentHandle:
 
 async def _start_a2a_host(agent_id: str, host: str, port: int, executor: AgentExecutor) -> A2AAgentHandle:
     """
-    启动一个极简 A2A Host（/message + /health），使用 Starlette 纯 JSON，
-    不依赖 Pydantic/BaseModel。
+    Start a minimal A2A Host (/message + /health) using Starlette pure JSON,
+    without relying on Pydantic/BaseModel.
     """
-    # 延迟导入（仅在需要 host 时依赖这些库）
+    # Delayed import (only depend on these libraries when host is needed)
     from starlette.applications import Starlette
     from starlette.responses import JSONResponse
     from starlette.requests import Request
@@ -83,65 +83,65 @@ async def _start_a2a_host(agent_id: str, host: str, port: int, executor: AgentEx
         except Exception:
             payload = {}
 
-        # 兼容 A2A 入参结构：{"id": "...", "params": {"message": {...}}}
+        # Compatible with A2A input structure: {"id": "...", "params": {"message": {...}}}
         msg = (payload.get("params") or {}).get("message") or {}
         parts = msg.get("parts") or []
         text = ""
         if parts and isinstance(parts, list) and isinstance(parts[0], dict):
-            # 兼容 {"kind":"text","text":"..."} / {"kind":"text","data":"..."}
+            # Support {"kind":"text","text":"..."} / {"kind":"text","data":"..."}
             text = parts[0].get("text") or parts[0].get("data") or ""
 
-        # 导入真正的 A2A 组件
+        # Import the real A2A components
         from a2a.server.agent_execution import RequestContext
         from a2a.server.events import EventQueue
         from a2a.types import Message, MessageSendParams, Role, TextPart
         
-        # 创建真正的 A2A Message 对象
+        # Create the real A2A Message object
         if text:
-            # 手动创建用户消息
+            # Manually create a user message
             message = Message(
                 role=Role.user,
                 parts=[TextPart(text=text)],
                 messageId=str(time.time_ns())
             )
         else:
-            # 尝试从原始 payload 构造 Message
+            # Try to construct Message from original payload
             msg_data = payload.get("params", {}).get("message", {})
             if msg_data:
-                # 从字典构造 Message 对象
+                # Construct Message object from dict
                 message = Message.model_validate(msg_data)
             else:
-                # 默认状态消息
+                # Default status message
                 message = Message(
                     role=Role.user,
                     parts=[TextPart(text="status")],
                     messageId=str(time.time_ns())
                 )
         
-        # 创建 MessageSendParams 和 RequestContext
+        # Create MessageSendParams and RequestContext
         params = MessageSendParams(message=message)
         ctx = RequestContext(params)
         eq = EventQueue()
         
         await executor.execute(context=ctx, event_queue=eq)
 
-        # 从 A2A EventQueue 中获取所有事件
+        # Retrieve all events from the A2A EventQueue
         serializable_events = []
         try:
             while not eq.queue.empty():
                 event = await eq.dequeue_event()
                 if event:
                     if hasattr(event, 'model_dump'):
-                        # Pydantic v2 方式 - 使用 mode='json' 确保枚举等被正确序列化
+                        # Pydantic v2 style - use mode='json' to ensure enums etc. are serialized correctly
                         serializable_events.append(event.model_dump(mode='json'))
                     elif hasattr(event, 'dict'):
-                        # Pydantic v1 方式
+                        # Pydantic v1 style
                         serializable_events.append(event.dict())
                     else:
-                        # 如果已经是字典，直接使用
+                        # If already a dict, use it directly
                         serializable_events.append(event)
         except:
-            # 如果队列为空或出现异常，使用空列表
+            # If queue is empty or an exception occurs, fall back to empty list
             pass
 
         return JSONResponse({"events": serializable_events})
@@ -162,7 +162,7 @@ async def _start_a2a_host(agent_id: str, host: str, port: int, executor: AgentEx
         await server.serve()
 
     task = asyncio.create_task(_serve())
-    await asyncio.sleep(0.3)  # 等端口起来
+    await asyncio.sleep(0.3)  # Wait for the port to come up
 
     return A2AAgentHandle(
         agent_id=agent_id,
@@ -175,30 +175,30 @@ async def _start_a2a_host(agent_id: str, host: str, port: int, executor: AgentEx
 
 
 # ==========================
-# 通信后端（含 Host 管理）
+# Comm Backend (including host management)
 # ==========================
 
 class A2ACommBackend(BaseCommBackend):
     """
-    - 维护 agent_id -> base_url
-    - 负责 /message 调用（发送/接收）
-    - 可在本进程 spawn 本地 A2A host（spawn_local_agent）
+    - Maintains agent_id -> base_url mapping
+    - Responsible for /message calls (send/receive)
+    - Can spawn a local A2A host in-process (spawn_local_agent)
     """
 
     def __init__(self, httpx_client: httpx.AsyncClient | None = None, request_timeout: float = 60.0):
         self._client = httpx_client or httpx.AsyncClient(timeout=request_timeout)
         self._own_client = httpx_client is None
         self._addr: Dict[str, str] = {}        # agent_id -> base_url
-        self._hosts: Dict[str, A2AAgentHandle] = {}  # 若由本进程启动，则保存句柄（便于关闭）
+        self._hosts: Dict[str, A2AAgentHandle] = {}  # If started in-process, keep handle for shutdown
 
-    # ---------- endpoint 注册 ----------
+    # ---------- endpoint registration ----------
     async def register_endpoint(self, agent_id: str, address: str) -> None:
         self._addr[agent_id] = address.rstrip("/")
 
-    # ---------- 本地 Host 管理 ----------
+    # ---------- local Host management ----------
     async def spawn_local_agent(self, agent_id: str, host: str, port: int, executor: AgentExecutor) -> A2AAgentHandle:
         """
-        启动一个本地 A2A Host，并自动 register_endpoint。
+        Start a local A2A Host and automatically register its endpoint.
         """
         if agent_id in self._hosts:
             raise RuntimeError(f"[A2ACommBackend] local agent already exists: {agent_id}")
@@ -213,13 +213,13 @@ class A2ACommBackend(BaseCommBackend):
             await h.stop()
         self._addr.pop(agent_id, None)
 
-    # ---------- 发送消息 ----------
+    # ---------- send message ----------
     async def send(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Any:
         """
-        发送一条消息到 dst 的 A2A /message。
-        payload 支持：
-          1) {"text":"..."} 或 {"parts":[{"kind":"text","text":"..."}]}
-          2) 已是完整 A2A message 结构（含 role/parts），则直接透传到 params.message
+        Send a message to the dst's A2A /message endpoint.
+        payload supports:
+          1) {"text":"..."} or {"parts":[{"kind":"text","text":"..."}]}
+          2) Full A2A message structure (including role/parts) which will be forwarded as params.message
         """
         base = self._addr.get(dst_id)
         if not base:
@@ -240,19 +240,19 @@ class A2ACommBackend(BaseCommBackend):
             "text": self._extract_text_from_events(data)
         }
 
-    # ---------- 健康检查 ----------
+    # ---------- health check ----------
     async def health_check(self, agent_id: str) -> bool:
         base = self._addr.get(agent_id)
         if not base:
             return False
-        # 先试 /health
+        # Try /health first
         try:
             r = await self._client.get(f"{base}/health")
             if r.status_code == 200:
                 return True
         except Exception:
             pass
-        # 退化：发一条 status 作为 message
+        # Fallback: send a status message to /message
         try:
             req = {
                 "id": str(time.time_ns()),
@@ -269,9 +269,9 @@ class A2ACommBackend(BaseCommBackend):
         except Exception:
             return False
 
-    # ---------- 关闭 ----------
+    # ---------- close ----------
     async def close(self) -> None:
-        # 关闭由本进程启动的 Host
+        # Shutdown any hosts started in this process
         for aid in list(self._hosts.keys()):
             try:
                 await self.stop_local_agent(aid)
@@ -282,7 +282,7 @@ class A2ACommBackend(BaseCommBackend):
 
     # -------------------- helpers --------------------
     def _to_a2a_message(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        # 已经是 A2A message 结构
+        # Already an A2A message structure
         if all(k in payload for k in ("role", "parts")):
             return payload
 
@@ -301,10 +301,10 @@ class A2ACommBackend(BaseCommBackend):
     def _extract_text_from_events(self, data: Dict[str, Any]) -> str:
         events = data.get("events") or []
         for ev in events:
-            # 与 a2a.utils.new_agent_text_message 对齐
+            # Align with a2a.utils.new_agent_text_message
             if ev.get("type") == "agent_text_message":
                 return ev.get("data") or ev.get("text") or ""
-            # 某些实现是 {"kind":"message","parts":[{"type":"text","text":"..."}]}
+            # Some implementations use {"kind":"message","parts":[{"type":"text","text":"..."}]}
             if ev.get("kind") == "message":
                 parts = ev.get("parts") or []
                 if parts and isinstance(parts[0], dict):
@@ -327,9 +327,9 @@ except ImportError as e:
 
 class A2ANetwork(NetworkBase):
     """
-    NetworkBase 的 A2A 具体实现：
-      - 用 A2ACommBackend 注入通信能力
-      - 额外提供 spawn_local_agent() 语法糖，用于在本进程启动执行器 HTTP 服务并自动 register
+    Concrete A2A implementation of NetworkBase:
+      - injects A2ACommBackend for communication capability
+      - additionally provides spawn_local_agent() convenience to start an in-process HTTP service for an executor and auto-register it
     """
     def __init__(self, httpx_client: Optional[httpx.AsyncClient] = None, request_timeout: float = 60.0):
         backend = A2ACommBackend(httpx_client=httpx_client, request_timeout=request_timeout)
@@ -337,10 +337,10 @@ class A2ANetwork(NetworkBase):
 
     async def spawn_local_agent(self, agent_id: str, host: str, port: int, executor: AgentExecutor) -> A2AAgentHandle:
         """
-        语法糖：在本进程启动一个 FastAPI+Uvicorn Host 承载该 executor，
-        并自动 register 到当前网络。
+        Convenience: start a FastAPI+Uvicorn host in-process to host the executor,
+        and automatically register it with the current network.
         """
-        # self._comm 类型即 A2ACommBackend
+        # self._comm is of type A2ACommBackend
         handle = await self._comm.spawn_local_agent(agent_id, host, port, executor)  # type: ignore[attr-defined]
         await self.register_agent(agent_id, handle.base_url)
         return handle

@@ -12,7 +12,7 @@ from typing import Any, Dict, Callable, Optional, TypedDict
 
 import uvicorn
 
-# 定义与client.py兼容的响应类型
+# 定义与client.py兼容的Response类型
 class AgoraTextResponse(TypedDict):
     text: str
 
@@ -91,7 +91,7 @@ def _build_receiver_with_llm_wrapper(agent_name: str):
         from agora.toolformers.langchain import LangChainToolformer  # type: ignore
         toolformer = LangChainToolformer(_LLMWrapperModel(role))
     except Exception:
-        # 尝试备用导入路径
+        # Try备用导入路径
         from agora import toolformers  # type: ignore
         toolformer = toolformers.LangChainToolformer(_LLMWrapperModel(role))
 
@@ -105,7 +105,7 @@ def _build_receiver_with_llm_wrapper(agent_name: str):
             text: 输入文本
 
         Returns:
-            符合Agora协议的文本响应
+            符合Agora协议的文本Response
         """
         try:
             from scenarios.safety_tech.core.llm_wrapper import generate_doctor_reply
@@ -135,9 +135,9 @@ def spawn_doctor(agent_name: str, port: int) -> None:
     """启动基于 llm_wrapper 的 Agora ReceiverServer。"""
     server = _build_receiver_with_llm_wrapper(agent_name)
     
-    # 尝试为Agora服务器添加健康检查端点
+    # Try为Agora服务器添加健康检查端点
     try:
-        # 检查服务器是否有添加路由的方法
+        # Check服务器是否有添加路由的方法
         if hasattr(server, 'app') and hasattr(server.app, 'get'):
             @server.app.get("/health")
             def health_check():

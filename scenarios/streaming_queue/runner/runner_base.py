@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 RunnerBase - 协议无关的运行器骨架
-负责：
+responsible for：
   * 加载配置 / 彩色输出
   * 调用子类实现的：创建网络 / 启动 agent / 协议通信（发指令给协调者）
   * 建拓扑、健康检查、调度/结果保存、清理
 
 子类需要至少实现：
   - create_network(self) -> AgentNetwork
-  - setup_agents(self) -> List[str]               # 返回 worker_ids
+  - setup_agents(self) -> List[str]               # Return worker_ids
   - send_command_to_coordinator(self, command:str) -> Dict|None
 
 可选覆盖：
@@ -81,7 +81,7 @@ class RunnerBase:
     def _load_config(self, config_path: str) -> dict:
         cfg_file = Path(__file__).parent.parent / config_path
         if not cfg_file.exists():
-            # 尝试与 runner 同目录的 config.yaml
+            # Try与 runner 同目录的 config.yaml
             cfg_file = Path(__file__).parent / config_path
         with open(cfg_file, "r", encoding="utf-8") as f:
             return yaml.safe_load(f)
@@ -92,7 +92,7 @@ class RunnerBase:
         raise NotImplementedError
 
     async def setup_agents(self) -> List[str]:
-        """创建并注册 Coordinator + Workers。返回 worker_ids。"""
+        """Create并注册 Coordinator + Workers。返回 worker_ids。"""
         raise NotImplementedError
 
     async def send_command_to_coordinator(self, command: str) -> Optional[Dict[str, Any]]:

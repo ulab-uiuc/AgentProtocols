@@ -27,8 +27,8 @@ async def main():
         print("🎵 Starting Agora Protocol Fail-Storm Recovery Test")
         print("=" * 60)
 
-        # 说明：base_runner 的解析逻辑会优先在 fail_storm_recovery/configs/ 下寻找纯文件名
-        # 传入多级相对路径会被再次拼接，导致找不到。改为只传文件名即可。
+        # Note: base_runner's parsing logic will look for plain filenames in fail_storm_recovery/configs/ first
+        # Passing multi-level relative paths will cause re-concatenation and result in not finding the file. Just pass the filename.
         # Create Agora runner with default config (will use configs/config_agora.yaml)
         runner = AgoraRunner()
 

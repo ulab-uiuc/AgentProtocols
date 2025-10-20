@@ -1,17 +1,18 @@
 """
 Agora Runner for GAIA Multi-Agent System
 
-该 Runner 负责：
-1. 读取 GAIA 任务与协议配置
-2. 创建并初始化 Agora 网络（Agent 创建逻辑已在网络内部完成）
-3. 调用通用 RunnerBase 执行工作流
-4. 统一的日志重定向（由 RunnerBase 提供）
+This Runner is responsible for:
+1. Loading GAIA task and protocol configuration
+2. Creating and initializing the Agora network (agent creation is handled internally by the network)
+3. Invoking the generic RunnerBase to execute the workflow
+4. Unified log redirection (provided by RunnerBase)
 
-使用方式：
+Usage:
     python -m script.gaia.runners.run_agora [config_path] [optional_log_file_name]
 
-如果未提供 config_path，将尝试使用 script/gaia/config/agora.yaml
+If config_path is not provided, it will default to script/gaia/config/agora.yaml
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -19,45 +20,45 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import sys
 
-# 路径设置
+# PathSetup
 HERE = Path(__file__).resolve().parent
 GAIA_ROOT = HERE.parent
 sys.path.insert(0, str(GAIA_ROOT))
 
-# 协议网络导入（Agent 创建已在网络内部处理，不再在 runner 中创建）
+# Protocol network import (agent instantiation is handled inside the network, not here)
 from protocol_backends.agora.network import AgoraNetwork
 
-# 基类 Runner
+# Base Runner
 from runners.runner_base import RunnerBase
 
 
 class AgoraRunner(RunnerBase):
-    """Agora 协议 Runner，实现 create_network 钩子。"""
+    """Agora protocol Runner, implements the create_network hook."""
     def __init__(self, config_path: str = "agora.yaml") -> None:
         super().__init__(config_path, protocol_name="agora")
 
-        # # 仅输出关键信息（其余逻辑在 network 内）
-        # print("🔧 Agora Runner 初始化完成")
-        # if self.config:
-        #     print(f"📦 Agora 协议配置键: {list(self.config.keys())}")
+    # # Print only key information (other logic is inside the network)
+    # print("🔧 Agora Runner initialized")
+    # if self.config:
+    #     print(f"📦 Agora protocol config keys: {list(self.config.keys())}")
 
     def create_network(self, general_config: Dict[str, Any]) -> AgoraNetwork:
         """
-        创建并返回 Agora 网络实例。
-        说明：Agent 的实例化/注册已移动到 AgoraNetwork 内部，不在此处处理。
+        Create and return an Agora network instance.
+        Note: Agent instantiation/registration has been moved inside AgoraNetwork and is not handled here.
         """
         try:
             print("ℹ️  Initializing NetworkBase and Agora Agents...")
             network = AgoraNetwork(config=general_config)
-            print("🌐 Agora Network 已创建（内部已处理 Agent 初始化）")
+            print("🌐 Agora Network created (agents initialized internally)")
             return network
         except Exception as e:
-            print(f"❌ 创建 Agora Network 失败: {e}")
+            print(f"❌ Failed to create Agora Network: {e}")
             raise
 
 
 async def main():
-    """Agora Runner 入口。"""
+    """Agora Runner entry point."""
     runner = AgoraRunner()
 
     try:        

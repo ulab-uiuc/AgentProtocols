@@ -96,10 +96,10 @@ class AgoraServerAdapter(BaseServerAdapter):
     def _create_toolformer(self, openai_api_key: Optional[str] = None, **kwargs) -> agora.Toolformer:
         """Create appropriate toolformer based on available dependencies."""
         
-        # 获取模型名称，默认是 'gpt-4o-mini'
+        # Get model name, default is 'gpt-4o-mini'
         model_name = kwargs.get('model', 'gpt-4o-mini')
 
-        # 尝试使用 Camel 框架
+        # Try using Camel framework
         try:
             import camel.types
             return agora.toolformers.CamelToolformer(
@@ -109,7 +109,7 @@ class AgoraServerAdapter(BaseServerAdapter):
         except ImportError:
             pass  # Fall back to LangChain
 
-        # 最后使用 LangChainToolformer 作为 fallback
+        # Finally use LangChainToolformer as fallback
         from langchain_openai import ChatOpenAI
         model = ChatOpenAI(model=model_name)
         return agora.toolformers.LangChainToolformer(model)

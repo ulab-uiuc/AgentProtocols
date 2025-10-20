@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 NetworkBase - Global scheduler and topology manager
-现在的实现：
-  * 仅登记 (agent_id -> endpoint)
-  * 通信全部通过 BaseCommBackend（由子类/外部注入）
+
+Current implementation:
+  * Registration only (agent_id -> endpoint)
+  * All communication goes through BaseCommBackend (injected by subclass/external)
 """
 
 from __future__ import annotations
@@ -13,27 +14,24 @@ import time
 from collections import defaultdict
 from typing import Any, Dict, Set, List, Optional
 
-# 指标（如无可选依赖，可自行降级为 no-op）
+# Metrics (falls back to no-op if optional dep isn't available)
 try:
     from metrics import RECOVERY_TIME  # type: ignore
 except Exception:
     class _Dummy:
-        def observe(self, *_args, **_kwargs): ...
+        def observe(self, *_args, **_kwargs):
+            ...
+
     RECOVERY_TIME = _Dummy()
 
-# 仅依赖抽象通信后端
+# Import path setup to locate comm backend within streaming_queue package
 import sys
 from pathlib import Path
 
-# Add streaming_queue to path for imports
-streaming_queue_path = Path(__file__).parent.parent
-if str(streaming_queue_path) not in sys.path:
-    sys.path.insert(0, str(streaming_queue_path))
-
-# Import BaseCommBackend with proper path handling
 current_file = Path(__file__).resolve()
-streaming_queue_dir = current_file.parent.parent  # 从 core 回到 streaming_queue
-sys.path.insert(0, str(streaming_queue_dir))
+streaming_queue_dir = current_file.parent.parent  # from core back to streaming_queue
+if str(streaming_queue_dir) not in sys.path:
+    sys.path.insert(0, str(streaming_queue_dir))
 
 from comm.base import BaseCommBackend
 
@@ -41,23 +39,23 @@ from comm.base import BaseCommBackend
 class NetworkBase:
     """Holds agents, their topology, and orchestrates traffic (protocol-agnostic)."""
 
-    def __init__(self, comm_backend: BaseCommBackend, metrics_collector=None):
+    def __init__(self, comm_backend: BaseCommBackend, metrics_collector: Optional[Any] = None) -> None:
         if comm_backend is None:
             raise ValueError("NetworkBase requires a concrete comm_backend.")
-        # 仅维护 id -> endpoint，不保存 Agent 实例
+        # Maintain only id -> endpoint; do not store Agent instances
         self._endpoints: Dict[str, str] = {}
         self._graph: Dict[str, Set[str]] = defaultdict(set)
         self._metrics: Dict[str, Any] = {}
         self._lock = asyncio.Lock()
         self._comm: BaseCommBackend = comm_backend
-        
-        # Set metrics collector if provided
-        if metrics_collector and hasattr(comm_backend, 'set_metrics_collector'):
+
+        # Optionally let the comm backend use a metrics collector
+        if metrics_collector and hasattr(comm_backend, "set_metrics_collector"):
             comm_backend.set_metrics_collector(metrics_collector)
 
     # --------------------------- CRUD ---------------------------
     async def register_agent(self, agent_id: str, address: str) -> None:
-        """注册 agent 的可达 endpoint（线程安全）。"""
+        """Register the reachable endpoint for an agent (thread-safe)."""
         async with self._lock:
             if agent_id in self._endpoints:
                 raise ValueError(f"Agent {agent_id} already exists.")
@@ -67,7 +65,7 @@ class NetworkBase:
             print(f"Registered agent: {agent_id} @ {address}")
 
     async def unregister_agent(self, agent_id: str) -> None:
-        """移除 agent 以及相关边。"""
+        """Remove an agent and its related edges."""
         async with self._lock:
             if agent_id not in self._endpoints:
                 raise KeyError(f"Agent {agent_id} not found.")
@@ -81,7 +79,7 @@ class NetworkBase:
                 self._graph[src_id].discard(agent_id)
 
     async def connect_agents(self, src_id: str, dst_id: str) -> None:
-        """创建一条有向边 src → dst（幂等）。"""
+        """Create a directed edge src → dst (idempotent)."""
         async with self._lock:
             if src_id not in self._endpoints or dst_id not in self._endpoints:
                 raise KeyError("Both agents must be registered first.")
@@ -89,18 +87,18 @@ class NetworkBase:
             if dst_id not in self._graph[src_id]:
                 self._graph[src_id].add(dst_id)
 
-            # 可选：让通信后端做建连/预热
+            # Optional: allow comm backend to prepare/establish connection
             await self._comm.connect(src_id, dst_id)
             print(f"Connected: {src_id} → {dst_id}")
 
     async def disconnect_agents(self, src_id: str, dst_id: str) -> None:
-        """移除一条有向边 src → dst。"""
+        """Remove a directed edge src → dst."""
         async with self._lock:
             if src_id in self._graph:
                 self._graph[src_id].discard(dst_id)
 
     async def kill_agents(self, agent_ids: Set[str]) -> None:
-        """模拟故障，直接移除节点与边。"""
+        """Simulate failure by removing nodes and edges directly."""
         self._metrics["failstorm_t0"] = time.time()
         async with self._lock:
             for aid in agent_ids:
@@ -114,15 +112,15 @@ class NetworkBase:
 
     # --------------------------- topology management ---------------------------
     def get_topology(self) -> Dict[str, List[str]]:
-        """返回当前网络拓扑。"""
+        """Return the current network topology."""
         return {src: list(dsts) for src, dsts in self._graph.items()}
 
     def get_agents(self) -> List[str]:
-        """返回所有已注册的 agent_id。"""
+        """Return all registered agent IDs."""
         return list(self._endpoints.keys())
 
     def setup_star_topology(self, center_id: str) -> None:
-        """以 center_id 为中心建立星型拓扑。"""
+        """Build a star topology with center_id as the hub."""
         if center_id not in self._endpoints:
             raise KeyError(f"Center agent {center_id} not found.")
 
@@ -132,7 +130,7 @@ class NetworkBase:
                 asyncio.create_task(self.connect_agents(center_id, agent_id))
 
     def setup_mesh_topology(self) -> None:
-        """全互联拓扑。"""
+        """Build a fully connected mesh topology."""
         agent_ids = list(self._endpoints.keys())
         for src_id in agent_ids:
             for dst_id in agent_ids:
@@ -141,7 +139,7 @@ class NetworkBase:
 
     # --------------------------- messaging ---------------------------
     async def route_message(self, src_id: str, dst_id: str, payload: Dict[str, Any], **kwargs) -> Any:
-        """若拓扑允许，则通过通信后端转发。"""
+        """If topology allows, forward message via the communication backend."""
         if dst_id not in self._graph.get(src_id, set()):
             raise PermissionError(f"{src_id} cannot reach {dst_id}.")
         return await self._comm.send(src_id, dst_id, payload, **kwargs)
@@ -149,7 +147,7 @@ class NetworkBase:
     async def broadcast_message(
         self, src_id: str, payload: Dict[str, Any], exclude: Optional[Set[str]] = None
     ) -> Dict[str, Any]:
-        """对外广播（仅对有边的邻居）。"""
+        """Broadcast to all neighbors (only those connected by edges)."""
         if src_id not in self._endpoints:
             raise KeyError(f"Source agent {src_id} not found.")
 

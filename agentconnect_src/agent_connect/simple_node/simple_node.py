@@ -44,7 +44,7 @@ class SimpleNode:
     def __init__(self,
                  host_domain: str,
                  host_port: str = "",
-                 host_ws_path: str = "/ws",  # 默认WebSocket路径为/ws
+                 host_ws_path: str = "/ws",  # Default WebSocket path is /ws
                  private_key_pem: Optional[str] = None,
                  did: Optional[str] = None,
                  did_document_json: Optional[str] = None,
@@ -56,7 +56,7 @@ class SimpleNode:
         if not self.host_ws_path.startswith('/'):
             self.host_ws_path = '/' + self.host_ws_path
 
-        # 构建完整的WebSocket URL
+        # Build the complete WebSocket URL
         base_url = f"wss://{host_domain}"
         if host_port:
             base_url += f":{host_port}"

@@ -601,7 +601,7 @@ class MetaProtocolCoordinator(QACoordinatorBase):
             import json
             import time
             
-            # 如果是相对路径，相对于 streaming_queue 目录
+            # If the path is relative, treat it as relative to the streaming_queue directory
             if not Path(self.result_file).is_absolute():
                 current_file = Path(__file__).resolve()
                 streaming_queue_dir = current_file.parent.parent.parent  # 从 meta_protocol 回到 streaming_queue

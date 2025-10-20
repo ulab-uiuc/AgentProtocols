@@ -5,7 +5,7 @@
 # Agora Worker (protocol-specific)
 
 # - 继承 QAWorkerBase，使用 Agora 协议包装成可执行的 Agent
-# - 仅负责"通信适配层"：提取用户输入文本 → 调用基类 answer() → 通过 Agora 返回
+# - 仅responsible for"通信适配层"：提取用户输入文本 → 调用基类 answer() → 通过 Agora 返回
 # """
 from __future__ import annotations
 import asyncio
@@ -15,7 +15,7 @@ from functools import wraps
 # Import Agora native SDK
 import agora
 
-# 允许多种导入相对路径（避免运行根目录不同导致的导入失败）
+# 允许多种导入相对路径（避免运行root directory不同导致的导入失败）
 import sys
 from pathlib import Path
 
@@ -127,7 +127,7 @@ class AgoraWorkerExecutor:
         输出格式: {"status": ..., "body": ...}
         """
         try:
-            # 提取agora格式内容
+            # Extractagora格式内容
             text = ""
             if isinstance(input_data, dict):
                 if "body" in input_data:
@@ -144,7 +144,7 @@ class AgoraWorkerExecutor:
                 raise ValueError("No input text provided")
             answer = await asyncio.wait_for(self.worker.answer(text), timeout=30.0)
 
-            # 返回agora格式
+            # Returnagora格式
             return {"status": "success", "body": answer}
 
         except asyncio.TimeoutError:

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ANP Coordinator for Streaming Queue
-使用真正的ANP协议实现QA协调器，支持DID认证和E2E加密
+Implements a QA coordinator using the real ANP protocol with DID authentication and end-to-end encryption.
 """
 
 from __future__ import annotations
@@ -35,13 +35,13 @@ except ImportError as e:
 
 class ANPQACoordinator(QACoordinatorBase):
     """
-    ANP协议的QA协调器实现
-    
+    QA coordinator implementation for the ANP protocol.
+
     Features:
-    - DID身份认证的工作器通信
-    - E2E加密的消息传输
-    - ANP协议原生支持
-    - 与streaming_queue QACoordinatorBase完全兼容
+    - Worker communication with DID-based authentication
+    - End-to-end encrypted messaging
+    - Native ANP protocol support
+    - Fully compatible with streaming_queue QACoordinatorBase
     """
 
     def __init__(self, config: Optional[dict] = None, output=None):
@@ -82,8 +82,8 @@ class ANPQACoordinator(QACoordinatorBase):
 
     async def send_to_worker(self, worker_id: str, question: str) -> Dict[str, Any]:
         """
-        Send question to worker via ANP protocol
-        
+        Send a question to a worker via the ANP protocol.
+
         This method maintains compatibility with QACoordinatorBase while adding
         ANP-specific features like DID authentication and encryption.
         """
@@ -153,7 +153,7 @@ class ANPQACoordinator(QACoordinatorBase):
         if not response:
             return "No response received"
         
-        # Check for streaming_queue compatible text field
+        # Check for streaming_queue-compatible text field
         if "text" in response:
             return response["text"]
         
@@ -179,7 +179,7 @@ class ANPQACoordinator(QACoordinatorBase):
         return str(response)
 
     def _verify_anp_response(self, response: Optional[Dict[str, Any]]) -> bool:
-        """Verify ANP response authentication"""
+        """Verify ANP response authentication."""
         if not response:
             return False
         
@@ -187,7 +187,7 @@ class ANPQACoordinator(QACoordinatorBase):
         return anp_meta.get("did_authenticated", False)
 
     async def get_anp_status(self) -> str:
-        """Get ANP-specific coordinator status"""
+        """Get ANP-specific coordinator status."""
         base_status = await self.get_status()
         
         anp_status = {
@@ -201,7 +201,7 @@ class ANPQACoordinator(QACoordinatorBase):
         return f"ANP Coordinator Status: {json.dumps(anp_status, indent=2)}"
 
     async def close(self):
-        """Close ANP coordinator and cleanup resources"""
+        """Close the ANP coordinator and clean up resources."""
         try:
             if self.node_session:
                 await self.node_session.close()
@@ -213,8 +213,8 @@ class ANPQACoordinator(QACoordinatorBase):
 # ================= ANP Executor for streaming_queue =================
 class ANPCoordinatorExecutor:
     """
-    ANP Coordinator Executor for streaming_queue compatibility
-    
+    ANP Coordinator Executor for streaming_queue compatibility.
+
     This class adapts the ANPQACoordinator to work with streaming_queue's
     agent execution model while maintaining full ANP protocol support.
     """
@@ -235,9 +235,9 @@ class ANPCoordinatorExecutor:
 
     async def execute(self, context, event_queue) -> None:
         """
-        Execute coordinator commands via ANP protocol
-        
-        Compatible with streaming_queue executor interface while providing
+        Execute coordinator commands via the ANP protocol.
+
+        Compatible with the streaming_queue executor interface while providing
         ANP-specific enhancements.
         """
         try:
@@ -277,7 +277,7 @@ class ANPCoordinatorExecutor:
             await event_queue.enqueue_event(error_event)
 
     def _extract_anp_command(self, raw_input: Any, context: Any) -> str:
-        """Extract command from ANP context"""
+        """Extract command from ANP context."""
         # Check for ANP metadata in context
         if hasattr(context, "anp_metadata"):
             anp_meta = context.anp_metadata
@@ -308,7 +308,7 @@ class ANPCoordinatorExecutor:
         return str(raw_input).strip().lower()
 
     async def _execute_anp_dispatch(self) -> str:
-        """Execute dispatch with ANP enhancements"""
+        """Execute dispatch with ANP enhancements."""
         try:
             result = await self.coordinator.dispatch_round()
             
@@ -331,7 +331,7 @@ ANP Metrics:
             return f"[ANP] Dispatch failed: {e}"
 
     def _get_anp_info(self) -> str:
-        """Get ANP protocol information"""
+        """Get ANP protocol information."""
         info = {
             "protocol": "ANP (Agent Network Protocol)",
             "version": "1.0",
@@ -351,7 +351,7 @@ ANP Metrics:
         return f"ANP Protocol Information:\n{json.dumps(info, indent=2)}"
 
     def _create_anp_event(self, result: str, command: str) -> Dict[str, Any]:
-        """Create ANP-enhanced event for streaming_queue"""
+        """Create an ANP-enhanced event for streaming_queue."""
         return {
             "type": "agent_text_message",
             "data": result,
@@ -366,7 +366,7 @@ ANP Metrics:
         }
 
     async def cancel(self, context, event_queue) -> None:
-        """Cancel ANP coordinator operations"""
+        """Cancel ANP coordinator operations."""
         cancel_msg = "[ANP] Coordinator operations cancelled"
         cancel_event = self._create_anp_event(cancel_msg, "cancel")
         await event_queue.enqueue_event(cancel_event)

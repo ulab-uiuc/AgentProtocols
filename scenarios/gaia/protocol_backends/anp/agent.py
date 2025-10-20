@@ -241,7 +241,7 @@ class ANPAgent(MeshAgent):
             # 4. 将服务器的运行作为一个可管理的后台任务
             self._node_task = asyncio.create_task(self._uvicorn_server.serve())
             
-            # 等待服务器完成启动。uvicorn.Server.started 是一个标志位
+            # Wait服务器完成启动。uvicorn.Server.started 是一个标志位
             await asyncio.sleep(0.5)
 
             if not self._uvicorn_server.started:
@@ -281,10 +281,10 @@ class ANPAgent(MeshAgent):
             # 这是 Uvicorn 官方推荐的优雅关闭方式
             self._uvicorn_server.should_exit = True
             
-            # 等待服务器任务真正结束
+            # Wait服务器任务真正结束
             if self._node_task and not self._node_task.done():
                 try:
-                    # 等待任务完成，它会在 should_exit=True 后自行退出
+                    # Wait任务完成，它会在 should_exit=True 后自行退出
                     await asyncio.wait_for(self._node_task, timeout=5.0)
                     self._log(f"✅ Uvicorn server on port {self.host_port} shut down.")
                 except asyncio.TimeoutError:
@@ -293,7 +293,7 @@ class ANPAgent(MeshAgent):
                 except asyncio.CancelledError:
                     pass # 任务已经被取消，是正常情况
 
-        # 清理所有相关状态
+        # Cleanup所有相关状态
         self._simple_node = None
         self._uvicorn_server = None
         self._node_task = None

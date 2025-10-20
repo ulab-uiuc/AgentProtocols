@@ -57,7 +57,7 @@ class AgoraRegistrationAdapter:
             "proof": proof
         }
         
-        # 发送注册请求到RG
+        # Send注册请求到RG
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{self.rg_endpoint}/register",
@@ -100,7 +100,7 @@ class AgoraRegistrationAdapter:
             return response.json()
     
     async def get_conversation_directory(self, conversation_id: str) -> Dict[str, Any]:
-        """获取会话目录"""
+        """Get会话目录"""
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{self.rg_endpoint}/directory",
@@ -114,7 +114,7 @@ class AgoraRegistrationAdapter:
             return response.json()
     
     async def _generate_agora_proof(self, agent_id: str, role: str) -> Dict[str, Any]:
-        """生成Agora协议证明"""
+        """GenerateAgora协议证明"""
         proof = {}
         
         # 1. Toolformer模型签名
@@ -146,7 +146,7 @@ class AgoraRegistrationAdapter:
         return proof
     
     async def _generate_observer_proof(self, observer_id: str) -> Dict[str, Any]:
-        """生成Observer证明（简化版）"""
+        """GenerateObserver证明（简化版）"""
         proof = {
             'observer_id': observer_id,
             'timestamp': time.time(),
@@ -154,7 +154,7 @@ class AgoraRegistrationAdapter:
             'observer_type': 'passive_listener'
         }
         
-        # 如果配置要求Observer证明，生成简单签名
+        # If配置要求Observer证明，生成简单签名
         if self.privacy_features.get('enable_observer_authentication', False):
             observer_signature = await self._generate_observer_signature(observer_id, proof['timestamp'])
             proof['observer_signature'] = observer_signature
@@ -162,7 +162,7 @@ class AgoraRegistrationAdapter:
         return proof
     
     async def _generate_toolformer_signature(self, agent_id: str, role: str) -> str:
-        """生成Toolformer模型签名"""
+        """GenerateToolformer模型签名"""
         model_name = self.toolformer_config.get('model', 'gpt-4o-mini')
         temperature = self.toolformer_config.get('temperature', 0.1)
         
@@ -183,7 +183,7 @@ class AgoraRegistrationAdapter:
         return f"toolformer_{model_name}_{signature_hash[:16]}"
     
     async def _generate_langchain_proof(self, agent_id: str) -> Dict[str, Any]:
-        """生成LangChain集成证明"""
+        """GenerateLangChain集成证明"""
         chain_id = f"agora_chain_{agent_id}_{int(time.time())}"
         
         langchain_proof = {
@@ -202,7 +202,7 @@ class AgoraRegistrationAdapter:
         return langchain_proof
     
     async def _generate_protocol_hash(self, agent_id: str, role: str) -> str:
-        """生成协议哈希验证"""
+        """Generate协议哈希验证"""
         protocol_data = {
             'protocol': 'agora',
             'version': '1.0',
@@ -219,17 +219,17 @@ class AgoraRegistrationAdapter:
         return hashlib.sha256(protocol_string.encode()).hexdigest()
     
     async def _generate_agent_signature(self, agent_id: str, role: str, timestamp: float) -> str:
-        """生成Agent身份签名"""
+        """GenerateAgent身份签名"""
         signature_data = f"{agent_id}:{role}:{timestamp}:agora"
         return hashlib.sha256(signature_data.encode()).hexdigest()[:32]
     
     async def _generate_observer_signature(self, observer_id: str, timestamp: float) -> str:
-        """生成Observer签名"""
+        """GenerateObserver签名"""
         signature_data = f"{observer_id}:observer:{timestamp}:agora"
         return hashlib.sha256(signature_data.encode()).hexdigest()[:24]
     
     def _generate_protocol_meta(self) -> Dict[str, Any]:
-        """生成协议元数据"""
+        """Generate协议元数据"""
         return {
             'protocol_version': '1.0',
             'supported_features': {
@@ -254,7 +254,7 @@ class AgoraRegistrationAdapter:
     async def simulate_impersonation_attack(self, target_agent_id: str, conversation_id: str) -> Dict[str, Any]:
         """模拟冒名顶替攻击"""
         try:
-            # 尝试使用空或伪造的证明注册
+            # Try使用空或伪造的证明注册
             fake_proof = {
                 'toolformer_signature': 'fake_signature_123',
                 'timestamp': time.time(),
@@ -426,7 +426,7 @@ class AgoraRegistrationAdapter:
     async def simulate_observer_auto_admission_attack(self, conversation_id: str) -> Dict[str, Any]:
         """模拟Observer自动准入攻击"""
         try:
-            # 尝试无证明注册Observer
+            # Try无证明注册Observer
             no_proof_request = {
                 "agent_id": f"unauthorized_observer_{int(time.time())}",
                 "conversation_id": conversation_id,

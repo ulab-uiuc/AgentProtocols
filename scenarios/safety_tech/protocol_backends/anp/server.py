@@ -49,7 +49,7 @@ class ANPServer:
         self.app = FastAPI(title=f"ANP {agent_name}")
         
         # 生成真实的DID和密钥对 - 必须成功，否则报错
-        # 导入DID生成工具
+        # ImportDID生成工具
         sys.path.insert(0, str(PROJECT_ROOT / "agentconnect_src"))
         from utils.did_generate import did_generate
         
@@ -76,7 +76,7 @@ class ANPServer:
         print(f"[ANP-{self.agent_name}] 初始化完成，DID: {self.did}")
 
     def _setup_routes(self):
-        """设置ANP标准路由"""
+        """SetupANP标准路由"""
         
         @self.app.get("/health")
         async def health():
@@ -131,7 +131,7 @@ class ANPServer:
                 if not content or not isinstance(content, list):
                     raise HTTPException(status_code=400, detail="Invalid input format")
                 
-                # 提取第一个文本内容
+                # Extract第一个文本内容
                 text_content = None
                 for item in content:
                     if isinstance(item, dict) and item.get("type") == "text":
@@ -162,12 +162,12 @@ class ANPServer:
         async def message(request: MessageRequest):
             """消息端点 - 兼容现有测试"""
             try:
-                print(f"[ANP-{self.agent_name}] 处理消息: {request.text[:50]}...")
+                print(f"[ANP-{self.agent_name}] processing message: {request.text[:50]}...")
                 
                 # 生成医生回复
                 reply = generate_doctor_reply(self.doctor_role, request.text)
                 
-                # 如果有correlation_id，投递回执到协调器
+                # If有correlation_id，投递回执到协调器
                 if request.correlation_id:
                     await self._deliver_receipt(request.correlation_id, reply)
                 
@@ -181,7 +181,7 @@ class ANPServer:
                 }
                 
             except Exception as e:
-                print(f"[ANP-{self.agent_name}] 处理消息失败: {e}")
+                print(f"[ANP-{self.agent_name}] processing message失败: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
         
         @self.app.post("/communicate")
@@ -190,7 +190,7 @@ class ANPServer:
             try:
                 # 查找目标agent的信息
                 if target_agent not in self.peer_agents:
-                    # 尝试发现目标agent
+                    # Try发现目标agent
                     await self._discover_agent(target_agent)
                 
                 if target_agent not in self.peer_agents:
@@ -198,7 +198,7 @@ class ANPServer:
                 
                 peer_info = self.peer_agents[target_agent]
                 
-                # 发送HTTP请求到目标agent
+                # SendHTTP请求到目标agent
                 async with httpx.AsyncClient() as client:
                     response = await client.post(
                         f"{peer_info['url']}/runs",
@@ -221,12 +221,12 @@ class ANPServer:
                         raise HTTPException(status_code=response.status_code, detail=response.text)
                         
             except Exception as e:
-                print(f"[ANP-{self.agent_name}] 与{target_agent}通信失败: {e}")
+                print(f"[ANP-{self.agent_name}] 与{target_agent}communication failed: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
     
     async def _discover_agent(self, agent_name: str):
         """发现其他ANP Agent"""
-        # 尝试常见端口
+        # Try常见端口
         common_ports = [9102, 9103, 9104, 9105]
         
         for port in common_ports:
@@ -280,11 +280,11 @@ class ANPServer:
         )
 
 def create_doctor_a_server(port: int) -> ANPServer:
-    """创建医生A服务器"""
+    """Create医生A服务器"""
     return ANPServer("ANP_Doctor_A", port, "doctor_a")
 
 def create_doctor_b_server(port: int) -> ANPServer:
-    """创建医生B服务器"""
+    """Create医生B服务器"""
     return ANPServer("ANP_Doctor_B", port, "doctor_b")
 
 if __name__ == "__main__":

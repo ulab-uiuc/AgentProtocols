@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-统一协议后端接口与注册表
+Unified protocol backend interfaces and registry.
 
-要求：
-- 使用原生协议，实现真实网络调用；不得提供mock/fallback/简化实现
-- 仅抽象最小共性：发送（数据面）
-- 通过注册表为协调器提供按协议名的发送能力
+Requirements:
+- Use native protocols to perform real network calls; no mock/fallback/simplified implementations
+- Abstract only the minimal common surface: sending (data plane)
+- Provide a registry to allow the coordinator to send by protocol name
 """
 
 from __future__ import annotations
@@ -15,53 +15,53 @@ from typing import Any, Dict, Optional
 
 
 class BaseProtocolBackend(abc.ABC):
-    """协议后端最小接口。
+    """Minimal interface for protocol backends.
 
-    约束：
-    - 所有实现必须基于原生协议的真实端点进行调用
-    - 不允许降级为mock或简单实现
+    Constraints:
+    - All implementations must call real endpoints of the native protocol
+    - Downgrading to mock or simplified implementations is not allowed
     """
 
     @abc.abstractmethod
     async def send(self, endpoint: str, payload: Dict[str, Any], correlation_id: Optional[str] = None, probe_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """向协议后端发送一条业务消息并返回对端响应（若有）。
+        """Send a business message to the protocol backend and return the peer Response (if any).
 
-        参数：
-        - endpoint: 目标服务基础地址，如 http://127.0.0.1:9002
-        - payload: 上层业务原始载荷（包含 sender_id/receiver_id/text/body/content 等）
-        - correlation_id: 消息关联ID，用于追踪和指标统计
-        - probe_config: 可选探针配置，用于S2保密性测试（TLS降级、重放攻击、明文嗅探等）
+        Args:
+        - endpoint: Target service base URL, e.g. http://127.0.0.1:9002
+        - payload: Upper-layer raw payload (may contain sender_id/receiver_id/text/body/content, etc.)
+        - correlation_id: Correlation ID for tracking and metrics
+        - probe_config: Optional probes for S2 confidentiality tests (TLS downgrade, replay, plaintext sniffing, etc.)
 
-        返回：
-        - 标准化的响应字典 {"status": "success|error", "data": ..., "probe_results": {...}}
+        Returns:
+        - Standardized Response dict {"status": "success|error", "data": ..., "probe_results": {...}}
         """
         raise NotImplementedError
 
-    # 以下为控制/生命周期接口（Runner 使用）。实现应基于原生SDK。
+    # Control/lifecycle interfaces (used by Runner). Implementations should use native SDKs.
     async def spawn(self, role: str, port: int, **kwargs: Any) -> Dict[str, Any]:
-        """启动本地协议服务（可选实现）。
+        """Start a local protocol service (optional).
 
-        要求：
-        - 使用该协议官方/原生服务端实现（如 ReceiverServer、acp-sdk server、A2A server、ANP SimpleNode shim）
-        - 以子进程/线程方式启动
+        Requirements:
+        - Use the protocol's official/native server (e.g., ReceiverServer, acp-sdk server, A2A server, ANP SimpleNode shim)
+        - Launch as a subprocess/thread
         
-        返回格式：
+        Return format:
         {"status": "success|error", "data": {"pid": int, "port": int}, "error": "..."}
         """
         raise NotImplementedError
 
     async def register(self, agent_id: str, endpoint: str, conversation_id: str, role: str, **kwargs: Any) -> Dict[str, Any]:
-        """向 RG 注册（调用各协议 registration_adapter 或原生证明端点）。
+        """Register with RG (call protocol-specific registration_adapter or native proof endpoint).
         
-        返回格式：
+        Return format:
         {"status": "success|error", "data": {"agent_id": str, "verification_method": str, "verification_latency_ms": int}, "error": "..."}
         """
         raise NotImplementedError
 
     async def health(self, endpoint: str) -> Dict[str, Any]:
-        """健康检查（调用 /health 或协议自带健康接口）。
+        """Health check (call /health or protocol-native endpoint).
         
-        返回格式：
+        Return format:
         {"status": "success|error", "data": {"healthy": bool, "response_time_ms": int, "details": {}}, "error": "..."}
         """
         raise NotImplementedError

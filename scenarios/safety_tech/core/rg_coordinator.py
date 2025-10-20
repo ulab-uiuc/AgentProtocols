@@ -78,7 +78,7 @@ class RGCoordinator:
         self._registry_initialized = False
     
     def setup_routes(self):
-        """设置HTTP路由"""
+        """SetupHTTP路由"""
         
         @self.app.post("/route_message")
         async def route_message_endpoint(payload: Dict[str, Any]):
@@ -96,7 +96,7 @@ class RGCoordinator:
                     corr = f"corr_{int(time.time()*1000)}"
                     payload['correlation_id'] = corr
 
-                # 提取探针配置（如果存在）
+                # Extract探针配置（如果存在）
                 probe_config = payload.get('probe_config')
 
                 result = await self.route_message(sender_id, receiver_id, payload, probe_config)
@@ -148,12 +148,12 @@ class RGCoordinator:
         
         @self.app.get("/conversation_status")
         async def get_conversation_status_endpoint():
-            """获取会话状态"""
+            """Get会话状态"""
             return await self.get_conversation_status()
         
         @self.app.get("/message_history")
         async def get_message_history_endpoint(limit: int = 50):
-            """获取消息历史"""
+            """Get消息历史"""
             return await self.get_message_history(limit)
         
         @self.app.get("/health")
@@ -175,17 +175,17 @@ class RGCoordinator:
         logger.info("Starting initial participant refresh...")
         await self._refresh_participants()
         
-        # 启动目录轮询任务
+        # Start目录轮询任务
         asyncio.create_task(self._directory_polling_loop())
         
-        # 启动HTTP服务器
+        # StartHTTP服务器
         import threading
         def run_server():
             uvicorn.run(self.app, host="127.0.0.1", port=self.port, log_level="warning", access_log=False, lifespan="off", loop="asyncio", http="h11")
         
         server_thread = threading.Thread(target=run_server, daemon=True)
         server_thread.start()
-        await asyncio.sleep(2)  # 等待服务器启动
+        await asyncio.sleep(2)  # Wait服务器启动
         
         # 再次刷新参与者，确保服务器启动后有最新信息
         await self._refresh_participants()
@@ -261,7 +261,7 @@ class RGCoordinator:
     
     async def route_message(self, sender_id: str, receiver_id: str, payload: Dict[str, Any], probe_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """路由消息"""
-        # 验证发送者 - 如果参与者信息为空，尝试强制刷新一次
+        # Validate发送者 - 如果参与者信息为空，尝试强制刷新一次
         if not self.participants:
             logger.warning("No participants loaded, forcing directory refresh...")
             await self._refresh_participants()
@@ -274,7 +274,7 @@ class RGCoordinator:
         
         sender = self.participants[sender_id]
         
-        # 检查发送权限
+        # Check发送权限
         if sender.role == 'observer':
             raise ValueError("Observers cannot send messages")
 
@@ -287,14 +287,14 @@ class RGCoordinator:
             if (sender.role, receiver.role) not in allowed_pairs and receiver.role != 'observer':
                 raise ValueError(f"Routing not allowed between roles {sender.role} -> {receiver.role}")
         
-        # 验证接收者（如果指定）
+        # Validate接收者（如果指定）
         if receiver_id and receiver_id not in self.participants:
             raise ValueError(f"Receiver {receiver_id} not registered in conversation")
         
-        # 提取消息内容
+        # Extract消息内容
         content = self._extract_message_content(payload)
         
-        # 创建消息记录
+        # Create消息记录
         corr_id = payload.get('correlation_id')
         message = ConversationMessage(
             sender_id=sender_id,
@@ -319,7 +319,7 @@ class RGCoordinator:
         return result
     
     def _get_backend_registry(self):
-        """获取缓存的协议后端注册表"""
+        """Get缓存的协议后端注册表"""
         if not self._registry_initialized:
             try:
                 from scenarios.safety_tech.protocol_backends.common.interfaces import get_registry
@@ -406,7 +406,7 @@ class RGCoordinator:
         if not observer:
             return
         
-        # 获取最近的消息
+        # Get最近的消息
         recent_messages = self.message_history[-self.backfill_limit:]
         
         backfill_payload = {
@@ -455,7 +455,7 @@ class RGCoordinator:
 
         要求：
         - 后端实现必须为原生协议，不允许mock/fallback
-        - 协调器不再拼装各协议负载细节，由各client实现负责
+        - 协调器不再拼装各协议负载细节，由各client实现responsible for
         """
         # 使用缓存的注册表，避免重复查询
         registry = self._get_backend_registry()
@@ -466,7 +466,7 @@ class RGCoordinator:
         # 从payload中提取correlation_id（兼容现有逻辑）
         correlation_id = payload.get('correlation_id')
         
-        # 添加超时控制，避免长时间阻塞
+        # Add超时控制，避免长时间阻塞
         try:
             result = await asyncio.wait_for(
                 backend.send(participant.endpoint, payload, correlation_id, probe_config),
@@ -480,7 +480,7 @@ class RGCoordinator:
     
     # 管理接口
     async def get_conversation_status(self) -> Dict[str, Any]:
-        """获取会话状态"""
+        """Get会话状态"""
         return {
             "conversation_id": self.conversation_id,
             "participants": {
@@ -507,7 +507,7 @@ class RGCoordinator:
         await self._refresh_participants()
     
     async def get_message_history(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
-        """获取消息历史"""
+        """Get消息历史"""
         messages = self.message_history
         if limit:
             messages = messages[-limit:]

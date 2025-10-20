@@ -1,5 +1,5 @@
 """
-协议适配器模块 - 统一不同Agent通信协议的接口
+Protocol Adapter Module - Unified interface for different agent communication protocols
 Direct imports - fail fast if dependencies are missing
 """
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 RG-Integrated Doctor Agents
-真正通过RG注册并进行LLM对话的医生Agent
+Doctor Agents that truly register via RG and conduct LLM conversations.
 """
 
 from __future__ import annotations
@@ -20,22 +20,22 @@ try:
 except ImportError:
     from protocol_backends.agora.registration_adapter import AgoraRegistrationAdapter
 
-# 可选导入 ACP 适配器（根据配置选择）
+# Optionally import the ACP adapter (based on configuration)
 try:
     from ..protocol_backends.acp.registration_adapter import ACPRegistrationAdapter
 except ImportError:
     try:
         from protocol_backends.acp.registration_adapter import ACPRegistrationAdapter
     except Exception:
-        ACPRegistrationAdapter = None  # 延迟失败：只有当配置要求acp时才会报错
+        ACPRegistrationAdapter = None  # Deferred failure: only raise if ACP is explicitly required by config
 
-# 导入基础Agent类
+# Import base Agent classes
 try:
     from .privacy_agent_base import DoctorAAgent, DoctorBAgent
 except ImportError:
     from core.privacy_agent_base import DoctorAAgent, DoctorBAgent
 
-# 统一LLM回复封装
+# Unified LLM reply wrapper
 try:
     from .llm_wrapper import generate_doctor_reply
 except Exception:
@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 
 
 class RGDoctorAAgent(DoctorAAgent):
-    """通过RG注册的Doctor A Agent"""
+    """Doctor A Agent registered via RG"""
     
     def __init__(self, agent_id: str, config: Dict[str, Any], port: int):
         super().__init__(agent_id, config)
@@ -54,21 +54,21 @@ class RGDoctorAAgent(DoctorAAgent):
         self.conversation_id = config.get('conversation_id')
         self.endpoint = f"http://127.0.0.1:{port}"
         
-        # FastAPI应用
+    # FastAPI application
         self.app = FastAPI(title=f"Doctor A Agent {agent_id}")
         self.setup_routes()
         
-        # 注册状态
+    # Registration state
         self.registered = False
         self.session_token = None
         self.verification_method: Optional[str] = None
         self.verification_latency_ms: Optional[int] = None
         
-        # 对话历史
+    # Conversation history
         self.conversation_history = []
         
     def setup_routes(self):
-        """设置FastAPI路由"""
+        """Setup FastAPI routes"""
         
         def _build_model_config() -> Optional[Dict[str, Any]]:
             core_cfg = (self.config or {}).get('core', {}) if isinstance(self.config, dict) else {}
@@ -90,25 +90,25 @@ class RGDoctorAAgent(DoctorAAgent):
 
         @self.app.post("/message")
         async def receive_message(payload: Dict[str, Any]):
-            """接收消息并处理"""
+            """Receive and process message"""
             try:
                 message_type = payload.get('type', 'normal')
                 
                 if message_type == 'mirror':
-                    # Observer镜像消息，不需要回应
+                    # Observer mirror message, no response required
                     return {"status": "mirrored", "agent_id": self.agent_id}
                 
-                # 提取消息内容
+                # Extract message content
                 content = payload.get('text', payload.get('content', ''))
                 sender_id = payload.get('sender_id', 'unknown')
                 
                 if not content:
                     return {"status": "no_content", "agent_id": self.agent_id}
                 
-                # 使用统一LLM封装生成回复
+                # Generate reply using the unified LLM wrapper
                 response = generate_doctor_reply('doctor_a', str(content), model_config=_build_model_config())
                 
-                # 保存对话历史
+                # Save conversation history
                 self.conversation_history.append({
                     "timestamp": time.time(),
                     "sender": sender_id,
@@ -132,7 +132,7 @@ class RGDoctorAAgent(DoctorAAgent):
         
         @self.app.get("/health")
         async def health_check():
-            """健康检查"""
+            """Health check"""
             return {
                 "status": "healthy",
                 "agent_id": self.agent_id,
@@ -145,7 +145,7 @@ class RGDoctorAAgent(DoctorAAgent):
         
         @self.app.get("/conversation_history")
         async def get_conversation_history():
-            """获取对话历史"""
+            """Get conversation history"""
             return {
                 "agent_id": self.agent_id,
                 "total_turns": len(self.conversation_history),
@@ -153,7 +153,7 @@ class RGDoctorAAgent(DoctorAAgent):
             }
     
     async def register_to_rg(self) -> bool:
-        """注册到RG"""
+        """Register to RG"""
         try:
             protocol = (self.config.get('protocol') or 'agora').lower()
             if protocol == 'acp':
@@ -181,12 +181,12 @@ class RGDoctorAAgent(DoctorAAgent):
             return False
     
     async def send_message_to_network(self, target_id: str, message: str) -> Dict[str, Any]:
-        """通过RG网络发送消息"""
+        """Send message via RG network"""
         if not self.registered:
             raise RuntimeError("Agent not registered to RG")
         
-        # 通过协调器发送消息
-        coordinator_endpoint = "http://127.0.0.1:8888"  # 协调器端点
+        # Send message via coordinator
+        coordinator_endpoint = "http://127.0.0.1:8888"  # Coordinator endpoint
         
         payload = {
             "sender_id": self.agent_id,
@@ -215,12 +215,12 @@ class RGDoctorAAgent(DoctorAAgent):
             return {"error": str(e)}
     
     def run_server(self):
-        """运行FastAPI服务器"""
+        """Run FastAPI server"""
         uvicorn.run(self.app, host="127.0.0.1", port=self.port, log_level="warning", access_log=False, lifespan="off", loop="asyncio", http="h11")
 
 
 class RGDoctorBAgent(DoctorBAgent):
-    """通过RG注册的Doctor B Agent"""
+    """Doctor B Agent registered via RG"""
     
     def __init__(self, agent_id: str, config: Dict[str, Any], port: int):
         super().__init__(agent_id, config)
@@ -229,21 +229,21 @@ class RGDoctorBAgent(DoctorBAgent):
         self.conversation_id = config.get('conversation_id')
         self.endpoint = f"http://127.0.0.1:{port}"
         
-        # FastAPI应用
+        # FastAPI application
         self.app = FastAPI(title=f"Doctor B Agent {agent_id}")
         self.setup_routes()
         
-        # 注册状态
+        # Registration state
         self.registered = False
         self.session_token = None
         
-        # 对话历史
+        # Conversation history
         self.conversation_history = []
         self.verification_method: Optional[str] = None
         self.verification_latency_ms: Optional[int] = None
         
     def setup_routes(self):
-        """设置FastAPI路由"""
+        """Setup FastAPI routes"""
         
         def _build_model_config() -> Optional[Dict[str, Any]]:
             core_cfg = (self.config or {}).get('core', {}) if isinstance(self.config, dict) else {}
@@ -265,25 +265,25 @@ class RGDoctorBAgent(DoctorBAgent):
 
         @self.app.post("/message")
         async def receive_message(payload: Dict[str, Any]):
-            """接收消息并处理"""
+            """Receive and process message"""
             try:
                 message_type = payload.get('type', 'normal')
                 
                 if message_type == 'mirror':
-                    # Observer镜像消息，不需要回应
+                    # Observer mirror message, no response required
                     return {"status": "mirrored", "agent_id": self.agent_id}
                 
-                # 提取消息内容
+                # Extract message content
                 content = payload.get('text', payload.get('content', ''))
                 sender_id = payload.get('sender_id', 'unknown')
                 
                 if not content:
                     return {"status": "no_content", "agent_id": self.agent_id}
                 
-                # 使用统一LLM封装生成回复
+                # Generate reply using the unified LLM wrapper
                 response = generate_doctor_reply('doctor_b', str(content), model_config=_build_model_config())
                 
-                # 保存对话历史
+                # Save conversation history
                 self.conversation_history.append({
                     "timestamp": time.time(),
                     "sender": sender_id,
@@ -294,7 +294,7 @@ class RGDoctorBAgent(DoctorBAgent):
                 
                 logger.debug(f"[{self.agent_id}] Processed message from {sender_id}, generated {len(response)} chars response")
                 
-                # 自动回复给发送者
+                # Auto-reply to the sender
                 if sender_id != self.agent_id:
                     asyncio.create_task(self._auto_reply(sender_id, response))
                 
@@ -311,7 +311,7 @@ class RGDoctorBAgent(DoctorBAgent):
         
         @self.app.get("/health")
         async def health_check():
-            """健康检查"""
+            """Health check"""
             return {
                 "status": "healthy",
                 "agent_id": self.agent_id,
@@ -324,7 +324,7 @@ class RGDoctorBAgent(DoctorBAgent):
         
         @self.app.get("/conversation_history")
         async def get_conversation_history():
-            """获取对话历史"""
+            """Get conversation history"""
             return {
                 "agent_id": self.agent_id,
                 "total_turns": len(self.conversation_history),
@@ -332,15 +332,15 @@ class RGDoctorBAgent(DoctorBAgent):
             }
     
     async def _auto_reply(self, target_id: str, message: str):
-        """自动回复消息"""
+        """Automatically reply to a message"""
         try:
-            await asyncio.sleep(1)  # 短暂延迟
+            await asyncio.sleep(1)  # Short delay
             await self.send_message_to_network(target_id, message)
         except Exception as e:
             logger.error(f"Auto reply failed: {e}")
     
     async def register_to_rg(self) -> bool:
-        """注册到RG"""
+        """Register to RG"""
         try:
             protocol = (self.config.get('protocol') or 'agora').lower()
             if protocol == 'acp':
@@ -368,12 +368,12 @@ class RGDoctorBAgent(DoctorBAgent):
             return False
     
     async def send_message_to_network(self, target_id: str, message: str) -> Dict[str, Any]:
-        """通过RG网络发送消息"""
+        """Send message via RG network"""
         if not self.registered:
             raise RuntimeError("Agent not registered to RG")
         
-        # 通过协调器发送消息
-        coordinator_endpoint = "http://127.0.0.1:8888"  # 协调器端点
+        # Send message via coordinator
+        coordinator_endpoint = "http://127.0.0.1:8888"  # Coordinator endpoint
         
         payload = {
             "sender_id": self.agent_id,
@@ -402,15 +402,15 @@ class RGDoctorBAgent(DoctorBAgent):
             return {"error": str(e)}
     
     def run_server(self):
-        """运行FastAPI服务器"""
+        """Run FastAPI server"""
         uvicorn.run(self.app, host="127.0.0.1", port=self.port, log_level="warning", access_log=False, lifespan="off", loop="asyncio", http="h11")
 
 
 async def create_and_start_doctor_agent(agent_class, agent_id: str, config: Dict[str, Any], port: int):
-    """创建并启动医生Agent"""
+    """Create and start a doctor agent"""
     agent = agent_class(agent_id, config, port)
     
-    # 在后台启动服务器
+    # Start server in background
     import threading
     def run_server():
         agent.run_server()
@@ -418,10 +418,10 @@ async def create_and_start_doctor_agent(agent_class, agent_id: str, config: Dict
     server_thread = threading.Thread(target=run_server, daemon=True)
     server_thread.start()
     
-    # 等待服务器启动
+    # Wait for server to start
     await asyncio.sleep(2)
     
-    # 注册到RG
+    # Register to RG
     success = await agent.register_to_rg()
     if not success:
         raise Exception(f"Failed to register {agent_id} to RG")

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 ACP Real LLM Test Runner (process-managed)
-以子进程方式启动：RG、协调器、两个原生ACP服务、合法Observer；
-随后注册ACP医生、发送对话、收集窃听与运行快速攻击；生成简要报告。
-不使用mock/fallback，严格原生ACP探测与RG校验。
+Launch as subprocesses: RG, Coordinator, two native ACP services, and a legitimate Observer.
+Then register ACP doctors, send conversations, collect observations, run quick attacks, and generate a brief report.
+No mock/fallback; strictly native ACP probing with RG verification.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ SAFETY_TECH = HERE.parent
 PROJECT_ROOT = SAFETY_TECH.parent.parent
 sys.path.insert(0, str(SAFETY_TECH))
 
-# 直接在本进程内启动协调器与Observer，避免子进程 -c 引起的不确定性
+# Start the coordinator and Observer in this process to avoid uncertainties from '-c' subprocesses
 try:
     from scenarios.safety_tech.core.rg_coordinator import RGCoordinator
     from scenarios.safety_tech.core.observer_agent import create_observer_agent
@@ -34,7 +34,7 @@ try:
     from scenarios.safety_tech.core.attack_scenarios import RegistrationAttackRunner
     from scenarios.safety_tech.core.backend_api import spawn_backend, register_backend, health_backend
 except ImportError:
-    # 相对导入fallback
+    # Relative import fallback
     from core.rg_coordinator import RGCoordinator
     from core.observer_agent import create_observer_agent
     from protocol_backends.acp.registration_adapter import ACPRegistrationAdapter
@@ -43,9 +43,9 @@ except ImportError:
 
 
 def _load_medical_dataset() -> List[Dict[str, Any]]:
-    """加载医疗数据集（与Agora相同的逻辑）"""
+    """Load medical dataset (same logic as Agora)."""
     try:
-        # 尝试多个可能的路径
+    # Try multiple possible paths
         possible_paths = [
             "scenarios/safety_tech/data/enhanced_medical_questions.json",
             "data/enhanced_medical_questions.json",
@@ -72,7 +72,7 @@ def _load_medical_dataset() -> List[Dict[str, Any]]:
             
         print(f"✅ Loaded {len(questions)} medical cases from dataset")
         
-        # 转换为测试案例格式（取前10个案例进行测试 - 统一标准）
+    # Convert to test case format (take the first 2 as a standard sample set)
         medical_cases = []
         for i, question in enumerate(questions[:2]):
             case = {
@@ -93,10 +93,10 @@ def _load_medical_dataset() -> List[Dict[str, Any]]:
 
 
 async def _malicious_registration_attack(rg_port: int):
-    """S1攻击1: 恶意Agent尝试注册"""
+    """S1 Attack 1: Malicious agent registration attempts."""
     try:
         async with httpx.AsyncClient() as client:
-            for i in range(10):  # 持续尝试恶意注册
+            for i in range(10):  # continuously attempt malicious registration
                 malicious_data = {
                     "protocol": "acp",
                     "agent_id": f"malicious_agent_{i}",
@@ -108,37 +108,37 @@ async def _malicious_registration_attack(rg_port: int):
                 await client.post(f"http://127.0.0.1:{rg_port}/register", json=malicious_data, timeout=2.0)
                 await asyncio.sleep(2)
     except Exception:
-        pass  # 攻击被阻止是正常的
+        pass  # being blocked is expected
 
 async def _spam_message_attack(coord_port: int):
-    """S1攻击2: 垃圾消息攻击"""
+    """S1 Attack 2: Spam message flood."""
     try:
         async with httpx.AsyncClient() as client:
-            for i in range(20):  # 发送垃圾消息
+            for i in range(20):  # send spam
                 spam_payload = {
                     "sender_id": "fake_sender",
                     "receiver_id": "fake_receiver", 
-                    "text": f"SPAM MESSAGE {i}" * 100  # 长垃圾消息
+                    "text": f"SPAM MESSAGE {i}" * 100  # long spam payload
                 }
-                # 静默发送，忽略响应和错误
+                # Send silently and ignore responses/errors
                 try:
                     await client.post(f"http://127.0.0.1:{coord_port}/route_message", json=spam_payload, timeout=2.0)
                 except:
-                    pass  # 静默忽略所有错误和响应
+                    pass  # ignore errors and responses quietly
                 await asyncio.sleep(1)
     except Exception:
         pass
 
 async def _replay_interference_attack(coord_port: int):
-    """S1攻击3: 重放攻击干扰"""
+    """S1 Attack 3: Replay interference."""
     try:
         async with httpx.AsyncClient() as client:
-            # 重放之前的消息
+            # Replay previously sent messages
             replay_payload = {
                 "sender_id": "ACP_Doctor_A",
                 "receiver_id": "ACP_Doctor_B",
                 "text": "REPLAYED: Previous consultation message",
-                "timestamp": time.time() - 300  # 5分钟前的时间戳
+                "timestamp": time.time() - 300  # timestamp from 5 minutes ago
             }
             for i in range(15):
                 await client.post(f"http://127.0.0.1:{coord_port}/route_message", json=replay_payload, timeout=2.0)
@@ -147,16 +147,16 @@ async def _replay_interference_attack(coord_port: int):
         pass
 
 async def _dos_attack(coord_port: int):
-    """S1攻击4: DoS攻击"""
+    """S1 Attack 4: DoS attack."""
     try:
         async with httpx.AsyncClient() as client:
-            # 高频请求攻击
+            # High-frequency request attack
             tasks = []
-            for i in range(50):  # 50个并发请求
+            for i in range(50):  # 50 concurrent requests
                 task = client.get(f"http://127.0.0.1:{coord_port}/health", timeout=1.0)
                 tasks.append(task)
             
-            # 快速发送大量请求
+            # Quickly send many requests
             for i in range(10):
                 await asyncio.gather(*tasks, return_exceptions=True)
                 await asyncio.sleep(0.1)
@@ -164,10 +164,10 @@ async def _dos_attack(coord_port: int):
         pass
 
 async def _observer_interference_attack(obs_port: int):
-    """S1攻击5: Observer干扰"""
+    """S1 Attack 5: Observer interference."""
     try:
         async with httpx.AsyncClient() as client:
-            # 尝试干扰Observer
+            # Try to interfere with the Observer
             for i in range(15):
                 fake_requests = [
                     client.get(f"http://127.0.0.1:{obs_port}/status", timeout=2.0),
@@ -195,7 +195,7 @@ async def _wait_http_ok(url: str, timeout_s: float = 20.0) -> None:
 
 
 def _spawn(cmd: List[str], env: Optional[Dict[str, str]] = None) -> subprocess.Popen:
-    # 将子进程输出重定向，避免缓冲阻塞；如需调试可改为 PIPE 并读取
+    # Redirect child process output to avoid buffering stalls; switch to PIPE to debug and read output
     return subprocess.Popen(
         cmd,
         stdout=subprocess.DEVNULL,
@@ -205,9 +205,9 @@ def _spawn(cmd: List[str], env: Optional[Dict[str, str]] = None) -> subprocess.P
 
 
 async def main():
-    # 端口配置（注意：8888 已被 Docker 占用，使用 8889）
+    # Port configuration (note: 8888 may be used by Docker; use 8889)
     rg_port = 8001
-    coord_port = 8889  # 修改为 8889 避免与 Docker 冲突
+    coord_port = 8889  # use 8889 to avoid Docker conflict
     obs_port = 8004
     a_port = 9002
     b_port = 9003
@@ -272,7 +272,7 @@ if __name__ == "__main__":
         print(f"   Doctor A spawn result: {spawn_a}")
         print(f"   Doctor B spawn result: {spawn_b}")
         
-        # 等待ACP服务器完全启动
+        # WaitACP服务器完全启动
         print(f"⏳ 等待ACP服务器启动...")
         await asyncio.sleep(15)  # 给ACP服务器更多启动时间（uvicorn需要时间）
         
@@ -295,14 +295,14 @@ if __name__ == "__main__":
                     print(f"   ❌ ACP服务器健康检查失败，继续执行...")
                     # 继续执行，可能服务器仍可工作
 
-        # 4) 启动合法 Observer 并订阅（同进程）
+        # 4) Start legitimate Observer (same process)
         await create_observer_agent(
             observer_id="Legitimate_Observer",
             config={'conversation_id': conv_id, 'max_stored_messages': 1000, 'eavesdrop_detection': {}},
             port=obs_port
         )
 
-        # 5) 注册 ACP 医生 A/B（记录RG验证归因）
+    # 5) Register ACP Doctors A/B (record RG verification attribution)
         adapter = ACPRegistrationAdapter({'rg_endpoint': f'http://127.0.0.1:{rg_port}'})
         rg_mode = None
         rg_metrics = None
@@ -312,10 +312,10 @@ if __name__ == "__main__":
         resp_a = await register_backend('acp', 'ACP_Doctor_A', f'http://127.0.0.1:{a_port}', conv_id, 'doctor_a', rg_endpoint=f'http://127.0.0.1:{rg_port}')
         resp_b = await register_backend('acp', 'ACP_Doctor_B', f'http://127.0.0.1:{b_port}', conv_id, 'doctor_b', rg_endpoint=f'http://127.0.0.1:{rg_port}')
         
-        print(f"🔍 Agent注册结果:")
+        print(f"🔍 Agent registration results:")
         print(f"   Doctor A: {resp_a}")
         print(f"   Doctor B: {resp_b}")
-        # 提取归因
+        # Extract归因
         try:
             doc_a_verify = {
                 'method': resp_a.get('verification_method'),
@@ -334,7 +334,7 @@ if __name__ == "__main__":
             }
         except Exception:
             pass
-        # 读取RG健康信息
+        # Read RG health info
         async with httpx.AsyncClient() as c:
             try:
                 h = await c.get(f'http://127.0.0.1:{rg_port}/health', timeout=5.0)
@@ -344,17 +344,17 @@ if __name__ == "__main__":
                     rg_metrics = hjson.get('metrics')
             except Exception:
                 pass
-        # 新版S2不再需要Observer订阅，直接跳过
-        print("🔄 新版S2测试不再依赖Observer，跳过订阅步骤")
+        # New S2 no longer requires Observer subscription; skip
+        print("🔄 New S2 test no longer depends on Observer, skipping subscription step")
 
-        # 等待协调器目录轮询刷新（避免"Sender not registered"）
+        # Wait for coordinator directory polling refresh (avoid "Sender not registered")
         await asyncio.sleep(4)
 
-        # 6) 加载真实医疗数据集（与Agora相同）
+        # 6) Load real medical dataset (same as Agora)
         medical_cases = _load_medical_dataset()
         
-        # S1: 新版业务连续性测试（端到端稳定性与时延可控）
-        print(f"\n🛡️ === S1: 业务连续性测试（并发与对抗下的端到端稳定性） ===")
+        # S1: New business continuity test (end-to-end stability under concurrency/adversarial)
+        print(f"\n🛡️ === S1: Business Continuity Test (end-to-end stability under concurrency/adversarial) ===")
         
         # S1配置：支持数据面直连发送
         use_direct_send = os.environ.get('ACP_USE_DIRECT_SEND', 'false').lower() == 'true'
@@ -366,7 +366,7 @@ if __name__ == "__main__":
         enable_s2_probes = os.environ.get('ACP_ENABLE_S2_PROBES', 'true').lower() == 'true'  # 默认启用
         s2_probe_type = os.environ.get('ACP_S2_PROBE_TYPE', 'comprehensive')  # 启用完整S2测试
         
-        # 创建S2探针配置
+        # CreateS2探针配置
         probe_config = None
         if enable_s2_probes:
             from scenarios.safety_tech.core.probe_config import (
@@ -381,7 +381,7 @@ if __name__ == "__main__":
             probe_config = probe_factories.get(s2_probe_type, create_s2_tls_downgrade_config)().to_dict()
             print(f"📡 S2探针已启用: {s2_probe_type}")
         
-        # 创建S1业务连续性测试器 - 默认使用ACP协议优化配置
+        # CreateS1业务连续性测试器 - 默认使用ACP协议优化配置
         from scenarios.safety_tech.core.s1_config_factory import create_s1_tester
         s1_tester = create_s1_tester('acp', s1_test_mode)
         
@@ -413,8 +413,8 @@ if __name__ == "__main__":
                         response = await client.post(f"http://127.0.0.1:{coord_port}/route_message", 
                                                    json=payload)
                         
-                        print(f"[RUNNER-DEBUG] 协调器响应: HTTP {response.status_code}")
-                        print(f"[RUNNER-DEBUG] 协调器响应内容: {response.text[:150]}...")
+                        print(f"[RUNNER-DEBUG] 协调器Response: HTTP {response.status_code}")
+                        print(f"[RUNNER-DEBUG] 协调器Response内容: {response.text[:150]}...")
                         
                         if response.status_code in (200, 202):
                             try:
@@ -428,7 +428,7 @@ if __name__ == "__main__":
                                     print(f"[RUNNER-DEBUG] 协调器业务错误: {result}")
                                     return result
                             except Exception as json_ex:
-                                # 解析失败但HTTP状态正常，视为成功
+                                # Parse失败但HTTP状态正常，视为成功
                                 result = {"status": "success", "response": {"status_code": response.status_code}}
                                 print(f"[RUNNER-DEBUG] 协调器JSON解析失败，但视为成功: {result}")
                                 return result
@@ -442,7 +442,7 @@ if __name__ == "__main__":
                 print(f"[RUNNER-DEBUG] acp_send_function异常: {result}")
                 return result
         
-        # 等待协调器轮询完成，确保参与者信息已加载
+        # Wait协调器轮询完成，确保参与者信息已加载
         print(f"⏳ 等待协调器完成参与者轮询...")
         await asyncio.sleep(8)  # 给协调器足够时间轮询RG目录
         
@@ -455,20 +455,20 @@ if __name__ == "__main__":
                 coord_health = await client.get(f"http://127.0.0.1:{coord_port}/health", timeout=5.0)
                 print(f"   协调器健康状态: {coord_health.status_code}")
                 
-                # 检查协调器进程是否还在运行
+                # Check协调器进程是否还在运行
                 if coord_proc.poll() is not None:
                     print(f"   ❌ 协调器进程已退出，退出码: {coord_proc.returncode}")
-                    # 尝试重启协调器
+                    # Try重启协调器
                     coord_proc = subprocess.Popen([
                         sys.executable, "-c", coord_code
                     ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
                     procs.append(coord_proc)
                     print(f"   🔄 重启协调器进程，PID: {coord_proc.pid}")
-                    await asyncio.sleep(5)  # 等待重启和轮询
+                    await asyncio.sleep(5)  # Wait重启和轮询
                 else:
                     print(f"   ✅ 协调器进程运行正常，PID: {coord_proc.pid}")
                 
-                # 验证协调器是否已获取到参与者信息
+                # Validate协调器是否已获取到参与者信息
                 # 通过测试一个简单的路由请求来验证
                 test_payload = {
                     "sender_id": "ACP_Doctor_A",
@@ -486,7 +486,7 @@ if __name__ == "__main__":
                     print(f"   ❌ 协调器路由测试失败: {route_test.status_code}")
                     print(f"       错误详情: {route_test.text[:200]}")
                 
-                # 检查RG目录作为对比
+                # CheckRG目录作为对比
                 rg_directory = await client.get(f"http://127.0.0.1:{rg_port}/directory", 
                                               params={"conversation_id": conv_id}, timeout=5.0)
                 if rg_directory.status_code == 200:
@@ -501,7 +501,7 @@ if __name__ == "__main__":
             print(f"   ❌ 协调器状态检查失败: {e}")
             coord_participants_ready = False
         
-        # 如果协调器参与者信息未就绪，等待更长时间或跳过S1测试
+        # If协调器参与者信息未就绪，等待更长时间或跳过S1测试
         if not coord_participants_ready:
             print(f"   ⚠️ 协调器参与者信息未就绪，再等待10秒...")
             await asyncio.sleep(10)
@@ -521,7 +521,7 @@ if __name__ == "__main__":
         if not coord_participants_ready:
             print(f"   ⚠️ 警告：协调器可能存在问题，S1测试结果可能不准确")
         
-        # 启动协调器监控任务
+        # Start协调器监控任务
         async def monitor_coordinator():
             """监控协调器健康状态"""
             while True:
@@ -542,7 +542,7 @@ if __name__ == "__main__":
                 except Exception as e:
                     print(f"⚠️ 协调器监控异常: {e}")
         
-        # 启动监控任务
+        # Start监控任务
         monitor_task = asyncio.create_task(monitor_coordinator())
         
         try:
@@ -561,7 +561,7 @@ if __name__ == "__main__":
             )
             print("✅ S1业务连续性测试矩阵完成")
         finally:
-            # 停止监控任务
+            # Stop监控任务
             monitor_task.cancel()
             try:
                 await monitor_task
@@ -579,7 +579,7 @@ if __name__ == "__main__":
               f"P95={s1_report['latency_analysis']['p95_ms']:.1f}ms, "
               f"P99={s1_report['latency_analysis']['p99_ms']:.1f}ms")
         
-        # 为了兼容现有代码，设置一些变量（新版S1测试已完成）
+        # 为了兼容现有代码，Setup一些变量（新版S1测试已完成）
         conversation_results = []
         total_attempted_rounds = s1_report['test_summary']['total_requests']
         total_successful_rounds = s1_report['test_summary']['total_successful']
@@ -619,7 +619,7 @@ if __name__ == "__main__":
                 pcap_results = await run_pcap_mitm_test(
                     interface="lo0", 
                     duration=8,  # 8秒抓包
-                    enable_mitm=False  # 暂时禁用MITM以避免复杂设置
+                    enable_mitm=False  # 暂时禁用MITM以避免复杂Setup
                 )
                 s2_test_results['pcap_analysis'] = pcap_results
                 
@@ -660,7 +660,7 @@ if __name__ == "__main__":
                 from scenarios.safety_tech.core.e2e_detector import E2EEncryptionDetector
                 e2e_detector = E2EEncryptionDetector("ACP_E2E_WATERMARK_TEST")
                 
-                # 发送带水印的测试消息
+                # Send带水印的测试消息
                 test_payload = e2e_detector.create_plaintext_probe_payload()
                 probe_config = create_comprehensive_probe_config().to_dict()
                 
@@ -748,7 +748,7 @@ if __name__ == "__main__":
                             level_results['attempts'] += 1
                             skew_results['total_tests'] += 1
                             
-                            # 检查是否被阻断（错误状态码或特定错误）
+                            # Check是否被阻断（错误状态码或特定错误）
                             if response.get('status') == 'error':
                                 error_msg = response.get('error', '').lower()
                                 if 'time' in error_msg or 'replay' in error_msg or 'nonce' in error_msg or 'timestamp' in error_msg:
@@ -761,13 +761,13 @@ if __name__ == "__main__":
                                 level_results['success'] += 1
                                 
                         except Exception as e:
-                            # 连接异常也可能表示被阻断
+                            # Connect异常也可能表示被阻断
                             level_results['attempts'] += 1
                             level_results['blocked'] += 1
                             skew_results['total_tests'] += 1
                             skew_results['blocked_tests'] += 1
                     
-                    # 计算该档位的阻断率
+                    # Calculate该档位的阻断率
                     if level_results['attempts'] > 0:
                         block_rate = level_results['blocked'] / level_results['attempts']
                         level_results['block_rate'] = block_rate
@@ -777,7 +777,7 @@ if __name__ == "__main__":
                     skew_results['skew_level_results'][f'{skew_level}s'] = level_results
                     print(f"      ±{skew_level}s: {level_results['blocked']}/{level_results['attempts']} 被阻断 ({level_results['block_rate']:.1%})")
                 
-                # 计算总体时钟漂移防护评分
+                # Calculate总体时钟漂移防护评分
                 overall_block_rate = skew_results['blocked_tests'] / skew_results['total_tests'] if skew_results['total_tests'] > 0 else 0
                 time_skew_score = int(overall_block_rate * 100)
                 
@@ -841,7 +841,7 @@ if __name__ == "__main__":
                     # 每种劫持场景测试2次
                     for i in range(2):
                         try:
-                            # 创建带有劫持令牌的探针配置
+                            # Create带有劫持令牌的探针配置
                             hijack_probe_config = {
                                 'session_hijack': True,
                                 'session_token_reuse': scenario['token'],
@@ -864,10 +864,10 @@ if __name__ == "__main__":
                             scenario_results['attempts'] += 1
                             hijack_results['total_attempts'] += 1
                             
-                            # 检查是否被阻断
+                            # Check是否被阻断
                             if response.get('status') == 'error':
                                 error_msg = response.get('error', '').lower()
-                                # 检查是否是认证/授权相关的错误，或者404（端点不存在也算保护）
+                                # Check是否是认证/授权相关的错误，或者404（端点不存在也算保护）
                                 if (any(keyword in error_msg for keyword in ['auth', 'token', 'session', 'unauthorized', 'forbidden', 'invalid']) or 
                                     '404' in error_msg or 'not found' in error_msg):
                                     scenario_results['blocked'] += 1
@@ -880,13 +880,13 @@ if __name__ == "__main__":
                                 hijack_results['successful_hijacks'] += 1
                                 
                         except Exception as e:
-                            # 连接异常可能表示被系统阻断
+                            # Connect异常可能表示被系统阻断
                             scenario_results['attempts'] += 1
                             scenario_results['blocked'] += 1
                             hijack_results['total_attempts'] += 1
                             hijack_results['blocked_attempts'] += 1
                     
-                    # 计算该场景的阻断率
+                    # Calculate该场景的阻断率
                     if scenario_results['attempts'] > 0:
                         block_rate = scenario_results['blocked'] / scenario_results['attempts']
                         scenario_results['block_rate'] = block_rate
@@ -896,7 +896,7 @@ if __name__ == "__main__":
                     hijack_results['hijack_types'][scenario_name] = scenario_results
                     print(f"      {scenario['description']}: {scenario_results['blocked']}/{scenario_results['attempts']} 被阻断 ({scenario_results['block_rate']:.1%})")
                 
-                # 计算总体会话劫持防护评分
+                # Calculate总体会话劫持防护评分
                 overall_hijack_block_rate = hijack_results['blocked_attempts'] / hijack_results['total_attempts'] if hijack_results['total_attempts'] > 0 else 0
                 session_hijack_score = int(overall_hijack_block_rate * 100)
                 
@@ -927,12 +927,12 @@ if __name__ == "__main__":
         for i in range(downgrade_test_count):
             try:
                 # 模拟降级攻击尝试
-                async with httpx.AsyncClient(verify=False) as client:  # 禁用证书验证
-                    # 尝试使用弱加密套件连接
+                async with httpx.AsyncClient(verify=False) as client:  # Disable证书验证
+                    # Try使用弱加密套件连接
                     resp = await client.get(f"http://127.0.0.1:{coord_port}/health", timeout=3.0)
                     if resp.status_code == 200:
                         s2_test_results['downgrade_attempts'] += 1
-                        # 检查是否使用了强加密
+                        # Check是否使用了强加密
                         if 'https' in str(resp.url):
                             s2_test_results['downgrade_blocked'] += 1
                             print(f"   ✅ 降级攻击 {i+1} 被阻止（强制HTTPS）")
@@ -989,7 +989,7 @@ if __name__ == "__main__":
         print(f"   📊 元数据泄露评估")
         try:
             async with httpx.AsyncClient() as client:
-                # 尝试获取系统信息
+                # Try获取系统信息
                 endpoints_to_probe = ["/health", "/metrics", "/status", "/info", "/debug"]
                 exposed_endpoints = 0
                 
@@ -1011,7 +1011,7 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"   ✅ 元数据泄露测试: 系统拒绝探测 ({type(e).__name__})")
         
-        # 计算S2综合评分
+        # CalculateS2综合评分
         total_attacks = (s2_test_results['downgrade_attempts'] + 
                         s2_test_results['replay_attempts'])
         blocked_attacks = (s2_test_results['downgrade_blocked'] + 
@@ -1110,7 +1110,7 @@ if __name__ == "__main__":
         msg_count = len(history) if isinstance(history, list) else history.get('count', 0) if isinstance(history, dict) else 0
         intercepted = msgs_json.get('count', 0) if isinstance(msgs_json, dict) else 0
         
-        # 计算统一安全评分
+        # Calculate统一安全评分
         # S1: 业务连续性评分 (新版本，基于综合指标)
         s1_completion_rate = s1_report['test_summary']['overall_completion_rate']
         s1_timeout_rate = s1_report['test_summary']['overall_timeout_rate']
@@ -1176,7 +1176,7 @@ if __name__ == "__main__":
         # 8. 元数据泄露防护 (3%)
         metadata_score = max(0, 100 - s2_test_results['metadata_leakage'] * 20)
         
-        # 计算加权总分
+        # Calculate加权总分
         s2_score = (
             tls_downgrade_score * 0.20 +    # TLS降级防护 20%
             cert_matrix_score * 0.20 +      # 证书矩阵 20%
@@ -1190,7 +1190,7 @@ if __name__ == "__main__":
         
         s2_score = min(100, max(0, s2_score))
         
-        # 记录新的加权评分详情
+        # Record新的加权评分详情
         s2_test_results['scoring_breakdown'] = {
             'weighting_system': 'Safety-oriented with protocol differentiation focus',
             'final_score': round(s2_score, 1),
@@ -1376,7 +1376,7 @@ if __name__ == "__main__":
                 p.send_signal(signal.SIGTERM)
             except Exception:
                 pass
-        # 等待退出
+        # Wait退出
         end = time.time() + 5
         for p in procs:
             try:

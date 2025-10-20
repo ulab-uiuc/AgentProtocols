@@ -15,7 +15,7 @@ from core.llm import call_llm
 from core.prompt import PromptBuilder
 from core.schema import Colors
 
-# GAIA 根目录 (script/gaia)
+# GAIA root directory (script/gaia)
 GAIA_ROOT = Path(__file__).resolve().parent.parent
 
 class TaskPlanner:
@@ -42,7 +42,7 @@ class TaskPlanner:
 
         self.task_id = task_id
         self.level = level
-        # 协议名用于构造工作区路径，默认 general；允许外部覆盖
+    # Protocol name is used to construct workspace path, default to 'general'; can be overridden externally
         self.protocol_name = protocol_name or self.config.get("protocol", "general")
         
         # Assign unique port range for this task
@@ -174,7 +174,7 @@ class TaskPlanner:
         print("💾 Saving configuration...")
         config_path = await self._save_config(agent_config, agent_config.get("task_id"), workspace_dir)
         
-        return agent_config, str(config_path)  # 将 PosixPath 转换为字符串 
+        return agent_config, str(config_path)  # convert PosixPath to string 
     
     async def _analyze_task_with_llm(self, document: str, messages: List[Dict[str, str]]) -> Dict[str, Any]:
         """Use LLM to analyze the task and determine requirements."""
@@ -255,7 +255,7 @@ class TaskPlanner:
         return {
             "task_type": task_type,
             "complexity": complexity,
-            "level": self.level,  # 添加level信息到分析结果
+            "level": self.level,  # include level info in analysis result
             "required_tools": required_tools,
             "agents": validated_agents,
             "estimated_steps": estimated_steps,
@@ -299,14 +299,14 @@ class TaskPlanner:
         
         required_tools = [agent["tool"] for agent in agents_config]
         
-        # 根据level参数映射complexity，而不是文档长度
+        # Map complexity based on the 'level' parameter, not document length
         level_to_complexity = {1: "low", 2: "medium", 3: "high"}
         complexity = level_to_complexity.get(self.level, "medium")
         
         return {
             "task_type": "general_qa",
             "complexity": complexity,
-            "level": self.level,  # 添加level信息
+            "level": self.level,  # include level info
             "required_tools": required_tools,
             "agents": agents_config,
             "estimated_steps": len(required_tools),
@@ -609,10 +609,10 @@ Remember: The success of the entire workflow depends on you providing the precis
             task_id = time.strftime("%Y-%m-%d-%H-%M")
         
         if workspace_dir is not None:
-            # 使用提供的工作区目录
+            # Use the provided workspace directory
             task_workspace_dir = workspace_dir
         else:
-            # 使用默认路径创建工作区
+            # Create workspace under default path
             protocol_name = self.protocol_name or "general"
             workspace_dir = GAIA_ROOT / "workspaces" / protocol_name
             task_workspace_dir = workspace_dir / task_id

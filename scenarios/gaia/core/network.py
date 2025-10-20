@@ -15,7 +15,7 @@ from pytest import Config
 from .agent import MeshAgent
 from .schema import AgentState, Message, Role, ToolCall, Memory, NetworkMemoryPool, ExecutionStatus, Colors
 
-# GAIA 根目录 (script/gaia)
+# GAIA root directory (script/gaia)
 GAIA_ROOT = Path(__file__).resolve().parent.parent
 
 # Setup logger for core network

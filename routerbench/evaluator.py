@@ -1,5 +1,5 @@
 """
-评估系统 - 统计ProtoRouter的协议选择准确性
+Evaluation System - Measure ProtoRouter protocol selection accuracy
 """
 
 import json
@@ -8,7 +8,7 @@ from collections import defaultdict
 
 
 class RouterBenchmarkEvaluator:
-    """Router benchmark评估器，统计各种准确率指标"""
+    """Router benchmark evaluator that tracks various accuracy metrics"""
     
     def __init__(self):
         self.results = []
@@ -16,12 +16,12 @@ class RouterBenchmarkEvaluator:
     
     def evaluate_scenario(self, scenario_id: str, llm_response: Dict[str, Any], 
                          ground_truth: Dict[str, Any]) -> Dict[str, Any]:
-        """评估单个场景的结果"""
+        """Evaluate the results of a single scenario"""
         
-        # 解析difficulty level
+        # Parse difficulty level
         difficulty = scenario_id.split("-")[0] if "-" in scenario_id else "Unknown"
         
-        # 获取LLM选择的协议
+        # Get protocol selections from LLM
         llm_selections = {}
         if llm_response and "module_selections" in llm_response:
             for selection in llm_response["module_selections"]:
@@ -29,16 +29,16 @@ class RouterBenchmarkEvaluator:
                 protocol = selection.get("selected_protocol", "")
                 llm_selections[module_id] = protocol
         
-        # 获取ground truth
+        # Get ground truth
         gt_selections = {}
         for module_id, gt_data in ground_truth.items():
             gt_selections[module_id] = gt_data.get("module_protocol", "")
         
-        # 计算各项指标
+        # Calculate metrics
         module_results = {}
         correct_modules = 0
         total_modules = len(gt_selections)
-        a2a_acp_confusion = 0  # A2A/ACP混淆的情况
+        a2a_acp_confusion = 0  # A2A/ACP confusion cases
         
         for module_id in gt_selections:
             gt_protocol = gt_selections[module_id]
@@ -48,7 +48,7 @@ class RouterBenchmarkEvaluator:
             if is_correct:
                 correct_modules += 1
             
-            # 检查A2A/ACP混淆
+            # Check for A2A/ACP confusion
             if ((gt_protocol == "A2A" and llm_protocol == "ACP") or 
                 (gt_protocol == "ACP" and llm_protocol == "A2A")):
                 a2a_acp_confusion += 1
@@ -70,10 +70,10 @@ class RouterBenchmarkEvaluator:
                                      (gt_protocol == "ACP" and llm_protocol == "A2A"))
             }
         
-        # 对于L2及以上难度，要求所有答案全做对才算做对
+        # For L2 and above, require all answers to be correct
         scenario_correct = correct_modules == total_modules
         if difficulty == "L1":
-            # L1可以允许部分正确
+            # L1 allows partial correctness
             scenario_correct = correct_modules > 0
         
         individual_accuracy = correct_modules / total_modules if total_modules > 0 else 0
@@ -99,28 +99,28 @@ class RouterBenchmarkEvaluator:
         return result
     
     def calculate_overall_statistics(self, evaluation_results: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """计算总体统计数据"""
+        """Calculate overall statistics"""
         
-        # 按难度分组
+        # Group by difficulty
         by_difficulty = defaultdict(list)
         for result in evaluation_results:
             difficulty = result["difficulty"]
             by_difficulty[difficulty].append(result)
         
-        # 总体统计
+        # Overall statistics
         total_scenarios = len(evaluation_results)
         correct_scenarios = sum(1 for r in evaluation_results if r["scenario_correct"])
         overall_scenario_accuracy = correct_scenarios / total_scenarios if total_scenarios > 0 else 0
         
-        # 每个小空的统计
+        # Individual module statistics
         total_modules = sum(r["total_modules"] for r in evaluation_results)
         correct_modules = sum(r["correct_modules"] for r in evaluation_results)
         individual_module_accuracy = correct_modules / total_modules if total_modules > 0 else 0
         
-        # A2A/ACP混淆统计
+        # A2A/ACP confusion statistics
         total_a2a_acp_confusion = sum(r["a2a_acp_confusion_count"] for r in evaluation_results)
         
-        # 按难度统计
+        # Statistics by difficulty
         difficulty_stats = {}
         for difficulty in self.difficulty_levels:
             if difficulty in by_difficulty:
@@ -142,7 +142,7 @@ class RouterBenchmarkEvaluator:
                     "module_accuracy": diff_module_accuracy
                 }
         
-        # 协议混淆矩阵
+        # Protocol confusion matrix
         confusion_matrix = self._calculate_confusion_matrix(evaluation_results)
         
         return {
@@ -161,7 +161,7 @@ class RouterBenchmarkEvaluator:
         }
     
     def _calculate_confusion_matrix(self, evaluation_results: List[Dict[str, Any]]) -> Dict[str, Dict[str, int]]:
-        """计算协议选择的混淆矩阵"""
+        """Calculate confusion matrix for protocol selection"""
         protocols = ["A2A", "ACP", "Agora", "ANP"]
         matrix = {gt: {pred: 0 for pred in protocols} for gt in protocols}
         

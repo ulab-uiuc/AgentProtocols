@@ -39,7 +39,7 @@ class A2ADoctorExecutor(AgentExecutor):
         self.coord_endpoint = os.environ.get('COORD_ENDPOINT', 'http://127.0.0.1:8888')
     
     async def execute(self, context: "RequestContext", event_queue: "EventQueue") -> None:
-        """执行A2A代理逻辑"""
+        """ExecuteA2A代理逻辑"""
         try:
             # 从context获取输入消息（优先使用A2A SDK提供的API）
             task_input = ""
@@ -58,7 +58,7 @@ class A2ADoctorExecutor(AgentExecutor):
                     else:
                         task_input = str(context.message)
             
-            # 提取correlation_id前缀 [CID:...]
+            # Extractcorrelation_id前缀 [CID:...]
             correlation_id = None
             text = task_input
             
@@ -78,7 +78,7 @@ class A2ADoctorExecutor(AgentExecutor):
             reply = generate_doctor_reply(f'doctor_{role}', text)
             print(f"[A2A-{self.agent_name}] 生成回复: '{reply[:100]}...'")
             
-            # 发送回复到事件队列
+            # Send回复到事件队列
             from a2a.utils import new_agent_text_message
             # A2A SDK EventQueue may return awaitable
             res = event_queue.enqueue_event(new_agent_text_message(reply))
@@ -95,7 +95,7 @@ class A2ADoctorExecutor(AgentExecutor):
             print(f"[A2A-{self.agent_name}] 执行异常: {e}")
             import traceback
             traceback.print_exc()
-            # 发送错误消息
+            # Send错误消息
             from a2a.utils import new_agent_text_message
             from a2a.utils import new_agent_text_message
             res = event_queue.enqueue_event(new_agent_text_message(f"Error: {str(e)}"))
@@ -129,8 +129,8 @@ class A2ADoctorExecutor(AgentExecutor):
 
 
 def create_doctor_app(agent_name: str, port: int):
-    """创建A2A医生代理应用（使用本项目A2A适配器，内置/health与/message）"""
-    # 创建执行器
+    """CreateA2A医生代理应用（使用本项目A2A适配器，内置/health与/message）"""
+    # Create执行器
     executor = A2ADoctorExecutor(agent_name)
 
     # 构造Agent Card（传给适配器用于/.well-known）
@@ -175,7 +175,7 @@ def create_doctor_app(agent_name: str, port: int):
 
 
 def run_server(agent_name: str, port: int):
-    """运行A2A服务器"""
+    """RunA2A服务器"""
     import uvicorn
     
     print(f"[A2A Server] 启动 {agent_name} 在端口 {port}")

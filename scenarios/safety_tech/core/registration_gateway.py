@@ -73,7 +73,7 @@ class RegistrationGateway:
         self.conversations: Dict[str, ConversationSession] = {}  # conversation_id -> session
         self.protocol_verifiers: Dict[str, callable] = {}
         self.used_nonces: Set[str] = set()
-        # 验证模式：transparent | native_delegated | strict
+        # Validate模式：transparent | native_delegated | strict
         # 默认使用原生委托（只用协议原生能力做判定，不做RG兜底）
         self.verification_mode: str = str(self.config.get('verification_mode', 'native_delegated')).lower()
         # ANP可选DID文档探针（基准模式仅记录，严格模式强制）
@@ -95,7 +95,7 @@ class RegistrationGateway:
         logger.info("Registration Gateway initialized")
 
     def _setup_protocol_verifiers(self):
-        """设置协议验证器"""
+        """Setup协议验证器"""
         self.protocol_verifiers = {
             'agora': self._verify_agora,
             'a2a': self._verify_a2a,
@@ -106,7 +106,7 @@ class RegistrationGateway:
         
 
     def setup_routes(self):
-        """设置REST API路由"""
+        """SetupREST API路由"""
         
         @self.app.post("/register")
         async def register_agent(request: Dict[str, Any]):
@@ -121,7 +121,7 @@ class RegistrationGateway:
         
         @self.app.get("/directory")
         async def get_directory(conversation_id: str):
-            """获取会话目录"""
+            """Get会话目录"""
             try:
                 return await self._handle_directory(conversation_id)
             except Exception as e:
@@ -140,8 +140,8 @@ class RegistrationGateway:
             return {"message": "Cleanup task scheduled"}
 
     async def _handle_register(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """处理Agent注册请求"""
-        # 验证必需字段
+        """HandleAgent注册请求"""
+        # Validate必需字段
         required_fields = ['protocol', 'agent_id', 'endpoint', 'conversation_id']
         for field in required_fields:
             if field not in request:
@@ -155,11 +155,11 @@ class RegistrationGateway:
         protocol_meta = request.get('protocolMeta', {})
         proof = request.get('proof', {})
         
-        # 检查协议支持
+        # Check协议支持
         if protocol not in self.protocol_verifiers:
             raise ValueError(f"Unsupported protocol: {protocol}")
         
-        # 创建注册记录
+        # Create注册记录
         record = RegistrationRecord(
             agent_id=agent_id,
             protocol=protocol,
@@ -177,7 +177,7 @@ class RegistrationGateway:
             verification_result = await self.protocol_verifiers[protocol](record)
         except Exception as e:
             _latency_ms = int((time.time() - _verify_start) * 1000)
-            # 记录归因原因
+            # Record归因原因
             try:
                 reason = str(e)
             except Exception:
@@ -191,13 +191,13 @@ class RegistrationGateway:
         if not record.verified:
             raise ValueError(f"Protocol verification failed: {verification_result.get('error', 'Unknown error')}")
         
-        # 检查会话限制
+        # Check会话限制
         await self._validate_session_constraints(record)
         
         # 存储注册记录
         self.registrations[agent_id] = record
         
-        # 更新会话信息
+        # Update会话信息
         await self._update_conversation_session(record)
         
         logger.info(f"Agent {agent_id} registered successfully for protocol {protocol}")
@@ -216,7 +216,7 @@ class RegistrationGateway:
         }
 
     async def _handle_subscribe(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """处理Observer订阅请求"""
+        """HandleObserver订阅请求"""
         agent_id = request.get('agent_id')
         conversation_id = request.get('conversation_id')
         role = request.get('role', 'observer')
@@ -228,22 +228,22 @@ class RegistrationGateway:
         if role != 'observer':
             raise ValueError("Subscribe endpoint only supports observer role")
         
-        # 检查Observer证明要求
+        # CheckObserver证明要求
         if self.require_proof_for_observers and not proof:
             raise ValueError("Proof required for observer subscription")
         
-        # 检查会话是否存在
+        # Check会话是否存在
         if conversation_id not in self.conversations:
             raise ValueError(f"Conversation {conversation_id} not found")
         
         session = self.conversations[conversation_id]
         
-        # 检查Observer数量限制
+        # CheckObserver数量限制
         current_observers = len([p for p in session.participants if p.role == 'observer'])
         if current_observers >= self.max_observers_per_session:
             raise ValueError(f"Maximum observers ({self.max_observers_per_session}) reached for conversation")
         
-        # 创建Observer注册记录
+        # CreateObserver注册记录
         observer_record = RegistrationRecord(
             agent_id=agent_id,
             protocol='observer',  # 特殊协议标识
@@ -272,7 +272,7 @@ class RegistrationGateway:
         }
 
     async def _handle_directory(self, conversation_id: str) -> Dict[str, Any]:
-        """处理目录查询请求"""
+        """Handle目录查询请求"""
         if conversation_id not in self.conversations:
             raise ValueError(f"Conversation {conversation_id} not found")
         
@@ -309,7 +309,7 @@ class RegistrationGateway:
         if conversation_id in self.conversations:
             session = self.conversations[conversation_id]
             
-            # 检查角色冲突
+            # Check角色冲突
             for participant in session.participants:
                 if participant.role == record.role and record.role in ["doctor_a", "doctor_b"]:
                     raise ValueError(f"Role {record.role} already taken in conversation {conversation_id}")
@@ -319,7 +319,7 @@ class RegistrationGateway:
         conversation_id = record.conversation_id
         
         if conversation_id not in self.conversations:
-            # 创建新会话
+            # Create新会话
             session = ConversationSession(
                 conversation_id=conversation_id,
                 participants=[record],
@@ -328,7 +328,7 @@ class RegistrationGateway:
             )
             self.conversations[conversation_id] = session
         else:
-            # 更新现有会话
+            # Update现有会话
             session = self.conversations[conversation_id]
             session.participants.append(record)
             session.last_activity = time.time()
@@ -344,7 +344,7 @@ class RegistrationGateway:
         
         for conversation_id in expired_sessions:
             del self.conversations[conversation_id]
-            # 清理相关注册记录
+            # Cleanup相关注册记录
             expired_agents = [aid for aid, record in self.registrations.items() 
                             if record.conversation_id == conversation_id]
             for agent_id in expired_agents:
@@ -428,7 +428,7 @@ class RegistrationGateway:
 
         nonce = str(proof.get('nonce', ''))
         if not nonce or nonce in self.used_nonces:
-            # 记录重放嫌疑
+            # Record重放嫌疑
             self.metrics['nonce_reuse_count'] = self.metrics.get('nonce_reuse_count', 0) + 1
             return {"verified": False, "error": "Replay detected: nonce reused or missing"}
         self.used_nonces.add(nonce)
@@ -454,7 +454,7 @@ class RegistrationGateway:
                     if r.status_code != 200:
                         return {"verified": False, "error": f"A2A challenge failed: status {r.status_code}"}
                     js = r.json() if r.content else {}
-                    # 统一JSON响应：包含events数组；若包含至少一个事件即视为回执成功
+                    # 统一JSONResponse：包含events数组；若包含至少一个事件即视为回执成功
                     if not isinstance(js, dict) or not js.get('events'):
                         return {"verified": False, "error": "A2A challenge no events returned"}
                     verification_method = "a2a_challenge_echo"
@@ -595,7 +595,7 @@ class RegistrationGateway:
         return {"verified": True, "session_token": session_token, "verification_method": "direct_none"}
 
     def run(self, host: str = "127.0.0.1", port: int = 8000):
-        """运行注册网关服务"""
+        """Run注册网关服务"""
         logger.info(f"Starting Registration Gateway on {host}:{port}")
         uvicorn.run(self.app, host=host, port=port, log_level="warning", access_log=False, lifespan="off", loop="asyncio", http="h11")
 

@@ -16,7 +16,7 @@ def doctor_a(input: list[Message], context) -> Message:
         for p in m.parts or []:
             if getattr(p, 'content', None):
                 text = p.content
-    # 提取correlation_id前缀 [CID:...]
+    # Extract correlation_id prefix [CID:...]
     cid = None
     if text.startswith('[CID:'):
         try:
@@ -27,7 +27,7 @@ def doctor_a(input: list[Message], context) -> Message:
         except Exception:
             cid = None
     reply = generate_doctor_reply('doctor_a', text or '')
-    # 回投协调器/deliver（最佳努力）
+    # Post back to coordinator/deliver (best effort)
     try:
         import httpx, os
         coord = os.environ.get('COORD_ENDPOINT', 'http://127.0.0.1:8888')

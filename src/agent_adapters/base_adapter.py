@@ -1,5 +1,5 @@
 """
-BaseProtocolAdapter - 协议适配器基类
+BaseProtocolAdapter - Base class for protocol adapters
 """
 
 from abc import ABC, abstractmethod

@@ -60,7 +60,7 @@ class RegistrationAttackRunner:
         self.attack_results: List[AttackResult] = []
         
     async def run_all_attacks(self) -> List[AttackResult]:
-        """运行所有六种攻击场景"""
+        """Run所有六种攻击场景"""
         attacks = [
             self.impersonation_attack,
             self.stolen_credential_attack,
@@ -92,7 +92,7 @@ class RegistrationAttackRunner:
         start_time = time.time()
         
         try:
-            # 尝试冒充Doctor_B身份注册
+            # Try冒充Doctor_B身份注册
             fake_registration = {
                 "protocol": self.protocol,
                 "agent_id": "Doctor_B",  # 冒用合法身份
@@ -200,7 +200,7 @@ class RegistrationAttackRunner:
         start_time = time.time()
         
         try:
-            # 创建旧的注册数据（模拟之前的合法注册）
+            # Create旧的注册数据（模拟之前的合法注册）
             old_timestamp = time.time() - 3600  # 1小时前
             old_registration = {
                 "protocol": "agora",
@@ -339,7 +339,7 @@ class RegistrationAttackRunner:
                     "cross_protocol_attempt": True,
                     "original_protocol": "anp"
                 },
-                # 如果未提供构造跨协议证明的钩子，则不再默认使用ANP，而是发送空proof以显式验证RG的协议绑定。
+                # If未提供构造跨协议证明的钩子，则不再默认使用ANP，而是发送空proof以显式验证RG的协议绑定。
                 "proof": (self.attack_hooks.get('build_cross_protocol_proof')() if self.attack_hooks.get('build_cross_protocol_proof') else {})
             }
             
@@ -380,7 +380,7 @@ class RegistrationAttackRunner:
         start_time = time.time()
         
         try:
-            # 尝试无证明注册Observer
+            # Try无证明注册Observer
             no_proof_request = {
                 "agent_id": f"unauthorized_observer_{int(time.time())}",
                 "conversation_id": self.target_conversation_id,
@@ -456,7 +456,7 @@ class RegistrationAttackRunner:
         return None
     
     def generate_attack_report(self) -> Dict[str, Any]:
-        """生成攻击报告"""
+        """Generate攻击报告"""
         if not self.attack_results:
             return {"error": "No attack results available"}
         
@@ -556,24 +556,24 @@ class EavesdropMetricsCollector:
                 if access_methods.get("live_mirror", False):
                     live_mirror_detected = True
         
-        # 更新指标
+        # Update指标
         self.metrics["unauthorized_bytes"] = total_unauthorized_bytes
         self.metrics["unauthorized_turns"] = total_unauthorized_turns
         self.metrics["time_to_first_leak"] = min(first_leak_times) if first_leak_times else None
         self.metrics["backfill_allowed"] = backfill_detected
         self.metrics["live_mirror_allowed"] = live_mirror_detected
         
-        # 计算窃听成功率
+        # Calculate窃听成功率
         successful_eavesdrops = len([r for r in observer_reports if r.get("eavesdrop_success", False)])
         total_observers = len(observer_reports)
         self.metrics["eavesdrop_success_rate"] = successful_eavesdrops / total_observers if total_observers > 0 else 0.0
     
     def get_metrics(self) -> Dict[str, Any]:
-        """获取收集的指标"""
+        """Get收集的指标"""
         return self.metrics.copy()
     
     def generate_protocol_comparison_data(self) -> Dict[str, Any]:
-        """生成协议对比数据"""
+        """Generate协议对比数据"""
         return {
             "protocol": self.metrics["protocol"],
             "security_score": self._calculate_security_score(),
@@ -593,7 +593,7 @@ class EavesdropMetricsCollector:
         }
     
     def _calculate_security_score(self) -> float:
-        """计算安全评分（0-100）"""
+        """Calculate安全评分（0-100）"""
         score = 100.0
         
         # 准入防御评分 (40%)

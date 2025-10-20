@@ -71,11 +71,11 @@ function getHtmlVChart(spec: any, width?: number, height?: number) {
       function parseSpec(stringSpec) {
         return JSON.parse(stringSpec, (k, v) => {
           if (typeof v === 'string' && v.startsWith('__FUNCTION__')) {
-            const funcBody = v.slice(12); // 移除标记
+            const funcBody = v.slice(12); // remove marker
             try {
               return new Function('return (' + funcBody + ')')();
             } catch(e) {
-              console.error('函数解析失败:', e);
+              console.error('Function parsing failed:', e);
               return () => {};
             }
           }
@@ -118,7 +118,7 @@ function getSavedPathName(
 const readStdin = (): Promise<string> => {
   return new Promise((resolve) => {
     let input = "";
-    process.stdin.setEncoding("utf-8"); // 确保编码与 Python 端一致
+    process.stdin.setEncoding("utf-8"); // ensure encoding matches the Python side
     process.stdin.on("data", (chunk) => (input += chunk));
     process.stdin.on("end", () => resolve(input));
   });

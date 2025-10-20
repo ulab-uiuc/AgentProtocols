@@ -1,5 +1,5 @@
 """
-SimpleJSONAdapter - 简单JSON协议适配器实现
+SimpleJSONAdapter - A minimal JSON protocol adapter implementation
 """
 
 import json
@@ -13,10 +13,10 @@ from .base_adapter import BaseProtocolAdapter
 
 class SimpleJSONAdapter(BaseProtocolAdapter):
     """
-    简单JSON协议适配器
+    A simple JSON protocol adapter.
     
-    使用最简单的JSON消息格式，专为测试和原型设计。
-    无复杂验证，专注于消息传递的核心功能。
+    Uses the simplest JSON message format, designed for testing and prototyping.
+    No complex validation—focuses on the core functionality of message passing.
     """
 
     @property
@@ -31,18 +31,18 @@ class SimpleJSONAdapter(BaseProtocolAdapter):
         agent_id: str = "unknown"
     ):
         """
-        初始化简单JSON适配器
+        Initialize the simple JSON adapter.
         
         Parameters
         ----------
         httpx_client : httpx.AsyncClient
-            HTTP客户端
+            HTTP client
         base_url : str
-            目标Agent的基础URL
+            Base URL of the target agent
         auth_headers : Optional[Dict[str, str]]
-            认证头（可选）
+            Authentication headers (optional)
         agent_id : str
-            当前Agent的ID
+            ID of the current agent
         """
         super().__init__(base_url=base_url, auth_headers=auth_headers or {})
         self.httpx_client = httpx_client
@@ -52,29 +52,28 @@ class SimpleJSONAdapter(BaseProtocolAdapter):
 
     async def initialize(self) -> None:
         """
-        初始化适配器
-        对于简单JSON协议，不需要特殊的初始化步骤
+        Initialize the adapter. No special steps are required for the simple JSON protocol.
         """
-        # 简单JSON协议不需要复杂的初始化
+        # No complex initialization needed for the simple JSON protocol
         pass
 
     async def send_message(self, dst_id: str, payload: Dict[str, Any]) -> Any:
         """
-        发送简单JSON消息
+        Send a simple JSON message.
         
         Parameters
         ----------
         dst_id : str
-            目标Agent ID
+            Target agent ID
         payload : Dict[str, Any]
-            消息负载
+            Message payload
         
         Returns
         -------
         Any
-            响应数据
+            Response data
         """
-        # 构造简单JSON消息格式
+        # Build the simple JSON message format
         message_id = str(uuid4())
         simple_message = {
             "id": message_id,
@@ -106,18 +105,18 @@ class SimpleJSONAdapter(BaseProtocolAdapter):
 
     async def send_message_streaming(self, dst_id: str, payload: Dict[str, Any]) -> AsyncIterator[Dict[str, Any]]:
         """
-        发送流式JSON消息（简化版本）
+        Send a streaming JSON message (simplified version).
         """
-        # 对于简单协议，流式处理返回单个响应
+        # For the simple protocol, streaming returns a single response
         result = await self.send_message(dst_id, payload)
         yield result
 
     async def receive_message(self) -> Dict[str, Any]:
-        """接收消息（客户端适配器不适用）"""
+        """Receive message (not applicable to client adapters)."""
         raise NotImplementedError("Client adapters do not receive messages directly")
 
     def convert_to_native(self, ute_message) -> Dict[str, Any]:
-        """将UTE消息转换为简单JSON格式"""
+        """Convert UTE message to simple JSON format."""
         return {
             "id": ute_message.id,
             "from": ute_message.src,
@@ -129,7 +128,7 @@ class SimpleJSONAdapter(BaseProtocolAdapter):
         }
 
     def convert_from_native(self, native_message: Dict[str, Any]):
-        """将简单JSON消息转换为UTE格式"""
+        """Convert a simple JSON message to UTE format."""
         from ..core.unified_message import UTE
         
         return UTE(
@@ -143,7 +142,7 @@ class SimpleJSONAdapter(BaseProtocolAdapter):
         )
 
     def get_agent_card(self) -> Dict[str, Any]:
-        """获取Agent能力和元数据"""
+        """Get agent capabilities and metadata."""
         return {
             "agent_id": self.agent_id,
             "protocol": "simple_json",
@@ -154,9 +153,9 @@ class SimpleJSONAdapter(BaseProtocolAdapter):
         }
 
     async def health_check(self) -> bool:
-        """检查适配器是否健康和已连接"""
+        """Check whether the adapter is healthy and reachable."""
         try:
-            # 尝试发送健康检查请求到目标URL
+            # Try sending a health check request to the target URL
             response = await self.httpx_client.get(
                 f"{self.base_url}/health",
                 headers=self.auth_headers,

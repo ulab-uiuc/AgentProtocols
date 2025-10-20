@@ -120,7 +120,7 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
     4. E2E加密支持
     """
     
-    # ================= DID认证设置 =================
+    # ================= DID认证Setup =================
     try:
         # Generate DID and private keys for authentication
         service_endpoint = f"http://{host}:{http_port}"
@@ -148,7 +148,7 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
         print(f"[ANP] Failed to generate DID for {agent_id}: {e}")
         raise
     
-    # ================= SimpleNode设置 =================
+    # ================= SimpleNodeSetup =================
     try:
         # Create SimpleNode with correct parameters based on SafetyTech implementation
         private_key_pem = get_pem_from_private_key(private_keys["private_key"])
@@ -574,7 +574,7 @@ class ANPCommBackend(BaseCommBackend):
         """
         dst_url = self._addr.get(dst_id)
         if not dst_url:
-            # 尝试自愈：等待短时并检查是否刚注册
+            # Try自愈：等待短时并检查是否刚注册
             await asyncio.sleep(0.1)
             dst_url = self._addr.get(dst_id)
             if not dst_url:

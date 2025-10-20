@@ -160,31 +160,31 @@ class ACPNetwork(MeshNetwork):
             raise ValueError("Full configuration must contain 'workflow' key")
         agent_configs = self.config.get("agents", [])
         agent_prompts = self.config.get("agent_prompts", {})
-        print(f"📝 准备创建 {len(agent_configs)} 个ACP Agent")
+        print(f"📝 Preparing to create {len(agent_configs)} ACP agents")
         for agent_info in agent_configs:
             agent = self.create_acp_agent(agent_info, self.task_id, agent_prompts)
             self.register_agent(agent)
             endpoint = f"http://127.0.0.1:{agent_info['port']}"
-            # 动态设置 ACP 侧名称：`<id>_<name>` 与工作区一致
+            # Dynamically set ACP-side name: `<id>_<name>` to match workspace
             acp_name = f"{agent.id}_{agent.name}"
             try:
                 agent._acp_agent_name = acp_name
             except Exception:
                 pass
-            # 向通信后端登记 (base_url, agent_name)
+            # Register with communication backend (base_url, agent_name)
             asyncio.create_task(self.comm_backend.register_agent(str(agent_info["id"]), endpoint, acp_name))
-            # agent 自身也保存 endpoint，供健康检查与诊断
+            # Agent also stores endpoint for health checks and diagnostics
             try:
                 agent._endpoint = endpoint
             except Exception:
                 pass
-            # 启动每个 Agent 的 ACP Server
+            # Start each agent's ACP server
             try:
                 agent.run_server_background()
             except Exception as e:
-                print(f"❌ 启动ACP Agent服务失败 {agent_info['id']}: {e}")
-            print(f"✅ ACP Agent {agent_info['name']} (ID: {agent_info['id']}) 已创建并注册，ACP 名称: {acp_name}")
-        print(f"🎉 总共成功注册了 {len(agent_configs)} 个ACP Agent")
+                print(f"❌ Failed to start ACP agent server {agent_info['id']}: {e}")
+            print(f"✅ ACP Agent {agent_info['name']} (ID: {agent_info['id']}) has been created and registered; ACP name: {acp_name}")
+        print(f"🎉 Successfully registered {len(agent_configs)} ACP agents in total")
 
     async def deliver(self, dst: int, msg: Dict[str, Any]) -> None:
         try:

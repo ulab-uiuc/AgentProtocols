@@ -48,7 +48,7 @@ class ACPAgent(MeshAgent):
         self._server_task: Optional[asyncio.Task] = None  # deprecated: kept for backward compatibility
         self._server_started = asyncio.Event()
         self._server_thread: Optional[threading.Thread] = None
-        # 保存 ACP 侧的 agent 名（用于 server 注册与 role 输出）
+        # Save the agent name on the ACP side (used for server registration and role output)
         self._acp_agent_name = name
 
         # Pretty init message (align with other backends style)
@@ -101,9 +101,9 @@ class ACPAgent(MeshAgent):
     def _create_server(self) -> Optional[Any]:
         server = Server()
 
-        # 允许 name 动态传入（若 SDK 不支持 name 形参则降级为默认 echo）
+        # Allow dynamic name passing (if SDK doesn't support 'name' parameter, fall back to default 'echo')
         def _sanitize_role(name: str) -> str:
-            # 仅保留字母、数字、下划线、短横线
+            # Keep only letters, numbers, underscores, and hyphens
             return re.sub(r"[^a-zA-Z0-9_\-]", "_", name or "agent")
 
         decorator = getattr(server, "agent")

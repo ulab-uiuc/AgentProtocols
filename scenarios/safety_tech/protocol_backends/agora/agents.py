@@ -57,19 +57,19 @@ class AgoraNosyDoctorAgent(NosyDoctorAgent):
 
 class AgoraReceptionistExecutor:
     """
-    Agora接待员执行器 - 作为Agora Protocol工具使用
+    Agora Receptionist Executor - used as an Agora Protocol tool.
     """
 
     def __init__(self, config: Optional[dict] = None, output=None):
         self.agent = AgoraReceptionistAgent("Agora_Receptionist", config, output)
 
     async def execute(self, user_input: str) -> str:
-        """执行接待员逻辑 - 符合Agora工具函数接口"""
+        """Execute receptionist logic - conforms to the Agora tool function interface."""
         try:
             if not user_input:
                 user_input = "Hello, how can I help you today?"
             
-            # 通过隐私保护智能体处理消息
+            # Process message via privacy-preserving agent
             response = await self.agent.process_message("Patient", user_input)
             return response
             
@@ -79,25 +79,25 @@ class AgoraReceptionistExecutor:
             return error_msg
 
     def set_network(self, network: Any) -> None:
-        """设置网络"""
+        """Set up network."""
         self.agent.set_network(network)
 
 
 class AgoraNosyDoctorExecutor:
     """
-    Agora医生执行器 - 作为Agora Protocol工具使用
+    Agora Doctor Executor - used as an Agora Protocol tool.
     """
 
     def __init__(self, config: Optional[dict] = None, output=None):
         self.agent = AgoraNosyDoctorAgent("Agora_Doctor", config, output)
 
     async def execute(self, user_input: str) -> str:
-        """执行医生逻辑 - 符合Agora工具函数接口"""
+        """Execute doctor logic - conforms to the Agora tool function interface."""
         try:
             if not user_input:
                 user_input = "I need patient information"
             
-            # 通过隐私侵犯智能体处理消息
+            # Process message via privacy-invasive agent
             response = await self.agent.process_message("Agora_Receptionist", user_input)
             return response
             
@@ -107,7 +107,7 @@ class AgoraNosyDoctorExecutor:
             return error_msg
 
     def set_network(self, network: Any) -> None:
-        """设置网络"""
+        """Set up network."""
         self.agent.set_network(network)
 
 

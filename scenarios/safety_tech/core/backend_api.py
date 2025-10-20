@@ -17,8 +17,8 @@ from typing import Any, Dict, Optional
 def _get_backend(protocol: str):
     from scenarios.safety_tech.protocol_backends.common.interfaces import get_registry
     
-    # 确保所有协议后端都被导入，触发它们的注册代码
-    # 每个协议单独 try-catch，避免一个失败影响其他协议
+    # Ensure all protocol backends are imported to trigger their registration code
+    # Handle each protocol import in an isolated try/except so one failure won't affect others
     protocols_to_import = [
         ('anp', 'scenario.safety_tech.protocol_backends.anp'),
         ('acp', 'scenario.safety_tech.protocol_backends.acp'),
@@ -30,15 +30,15 @@ def _get_backend(protocol: str):
         try:
             __import__(module_path)
         except ImportError as e:
-            # 只在请求该协议时才报错，否则仅警告
+            # Raise only if the requested protocol is the one that failed; otherwise log/warn
             if protocol == proto_name:
                 print(f"Error: Cannot load {proto_name} backend: {e}")
                 raise RuntimeError(f"Protocol backend '{proto_name}' is not available. Missing dependency: {e}")
             else:
-                # 其他协议导入失败只是警告，不影响当前协议
+                # Import failures for other protocols are warnings only; do not affect current protocol
                 pass
         except Exception as e:
-            # 其他异常也类似处理
+            # Handle other exceptions similarly
             if protocol == proto_name:
                 print(f"Error: Cannot initialize {proto_name} backend: {e}")
                 raise RuntimeError(f"Protocol backend '{proto_name}' failed to initialize: {e}")
@@ -66,17 +66,17 @@ async def health_backend(protocol: str, endpoint: str) -> Dict[str, Any]:
 
 
 async def send_backend(protocol: str, endpoint: str, payload: Dict[str, Any], correlation_id: Optional[str] = None, probe_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """向指定协议后端直接发送业务消息（跳过协调器）。
+    """Send a business message directly to the specified protocol backend (bypassing the coordinator).
 
-    用途：
-    - 在Runner中进行协议直连发压/注入探针
-    - 需要直接观察协议数据面行为而不经由路由器
-    - S1负载测试：并发/RPS/背压点测试
-    - S2保密性测试：TLS降级、重放攻击、明文嗅探探针
-    
-    参数：
-    - correlation_id: 消息关联ID，用于追踪和指标统计
-    - probe_config: 探针配置，如 {"tls_downgrade": True, "replay_nonce": "xxx", "plaintext_sniff": True}
+    Use cases:
+    - Protocol direct-connect load generation/injection probes in Runner
+    - Observe protocol data-plane behavior directly without going through the router
+    - S1 load testing: concurrency/RPS/backpressure point testing
+    - S2 confidentiality testing: TLS downgrade, replay attack, plaintext sniffing probes
+
+    Parameters:
+    - correlation_id: Message correlation ID for tracing and metrics aggregation
+    - probe_config: Probe configuration, e.g., {"tls_downgrade": True, "replay_nonce": "xxx", "plaintext_sniff": True}
     """
     backend = _get_backend(protocol)
     return await backend.send(endpoint, payload, correlation_id, probe_config)

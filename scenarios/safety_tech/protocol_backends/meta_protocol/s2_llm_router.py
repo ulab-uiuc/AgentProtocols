@@ -188,8 +188,8 @@ class S2LLMRouter:
         if not self.llm_core:
             raise RuntimeError(
                 "S2 Meta协议需要LLM进行智能路由决策。请配置有效的LLM服务:\n"
-                "- 设置 core.openai_api_key\n"
-                "- 设置 core.openai_base_url\n"
+                "- Setup core.openai_api_key\n"
+                "- Setup core.openai_base_url\n"
                 "- 确保LLM服务可访问\n"
                 "S2安全测试不支持规则路由回退。"
             )
@@ -278,8 +278,8 @@ S2测试配置:
             response = self.llm_core.execute(messages)
             
             if self.output:
-                self.output.info("📝 LLM路由响应:")
-                # 显示响应的前200个字符
+                self.output.info("📝 LLM路由Response:")
+                # 显示Response的前200个字符
                 response_preview = response[:200] + "..." if len(response) > 200 else response
                 for line in response_preview.split('\n'):
                     if line.strip():

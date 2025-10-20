@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-S1业务连续性测试配置工厂
-提供预定义的测试配置和工厂方法
+S1 business continuity test configuration factory.
+Provides predefined test configurations and factory methods.
 """
 
 from typing import Dict, Any, List
@@ -12,24 +12,24 @@ from .s1_business_continuity import (
 
 
 class S1ConfigFactory:
-    """S1配置工厂"""
+    """S1 configuration factory"""
     
     @staticmethod
     def create_light_test_config() -> Dict[str, Any]:
-        """轻量测试配置：快速验证"""
+        """Lightweight test configuration: quick validation"""
         return {
             'load_config': LoadMatrixConfig(
-                concurrent_levels=[1],  # 最小并发数
+                concurrent_levels=[1],  # minimal concurrency
                 rps_patterns=[LoadPattern.CONSTANT],
                 message_types=[MessageType.SHORT],
-                test_duration_seconds=5,  # 极短测试时间
-                base_rps=1  # 最小RPS
+                test_duration_seconds=5,  # very short duration
+                base_rps=1  # minimal RPS
             ),
             'disturbance_config': NetworkDisturbanceConfig(
                 jitter_ms_range=(10, 50),
                 packet_loss_rate=0.01,
                 reorder_probability=0.005,
-                enable_connection_drops=False  # 轻量测试不启用连接中断
+                enable_connection_drops=False  # no connection drops in light test
             ),
             'attack_config': AttackNoiseConfig(
                 malicious_registration_rate=1,
@@ -42,7 +42,7 @@ class S1ConfigFactory:
     
     @staticmethod
     def create_standard_test_config() -> Dict[str, Any]:
-        """标准测试配置：平衡性能和覆盖度"""
+        """Standard test configuration: balance performance and coverage"""
         return {
             'load_config': LoadMatrixConfig(
                 concurrent_levels=[8, 32],
@@ -69,7 +69,7 @@ class S1ConfigFactory:
     
     @staticmethod
     def create_stress_test_config() -> Dict[str, Any]:
-        """压力测试配置：高强度全面测试"""
+        """Stress test configuration: high-intensity comprehensive test"""
         return {
             'load_config': LoadMatrixConfig(
                 concurrent_levels=[8, 32, 128],
@@ -97,52 +97,52 @@ class S1ConfigFactory:
     
     @staticmethod
     def create_protocol_optimized_config(protocol_name: str) -> Dict[str, Any]:
-        """为特定协议优化的配置"""
+        """Configuration optimized for a specific protocol"""
         base_config = S1ConfigFactory.create_standard_test_config()
         
         if protocol_name.lower() == 'acp':
-            # ACP (HTTP同步RPC型) - 对延迟尖峰敏感
-            base_config['load_config'].base_rps = 8  # 降低RPS避免线程池瓶颈
-            base_config['disturbance_config'].jitter_ms_range = (5, 50)  # 降低抖动
-            base_config['disturbance_config'].connection_drop_interval = 60  # 减少连接中断
+            # ACP (HTTP synchronous RPC) - sensitive to latency spikes
+            base_config['load_config'].base_rps = 8  # reduce RPS to avoid thread-pool bottlenecks
+            base_config['disturbance_config'].jitter_ms_range = (5, 50)  # lower jitter
+            base_config['disturbance_config'].connection_drop_interval = 60  # fewer connection drops
             
         elif protocol_name.lower() == 'anp':
-            # ANP (长连接/会话型) - 建立成本高但稳态好
-            base_config['load_config'].base_rps = 12  # 可以承受更高RPS
-            base_config['disturbance_config'].connection_drop_interval = 90  # 更少连接中断
-            base_config['disturbance_config'].packet_loss_rate = 0.03  # 测试对丢包的鲁棒性
+            # ANP (long-lived connections/session-based) - higher setup cost but stable in steady state
+            base_config['load_config'].base_rps = 12  # can sustain higher RPS
+            base_config['disturbance_config'].connection_drop_interval = 90  # fewer connection drops
+            base_config['disturbance_config'].packet_loss_rate = 0.03  # test robustness to packet loss
             
         elif protocol_name.lower() == 'a2a':
-            # A2A (混合型) - 取决于具体部署
-            # 保持标准配置，但增加突发测试
+            # A2A (hybrid) - depends on specific deployment
+            # keep standard config but add burst tests
             base_config['load_config'].rps_patterns.append(LoadPattern.BURST)
             base_config['load_config'].burst_multiplier = 3.5
             
         elif protocol_name.lower() == 'agora':
-            # Agora (平台化网络) - 背压友好但可能厚尾延迟
-            base_config['load_config'].base_rps = 15  # 更高RPS测试背压
-            base_config['load_config'].test_duration_seconds = 75  # 更长测试时间观察厚尾
-            base_config['disturbance_config'].bandwidth_limit_kbps = 800  # 更严格的带宽限制
+            # Agora (platform network) - backpressure-friendly but may show heavy-tail latency
+            base_config['load_config'].base_rps = 15  # higher RPS to test backpressure
+            base_config['load_config'].test_duration_seconds = 75  # longer to observe heavy tail
+            base_config['disturbance_config'].bandwidth_limit_kbps = 800  # stricter bandwidth limit
         
         return base_config
     
     @staticmethod
     def create_network_focus_config() -> Dict[str, Any]:
-        """网络扰动重点配置：专注测试网络韧性"""
+        """Network-disturbance-focused config: emphasize network resilience"""
         return {
             'load_config': LoadMatrixConfig(
-                concurrent_levels=[16],  # 固定中等并发
-                rps_patterns=[LoadPattern.CONSTANT],  # 固定模式
-                message_types=[MessageType.SHORT, MessageType.LONG],  # 测试不同大小报文
-                test_duration_seconds=120,  # 更长时间观察网络效果
+                concurrent_levels=[16],  # fixed medium concurrency
+                rps_patterns=[LoadPattern.CONSTANT],  # fixed pattern
+                message_types=[MessageType.SHORT, MessageType.LONG],  # test different payload sizes
+                test_duration_seconds=120,  # longer to observe network effects
                 base_rps=8
             ),
             'disturbance_config': NetworkDisturbanceConfig(
-                jitter_ms_range=(50, 300),  # 高抖动
-                packet_loss_rate=0.08,      # 高丢包率
-                reorder_probability=0.05,   # 高乱序概率
-                bandwidth_limit_kbps=200,   # 严格带宽限制
-                connection_drop_interval=20, # 频繁连接中断
+                jitter_ms_range=(50, 300),  # high jitter
+                packet_loss_rate=0.08,      # high loss rate
+                reorder_probability=0.05,   # high reordering probability
+                bandwidth_limit_kbps=200,   # strict bandwidth limit
+                connection_drop_interval=20, # frequent connection drops
                 enable_jitter=True,
                 enable_packet_loss=True,
                 enable_reorder=True,
@@ -150,7 +150,7 @@ class S1ConfigFactory:
                 enable_connection_drops=True
             ),
             'attack_config': AttackNoiseConfig(
-                # 降低攻击强度，专注网络扰动
+                # Lower attack intensity; focus on network disturbances
                 malicious_registration_rate=2,
                 spam_message_rate=10,
                 replay_attack_rate=1,
@@ -161,50 +161,50 @@ class S1ConfigFactory:
     
     @staticmethod
     def create_attack_focus_config() -> Dict[str, Any]:
-        """攻击噪声重点配置：专注测试攻击抗性"""
+        """Attack-noise-focused config: emphasize attack resistance"""
         return {
             'load_config': LoadMatrixConfig(
-                concurrent_levels=[16],  # 固定中等并发
-                rps_patterns=[LoadPattern.CONSTANT, LoadPattern.BURST],  # 测试突发对攻击的影响
-                message_types=[MessageType.SHORT],  # 简化消息类型
+                concurrent_levels=[16],  # fixed medium concurrency
+                rps_patterns=[LoadPattern.CONSTANT, LoadPattern.BURST],  # test burst impact on attacks
+                message_types=[MessageType.SHORT],  # simplified message type
                 test_duration_seconds=90,
                 base_rps=10
             ),
             'disturbance_config': NetworkDisturbanceConfig(
-                # 最小网络扰动，专注攻击效果
+                # Minimal network disturbance to isolate attack effects
                 jitter_ms_range=(5, 30),
                 packet_loss_rate=0.005,
                 reorder_probability=0.001,
                 enable_connection_drops=False
             ),
             'attack_config': AttackNoiseConfig(
-                malicious_registration_rate=20,  # 高频恶意注册
-                spam_message_rate=100,           # 高频垃圾消息
-                replay_attack_rate=15,           # 高频重放攻击
-                dos_request_rate=200,            # 高频DoS
-                probe_query_rate=30              # 高频旁路查询
+                malicious_registration_rate=20,  # high-rate malicious registration
+                spam_message_rate=100,           # high-rate spam messages
+                replay_attack_rate=15,           # high-rate replay attacks
+                dos_request_rate=200,            # high-rate DoS
+                probe_query_rate=30              # high-rate side-channel queries
             )
         }
     
     @staticmethod
     def create_latency_focus_config() -> Dict[str, Any]:
-        """延迟重点配置：专注测试延迟分布"""
+        """Latency-focused config: emphasize latency distribution"""
         return {
             'load_config': LoadMatrixConfig(
-                concurrent_levels=[4, 16, 64],   # 多层并发测试
-                rps_patterns=[LoadPattern.CONSTANT],  # 稳定模式
-                message_types=[MessageType.SHORT, MessageType.LONG, MessageType.STREAMING],  # 全消息类型
-                test_duration_seconds=180,       # 长时间测试
-                base_rps=5                       # 较低RPS确保质量
+                concurrent_levels=[4, 16, 64],   # multi-level concurrency
+                rps_patterns=[LoadPattern.CONSTANT],  # stable pattern
+                message_types=[MessageType.SHORT, MessageType.LONG, MessageType.STREAMING],  # all message types
+                test_duration_seconds=180,       # long duration
+                base_rps=5                       # lower RPS to ensure quality
             ),
             'disturbance_config': NetworkDisturbanceConfig(
-                jitter_ms_range=(1, 20),        # 低抖动精确测量
-                packet_loss_rate=0.001,         # 极低丢包
-                reorder_probability=0.0005,     # 极低乱序
-                enable_connection_drops=False   # 不干扰延迟测量
+                jitter_ms_range=(1, 20),        # low jitter for precise measurement
+                packet_loss_rate=0.001,         # very low loss
+                reorder_probability=0.0005,     # very low reordering
+                enable_connection_drops=False   # do not disturb latency measurement
             ),
             'attack_config': AttackNoiseConfig(
-                # 最小攻击噪声
+                # Minimal attack noise
                 malicious_registration_rate=1,
                 spam_message_rate=5,
                 replay_attack_rate=1,
@@ -215,7 +215,7 @@ class S1ConfigFactory:
     
     @staticmethod
     def create_tester_from_config(protocol_name: str, config_dict: Dict[str, Any]) -> S1BusinessContinuityTester:
-        """从配置字典创建测试器"""
+        """Create tester from configuration dictionary"""
         return S1BusinessContinuityTester(
             protocol_name=protocol_name,
             load_config=config_dict['load_config'],
@@ -225,7 +225,7 @@ class S1ConfigFactory:
     
     @staticmethod
     def get_available_configs() -> List[str]:
-        """获取可用配置列表"""
+        """Get available configuration names"""
         return [
             'light',
             'standard', 
@@ -237,7 +237,7 @@ class S1ConfigFactory:
     
     @staticmethod
     def create_config_by_name(config_name: str, protocol_name: str = None) -> Dict[str, Any]:
-        """根据名称创建配置"""
+        """Create configuration by name"""
         config_map = {
             'light': S1ConfigFactory.create_light_test_config,
             'standard': S1ConfigFactory.create_standard_test_config,
@@ -251,14 +251,14 @@ class S1ConfigFactory:
             return S1ConfigFactory.create_protocol_optimized_config(protocol_name)
         
         if config_name not in config_map:
-            raise ValueError(f"未知配置名称: {config_name}. 可用配置: {list(config_map.keys())}")
+            raise ValueError(f"Unknown configuration name: {config_name}. Available: {list(config_map.keys())}")
         
         return config_map[config_name]()
 
 
 def create_s1_tester(protocol_name: str, 
                      config_name: str = 'standard') -> S1BusinessContinuityTester:
-    """便捷函数：创建S1测试器"""
+    """Convenience function: create an S1 tester"""
     if config_name == 'protocol_optimized':
         config = S1ConfigFactory.create_protocol_optimized_config(protocol_name)
     else:
@@ -267,86 +267,86 @@ def create_s1_tester(protocol_name: str,
     return S1ConfigFactory.create_tester_from_config(protocol_name, config)
 
 
-# 预定义的医疗场景消息模板
+# Predefined medical scenario message templates
 MEDICAL_SCENARIO_TEMPLATES = {
     MessageType.SHORT: [
-        "患者{patient_id}血压异常，请会诊",
-        "手术{surgery_id}需要专科医生支援",
-        "检查报告{report_id}结果异常",
-        "患者{patient_id}出现过敏反应",
-        "急诊{emergency_id}需要立即处理",
-        "药物{drug_name}剂量需要调整",
-        "病房{room_id}患者病情变化",
-        "手术室{or_id}设备故障报告"
+    "Patient {patient_id} shows abnormal blood pressure; request consultation",
+    "Surgery {surgery_id} requires specialist support",
+    "Examination report {report_id} indicates abnormal result",
+    "Patient {patient_id} has an allergic reaction",
+    "Emergency case {emergency_id} requires immediate attention",
+    "Medication {drug_name} dosage needs adjustment",
+    "Condition change reported for patient in room {room_id}",
+    "Operating room {or_id} equipment fault report"
     ],
     
     MessageType.LONG: [
-        """患者{patient_id}详细病历：
-年龄：{age}岁，性别：{gender}
-主诉：{chief_complaint}
-现病史：{present_illness}
-既往史：{past_history}
-体格检查：{physical_exam}
-辅助检查：{lab_results}
-初步诊断：{diagnosis}
-治疗方案：{treatment_plan}
-请各位专家给出会诊意见，特别关注{focus_area}的处理。
-患者目前生命体征稳定，但需要密切观察{monitoring_focus}。
-建议进一步检查{additional_tests}以明确诊断。
-如有疑问请及时联系，谢谢！""",
+    """Detailed medical record for patient {patient_id}:
+Age: {age} years, Gender: {gender}
+Chief complaint: {chief_complaint}
+Present illness: {present_illness}
+Past medical history: {past_history}
+Physical examination: {physical_exam}
+Auxiliary tests: {lab_results}
+Preliminary diagnosis: {diagnosis}
+Treatment plan: {treatment_plan}
+Please provide consultation opinions, with a special focus on handling {focus_area}.
+The patient's vital signs are currently stable, but closely monitor {monitoring_focus}.
+Further tests {additional_tests} are recommended to clarify diagnosis.
+Please contact us if there are any questions. Thank you!""",
         
-        """多学科会诊病例{case_id}：
-科室：{department}
-主治医师：{attending_doctor}
-患者基本信息：{patient_info}
-病情摘要：{case_summary}
-目前治疗：{current_treatment}
-会诊问题：{consultation_questions}
-相关检查：{relevant_tests}
-影像学表现：{imaging_findings}
-实验室指标：{lab_values}
-请各位专家从以下角度给出意见：
-1. 诊断是否准确？
-2. 治疗方案是否合理？
-3. 是否需要调整用药？
-4. 预后评估如何？
-5. 是否需要进一步检查？
-期待您的宝贵意见，谢谢合作！"""
+    """Multidisciplinary consultation case {case_id}:
+Department: {department}
+Attending physician: {attending_doctor}
+Patient information: {patient_info}
+Case summary: {case_summary}
+Current treatment: {current_treatment}
+Consultation questions: {consultation_questions}
+Relevant examinations: {relevant_tests}
+Imaging findings: {imaging_findings}
+Laboratory indicators: {lab_values}
+Please provide opinions from the following perspectives:
+1. Is the diagnosis accurate?
+2. Is the treatment plan reasonable?
+3. Is medication adjustment needed?
+4. What is the prognosis assessment?
+5. Are further examinations needed?
+We appreciate your valuable input. Thank you!"""
     ],
     
     MessageType.STREAMING: [
-        "[数据流{stream_id}-1/5] 患者{patient_id}生命体征监测开始... | [数据流{stream_id}-2/5] 血压：{bp_systolic}/{bp_diastolic}mmHg，心率：{heart_rate}次/分 | [数据流{stream_id}-3/5] 血氧饱和度：{spo2}%，呼吸：{resp_rate}次/分，体温：{temp}°C | [数据流{stream_id}-4/5] 心电图：{ecg_findings}，血气分析：{blood_gas} | [数据流{stream_id}-5/5] 监测结论：{monitoring_conclusion}，建议：{recommendations}",
+    "[Stream {stream_id} - 1/5] Patient {patient_id} vital sign monitoring started... | [Stream {stream_id} - 2/5] Blood pressure: {bp_systolic}/{bp_diastolic} mmHg, Heart rate: {heart_rate} bpm | [Stream {stream_id} - 3/5] SpO2: {spo2}%, Respiration: {resp_rate} breaths/min, Temperature: {temp}°C | [Stream {stream_id} - 4/5] ECG: {ecg_findings}, Blood gas: {blood_gas} | [Stream {stream_id} - 5/5] Conclusion: {monitoring_conclusion}, Recommendation: {recommendations}",
         
-        "[实时数据{data_id}-1/4] 手术{surgery_id}进行中，当前阶段：{surgery_stage} | [实时数据{data_id}-2/4] 麻醉状态：{anesthesia_status}，出血量：{blood_loss}ml | [实时数据{data_id}-3/4] 手术进展：{surgery_progress}，预计剩余时间：{estimated_time} | [实时数据{data_id}-4/4] 需要支援：{support_needed}，联系电话：{contact_number}"
+    "[Realtime {data_id} - 1/4] Surgery {surgery_id} in progress, current stage: {surgery_stage} | [Realtime {data_id} - 2/4] Anesthesia status: {anesthesia_status}, Blood loss: {blood_loss} ml | [Realtime {data_id} - 3/4] Surgical progress: {surgery_progress}, Estimated time remaining: {estimated_time} | [Realtime {data_id} - 4/4] Support needed: {support_needed}, Contact: {contact_number}"
     ]
 }
 
 
 def generate_medical_message(msg_type: MessageType, case_data: Dict[str, Any] = None) -> str:
-    """生成医疗场景消息"""
+    """Generate a medical scenario message"""
     import random
     
     if case_data is None:
         case_data = {}
     
-    templates = MEDICAL_SCENARIO_TEMPLATES.get(msg_type, ["默认消息"])
+    templates = MEDICAL_SCENARIO_TEMPLATES.get(msg_type, ["Default message"])
     template = random.choice(templates)
     
-    # 默认数据
+    # Default data
     default_data = {
         'patient_id': f"P{random.randint(1000, 9999)}",
         'surgery_id': f"S{random.randint(100, 999)}",
         'report_id': f"R{random.randint(10000, 99999)}",
         'emergency_id': f"E{random.randint(100, 999)}",
-        'drug_name': random.choice(['阿司匹林', '美托洛尔', '氯吡格雷', '阿托伐他汀']),
+        'drug_name': random.choice(['Aspirin', 'Metoprolol', 'Clopidogrel', 'Atorvastatin']),
         'room_id': f"{random.randint(1, 20)}0{random.randint(1, 8)}",
         'or_id': f"OR-{random.randint(1, 10)}",
         'age': random.randint(25, 80),
-        'gender': random.choice(['男', '女']),
-        'chief_complaint': random.choice(['胸痛', '呼吸困难', '腹痛', '头痛', '发热']),
+        'gender': random.choice(['Male', 'Female']),
+        'chief_complaint': random.choice(['Chest pain', 'Dyspnea', 'Abdominal pain', 'Headache', 'Fever']),
         'case_id': f"MDT{random.randint(1000, 9999)}",
-        'department': random.choice(['心内科', '呼吸科', '消化科', '神经科', '急诊科']),
-        'attending_doctor': f"Dr.{random.choice(['张', '李', '王', '刘', '陈'])}{random.choice(['明', '华', '强', '伟', '峰'])}",
+        'department': random.choice(['Cardiology', 'Pulmonology', 'Gastroenterology', 'Neurology', 'Emergency']),
+        'attending_doctor': f"Dr. {random.choice(['Smith', 'Johnson', 'Williams', 'Brown', 'Jones'])} {random.choice(['James', 'William', 'Benjamin', 'Lucas', 'Henry'])}",
         'stream_id': f"STR{random.randint(100, 999)}",
         'bp_systolic': random.randint(90, 180),
         'bp_diastolic': random.randint(60, 110),
@@ -357,11 +357,11 @@ def generate_medical_message(msg_type: MessageType, case_data: Dict[str, Any] = 
         'data_id': f"RT{random.randint(100, 999)}"
     }
     
-    # 合并用户数据
+    # Merge user-provided data
     default_data.update(case_data)
     
     try:
         return template.format(**default_data)
     except KeyError as e:
-        # 如果模板中有未提供的字段，返回简化版本
-        return f"医疗消息 - 患者{default_data['patient_id']} - {msg_type.value}类型消息"
+        # If the template references an unknown field, return a simplified version
+        return f"Medical message - patient {default_data['patient_id']} - type {msg_type.value}"

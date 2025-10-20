@@ -41,7 +41,7 @@ class A2AProtocolBackend(BaseProtocolBackend):
             }
         }
         
-        # 处理探针配置
+        # Process探针配置
         if probe_config:
             # TLS降级探针
             if probe_config.get('tls_downgrade'):
@@ -56,7 +56,7 @@ class A2AProtocolBackend(BaseProtocolBackend):
                     ssl_context.minimum_version = ssl.TLSVersion.TLSv1
                     ssl_context.maximum_version = ssl.TLSVersion.TLSv1
                 
-                # 设置弱加密套件
+                # Setup弱加密套件
                 if probe_config.get('cipher_downgrade'):
                     ssl_context.set_ciphers('DES-CBC3-SHA:RC4-MD5:NULL-MD5')
                 
@@ -107,7 +107,7 @@ class A2AProtocolBackend(BaseProtocolBackend):
                 modified_payload = e2e_detector.inject_watermark_payload(original_payload)
                 txt = modified_payload.get('text', txt)
                 
-                # 创建明文探测payload
+                # Create明文探测payload
                 if probe_config.get('e2e_probe_payload'):
                     probe_payload = e2e_detector.create_plaintext_probe_payload()
                     txt += f" [PROBE_PAYLOAD: {probe_payload['probe_markers']['credit_card']}]"
@@ -148,7 +148,7 @@ class A2AProtocolBackend(BaseProtocolBackend):
                     txt = f"{random.choice(window_markers)} {txt}"
                     probe_results['window_test_marker'] = True
 
-        # 更新消息文本（可能已被探针修改）
+        # Update消息文本（可能已被探针修改）
         send_payload["params"]["message"]["text"] = txt
         send_payload["params"]["message"]["parts"] = [{"type": "text", "text": txt}]
 
@@ -191,9 +191,9 @@ class A2AProtocolBackend(BaseProtocolBackend):
             # 使用直接代码执行方式，类似ANP的修复方法
             from pathlib import Path
             
-            # 找到项目根目录（包含script目录的地方）
+            # 找到项目root directory（包含script目录的地方）
             current_file = Path(__file__).resolve()
-            project_root = current_file.parent.parent.parent.parent.parent  # 从protocol_backends/a2a/client.py回到项目根目录
+            project_root = current_file.parent.parent.parent.parent.parent  # 从protocol_backends/a2a/client.py回到项目root directory
             
             code = (
                 f"import sys; sys.path.insert(0, '{project_root}');"

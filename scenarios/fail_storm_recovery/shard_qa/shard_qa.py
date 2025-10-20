@@ -149,16 +149,16 @@ class ShardQADemo:
         self.current_group_id = 0
         self.independent_mode = False  # Flag for independent processing mode
         
-        # 设置全局异常处理器，防止未捕获的异常导致崩溃
+        # Setup全局异常处理器，防止未捕获的异常导致崩溃
         self._setup_exception_handlers()
     
     def _setup_exception_handlers(self):
-        """设置全局异常处理器，防止未捕获异常导致agent崩溃"""
+        """Setup全局异常处理器，防止未捕获异常导致agent崩溃"""
         import asyncio
         import sys
         
         def handle_exception(loop, context):
-            """处理asyncio事件循环中的未捕获异常"""
+            """Handleasyncio事件循环中的未捕获异常"""
             exception = context.get('exception')
             if exception:
                 if isinstance(exception, asyncio.CancelledError):
@@ -174,15 +174,15 @@ class ShardQADemo:
                 if hasattr(self, 'output') and self.output:
                     self.output.warning(f"Event loop error: {context}")
         
-        # 设置asyncio异常处理器
+        # Setupasyncio异常处理器
         try:
             loop = asyncio.get_event_loop()
             loop.set_exception_handler(handle_exception)
         except RuntimeError:
-            # 如果没有运行中的event loop，稍后再设置
+            # If没有运行中的event loop，稍后再Setup
             pass
         
-        # 设置系统级异常处理器
+        # Setup系统级异常处理器
         def sys_exception_handler(exc_type, exc_value, exc_traceback):
             if hasattr(self, 'output') and self.output:
                 self.output.error(f"Unhandled system exception: {exc_type.__name__}: {exc_value}")
@@ -352,8 +352,8 @@ class ShardQADemo:
                     if "10048" in str(e) or "address already in use" in str(e).lower():
                         self.output.warning(f"Port {port} for {shard_id} is occupied, attempt {retry+1}/{max_retries}")
                         if retry < max_retries - 1:
-                            port = original_port + 100 + (retry + 1) * 10  # 尝试使用更高的端口
-                            await asyncio.sleep(2)  # 等待2秒再重试
+                            port = original_port + 100 + (retry + 1) * 10  # Try使用更高的端口
+                            await asyncio.sleep(2)  # Wait2秒再重试
                         else:
                             self.output.error(f"Failed to create {shard_id} after {max_retries} attempts - all ports occupied")
                             raise

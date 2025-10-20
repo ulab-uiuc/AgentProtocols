@@ -124,7 +124,7 @@ class AgoraCoordinatorExecutor:
                     worker_list = original_text.split(" ", 1)[1] if " " in original_text else ""
                     worker_ids = [w.strip() for w in worker_list.split(",") if w.strip()]
 
-                    # 设置协调器网络访问
+                    # Setup协调器网络访问
                     self.coordinator.worker_ids = worker_ids
                     self.coordinator.coordinator_id = "Coordinator-1"
 

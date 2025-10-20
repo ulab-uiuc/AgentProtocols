@@ -27,12 +27,12 @@ HERE = Path(__file__).resolve().parent
 SAFETY_TECH = HERE.parent
 PROJECT_ROOT = HERE.parent.parent.parent
 sys.path.insert(0, str(SAFETY_TECH))
-# 为支持 `import src.*`，需要将项目根目录加入 sys.path（而非 src 目录本身）
+# 为支持 `import src.*`，需要将项目root directory加入 sys.path（而非 src 目录本身）
 sys.path.insert(0, str(PROJECT_ROOT))
 
 logger = logging.getLogger(__name__)
 
-# 导入核心组件（Coordinator/Observer/攻击场景）
+# Import核心组件（Coordinator/Observer/攻击场景）
 try:
     from core.rg_coordinator import RGCoordinator
     from core.attack_scenarios import RegistrationAttackRunner
@@ -148,7 +148,7 @@ async def main():
         await spawn_backend('a2a', 'doctor_a', a_port)
         await spawn_backend('a2a', 'doctor_b', b_port)
         
-        # 等待服务启动并检查健康状态
+        # Wait服务启动并检查健康状态
         await _wait_http_ok(f"http://127.0.0.1:{a_port}/health", 15.0)
         await _wait_http_ok(f"http://127.0.0.1:{b_port}/health", 15.0)
 
@@ -196,7 +196,7 @@ async def main():
             except Exception:
                 pass
 
-        # 等待Coordinator目录刷新
+        # WaitCoordinator目录刷新
         await asyncio.sleep(4)
 
         # 6) 加载数据集（标准：10个案例）
@@ -210,7 +210,7 @@ async def main():
         skip_s1 = s1_test_mode in ('skip', 'none', 'off')
         
         if not skip_s1:
-            # 创建S1业务连续性测试器
+            # CreateS1业务连续性测试器
             from scenarios.safety_tech.core.s1_config_factory import create_s1_tester
             
             if s1_test_mode == 'protocol_optimized':
@@ -276,7 +276,7 @@ async def main():
                 import traceback
                 print(f"详细错误: {traceback.format_exc()}")
                 s1_results = []
-        # 处理S1测试结果
+        # ProcessS1测试结果
         if skip_s1:
             # 跳过测试的情况
             s1_report = {
@@ -305,7 +305,7 @@ async def main():
               f"P95={s1_report['latency_analysis']['p95_ms']:.1f}ms, "
               f"P99={s1_report['latency_analysis']['p99_ms']:.1f}ms")
         
-        # 为了兼容现有代码，设置一些变量（新版S1测试已完成）
+        # 为了兼容现有代码，Setup一些变量（新版S1测试已完成）
         conversation_results = []
         total_attempted_rounds = s1_report['test_summary']['total_requests']
         total_successful_rounds = s1_report['test_summary']['total_successful']
@@ -343,7 +343,7 @@ async def main():
         enable_s2_probes = os.environ.get('A2A_ENABLE_S2_PROBES', 'true').lower() == 'true'  # 默认启用
         s2_probe_type = os.environ.get('A2A_S2_PROBE_TYPE', 'comprehensive')  # 启用完整S2测试
         
-        # 创建S2探针配置
+        # CreateS2探针配置
         probe_config = None
         if enable_s2_probes:
             from scenarios.safety_tech.core.probe_config import (
@@ -451,7 +451,7 @@ async def main():
                 pcap_results = await run_pcap_mitm_test(
                     interface="lo0", 
                     duration=8,  # 8秒抓包
-                    enable_mitm=False  # 暂时禁用MITM以避免复杂设置
+                    enable_mitm=False  # 暂时禁用MITM以避免复杂Setup
                 )
                 s2_test_results['pcap_analysis'] = pcap_results
                 
@@ -492,7 +492,7 @@ async def main():
                 from scenarios.safety_tech.core.e2e_detector import E2EEncryptionDetector
                 e2e_detector = E2EEncryptionDetector("A2A_E2E_WATERMARK_TEST")
                 
-                # 发送带水印的测试消息
+                # Send带水印的测试消息
                 test_payload = e2e_detector.create_plaintext_probe_payload()
                 probe_config = create_comprehensive_probe_config().to_dict()
                 
@@ -580,7 +580,7 @@ async def main():
                             level_results['attempts'] += 1
                             skew_results['total_tests'] += 1
                             
-                            # 检查是否被阻断（错误状态码或特定错误）
+                            # Check是否被阻断（错误状态码或特定错误）
                             if response.get('status') == 'error':
                                 error_msg = response.get('error', '').lower()
                                 if 'time' in error_msg or 'replay' in error_msg or 'nonce' in error_msg or 'timestamp' in error_msg:
@@ -593,13 +593,13 @@ async def main():
                                 level_results['success'] += 1
                                 
                         except Exception as e:
-                            # 连接异常也可能表示被阻断
+                            # Connect异常也可能表示被阻断
                             level_results['attempts'] += 1
                             level_results['blocked'] += 1
                             skew_results['total_tests'] += 1
                             skew_results['blocked_tests'] += 1
                     
-                    # 计算该档位的阻断率
+                    # Calculate该档位的阻断率
                     if level_results['attempts'] > 0:
                         block_rate = level_results['blocked'] / level_results['attempts']
                         level_results['block_rate'] = block_rate
@@ -609,7 +609,7 @@ async def main():
                     skew_results['skew_level_results'][f'{skew_level}s'] = level_results
                     print(f"      ±{skew_level}s: {level_results['blocked']}/{level_results['attempts']} 被阻断 ({level_results['block_rate']:.1%})")
                 
-                # 计算总体时钟漂移防护评分
+                # Calculate总体时钟漂移防护评分
                 overall_block_rate = skew_results['blocked_tests'] / skew_results['total_tests'] if skew_results['total_tests'] > 0 else 0
                 time_skew_score = int(overall_block_rate * 100)
                 
@@ -673,7 +673,7 @@ async def main():
                     # 每种劫持场景测试2次
                     for i in range(2):
                         try:
-                            # 创建带有劫持令牌的探针配置
+                            # Create带有劫持令牌的探针配置
                             hijack_probe_config = {
                                 'session_hijack': True,
                                 'session_token_reuse': scenario['token'],
@@ -696,10 +696,10 @@ async def main():
                             scenario_results['attempts'] += 1
                             hijack_results['total_attempts'] += 1
                             
-                            # 检查是否被阻断
+                            # Check是否被阻断
                             if response.get('status') == 'error':
                                 error_msg = response.get('error', '').lower()
-                                # 检查是否是认证/授权相关的错误
+                                # Check是否是认证/授权相关的错误
                                 if (any(keyword in error_msg for keyword in ['auth', 'token', 'session', 'unauthorized', 'forbidden', 'invalid']) or 
                                     '404' in error_msg or 'not found' in error_msg):
                                     scenario_results['blocked'] += 1
@@ -712,13 +712,13 @@ async def main():
                                 hijack_results['successful_hijacks'] += 1
                                 
                         except Exception as e:
-                            # 连接异常可能表示被系统阻断
+                            # Connect异常可能表示被系统阻断
                             scenario_results['attempts'] += 1
                             scenario_results['blocked'] += 1
                             hijack_results['total_attempts'] += 1
                             hijack_results['blocked_attempts'] += 1
                     
-                    # 计算该场景的阻断率
+                    # Calculate该场景的阻断率
                     if scenario_results['attempts'] > 0:
                         block_rate = scenario_results['blocked'] / scenario_results['attempts']
                         scenario_results['block_rate'] = block_rate
@@ -728,7 +728,7 @@ async def main():
                     hijack_results['hijack_types'][scenario_name] = scenario_results
                     print(f"      {scenario['description']}: {scenario_results['blocked']}/{scenario_results['attempts']} 被阻断 ({scenario_results['block_rate']:.1%})")
                 
-                # 计算总体会话劫持防护评分
+                # Calculate总体会话劫持防护评分
                 overall_hijack_block_rate = hijack_results['blocked_attempts'] / hijack_results['total_attempts'] if hijack_results['total_attempts'] > 0 else 0
                 session_hijack_score = int(overall_hijack_block_rate * 100)
                 
@@ -794,7 +794,7 @@ async def main():
         # 8. 元数据泄露防护 (3%)
         metadata_score = max(0, 100 - s2_test_results['metadata_leakage'] * 20)
         
-        # 计算加权总分
+        # Calculate加权总分
         s2_comprehensive_score = (
             tls_downgrade_score * 0.20 +    # TLS降级防护 20%
             cert_matrix_score * 0.20 +      # 证书矩阵 20%
@@ -808,7 +808,7 @@ async def main():
         
         s2_comprehensive_score = min(100, max(0, s2_comprehensive_score))
         
-        # 记录新的加权评分详情
+        # Record新的加权评分详情
         s2_test_results['scoring_breakdown'] = {
             'weighting_system': 'Safety-oriented with protocol differentiation focus',
             'final_score': round(s2_comprehensive_score, 1),

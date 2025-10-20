@@ -205,7 +205,7 @@ class Config:
 
     @staticmethod
     def _get_config_path() -> Path:
-        """只允许使用 config/general.yaml 作为唯一配置入口。"""
+        """Only allow config/general.yaml as the single configuration entry point."""
         cfg = PROJECT_ROOT / "config" / "general.yaml"
         if not cfg.exists():
             raise FileNotFoundError("Missing required configuration file: config/general.yaml")
@@ -222,15 +222,15 @@ class Config:
     def _load_initial_config(self):
         raw_config = self._load_config()
 
-        # ================= LLM 解析（兼容 YAML 与旧 TOML） =================
+    # ================= LLM parsing (compatible with YAML and legacy TOML) =================
         llm_block = raw_config.get("llm", {}) if isinstance(raw_config.get("llm", {}), dict) else {}
 
-        # YAML: 期望结构 llm: { default: {...}, vision: {...}, other: {...} }
+    # YAML: expected structure llm: { default: {...}, vision: {...}, other: {...} }
         if "default" in llm_block:
             default_settings = {**llm_block.get("default", {})}
             llm_overrides = {k: v for k, v in llm_block.items() if k != "default" and isinstance(v, dict)}
         else:
-            # 旧格式: 顶层直接放所有字段（TOML [llm] 情况）
+            # Legacy format: all fields directly under the top level (TOML [llm] case)
             base_llm = llm_block
             default_settings = {
                 "model": base_llm.get("model"),
@@ -244,7 +244,7 @@ class Config:
             }
             llm_overrides = {k: v for k, v in llm_block.items() if isinstance(v, dict)}
 
-        # 确保必要字段存在（避免 Pydantic 报错）
+    # Ensure required fields exist (avoid Pydantic errors)
         default_settings.setdefault("api_type", "")
         default_settings.setdefault("api_version", "")
         default_settings.setdefault("temperature", 1.0)

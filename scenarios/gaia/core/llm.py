@@ -183,23 +183,23 @@ class LLM:
         self.total_input_tokens += input_tokens
         self.total_completion_tokens += completion_tokens
         
-        # 醒目的颜色和格式显示 token 使用情况
-        GREEN = "\033[92m"      # 亮绿色
-        YELLOW = "\033[93m"     # 亮黄色  
-        CYAN = "\033[96m"       # 亮青色
-        BOLD = "\033[1m"        # 粗体
-        RESET = "\033[0m"       # 重置
-        
-        # 创建醒目的分隔符和格式
+        # Eye-catching colors and formatting for token usage display
+        GREEN = "\033[92m"      # bright green
+        YELLOW = "\033[93m"     # bright yellow
+        CYAN = "\033[96m"       # bright cyan
+        BOLD = "\033[1m"        # bold
+        RESET = "\033[0m"       # reset
+
+        # Create a visible separator and formatting
         separator = "=" * 60
         current_total = input_tokens + completion_tokens
         cumulative_total = self.total_input_tokens + self.total_completion_tokens
-        
+
         print(f"\n{CYAN}{BOLD}{separator}{RESET}")
         print(f"{GREEN}{BOLD}🚀 TOKEN USAGE REPORT - Model: {self.model}{RESET}")
         print(f"{CYAN}{BOLD}{separator}{RESET}")
         print(f"{YELLOW}📥 Input Tokens:      {BOLD}{input_tokens:,}{RESET} (this call)")
-        print(f"{YELLOW}📤 Output Tokens:     {BOLD}{completion_tokens:,}{RESET} (this call)")  
+        print(f"{YELLOW}📤 Output Tokens:     {BOLD}{completion_tokens:,}{RESET} (this call)")
         print(f"{GREEN}📊 Call Total:        {BOLD}{current_total:,}{RESET} tokens")
         print(f"{CYAN}📈 Cumulative Input:  {BOLD}{self.total_input_tokens:,}{RESET} tokens")
         print(f"{CYAN}📈 Cumulative Output: {BOLD}{self.total_completion_tokens:,}{RESET} tokens")
@@ -502,7 +502,7 @@ class LLM:
         endpoint = f"{self.config.base_url.rstrip('/')}/chat/completions"
         timeout_config = aiohttp.ClientTimeout(total=timeout)
 
-        params["stream"] = False  # Always use non-streaming for tool requests
+        params["stream"] = False  # always use non-streaming for tool requests
 
         async with aiohttp.ClientSession(timeout=timeout_config) as session:
             async with session.post(endpoint, headers=headers, json=params) as response:

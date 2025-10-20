@@ -24,7 +24,7 @@ class CertificateMatrixTester:
         self.test_results = {}
     
     async def run_cert_matrix_test(self, target_host: str = "127.0.0.1", target_port: int = 8888) -> Dict[str, Any]:
-        """运行完整的证书矩阵测试"""
+        """Run完整的证书矩阵测试"""
         results = {
             "target": f"{target_host}:{target_port}",
             "test_timestamp": datetime.now().isoformat(),
@@ -49,13 +49,13 @@ class CertificateMatrixTester:
         # 6. TLS版本降级测试
         results["tests"]["tls_downgrade"] = await self._test_tls_version_downgrade(target_host, target_port)
         
-        # 计算总体评分
+        # Calculate总体评分
         results["matrix_score"] = self._calculate_matrix_score(results["tests"])
         
         return results
     
     async def _test_expired_certificate(self, host: str, port: int) -> Dict[str, Any]:
-        """测试过期证书拒绝"""
+        """Test过期证书拒绝"""
         test_result = {
             "test_name": "过期证书测试",
             "description": "使用过期证书连接，验证是否被正确拒绝",
@@ -68,7 +68,7 @@ class CertificateMatrixTester:
             # 生成过期的自签名证书
             expired_cert_path, expired_key_path = self._generate_expired_certificate(host)
             
-            # 尝试使用过期证书连接
+            # Try使用过期证书连接
             ssl_context = ssl.create_default_context()
             ssl_context.load_cert_chain(expired_cert_path, expired_key_path)
             ssl_context.check_hostname = False  # 绕过主机名检查，专门测试过期
@@ -99,7 +99,7 @@ class CertificateMatrixTester:
         return test_result
     
     async def _test_hostname_mismatch(self, host: str, port: int) -> Dict[str, Any]:
-        """测试主机名不匹配证书拒绝"""
+        """Test主机名不匹配证书拒绝"""
         test_result = {
             "test_name": "主机名不匹配测试",
             "description": "使用错误主机名的证书连接",
@@ -143,7 +143,7 @@ class CertificateMatrixTester:
         return test_result
     
     async def _test_self_signed_cert(self, host: str, port: int) -> Dict[str, Any]:
-        """测试自签名证书处理"""
+        """Test自签名证书处理"""
         test_result = {
             "test_name": "自签名证书测试",
             "description": "使用自签名证书连接，检查是否需要明确信任",
@@ -174,16 +174,16 @@ class CertificateMatrixTester:
         return test_result
     
     async def _test_incomplete_chain(self, host: str, port: int) -> Dict[str, Any]:
-        """测试证书链不完整的处理"""
+        """Test证书链不完整的处理"""
         return {
             "test_name": "证书链不完整测试",
             "status": "skipped",
-            "reason": "需要复杂的CA链设置，暂时跳过",
+            "reason": "需要复杂的CA链Setup，暂时跳过",
             "blocked": None
         }
     
     async def _test_weak_cipher_suites(self, host: str, port: int) -> Dict[str, Any]:
-        """测试弱加密套件拒绝"""
+        """Test弱加密套件拒绝"""
         test_result = {
             "test_name": "弱加密套件测试",
             "description": "尝试使用弱加密套件连接",
@@ -233,7 +233,7 @@ class CertificateMatrixTester:
                     "setup_error": str(e)
                 }
         
-        # 计算总体阻断率
+        # Calculate总体阻断率
         total_tests = len(weak_ciphers)
         blocked_count = sum(1 for result in test_result["cipher_results"].values() 
                           if result.get("blocked", False))
@@ -245,7 +245,7 @@ class CertificateMatrixTester:
         return test_result
     
     async def _test_tls_version_downgrade(self, host: str, port: int) -> Dict[str, Any]:
-        """测试TLS版本降级拒绝"""
+        """TestTLS版本降级拒绝"""
         test_result = {
             "test_name": "TLS版本降级测试",
             "description": "尝试使用旧版本TLS连接",
@@ -291,7 +291,7 @@ class CertificateMatrixTester:
                     "setup_error": str(e)
                 }
         
-        # 计算阻断率
+        # Calculate阻断率
         total_tests = len(tls_versions)
         blocked_count = sum(1 for result in test_result["version_results"].values() 
                           if result.get("blocked", False))
@@ -302,17 +302,17 @@ class CertificateMatrixTester:
         return test_result
     
     def _generate_expired_certificate(self, hostname: str) -> tuple:
-        """生成过期的自签名证书"""
-        # 创建密钥对
+        """Generate过期的自签名证书"""
+        # Create密钥对
         key = crypto.PKey()
         key.generate_key(crypto.TYPE_RSA, 2048)
         
-        # 创建证书
+        # Create证书
         cert = crypto.X509()
         cert.get_subject().CN = hostname
         cert.set_serial_number(1000)
         
-        # 设置为已过期（昨天到期）
+        # Setup为已过期（昨天到期）
         cert.gmtime_adj_notBefore(-86400 * 2)  # 2天前开始
         cert.gmtime_adj_notAfter(-86400)       # 昨天过期
         
@@ -333,12 +333,12 @@ class CertificateMatrixTester:
         return str(cert_path), str(key_path)
     
     def _generate_certificate(self, hostname: str) -> tuple:
-        """生成有效的自签名证书"""
-        # 创建密钥对
+        """Generate有效的自签名证书"""
+        # Create密钥对
         key = crypto.PKey()
         key.generate_key(crypto.TYPE_RSA, 2048)
         
-        # 创建证书
+        # Create证书
         cert = crypto.X509()
         cert.get_subject().CN = hostname
         cert.set_serial_number(1000)
@@ -361,7 +361,7 @@ class CertificateMatrixTester:
         return str(cert_path), str(key_path)
     
     def _calculate_matrix_score(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
-        """计算证书矩阵测试的综合评分"""
+        """Calculate证书矩阵测试的综合评分"""
         scores = {
             "expired_cert": 0,
             "hostname_mismatch": 0,
@@ -390,7 +390,7 @@ class CertificateMatrixTester:
         tls_downgrade_rate = test_results.get("tls_downgrade", {}).get("block_rate", 0)
         scores["tls_downgrade"] = int(tls_downgrade_rate * 100)
         
-        # 计算加权总分
+        # Calculate加权总分
         total_score = (
             scores["expired_cert"] * 0.25 +      # 25%
             scores["hostname_mismatch"] * 0.25 + # 25% 
@@ -420,7 +420,7 @@ class CertificateMatrixTester:
 
 
 async def run_cert_matrix_test(host: str = "127.0.0.1", port: int = 8888) -> Dict[str, Any]:
-    """运行证书矩阵测试的入口函数"""
+    """Run证书矩阵测试的入口函数"""
     tester = CertificateMatrixTester()
     return await tester.run_cert_matrix_test(host, port)
 

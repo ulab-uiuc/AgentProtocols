@@ -15,19 +15,19 @@ from typing import Dict, List, Any, Optional
 import logging
 import httpx
 
-# 设置路径
+# Setup路径
 HERE = Path(__file__).resolve().parent
 SAFETY_TECH = HERE.parent
 sys.path.insert(0, str(SAFETY_TECH))
 
-# 导入 RunnerBase
+# Import RunnerBase
 from .runner_base import RunnerBase
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# 导入 Agora 特定组件
+# Import Agora 特定组件
 import json
 try:
     from core.backend_api import spawn_backend, register_backend, health_backend
@@ -72,7 +72,7 @@ class AgoraSecurityTestRunner(RunnerBase):
 
     
     async def setup_infrastructure(self):
-        """设置基础设施 (使用 RunnerBase 的方法)"""
+        """Setup基础设施 (使用 RunnerBase 的方法)"""
         self.output.info("🚀 Setting up Agora Test infrastructure...")
         
         # 0. 加载医疗数据集 (使用父类方法)
@@ -101,7 +101,7 @@ class AgoraSecurityTestRunner(RunnerBase):
         await spawn_backend('agora', 'doctor_a', 8002)
         await spawn_backend('agora', 'doctor_b', 8003)
         
-        # 等待服务启动并检查健康状态（增加等待时间）
+        # Wait服务启动并检查健康状态（增加等待时间）
         await asyncio.sleep(5)  # 增加到5秒，给Agora更多启动时间
         for port, agent_name in [(8002, 'Agora_Doctor_A'), (8003, 'Agora_Doctor_B')]:
             max_retries = 10
@@ -177,7 +177,7 @@ class AgoraSecurityTestRunner(RunnerBase):
         _skip = True  # 强制跳过S1测试
         
         if not _skip:
-            # 创建S1业务连续性测试器
+            # CreateS1业务连续性测试器
             from scenarios.safety_tech.core.s1_config_factory import create_s1_tester
             
             if s1_test_mode == 'protocol_optimized':
@@ -231,7 +231,7 @@ class AgoraSecurityTestRunner(RunnerBase):
             try:
                 import httpx
                 async with httpx.AsyncClient() as client:
-                    # 检查协调器健康状态
+                    # Check协调器健康状态
                     health_resp = await client.get(f"http://127.0.0.1:{self.coord_port}/health", timeout=5.0)
                     logger.info(f"  协调器健康状态: {health_resp.status_code}")
                     
@@ -259,7 +259,7 @@ class AgoraSecurityTestRunner(RunnerBase):
                             except:
                                 pass
                                 
-                        # 检查RG目录信息  
+                        # CheckRG目录信息  
                         rg_directory = await client.get(f"http://127.0.0.1:{self.rg_port}/directory", 
                                                       params={"conversation_id": self.conversation_id}, timeout=5.0)
                         if rg_directory.status_code == 200:
@@ -274,10 +274,10 @@ class AgoraSecurityTestRunner(RunnerBase):
                 logger.info(f"  ❌ 协调器状态检查失败: {e}")
                 coord_participants_ready = False
             
-            # 如果协调器参与者信息未就绪，等待更长时间
+            # If协调器参与者信息未就绪，等待更长时间
             if not coord_participants_ready:
                 logger.info(f"  ⚠️ 协调器参与者信息未就绪，等待协调器轮询更新...")
-                await asyncio.sleep(15)  # 等待协调器轮询RG目录（增加到15秒）
+                await asyncio.sleep(15)  # Wait协调器轮询RG目录（增加到15秒）
                 # 再次尝试路由测试
                 try:
                     async with httpx.AsyncClient() as client:
@@ -320,7 +320,7 @@ class AgoraSecurityTestRunner(RunnerBase):
                 import traceback
                 logger.error(f"详细错误: {traceback.format_exc()}")
                 s1_results = []
-        # 处理S1测试结果
+        # ProcessS1测试结果
         if _skip:
             logger.info("⏭️ 跳过S1业务连续性测试（避免Agora SDK上下文累积影响E2E测试）")
             s1_report = {
@@ -439,7 +439,7 @@ class AgoraSecurityTestRunner(RunnerBase):
         enable_s2_probes = os.environ.get('AGORA_ENABLE_S2_PROBES', 'true').lower() == 'true'  # 默认启用
         s2_probe_type = os.environ.get('AGORA_S2_PROBE_TYPE', 'comprehensive')  # 启用完整S2测试
         
-        # 创建S2探针配置
+        # CreateS2探针配置
         probe_config = None
         if enable_s2_probes:
             try:
@@ -455,7 +455,7 @@ class AgoraSecurityTestRunner(RunnerBase):
                 probe_config = probe_factories.get(s2_probe_type, create_s2_tls_downgrade_config)().to_dict()
                 logger.info(f"📡 S2探针已启用: {s2_probe_type}")
             except ImportError:
-                logger.info(f"⚠️ S2探针配置模块不可用，跳过探针测试")
+                logger.info(f"⚠️ S2探针配置module不可用，跳过探针测试")
                 enable_s2_probes = False
         
         s2 = {
@@ -564,7 +564,7 @@ class AgoraSecurityTestRunner(RunnerBase):
                 pcap_results = await run_pcap_mitm_test(
                     interface="lo0", 
                     duration=8,  # 8秒抓包
-                    enable_mitm=False  # 暂时禁用MITM以避免复杂设置
+                    enable_mitm=False  # 暂时禁用MITM以避免复杂Setup
                 )
                 s2['pcap_analysis'] = pcap_results
                 
@@ -608,7 +608,7 @@ class AgoraSecurityTestRunner(RunnerBase):
                 # 确保使用干净的上下文避免累积问题
                 logger.info(f"   🧹 使用独立E2E测试上下文，避免历史消息累积")
                 
-                # 发送带水印的测试消息
+                # Send带水印的测试消息
                 test_payload = e2e_detector.create_plaintext_probe_payload()
                 probe_config = create_comprehensive_probe_config().to_dict()
                 
@@ -658,7 +658,7 @@ class AgoraSecurityTestRunner(RunnerBase):
                                 
                         else:
                             logger.info(f"   ⚠️ E2E检测: 未收到探针结果 (状态: {probe_response.status_code})")
-                            # 记录失败但不影响其他测试
+                            # Record失败但不影响其他测试
                             s2['e2e_detection_results']['error'] = f"HTTP {probe_response.status_code}"
                 except Exception as send_e:
                     error_msg = str(send_e) if str(send_e) else f"{type(send_e).__name__}: {repr(send_e)}"
@@ -703,7 +703,7 @@ class AgoraSecurityTestRunner(RunnerBase):
                                 'message_id': f"time_skew_{skew_level}_{i}_{int(_time.time())}",
                                 'correlation_id': f"time_skew_test_{skew_level}_{i}",
                                 'timestamp': _time.time() - skew_level,  # 过时的时间戳
-                                'probe_config': skew_config  # 添加探针配置
+                                'probe_config': skew_config  # Add探针配置
                             }
                             
                             async with _httpx.AsyncClient() as client:
@@ -716,9 +716,9 @@ class AgoraSecurityTestRunner(RunnerBase):
                                 level_results['attempts'] += 1
                                 skew_results['total_tests'] += 1
                                 
-                                # 检查是否被阻断（错误状态码或特定错误）
+                                # Check是否被阻断（错误状态码或特定错误）
                                 if response.status_code in [400, 401, 403]:
-                                    # 检查错误内容是否真的是时钟相关
+                                    # Check错误内容是否真的是时钟相关
                                     try:
                                         error_data = response.json()
                                         error_detail = error_data.get('detail', '').lower()
@@ -741,7 +741,7 @@ class AgoraSecurityTestRunner(RunnerBase):
                                     skew_results['blocked_tests'] += 1
                                     
                         except Exception as e:
-                            # 连接异常区分类型：超时不算时钟阻断，连接拒绝才算
+                            # Connect异常区分类型：超时不算时钟阻断，连接拒绝才算
                             level_results['attempts'] += 1
                             skew_results['total_tests'] += 1
                             
@@ -754,7 +754,7 @@ class AgoraSecurityTestRunner(RunnerBase):
                                 level_results['blocked'] += 1
                                 skew_results['blocked_tests'] += 1
                     
-                    # 计算该档位的阻断率
+                    # Calculate该档位的阻断率
                     if level_results['attempts'] > 0:
                         block_rate = level_results['blocked'] / level_results['attempts']
                         level_results['block_rate'] = block_rate
@@ -764,7 +764,7 @@ class AgoraSecurityTestRunner(RunnerBase):
                     skew_results['skew_level_results'][f'{skew_level}s'] = level_results
                     logger.info(f"      ±{skew_level}s: {level_results['blocked']}/{level_results['attempts']} 被阻断 ({level_results['block_rate']:.1%})")
                 
-                # 计算总体时钟漂移防护评分
+                # Calculate总体时钟漂移防护评分
                 overall_block_rate = skew_results['blocked_tests'] / skew_results['total_tests'] if skew_results['total_tests'] > 0 else 0
                 time_skew_score = int(overall_block_rate * 100)
                 
@@ -847,7 +847,7 @@ class AgoraSecurityTestRunner(RunnerBase):
                                 scenario_results['attempts'] += 1
                                 hijack_results['total_attempts'] += 1
                                 
-                                # 检查是否被阻断
+                                # Check是否被阻断
                                 if response.status_code in [401, 403, 404]:
                                     scenario_results['blocked'] += 1
                                     hijack_results['blocked_attempts'] += 1
@@ -864,7 +864,7 @@ class AgoraSecurityTestRunner(RunnerBase):
                                     hijack_results['blocked_attempts'] += 1
                                     
                         except Exception as e:
-                            # 连接异常区分类型：超时不算认证阻断
+                            # Connect异常区分类型：超时不算认证阻断
                             scenario_results['attempts'] += 1
                             hijack_results['total_attempts'] += 1
                             
@@ -878,7 +878,7 @@ class AgoraSecurityTestRunner(RunnerBase):
                                 scenario_results['blocked'] += 1
                                 hijack_results['blocked_attempts'] += 1
                     
-                    # 计算该场景的阻断率
+                    # Calculate该场景的阻断率
                     if scenario_results['attempts'] > 0:
                         block_rate = scenario_results['blocked'] / scenario_results['attempts']
                         scenario_results['block_rate'] = block_rate
@@ -888,7 +888,7 @@ class AgoraSecurityTestRunner(RunnerBase):
                     hijack_results['hijack_types'][scenario_name] = scenario_results
                     logger.info(f"      {scenario['description']}: {scenario_results['blocked']}/{scenario_results['attempts']} 被阻断 ({scenario_results['block_rate']:.1%})")
                 
-                # 计算总体会话劫持防护评分
+                # Calculate总体会话劫持防护评分
                 overall_hijack_block_rate = hijack_results['blocked_attempts'] / hijack_results['total_attempts'] if hijack_results['total_attempts'] > 0 else 0
                 session_hijack_score = int(overall_hijack_block_rate * 100)
                 
@@ -1007,7 +1007,7 @@ class AgoraSecurityTestRunner(RunnerBase):
     # endpoint_proof_ab_test 等方法已被父类的 conduct_s3_registration_defense_test 替代
     
     async def generate_real_test_report(self):
-        """生成真实测试报告"""
+        """Generate真实测试报告"""
         logger.info("📊 Generating Real LLM Test Report...")
         
         # 收集所有数据
@@ -1026,7 +1026,7 @@ class AgoraSecurityTestRunner(RunnerBase):
             len([a for a in attack_data_full if a.get('success', False)])
         )
         
-        # 计算安全评分
+        # Calculate安全评分
         conversation_success_rate = successful_conversations / len(conversation_data) if conversation_data else 0
         eavesdrop_success_rate = successful_eavesdrops / len(eavesdrop_data) if eavesdrop_data else 0
         total_attacks = len(attack_data_quick) + len(attack_data_full)
@@ -1126,15 +1126,15 @@ class AgoraSecurityTestRunner(RunnerBase):
         logger.info("✅ Cleanup completed")
     
     async def run_unified_security_test(self):
-        """运行统一安全防护测试"""
+        """Run统一安全防护测试"""
         try:
-            # 1. 设置基础设施
+            # 1. Setup基础设施
             await self.setup_infrastructure()
             
             # 2. 启动真实医生Agent
             await self.start_real_doctor_agents()
             
-            # 3. 设置Observer
+            # 3. SetupObserver
             await self.setup_observers()
             
             # S1: 并发攻击下对话稳定性测试
@@ -1174,7 +1174,7 @@ async def main():
         logger.error(f"❌ Config file not found: {config_file}")
         sys.exit(1)
     
-    # 创建并运行统一安全防护测试 (使用重构后的类名)
+    # Create并运行统一安全防护测试 (使用重构后的类名)
     test_runner = AgoraSecurityTestRunner(str(config_file))
     
     try:
@@ -1184,7 +1184,7 @@ async def main():
         logger.info(f"📊 安全评分: {final_report.get('security_score', 0)}/100")
         logger.info(f"🏷️ 安全等级: {final_report.get('security_level', 'UNKNOWN')}")
         
-        # 根据安全等级设置退出码
+        # 根据安全等级Setup退出码
         exit_code = 0 if final_report.get('security_level') in ['SECURE', 'MODERATE'] else 1
         sys.exit(exit_code)
         

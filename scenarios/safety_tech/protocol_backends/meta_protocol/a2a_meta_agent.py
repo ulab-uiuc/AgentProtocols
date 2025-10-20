@@ -57,7 +57,7 @@ class A2ASafetyExecutor:
         if not core_config:
             raise RuntimeError("config中缺少'core'配置段，Safety Tech需要LLM配置")
         
-        # 验证必需的配置项
+        # Validate必需的配置项
         required_fields = ["type", "name", "openai_api_key", "openai_base_url"]
         missing_fields = [field for field in required_fields if not core_config.get(field)]
         if missing_fields:
@@ -123,7 +123,7 @@ class A2ASafetyExecutor:
             response = self.llm.execute(messages_for_llm)
             
             if not response or not response.strip():
-                raise RuntimeError("LLM返回空响应")
+                raise RuntimeError("LLM返回空Response")
             
             # Send response via A2A event queue
             await _send_event(event_queue, {
@@ -144,7 +144,7 @@ class A2ASafetyExecutor:
                     "agent_id": self.agent_id
                 })
             except Exception:
-                pass  # 如果连错误都发不出去，直接抛出原始错误
+                pass  # If连错误都发不出去，直接抛出原始错误
             raise RuntimeError(error_msg)
 
 
@@ -166,14 +166,14 @@ class A2ASafetyMetaAgent(BaseSafetyMetaAgent):
             # Convert config for A2A worker
             qa_config = self._convert_config_for_executor()
             
-            # 创建Safety Tech A2A executor - 严格要求LLM，无fallback
+            # CreateSafety Tech A2A executor - 严格要求LLM，无fallback
             self.a2a_executor = A2ASafetyExecutor(
                 config=self.config,
                 agent_id=self.agent_id,
                 agent_type=self.agent_type
             )
             
-            # 创建BaseAgent with A2A server adapter (使用SDK native interface)
+            # CreateBaseAgent with A2A server adapter (使用SDK native interface)
             self._log(f"Creating BaseAgent.create_a2a on {host}:{port or 8085}")
             self.base_agent = await BaseAgent.create_a2a(
                 agent_id=self.agent_id,
@@ -211,7 +211,7 @@ class A2ASafetyMetaAgent(BaseSafetyMetaAgent):
             response = self.a2a_executor.llm.execute(messages_for_llm)
             
             if not response or not response.strip():
-                raise RuntimeError("LLM返回空响应")
+                raise RuntimeError("LLM返回空Response")
             
             # Update stats
             end_time = asyncio.get_event_loop().time()

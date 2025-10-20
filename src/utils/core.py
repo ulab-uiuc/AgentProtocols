@@ -47,7 +47,7 @@ class Core:
             import httpx
             from openai import OpenAI
             
-            # 创建一个干净的 httpx 客户端，明确不传递任何代理设置
+            # Create a clean httpx client without passing any proxy configuration
             http_client = httpx.Client()
             
             try:
@@ -59,10 +59,10 @@ class Core:
                 print(f"[Core] OpenAI client initialized with custom httpx client")
             except Exception as e:
                 print(f"[Core] Failed with custom httpx client: {e}")
-                # 尝试完全避免 httpx 客户端自定义
+                # Try to avoid httpx client customization entirely
                 try:
                     import os
-                    # 临时清除可能的代理环境变量
+                    # Temporarily clear possible proxy environment variables
                     old_env = {}
                     proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']
                     for var in proxy_vars:
@@ -74,7 +74,7 @@ class Core:
                         base_url=self.config["model"].get("openai_base_url", "https://api.openai.com/v1"),
                     )
                     
-                    # 恢复环境变量
+                    # Restore environment variables
                     for var, value in old_env.items():
                         os.environ[var] = value
                         
@@ -242,7 +242,7 @@ class Core:
                             model=self.config["model"]["name"],
                             messages=truncated_messages,
                             tools=tools,
-                            tool_choice="auto",  # 回退到自动模式
+                            tool_choice="auto",  # Fallback to auto mode
                             temperature=self.config["model"]["temperature"],
                             n=1,
                         )

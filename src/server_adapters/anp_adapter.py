@@ -1,5 +1,5 @@
 """
-ANP (Agent Network Protocol) Server Adapter - AgentConnect协议服务器适配器
+ANP (Agent Network Protocol) Server Adapter - AgentConnect protocol server adapter
 """
 
 import asyncio
@@ -35,7 +35,7 @@ if agentconnect_path not in sys.path:
 
 # Import local AgentConnect components
 try:
-    # 直接导入本地 agentconnect_src 模块
+    # Directly import local agentconnect_src module
     from agent_connect.simple_node import SimpleNode, SimpleNodeSession
     from agent_connect.authentication.didallclient import DIDAllClient
     from agent_connect.authentication.did_wba import create_did_wba_document
@@ -387,15 +387,15 @@ class ANPSimpleNodeWrapper:
             try:
                 message_data = await request.json()
                 
-                # 获取executor wrapper引用
+                # Get executor wrapper reference
                 executor_wrapper = self.executor_wrapper
                 
-                # 直接调用executor处理消息
+                # Directly call executor to process the message
                 if executor_wrapper:
-                    # 提取消息内容
+                    # Extract message content
                     payload = message_data.get("payload", {})
                     
-                    # 从嵌套的payload中提取真实内容
+                    # Extract actual content from a nested payload
                     if isinstance(payload, dict) and "payload" in payload:
                         inner_payload = payload["payload"]
                         if isinstance(inner_payload, dict) and "content" in inner_payload:
@@ -407,14 +407,14 @@ class ANPSimpleNodeWrapper:
                     else:
                         text_content = str(payload)
                     
-                    # 检查是否有底层的QA Worker
+                    # Check whether there is an underlying QA Worker
                     qa_worker = None
                     if hasattr(executor_wrapper, 'anp_qa_worker'):
                         qa_worker = executor_wrapper.anp_qa_worker
                     elif hasattr(executor_wrapper, 'executor') and hasattr(executor_wrapper.executor, 'answer'):
                         qa_worker = executor_wrapper.executor
                     
-                    # 直接调用QA Worker或使用wrapper
+                    # Directly call QA Worker or use wrapper
                     if hasattr(executor_wrapper, 'anp_qa_worker') and hasattr(executor_wrapper.anp_qa_worker, 'answer'):
                         qa_result = await executor_wrapper.anp_qa_worker.answer(text_content)
                         response_text = qa_result
@@ -422,7 +422,7 @@ class ANPSimpleNodeWrapper:
                         qa_result = await qa_worker.answer(text_content)
                         response_text = qa_result
                     else:
-                        # 返回处理后的响应
+                        # Return processed response
                         response_text = f"Processing message with ANP executor: {text_content}"
                     
                     # Build UTE-compatible response body
@@ -469,13 +469,12 @@ class ANPSimpleNodeWrapper:
             return
 
         logger.info("Generating DID for ANP server")
-
-        ws_port = self.host_port + 1000  # WebSocket 实际监听端口
+        ws_port = self.host_port + 1000  # WebSocket actual listening port
         public_host = "127.0.0.1" if self.host_domain in ("0.0.0.0", "::") else self.host_domain
         ws_endpoint = f"ws://{public_host}:{ws_port}{self.host_ws_path}"
 
         try:
-            # 如果上层通过 kwargs 传了 did_service_url / did_api_key，就用服务生成 did:wba
+            # If did_service_url / did_api_key is provided via kwargs or env, use the service to generate did:wba
             did_service_url = (self.agent_card.get("_did_service_url") or
                                os.getenv("ANP_DID_SERVICE_URL"))
             did_api_key = (self.agent_card.get("_did_api_key") or
@@ -497,7 +496,7 @@ class ANPSimpleNodeWrapper:
             else:
                 raise RuntimeError("DID service not configured")
         except Exception as e:
-            # 回退到标准 did:wba 生成（与AgentConnect协议兼容）
+            # Fall back to standard did:wba generation (compatible with AgentConnect protocol)
             import uuid
             import json
             from cryptography.hazmat.primitives import hashes
@@ -569,11 +568,11 @@ class ANPSimpleNodeWrapper:
             }
             logger.info(f"Using local did:wba generation (DID service not configured): {did}")
 
-        # 写入 agent card 基本信息
+        # Write basic information into the agent card
         self.agent_card["id"] = self.did_info["did"]
         self.agent_card.setdefault("authentication", {})["did"] = self.did_info["did"]
 
-        # 在 agent card 中挂出 DID 文档（JSON 对象）
+        # Attach DID document (JSON object) in the agent card
         try:
             did_doc = self.did_info.get("did_document_json")
             if isinstance(did_doc, str):
@@ -582,7 +581,7 @@ class ANPSimpleNodeWrapper:
         except Exception:
             pass
 
-        # 统一把 0.0.0.0 映射为 127.0.0.1，防止客户端拿到不可连的地址
+        # Map 0.0.0.0 to 127.0.0.1 to prevent clients from getting an unreachable address
         try:
             pub_host = "127.0.0.1" if self.host_domain in ("0.0.0.0", "::") else self.host_domain
             if "endpoints" in self.agent_card:
@@ -706,7 +705,7 @@ class ANPSimpleNodeWrapper:
                 log_level="critical",
                 access_log=False,
                 use_colors=False,
-                lifespan="off"  # 禁用 lifespan，避免退出时 CancelledError 噪音
+                lifespan="off"  # Disable lifespan to avoid CancelledError noise on shutdown
             )
             server = uvicorn.Server(config)
             self._uvicorn_server = server
@@ -757,7 +756,7 @@ class ANPSimpleNodeWrapper:
     async def stop(self) -> None:
         """Stop the ANP server."""
         self.should_exit = True
-        # 通知 uvicorn 优雅退出
+        # Notify uvicorn to gracefully exit
         try:
             if self._uvicorn_server is not None:
                 self._uvicorn_server.should_exit = True
