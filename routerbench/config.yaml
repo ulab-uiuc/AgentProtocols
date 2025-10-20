@@ -5,7 +5,7 @@ model:
   openai_api_key: "sk-your-openai-api-key"
   openai_base_url: "https://api.openai.com/v1"
 
-# 如果使用本地模型，配置如下:
+# If using a local model, configure as follows:
 # model:
 #   type: "openai"
 #   name: "gpt-4o"

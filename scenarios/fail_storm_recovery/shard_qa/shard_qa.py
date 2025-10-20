@@ -63,15 +63,15 @@ class ColoredOutput:
     def _log_plain(self, message: str) -> None:
         """Write plain message to log file"""
         if not hasattr(self, 'log_handle') or not self.log_handle or self.log_handle.closed:
-            return  # 日志文件已关闭，静默跳过
+            return  # Log file is closed, silently skip
         
         try:
             import datetime
-            timestamp = datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]  # 毫秒精度
+            timestamp = datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]  # millisecond precision
             self.log_handle.write(f"[{timestamp}] {message}\n")
-            self.log_handle.flush()  # 立即写入文件
+            self.log_handle.flush()  # flush immediately
         except (ValueError, OSError):
-            # 文件已关闭或其他I/O错误，静默跳过
+            # File closed or other I/O error, silently skip
             pass
     
     def info(self, message: str) -> None:
@@ -125,7 +125,7 @@ class ColoredOutput:
                 self.log_handle.close()
                 print(f"{Fore.CYAN}{Style.BRIGHT}📁 Log saved to: {self.log_file}{Style.RESET_ALL}")
             except (ValueError, OSError):
-                # 文件已关闭或其他I/O错误，静默跳过
+                # File closed or other I/O error, silently skip
                 pass
     
     def __del__(self):
@@ -133,7 +133,7 @@ class ColoredOutput:
         try:
             self.close()
         except:
-            # 忽略析构函数中的任何错误
+            # Ignore any errors in destructor
             pass
 
 class ShardQADemo:
@@ -144,29 +144,29 @@ class ShardQADemo:
         self.network = AgentNetwork()
         self.coordinator = None
         self.workers = []  # List of 8 shard workers
-        self.httpx_client = httpx.AsyncClient(timeout=5.0)  # 与业务逻辑匹配的合理超时
-        self.output = ColoredOutput()  # 现在是实例而不是静态类
+        self.httpx_client = httpx.AsyncClient(timeout=5.0)  # reasonable timeout matched to business logic
+        self.output = ColoredOutput()  # now an instance rather than a static class
         self.current_group_id = 0
         self.independent_mode = False  # Flag for independent processing mode
         
-        # Setup全局异常处理器，防止未捕获的异常导致崩溃
+        # Setup global exception handlers to prevent uncaught exceptions causing agent crashes
         self._setup_exception_handlers()
     
     def _setup_exception_handlers(self):
-        """Setup全局异常处理器，防止未捕获异常导致agent崩溃"""
+        """Setup global exception handlers to prevent uncaught exceptions from crashing agents"""
         import asyncio
         import sys
         
         def handle_exception(loop, context):
-            """Handleasyncio事件循环中的未捕获异常"""
+            """Handle uncaught exceptions in the asyncio event loop"""
             exception = context.get('exception')
             if exception:
                 if isinstance(exception, asyncio.CancelledError):
-                    # CancelledError是正常的取消操作，只记录但不报错
+                    # CancelledError is a normal cancellation; log but don't treat as error
                     if hasattr(self, 'output') and self.output:
                         self.output.progress(f"Task cancelled: {context.get('message', 'Unknown')}")
                 else:
-                    # 其他异常需要记录
+                    # Other exceptions should be logged
                     if hasattr(self, 'output') and self.output:
                         self.output.error(f"Unhandled exception in event loop: {exception}")
                         self.output.error(f"Context: {context}")
@@ -174,36 +174,36 @@ class ShardQADemo:
                 if hasattr(self, 'output') and self.output:
                     self.output.warning(f"Event loop error: {context}")
         
-        # Setupasyncio异常处理器
+        # Setup asyncio exception handler
         try:
             loop = asyncio.get_event_loop()
             loop.set_exception_handler(handle_exception)
         except RuntimeError:
-            # If没有运行中的event loop，稍后再Setup
+            # If there's no running event loop, set up later
             pass
         
-        # Setup系统级异常处理器
+        # Setup system-level exception handler
         def sys_exception_handler(exc_type, exc_value, exc_traceback):
             if hasattr(self, 'output') and self.output:
                 self.output.error(f"Unhandled system exception: {exc_type.__name__}: {exc_value}")
-            # 调用默认的异常处理器
+            # Call the default exception handler
             sys.__excepthook__(exc_type, exc_value, exc_traceback)
         
         sys.excepthook = sys_exception_handler
     
     def _check_port_available(self, host: str, port: int) -> bool:
-        """检查端口是否可用"""
+        """Check if a port is available"""
         import socket
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.settimeout(1)
                 result = sock.connect_ex((host, port))
-                return result != 0  # 0表示连接成功（端口被占用）
+                return result != 0  # 0 means connection succeeded (port in use)
         except Exception:
             return False
     
     async def _wait_for_port_release(self, host: str, port: int, max_wait: int = 10) -> bool:
-        """等待端口释放"""
+        """Wait for a port to be released"""
         for i in range(max_wait):
             if self._check_port_available(host, port):
                 return True
@@ -312,18 +312,18 @@ class ShardQADemo:
             original_port = port
             max_retries = 3
             
-            # 预检查端口可用性
+            # Pre-check port availability
             if not self._check_port_available("localhost", port):
                 self.output.warning(f"Port {port} for {shard_id} is already occupied")
                 if await self._wait_for_port_release("localhost", port, max_wait=5):
                     self.output.success(f"Port {port} is now available for {shard_id}")
                 else:
                     self.output.warning(f"Port {port} still occupied, trying alternative ports")
-                    port = original_port + 100  # 使用备用端口
+                    port = original_port + 100  # use alternative port
             
             for retry in range(max_retries):
                 try:
-                    # 再次检查端口（避免时间窗口问题）
+                    # Re-check port to avoid race conditions
                     if not self._check_port_available("localhost", port):
                         self.output.warning(f"Port {port} occupied just before creation, finding alternative...")
                         port = original_port + 100 + retry * 10
@@ -346,14 +346,14 @@ class ShardQADemo:
                         self.output.warning(f"{shard_id} created on alternative port {port} (original: {original_port})")
                     else:
                         self.output.success(f"{shard_id} created and registered to AgentNetwork (port: {port})")
-                    break  # 成功创建，跳出重试循环
+                    break  # Created successfully, break retry loop
                     
                 except OSError as e:
                     if "10048" in str(e) or "address already in use" in str(e).lower():
                         self.output.warning(f"Port {port} for {shard_id} is occupied, attempt {retry+1}/{max_retries}")
                         if retry < max_retries - 1:
-                            port = original_port + 100 + (retry + 1) * 10  # Try使用更高的端口
-                            await asyncio.sleep(2)  # Wait2秒再重试
+                            port = original_port + 100 + (retry + 1) * 10  # try a higher port
+                            await asyncio.sleep(2)  # wait 2 seconds before retry
                         else:
                             self.output.error(f"Failed to create {shard_id} after {max_retries} attempts - all ports occupied")
                             raise
@@ -382,8 +382,8 @@ class ShardQADemo:
     
     async def _register_coordinator_handler(self):
         """Register coordinator to handle A2A messages from workers"""
-        # 暂时禁用自定义handler，让所有消息通过execute()方法处理
-        # 这样可以避免A2A框架中的NoneType错误
+        # Temporarily disable custom handler; let all messages be handled via execute() method
+        # This avoids NoneType errors in the A2A framework
         if self.output:
             self.output.system("Using execute() method for message handling (handler registration disabled)")
     
@@ -589,13 +589,13 @@ class ShardQADemo:
             await self.cleanup()
     
     async def cleanup(self):
-        """强化的资源清理，防止资源泄漏导致的崩溃"""
+        """Enhanced resource cleanup to prevent crashes due to resource leaks"""
         self.output.system("Cleaning up resources...")
         
         cleanup_errors = []
         
         try:
-            # 1. 停止所有Workers（优先清理，避免连接残留）
+            # 1. Stop all Workers (prioritize cleanup to avoid lingering connections)
             if self.workers:
                 self.output.progress("Stopping worker agents...")
                 for i, worker in enumerate(self.workers):
@@ -606,7 +606,7 @@ class ShardQADemo:
                     except Exception as e:
                         cleanup_errors.append(f"Worker {i} stop failed: {e}")
                         
-            # 2. 停止Coordinator
+            # 2. Stop Coordinator
             if self.coordinator:
                 try:
                     self.output.progress("Stopping coordinator...")
@@ -615,15 +615,15 @@ class ShardQADemo:
                 except Exception as e:
                     cleanup_errors.append(f"Coordinator stop failed: {e}")
             
-            # 3. 清理网络连接
+            # 3. Clean up network connections
             try:
                 if hasattr(self, 'network') and self.network:
                     self.output.progress("Cleaning up network connections...")
-                    # 这里可以添加网络清理逻辑
+                    # Network cleanup logic can be added here
             except Exception as e:
                 cleanup_errors.append(f"Network cleanup failed: {e}")
             
-            # 4. 关闭HTTP客户端
+            # 4. Close HTTP client
             try:
                 if hasattr(self, 'httpx_client') and self.httpx_client:
                     self.output.progress("Closing HTTP client...")
@@ -631,7 +631,7 @@ class ShardQADemo:
             except Exception as e:
                 cleanup_errors.append(f"HTTP client close failed: {e}")
             
-            # 5. 强制垃圾回收
+            # 5. Force garbage collection
             import gc
             gc.collect()
             
@@ -645,12 +645,12 @@ class ShardQADemo:
         except Exception as e:
             self.output.error(f"Critical error during cleanup: {e}")
         finally:
-            # 6. 确保日志文件正确关闭（最优先）
+            # 6. Ensure log file is closed (highest priority)
             try:
                 if hasattr(self, 'output') and self.output:
                     self.output.close()
             except:
-                pass  # 日志关闭失败也不要影响程序退出
+                pass  # Do not let log close failure affect program exit
 
 async def run_quick_demo():
     """Run a quick demonstration with test data"""
@@ -727,4 +727,4 @@ if __name__ == "__main__":
         sys.exit(0)
     except Exception as e:
         print(f"\n{Fore.RED}{Style.BRIGHT}[FATAL] Fatal error: {e}{Style.RESET_ALL}")
-        sys.exit(1) 
+        sys.exit(1)

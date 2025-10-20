@@ -213,7 +213,7 @@ class ANPAgent(MeshAgent):
             if not self.local_did_info.get('did'):
                 await self._generate_did()
             
-            # 1. 实例化 SimpleNode 来准备 FastAPI app（必须提供 new_session_callback）
+            # 1. Instantiate SimpleNode to prepare the FastAPI app (must provide new_session_callback)
             self._simple_node = SimpleNode(
                 host_domain=self.host_domain,
                 new_session_callback=self._on_new_session,
@@ -222,26 +222,27 @@ class ANPAgent(MeshAgent):
                 private_key_pem=self.local_did_info.get('private_key_pem'),
                 did=self.local_did_info.get('did'),
                 did_document_json=self.local_did_info.get('did_document_json')
-                # 注意：SimpleNode 里的 SSL 参数在这里没有传递，如果需要请添加
+                # Note: SSL parameters inside SimpleNode are not passed here; add if needed
             )
             
-            # 2. 手动创建 uvicorn.Config，模仿 SimpleNode._run() 的行为
-            #    这样可以避免 SimpleNode 内部调用 uvicorn.run，从而避免 SystemExit
+            # 2. Manually create uvicorn.Config, imitating SimpleNode._run() behavior
+            #    This avoids SimpleNode calling uvicorn.run internally, preventing SystemExit
+            #    Note: Add SSL configuration here if your use case requires it
             config = uvicorn.Config(
-                app=self._simple_node.app, # 从 SimpleNode 获取 FastAPI 实例
+                app=self._simple_node.app, # Get FastAPI instance from SimpleNode
                 host="0.0.0.0",
                 port=int(self.host_port),
-                lifespan="off" # 保持与 SimpleNode 源码一致
-                # 注意：SSL 配置也需要在这里添加，如果您的用例需要的话
+                lifespan="off" # Keep consistent with SimpleNode source
+                # Note: Add SSL configuration here if your use case requires it
             )
 
-            # 3. 创建 uvicorn.Server 实例并保存它
+            # 3. Create a uvicorn.Server instance and keep a reference
             self._uvicorn_server = uvicorn.Server(config)
 
-            # 4. 将服务器的运行作为一个可管理的后台任务
+            # 4. Run the server as a manageable background task
             self._node_task = asyncio.create_task(self._uvicorn_server.serve())
             
-            # Wait服务器完成启动。uvicorn.Server.started 是一个标志位
+            # Wait for the server to finish starting. uvicorn.Server.started is a flag
             await asyncio.sleep(0.5)
 
             if not self._uvicorn_server.started:
@@ -253,7 +254,7 @@ class ANPAgent(MeshAgent):
         except Exception as e:
             self._log(f"❌ Failed to start ANP node: {e}")
             self.anp_initialized = False
-            # 确保即使启动失败，任务也能被清理
+            # Ensure tasks are cleaned up even if startup fails
             if self._node_task and not self._node_task.done():
                 self._node_task.cancel()
             raise
@@ -275,25 +276,25 @@ class ANPAgent(MeshAgent):
 
     async def _stop_anp_node(self):
         """Gracefully shut down the managed Uvicorn server."""
-        # 优先关闭服务器
+        # Prefer shutting down the server first
         if self._uvicorn_server and self._uvicorn_server.started:
             self._log(f"Shutting down Uvicorn server on port {self.host_port}...")
-            # 这是 Uvicorn 官方推荐的优雅关闭方式
+            # This is the recommended graceful shutdown method by Uvicorn
             self._uvicorn_server.should_exit = True
             
-            # Wait服务器任务真正结束
+            # Wait for the server task to actually finish
             if self._node_task and not self._node_task.done():
                 try:
-                    # Wait任务完成，它会在 should_exit=True 后自行退出
+                    # Wait for the task to complete; it will exit after should_exit=True
                     await asyncio.wait_for(self._node_task, timeout=5.0)
                     self._log(f"✅ Uvicorn server on port {self.host_port} shut down.")
                 except asyncio.TimeoutError:
                     self._log(f"⚠️ Uvicorn server on port {self.host_port} did not shut down in time, cancelling task.")
                     self._node_task.cancel()
                 except asyncio.CancelledError:
-                    pass # 任务已经被取消，是正常情况
+                    pass # Task was already cancelled; this is normal
 
-        # Cleanup所有相关状态
+        # Cleanup all related state
         self._simple_node = None
         self._uvicorn_server = None
         self._node_task = None
@@ -350,4 +351,3 @@ class ANPAgent(MeshAgent):
                 "connected": self._connected
             }
         }
-

@@ -74,17 +74,17 @@ TOOL_SCHEMA = [
         "type": "function",
         "function": {
             "name": "lookup_fragment",
-            "description": "检查local snippet 是否包含答案；TTL和路径由系统自动管理",
+            "description": "Check if the local snippet contains the answer; TTL and path are managed automatically by the system",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "question": {
                         "type": "string",
-                        "description": "要搜索的问题"
+                        "description": "The question to search for"
                     },
                     "found": {
                         "type": "boolean",
-                        "description": "是否在local找到答案"
+                        "description": "Whether the answer was found locally"
                     }
                 },
                 "required": ["question", "found"]
@@ -95,17 +95,17 @@ TOOL_SCHEMA = [
         "type": "function",
         "function": {
             "name": "send_message",
-            "description": "在 ring 中转发消息或把结果回传给上一个节点/协调器",
+            "description": "Forward message within the ring or return results to the previous node/coordinator",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "destination": {
                         "type": "string",
-                        "description": "目标agent ID (prev_id, next_id, 或 coordinator)"
+                        "description": "Target agent ID (prev_id, next_id, or coordinator)"
                     },
                     "content": {
                         "type": "string",
-                        "description": "消息内容"
+                        "description": "Message content"
                     }
                 },
                 "required": ["destination", "content"]
@@ -126,7 +126,7 @@ class ShardWorker:
         self.neighbors = neighbors  # {prev_id, next_id}
         self.output = output
         self.agent_network = None
-        self.force_llm = force_llm  # 控制是否强制使用LLM模式
+        self.force_llm = force_llm  # Controls whether to force LLM mode
         
         # Agent index from agent_id (e.g., "agent3" -> 3 or "shard3" -> 3)
         if shard_id.startswith("agent"):
@@ -157,7 +157,7 @@ class ShardWorker:
         # Pending message management with strict throttling
         self.pending: Dict[str, asyncio.Future] = {}
         neighbor_count = 2  # prev + next
-        self.max_pending = min(neighbor_count * 2, 4)  # 严格限制：最多4个并发请求
+        self.max_pending = min(neighbor_count * 2, 4)  # Strict limit: up to 4 concurrent requests
         
         # Request throttling counters
         self.pending_count = 0
@@ -169,8 +169,8 @@ class ShardWorker:
         self._init_core()
     
     def _convert_config_for_core(self) -> Dict[str, Any]:
-        """转换config格式为Core期望的格式 - 简单直接的转换逻辑"""
-        # 默认配置
+        """Convert config format to the format expected by Core - simple direct conversion"""
+        # Default configuration
         default_config = {
             "model": {
                 "type": "openai",
@@ -182,11 +182,11 @@ class ShardWorker:
             }
         }
         
-        # Ifconfig为空，返回默认配置
+        # If config is empty, return the default
         if not self.config:
             return default_config
         
-        # Try从'llm'字段读取（新格式）
+        # Try reading from 'llm' field (new format)
         llm_config = self.config.get('llm')
         if llm_config:
             return {
@@ -200,10 +200,10 @@ class ShardWorker:
                 }
             }
         
-        # Check是否已经是 model 格式 (base_runner 传递的格式: {"model": {...llm_config...}})
+        # Check if already in model format (base_runner passes format: {"model": {...llm_config...}})
         if 'model' in self.config:
             model_data = self.config['model']
-            # If model 字段是一个字典，需要转换字段名
+            # If model field is a dict, convert field names
             if isinstance(model_data, dict):
                 return {
                     "model": {
@@ -216,7 +216,7 @@ class ShardWorker:
                     }
                 }
         
-        # 都没有，返回默认配置
+        # Otherwise, return default configuration
         return default_config
         
     def _init_core(self):
@@ -246,15 +246,15 @@ class ShardWorker:
             if not self.config:
                 raise Exception("No valid config provided")
             
-            # 转换config格式为Core期望的格式
+            # Convert config format to what Core expects
             core_config = self._convert_config_for_core()
             
-            # 从转换后的配置中获取model_config用于验证和日志
+            # Get model_config for validation and logging
             model_config = core_config['model']
             if 'type' not in model_config:
                 raise Exception("Missing 'type' in model config")
             
-            # 只有openai类型才需要验证API key（local类型不需要）
+            # Only openai type requires API key validation (local type does not)
             if model_config['type'] == 'openai':
                 if 'openai_api_key' not in model_config or not model_config['openai_api_key']:
                     raise Exception("Missing or empty 'openai_api_key' in model config")
@@ -498,7 +498,7 @@ Fragment: "Car manufacturing processes..."
             done, pending = await asyncio.wait(
                 [task for _, task in tasks],
                 return_when=asyncio.FIRST_COMPLETED,
-                timeout=25.0  # 邻居协作总超时：两个邻居并发搜索，考虑可能的转发
+                timeout=25.0  # Total neighbor collaboration timeout: concurrent search + potential forwarding
             )
             
             # Cancel pending tasks
@@ -551,7 +551,7 @@ Fragment: "Car manufacturing processes..."
                 content=request_content,
                 ttl=search_request['ttl'],
                 path=search_request['path'],
-                timeout=18.0  # 单个邻居搜索：LLM(4s) + 转发(12s) + Response(2s)
+                timeout=18.0  # Single neighbor search timeout: LLM(4s) + forwarding(12s) + response(2s)
             )
             
             if response and "SEARCH_RESPONSE:" in response:
@@ -865,7 +865,7 @@ SEARCH CRITERIA (Be ULTRA-LIBERAL - MAXIMIZE DISCOVERY):
 - Absolutely no shared concepts, words, or themes
 - Example: Question about "music" but fragment about "cooking" with no connection
 
-🚨 CRITICAL: When in doubt, choose found=true! Better to include potentially relevant info than miss it.
+🚨 CRITICAL: When in doubt, choose found=true! Better to include potentially relevant info than to miss it.
 
 RESPONSE FORMAT: Use the lookup_fragment function with:
 - found: true/false (be generous with true)
@@ -892,8 +892,8 @@ Remember: It's better to find partial information than to miss relevant content.
         # v2: Dynamic timeout based on TTL - balanced for stability
         if timeout is None:
             max_ttl = self.global_config.get('tool_schema', {}).get('max_ttl', 8)
-            single_hop_timeout = 6.0  # 单跳6秒：LLM(4s) + 网络(1s) + 处理(1s)
-            timeout = max(single_hop_timeout, min(ttl * single_hop_timeout, 48.0))  # 最大48s，允许完整环路
+            single_hop_timeout = 6.0  # Single hop 6s: LLM(4s) + network(1s) + processing(1s)
+            timeout = max(single_hop_timeout, min(ttl * single_hop_timeout, 48.0))  # max 48s, allow full ring
         
         msg_id = f"v1.1-{self.current_group_id}-{self.shard_id}-{int(time.time()*1e6)}"
         # Create safe A2A message
@@ -906,7 +906,7 @@ Remember: It's better to find partial information than to miss relevant content.
         }
         payload = create_safe_a2a_message(msg_id, content, meta)
         
-        # 严格的节流控制 - 队列满时丢弃而不是排队
+        # Strict throttling control - drop instead of queuing when full
         if len(self.pending) >= self.max_pending:
             self.dropped_count += 1
             if self.output:
@@ -968,8 +968,8 @@ Remember: It's better to find partial information than to miss relevant content.
         sender = meta.get("sender", sender) if meta else sender
         reply_to = meta.get("reply_to") if meta else None
         
-        # Setup机器控制的 TTL 和 path 上下文
-        # 重要：从邻居收到消息时，TTL 应该继续递减
+        # Setup machine-controlled TTL and path context
+        # Important: TTL should continue decrementing when receiving messages from neighbors
         self.current_ttl = max(0, ttl - 1) if ttl > 0 else 0
         self.current_path = path + [self.shard_id] if path else [sender, self.shard_id]
         
@@ -1033,8 +1033,8 @@ Remember: It's better to find partial information than to miss relevant content.
                 300000  # max_length
             )
             
-            # TTL现在完全由机器控制，不需要任何篡改
-            response = raw_resp  # 直接使用LLM产生的Response
+            # TTL is now fully machine-controlled, no need to tamper with it
+            response = raw_resp  # Use the LLM-generated response directly
             
             # Track LLM token usage if available
             await self._track_llm_usage(response)
@@ -1049,7 +1049,7 @@ Remember: It's better to find partial information than to miss relevant content.
 
     async def start_task(self, group_id: int) -> str:
         """Start processing task for given group_id (each agent has own question but can communicate via ring)"""
-        # 防止重复处理同一个group
+        # Prevent processing the same group multiple times
         if hasattr(self, '_processing_groups') and group_id in self._processing_groups:
             if self.output:
                 self.output.warning(f"[{self.shard_id}] Group {group_id} already being processed, skipping")
@@ -1074,7 +1074,7 @@ Remember: It's better to find partial information than to miss relevant content.
                 from collections import deque
                 self.history[group_id] = deque(maxlen=self.max_history)
             
-            # Setup初始任务的 TTL 和 path 上下文
+            # Setup initial TTL and path context for the task
             max_ttl = self.global_config.get('tool_schema', {}).get('max_ttl', 8)
             self.current_ttl = max_ttl
             self.current_path = [self.shard_id]
@@ -1103,7 +1103,7 @@ If you don't find relevant information locally, then use send_message to ask nei
             
             # Call Core with function calling
 
-            # Addforce_llm flag来控制是否强制使用LLM
+            # Use force_llm flag to control whether to force LLM
             force_llm = getattr(self, 'force_llm', False)
             
             # Debug: Check actual model type configuration
@@ -1113,7 +1113,7 @@ If you don't find relevant information locally, then use send_message to ask nei
                 if self.output:
                     self.output.progress(f"   🔍 [{self.shard_id}] DEBUG: Detected model type: {actual_model_type}")
             
-            # 对于NVIDIA模型，自动使用mock模式（因为不支持工具调用）
+            # For NVIDIA models, automatically enable mock mode (because they don't support tool calling)
             use_mock_for_nvidia = False
             if self.core and hasattr(self.core, 'config') and self.core.config.get('model', {}).get('type') == 'nvidia':
                 use_mock_for_nvidia = True
@@ -1123,21 +1123,21 @@ If you don't find relevant information locally, then use send_message to ask nei
                         self.output.progress(f"   🔍 [{self.shard_id}] Using mock mode for NVIDIA model (no tool calling support)")
                     # Silent during recovery phase
             
-            # 强制使用真实LLM，禁用mock模式
+            # Force use of real LLM, disable mock mode
             use_real_llm = True
             if self.core is None:
                 if self.output:
                     self.output.error(f"[{self.shard_id}] Core LLM not initialized, cannot proceed")
                 return "Core LLM not available"
             
-            # 使用真实LLM进行判定
+            # Use real LLM for decision making
             if use_real_llm and self.core:
                 if self.output:
                     is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
                     if not is_recovery:
                         self.output.progress(f"   🧠 [{self.shard_id}] Using real LLM for document analysis")
                 
-                # 使用真实LLM进行tool calling
+                # Use real LLM for tool calling
                 try:
                     response = await asyncio.get_event_loop().run_in_executor(
                         None, 
@@ -1151,7 +1151,7 @@ If you don't find relevant information locally, then use send_message to ask nei
                         if not is_recovery:
                             self.output.progress(f"   🤖 [{self.shard_id}] LLM response received")
                     
-                    # ProcessLLM的tool callingResponse
+                    # Process LLM function calling response
                     result = await self._handle_core_response(response)
                     return result
                     
@@ -1294,10 +1294,10 @@ If you don't find relevant information locally, then use send_message to ask nei
                     continue
             
             if function_name == "lookup_fragment":
-                # Add调试输出
+                # Debug output
                 if self.output:
                     self.output.progress(f"🔍 [{self.shard_id}] DEBUG: LLM returned arguments: {arguments}")
-                # 传递机器控制的 TTL 和 path 上下文
+                # Pass machine-controlled TTL and path context
                 result = await self._handle_lookup_fragment(arguments, self.current_ttl, self.current_path)
                 results.append(result)
             elif function_name == "send_message":
@@ -1310,62 +1310,62 @@ If you don't find relevant information locally, then use send_message to ask nei
         """Handle lookup_fragment function call - v3 (Machine-controlled TTL)"""
 
         question = args.get('question', '')
-        found = args.get('found', False)  # LLM 只responsible for判断是否找到答案
+        found = args.get('found', False)  # LLM is only responsible for deciding whether the answer was found
         
-        # TTL 和 path 由机器控制，不再依赖 LLM
+        # TTL and path are machine-controlled, no longer depend on LLM
         if context_ttl is not None:
-            ttl = context_ttl  # 使用调用方传入的 TTL
+            ttl = context_ttl  # Use TTL provided by caller
         else:
-            # If是 start_task 第一次调用，Setup初始 TTL
+            # If called from start_task first time, set initial TTL
             max_ttl = self.global_config.get('tool_schema', {}).get('max_ttl', 8)
             ttl = max_ttl
         
         if context_path is not None:
-            path = context_path.copy()  # 使用调用方传入的路径
+            path = context_path.copy()  # Use path provided by caller
         else:
-            # If是第一次调用，初始化路径
+            # If first call, initialize path
             path = [self.shard_id]
         
         if self.output:
             is_recovery = hasattr(self, 'metrics_collector') and self.metrics_collector and getattr(self.metrics_collector, 'in_recovery_phase', False)
             if not is_recovery:
                 self.output.progress(f"   [{self.shard_id}] Looking up fragment for: {question[:30]}... (ttl={ttl}, found={found})")
-                # TTL跟踪日志 - 用于调试TTL递减情况
+                # TTL trace log - for debugging TTL decrement behavior
                 self.output.progress(f"   [TTL_TRACE] {self.shard_id} ttl={ttl} path={path} found={found} [MACHINE_CONTROLLED]")
             # Silent during recovery phase
         
-        # Process LLM 判断结果 - v2 with fallback
+        # Process LLM decision - v2 with fallback
         if found is None:
-            # Fallback: LLM 没有提供 found 参数，使用简化匹配
+            # Fallback: LLM didn't provide found parameter, use simplified matching
             if self.output:
                 self.output.warning(f"[{self.shard_id}] LLM didn't provide found parameter, using fallback matching")
             
-            # 简化的匹配逻辑
+            # Simplified matching logic
             question_lower = question.lower()
             snippet_lower = self.current_snippet.lower()
             answer_lower = self.current_answer.lower()
             
-            # 直接答案匹配或答案词汇匹配
+            # Direct answer match or answer word matching
             if answer_lower in snippet_lower:
                 found = True
             elif answer_lower:
                 answer_words = [word for word in answer_lower.split() if len(word) > 2]
                 if answer_words:
                     found_words = sum(1 for word in answer_words if word in snippet_lower)
-                    # 降低阈值到50%，让更多答案能被找到
-                    found = found_words >= max(1, len(answer_words) * 0.5)  # 50% threshold (更合理)
+                    # Lower threshold to 50% to allow more matches
+                    found = found_words >= max(1, len(answer_words) * 0.5)  # 50% threshold (more permissive)
                 else:
                     found = False
             else:
                 found = False
         else:
-            # LLM 提供了 found 参数，添加调试输出
+            # LLM provided the found parameter, add debug output
             if self.output:
                 self.output.progress(f"🔍 [{self.shard_id}] LLM provided found={found}, checking fallback logic...")
                 self.output.progress(f"📄 [{self.shard_id}] Answer: '{self.current_answer}'")
                 self.output.progress(f"📄 [{self.shard_id}] Snippet: '{self.current_snippet[:100]}...'")
                 
-                # Check答案是否在snippet中
+                # Check if the answer is in the snippet
                 answer_lower = self.current_answer.lower()
                 snippet_lower = self.current_snippet.lower()
                 if answer_lower in snippet_lower:
@@ -1380,7 +1380,7 @@ If you don't find relevant information locally, then use send_message to ask nei
                 self.output.success(f"   Answer: {self.current_answer}")
                 self.output.success(f"   Source: Local document fragment")
             
-            # Record任务执行成功
+            # Record task execution success
             if hasattr(self, 'metrics_collector') and self.metrics_collector:
                 self.metrics_collector.record_task_execution(
                     task_id=f"{self.current_group_id}-{self.shard_id}",
@@ -1393,23 +1393,23 @@ If you don't find relevant information locally, then use send_message to ask nei
                     answer_source="local"
                 )
             
-            # 使用实际答案
+            # Use the actual answer
             answer_text = self.current_answer
             
-            # Create增强的local答案回传信息
+            # Create enhanced local answer payload
             local_response = {
                 "type": "LOCAL_ANSWER_FOUND",
                 "original_question": self.current_question,
                 "answer": answer_text,
                 "source_agent": self.shard_id,
-                "source_context": self.current_snippet[:500],  # 提供上下文
+                "source_context": self.current_snippet[:500],  # Provide context
                 "hop_count": len(path),
                 "search_path": path + [self.shard_id],
                 "timestamp": time.time(),
                 "group_id": self.current_group_id
             }
             
-            # Send增强的local答案信息
+            # Send enhanced local answer information
             try:
                 import json
                 enhanced_message = f"LOCAL_ANSWER: {json.dumps(local_response)}"
@@ -1432,7 +1432,7 @@ If you don't find relevant information locally, then use send_message to ask nei
             if self.output:
                 self.output.warning(f"[{self.shard_id}] TTL exhausted, cannot search neighbors")
             
-            # 保护TTL_EXHAUSTED发送
+            # Send TTL_EXHAUSTED notification
             try:
                 await self._send_to_coordinator("TTL_EXHAUSTED", path + [self.shard_id], ttl)
             except asyncio.CancelledError:
@@ -1547,9 +1547,9 @@ If you don't find relevant information locally, then use send_message to ask nei
                 await self._send_to_coordinator(content, path=[self.shard_id], ttl=0)
                 return "Message sent to coordinator"
             else:
-                # 🔥 关键修复：使用当前上下文TTL，禁止TTL复活
+                # Critical fix: use current context TTL, prevent TTL resurrection
                 if self.current_ttl is None:
-                    # 兜底：如果意外为空，设为0防止重置
+                    # Fallback: if unexpectedly None, set to 0 to avoid resetting
                     ttl_to_use = 0
                 else:
                     ttl_to_use = max(0, self.current_ttl - 1)
@@ -1557,11 +1557,11 @@ If you don't find relevant information locally, then use send_message to ask nei
                 if ttl_to_use <= 0:
                     if self.output:
                         self.output.warning(f"[{self.shard_id}] 🛑 TTL exhausted → NOT forwarding to {destination}")
-                    # 告知协调器彻底放弃
+                    # Notify coordinator to give up
                     await self._send_to_coordinator("TTL_EXHAUSTED", path=[self.shard_id], ttl=0)
                     return "TTL exhausted - message dropped"
                 
-                # 使用递减的TTL，而不是硬编码的5
+                # Use decremented TTL instead of hardcoded 5
                 await self._send_to_agent(destination, content, ttl=ttl_to_use, path=[self.shard_id])
                 return f"Message sent to {destination} (TTL={ttl_to_use})"
         except Exception as e:
@@ -1593,20 +1593,20 @@ If you don't find relevant information locally, then use send_message to ask nei
                 meta
             )
             
-            # 使用 shield 保护关键网络I/O，避免被外层取消打断
+            # Use shield to protect critical network I/O from outer cancellations
             try:
                 await asyncio.shield(
                     self.agent_network.route_message(self.shard_id, "coordinator", message_payload)
                 )
             except asyncio.CancelledError:
-                # 即使被取消也要保护这个关键发送操作
+                # Even if cancelled, protect this critical send operation
                 if self.output:
                     self.output.warning(f"[{self.shard_id}] Send to coordinator was cancelled but shielded")
                 pass
 
     async def _send_to_agent(self, destination: str, content: str, ttl: int = 5, path: List[str] = None):
         """Send message to another agent with TTL and path"""
-        # 🛡️ 防守式编程：绝不发送TTL<=0的消息
+        # Defensive programming: never send messages with TTL <= 0
         if ttl <= 0:
             if self.output:
                 self.output.error(f"[{self.shard_id}] 🚫 Blocked sending TTL={ttl} message to {destination}")
@@ -1632,7 +1632,7 @@ If you don't find relevant information locally, then use send_message to ask nei
                 meta
             )
             
-            # 使用 shield 保护网络I/O
+            # Use shield to protect network I/O
             try:
                 await asyncio.shield(
                     self.agent_network.route_message(self.shard_id, destination, message_payload)
@@ -1704,15 +1704,15 @@ class ShardWorkerExecutor(AgentExecutor):
             await safe_enqueue_event(event_queue, new_agent_text_message("No input received"))
             return
         
-        # ✅ 提取 A2A 消息的 meta 信息
+        # ✅ Extract A2A message meta information
         sender = "unknown"
         meta = {}
         
-        # ✅ 双重保险的TTL提取：A2A meta + 消消息内容解析
+        # ✅ Double-checked TTL extraction: A2A meta + message content parsing fallback
         sender = "unknown"
         meta = {}
         
-        # 方案1: 从A2A消息中提取meta信息
+        # Method 1: Extract meta from A2A message
         try:
             if hasattr(context, 'params') and hasattr(context.params, 'message'):
                 message = context.params.message
@@ -1726,18 +1726,18 @@ class ShardWorkerExecutor(AgentExecutor):
         except Exception:
             pass
         
-        # 方案2: 备用方案 - 从消息内容解析TTL（当A2A meta失败时）
+        # Method 2: Fallback - parse TTL from message content (when A2A meta fails)
         if not meta.get('ttl') and "Need help:" in user_input and "(ttl=" in user_input:
             import re
             ttl_match = re.search(r'\(ttl=(\d+)\)', user_input)
             if ttl_match:
                 parsed_ttl = int(ttl_match.group(1))
                 meta['ttl'] = parsed_ttl
-                sender = "neighbor"  # from邻居的消息
+                sender = "neighbor"  # from a neighbor message
                 if self.output:
                     self.output.warning(f"[{self.shard_id}] 🔄 A2A meta failed, parsed from content: ttl={parsed_ttl}")
         
-        # 方案3: 如果还是没有TTL，但是消息from外部，设为0
+        # Method 3: If still no TTL and message is external, set to 0
         if not meta.get('ttl') and sender == "unknown":
             meta['ttl'] = 0
             sender = "external"
@@ -1759,9 +1759,9 @@ class ShardWorkerExecutor(AgentExecutor):
                     except ValueError:
                         pass
             
-            # ✅ 优先检查是否为 A2A 消息（基于 meta 信息）
+            # ✅ Prefer handling as A2A message (based on meta)
             if meta and sender != "unknown" and sender != "external":
-                # 🛑 TTL=0时拒绝处理，避免无限循环
+                # 🛑 Reject TTL=0 to avoid infinite loops
                 ttl = meta.get('ttl', 0)
                 if ttl <= 0:
                     if self.output:

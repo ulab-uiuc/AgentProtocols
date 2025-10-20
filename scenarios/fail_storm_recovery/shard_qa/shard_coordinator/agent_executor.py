@@ -126,7 +126,7 @@ class ShardCoordinator:
             # Each worker gets their own question but can ask neighbors for help
             individual_message = f"Process GROUP_ID = {group_id} independently. You have your own question to answer, but you can communicate with neighbors if needed."
             
-            # Setup初始 TTL - 修复机器控制的TTL
+            # Setup initial TTL - fix machine-controlled TTL
             initial_ttl = self.global_config.get('tool_schema', {}).get('max_ttl', 8)
             
             meta = {
@@ -135,8 +135,8 @@ class ShardCoordinator:
                 "timestamp": float(time.time()),
                 "task_type": "independent_with_communication",  # New task type
                 "worker_id": worker_id,
-                "ttl": initial_ttl,  # ✅ 添加机器控制的初始TTL
-                "path": ["coordinator"]  # ✅ 添加初始路径
+                "ttl": initial_ttl,  # ✅ Add machine-controlled initial TTL
+                "path": ["coordinator"]  # ✅ Add initial path
             }
             message_payload = create_safe_a2a_message(
                 f"v1.1-{group_id}-{worker_id}-coordinator",
