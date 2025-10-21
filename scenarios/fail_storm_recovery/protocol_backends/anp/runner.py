@@ -1067,7 +1067,7 @@ class ANPRunner(FailStormRunnerBase):
         for agent_id in self.shard_workers.keys():
             if (agent_id not in self.killed_agents and 
                 agent_id not in exclude_agents and
-                agent_id in self.agents):  # 确保agent还存在
+                agent_id in self.agents):  # Ensure agent still exists
                 available_agents.append(agent_id)
         
         if available_agents:

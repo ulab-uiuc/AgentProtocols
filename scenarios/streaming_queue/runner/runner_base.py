@@ -174,7 +174,7 @@ class RunnerBase:
         self.output.info("Runner started")
         print("=" * 60)
         try:
-            # 1) 网络 & agent
+            # 1) Network & agents
             self.network = await self.create_network()
             worker_ids = await self.setup_agents()
 

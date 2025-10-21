@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-S2 E2E负载加密存在性检测
-通过水印注入与中间点观察，判定协议是否具有端到端负载加密能力
+ E2E encryption detection toolkit
+ 
+ Utilities for injecting watermarks into payloads and analyzing intercepted
+ traffic or middleware logs to detect whether end-to-end encryption is
+ present or whether sensitive data appears in plaintext.
 """
 
 import hashlib
@@ -13,7 +16,12 @@ import json
 
 
 class E2EEncryptionDetector:
-    """端到端加密检测器"""
+    """End-to-end encryption detector helper.
+
+    Provides methods to inject a hidden watermark into payloads for testing
+    and to analyze intercepted traffic or middleware logs for evidence of
+    plaintext leakage or encryption indicators.
+    """
     
     def __init__(self, watermark: str = "S2_E2E_WATERMARK"):
         self.watermark = watermark
@@ -21,30 +29,30 @@ class E2EEncryptionDetector:
         self.payload_markers = []
         
     def inject_watermark_payload(self, original_payload: Dict[str, Any]) -> Dict[str, Any]:
-        """向payload注入水印标记用于检测"""
+        """Inject a unique watermark into a payload for detection testing."""
         modified_payload = original_payload.copy()
         
-        # 生成唯一水印
+        # generate a unique watermark
         timestamp = int(time.time() * 1000)
         unique_watermark = f"{self.watermark}_{timestamp}"
         watermark_hash = hashlib.md5(unique_watermark.encode()).hexdigest()[:8]
         
-        # 根据payload结构注入水印
+        # inject watermark according to payload structure
         if 'text' in modified_payload:
-            # 文本消息：在末尾添加隐藏标记
+            # text message: append a hidden marker at the end
             modified_payload['text'] += f" [HIDDEN_MARKER:{unique_watermark}]"
         elif 'content' in modified_payload:
-            # content结构：注入到内容中
+            # content structure: inject into the content
             if isinstance(modified_payload['content'], str):
                 modified_payload['content'] += f" {unique_watermark}"
         
-        # 在metadata中也注入标记
+        # also insert marker into metadata
         if 'metadata' not in modified_payload:
             modified_payload['metadata'] = {}
         modified_payload['metadata']['s2_watermark'] = unique_watermark
         modified_payload['metadata']['s2_watermark_hash'] = watermark_hash
         
-        # Record注入的标记
+        # record the injected marker
         self.payload_markers.append({
             'watermark': unique_watermark,
             'hash': watermark_hash,
@@ -55,10 +63,10 @@ class E2EEncryptionDetector:
         return modified_payload
     
     def create_plaintext_probe_payload(self) -> Dict[str, Any]:
-        """Create明显的明文探测payload"""
+        """Create a plaintext probe payload containing sensitive-looking fields."""
         timestamp = int(time.time() * 1000)
         
-        # Create包含明显敏感信息的payload
+        # create a payload containing clearly sensitive information
         probe_payload = {
             'text': f'PLAINTEXT_PROBE_{timestamp}: This is sensitive medical data - Patient ID: 12345, SSN: 555-66-7777',
             'sender_id': 'E2E_PROBE_SENDER',
@@ -77,7 +85,7 @@ class E2EEncryptionDetector:
             }
         }
         
-        # Record探测payload
+        # record the probe payload
         self.payload_markers.append({
             'type': 'plaintext_probe',
             'probe_id': f'probe_{timestamp}',
@@ -88,7 +96,7 @@ class E2EEncryptionDetector:
         return probe_payload
     
     def analyze_intercepted_traffic(self, intercepted_data: str) -> Dict[str, Any]:
-        """分析拦截到的网络流量，检测是否包含明文水印"""
+        """Analyze intercepted network traffic for watermark presence and plaintext."""
         analysis = {
             'timestamp': time.time(),
             'traffic_size': len(intercepted_data),
@@ -98,7 +106,7 @@ class E2EEncryptionDetector:
             'e2e_encryption_verdict': 'unknown'
         }
         
-        # 检测注入的水印是否以明文形式出现
+        # detect whether injected watermarks appear in plaintext
         for marker in self.payload_markers:
             if marker.get('watermark') and marker['watermark'] in intercepted_data:
                 analysis['watermark_detections'].append({
@@ -113,12 +121,12 @@ class E2EEncryptionDetector:
                     'detection_method': 'hash_match'
                 })
         
-        # 检测明文敏感关键字
+        # detect plaintext sensitive keywords
         sensitive_patterns = [
             r'Patient ID:\s*\d+',
             r'SSN:\s*\d{3}-\d{2}-\d{4}',
-            r'\d{4}-\d{4}-\d{4}-\d{4}',  # 信用卡
-            r'\(\d{3}\)\s*\d{3}-\d{4}',  # 电话
+            r'\d{4}-\d{4}-\d{4}-\d{4}',  # credit card
+            r'\(\d{3}\)\s*\d{3}-\d{4}',  # phone
             r'CONFIDENTIAL_MEDICAL_DIAGNOSIS',
             r'PLAINTEXT_PROBE_\d+'
         ]
@@ -128,10 +136,10 @@ class E2EEncryptionDetector:
             if matches:
                 analysis['plaintext_keywords_found'].extend(matches)
         
-        # 检测加密指标
+        # detect encryption indicators
         self._detect_encryption_indicators(intercepted_data, analysis)
         
-        # 做出E2E加密判决
+        # make an E2E encryption verdict
         analysis['e2e_encryption_verdict'] = self._make_e2e_verdict(analysis)
         
         return analysis
@@ -139,7 +147,7 @@ class E2EEncryptionDetector:
     def analyze_middleware_logs(self, 
                                rg_logs: Optional[str] = None,
                                coordinator_logs: Optional[str] = None) -> Dict[str, Any]:
-        """分析中间件日志，检测payload是否在中间层可读"""
+        """Analyze middleware logs (RG, Coordinator) to detect payload visibility."""
         middleware_analysis = {
             'timestamp': time.time(),
             'rg_analysis': {},
@@ -147,19 +155,19 @@ class E2EEncryptionDetector:
             'e2e_breach_detected': False
         }
         
-        # 分析RG日志
+        # analyze RG logs
         if rg_logs:
             middleware_analysis['rg_analysis'] = self._analyze_single_middleware_log(
                 rg_logs, 'RG'
             )
         
-        # 分析Coordinator日志
+        # analyze Coordinator logs
         if coordinator_logs:
             middleware_analysis['coordinator_analysis'] = self._analyze_single_middleware_log(
                 coordinator_logs, 'Coordinator'
             )
         
-        # 检测是否有E2E加密泄露
+        # detect whether there is E2E encryption leakage
         rg_breach = middleware_analysis['rg_analysis'].get('watermarks_found', [])
         coord_breach = middleware_analysis['coordinator_analysis'].get('watermarks_found', [])
         
@@ -174,7 +182,7 @@ class E2EEncryptionDetector:
         return middleware_analysis
     
     def _analyze_single_middleware_log(self, log_content: str, middleware_name: str) -> Dict[str, Any]:
-        """分析单个中间件日志"""
+        """Analyze a single middleware log for watermarks and sensitive data."""
         analysis = {
             'middleware': middleware_name,
             'log_size': len(log_content),
@@ -183,7 +191,7 @@ class E2EEncryptionDetector:
             'payload_visibility_score': 0
         }
         
-        # Check水印是否出现在日志中
+        # check whether watermark appears in logs
         for marker in self.payload_markers:
             watermark = marker.get('watermark', '')
             if watermark and watermark in log_content:
@@ -193,7 +201,7 @@ class E2EEncryptionDetector:
                     'timestamp': marker.get('timestamp')
                 })
         
-        # Check敏感数据泄露
+        # check sensitive data exposure
         sensitive_indicators = [
             'Patient ID', 'SSN', 'CONFIDENTIAL', 'credit_card',
             'PLAINTEXT_PROBE', 'medical data', 'diagnosis'
@@ -203,15 +211,15 @@ class E2EEncryptionDetector:
             if indicator.lower() in log_content.lower():
                 analysis['sensitive_data_found'].append(indicator)
         
-        # Calculatepayload可见性评分（0-100，越高越糟糕）
+        # calculate payload visibility score (0-100, higher is worse)
         visibility_factors = len(analysis['watermarks_found']) * 30 + len(analysis['sensitive_data_found']) * 20
         analysis['payload_visibility_score'] = min(100, visibility_factors)
         
         return analysis
     
     def _detect_encryption_indicators(self, data: str, analysis: Dict[str, Any]):
-        """检测加密指标"""
-        # Base64编码数据检测
+        """Detect signs that data is encrypted (base64, JWTs, high entropy)."""
+        # detect base64-encoded data
         base64_pattern = r'[A-Za-z0-9+/]{20,}={0,2}'
         base64_matches = re.findall(base64_pattern, data)
         if base64_matches:
@@ -221,7 +229,7 @@ class E2EEncryptionDetector:
                 'sample': base64_matches[0][:50] if base64_matches else None
             })
         
-        # JSON Web Token检测
+        # detect JSON Web Tokens
         jwt_pattern = r'eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+'
         jwt_matches = re.findall(jwt_pattern, data)
         if jwt_matches:
@@ -230,25 +238,25 @@ class E2EEncryptionDetector:
                 'count': len(jwt_matches)
             })
         
-        # 高熵数据检测（可能是加密数据）
+        # detect high-entropy data (possible encrypted data)
         entropy_score = self._calculate_entropy(data)
-        if entropy_score > 4.5:  # 高熵阈值
+        if entropy_score > 4.5:  # high-entropy threshold
             analysis['encryption_indicators'].append({
                 'type': 'high_entropy_data',
                 'entropy_score': entropy_score
             })
     
     def _calculate_entropy(self, data: str) -> float:
-        """Calculate字符串熵值"""
+        """Calculate the entropy of a string (Shannon entropy)."""
         if not data:
             return 0
         
-        # 统计字符频率
+        # compute character frequencies
         frequency = {}
         for char in data:
             frequency[char] = frequency.get(char, 0) + 1
         
-        # Calculate熵
+        # calculate entropy
         import math
         entropy = 0
         data_len = len(data)
@@ -260,34 +268,34 @@ class E2EEncryptionDetector:
         return entropy
     
     def _make_e2e_verdict(self, analysis: Dict[str, Any]) -> str:
-        """基于分析结果做出E2E加密判决（改进版）"""
+        """Produce a best-effort verdict about E2E encryption presence."""
         watermark_found = bool(analysis['watermark_detections'])
         plaintext_found = bool(analysis['plaintext_keywords_found'])
         encryption_indicators = bool(analysis['encryption_indicators'])
         
-        # 新增：检查熵值和二进制指标
+        # note: check entropy and binary indicators
         avg_entropy = analysis.get('payload_entropy', 0)
         binary_ratio = analysis.get('binary_content_ratio', 0)
         
-        # 综合评判逻辑
+        # Comprehensive assessment logic
         if watermark_found or plaintext_found:
             if avg_entropy > 6.0 and binary_ratio > 0.3:
-                return 'PARTIAL_E2E_ENCRYPTION'  # 部分加密，但有泄露
+                return 'PARTIAL_E2E_ENCRYPTION'  # partial encryption, but leakage present
             else:
-                return 'NO_E2E_ENCRYPTION'  # 明确无E2E加密
+                return 'NO_E2E_ENCRYPTION'  # no E2E encryption detected
         elif encryption_indicators and avg_entropy > 7.0 and binary_ratio > 0.5:
-            return 'STRONG_E2E_ENCRYPTION'  # 强E2E加密指标
+            return 'STRONG_E2E_ENCRYPTION'  # strong E2E encryption indicators
         elif encryption_indicators:
-            return 'LIKELY_E2E_ENCRYPTED'  # 可能有E2E加密
+            return 'LIKELY_E2E_ENCRYPTED'  # likely E2E encrypted
         elif avg_entropy > 5.0:
-            return 'WEAK_E2E_ENCRYPTION'  # 弱加密指标
+            return 'WEAK_E2E_ENCRYPTION'  # weak encryption indicators
         else:
-            return 'INSUFFICIENT_DATA'  # 数据不足判断
+            return 'INSUFFICIENT_DATA'  # insufficient data to decide
     
     def analyze_middleware_readability(self, 
                                      payload: Dict[str, Any],
                                      middleware_logs: List[str] = None) -> Dict[str, Any]:
-        """分析中间点（协调器/RG）对payload的可读性"""
+        """Analyze how readable a payload would be if logged by middleware."""
         result = {
             'timestamp': time.time(),
             'payload_analyzed': True,
@@ -298,46 +306,46 @@ class E2EEncryptionDetector:
             'middleware_breach_indicators': []
         }
         
-        # 分析payload内容
+        # analyze payload content
         payload_text = str(payload.get('text', ''))
         if payload_text:
             result['payload_entropy'] = self._calculate_entropy(payload_text)
             
-            # Check水印是否可见
+            # check whether watermark is visible
             for marker in self.payload_markers:
                 if marker in payload_text:
                     result['watermark_visible'] = True
-                    result['middleware_breach_indicators'].append(f"水印可见: {marker}")
+                    result['middleware_breach_indicators'].append(f"watermark visible: {marker}")
             
-            # Check敏感数据可见性
+            # check sensitive data visibility
             sensitive_patterns = [
-                r'\b\d{4}-\d{4}-\d{4}-\d{4}\b',  # 信用卡号
+                r'\b\d{4}-\d{4}-\d{4}-\d{4}\b',  # credit card number
                 r'\b\d{3}-\d{2}-\d{4}\b',       # SSN
-                r'\bpatient.*id.*\d+\b',         # 患者ID
-                r'\bmedical.*record.*\d+\b'      # 病历号
+                r'\bpatient.*id.*\d+\b',         # patient ID
+                r'\bmedical.*record.*\d+\b'      # medical record ID
             ]
             
             import re
             for pattern in sensitive_patterns:
                 if re.search(pattern, payload_text, re.IGNORECASE):
                     result['sensitive_data_visible'] = True
-                    result['middleware_breach_indicators'].append(f"敏感数据模式: {pattern}")
+                    result['middleware_breach_indicators'].append(f"sensitive data pattern: {pattern}")
         
-        # 分析中间件日志（如果提供）
+        # analyze middleware logs (if provided)
         if middleware_logs:
             for log_line in middleware_logs:
-                # Check日志中是否泄露了payload内容
+                # check whether logs leak payload content
                 if payload_text and len(payload_text) > 10:
-                    payload_snippet = payload_text[:20]  # 取前20个字符
+                    payload_snippet = payload_text[:20]  # take the first 20 characters
                     if payload_snippet.lower() in log_line.lower():
-                        result['middleware_breach_indicators'].append("日志泄露payload内容")
+                        result['middleware_breach_indicators'].append("log contains payload snippet")
                         result['sensitive_data_visible'] = True
         
-        # Calculate可读性评分 (0-100，越低越好)
+        # calculate readability score (0-100, lower is better)
         breach_count = len(result['middleware_breach_indicators'])
         if result['watermark_visible'] or result['sensitive_data_visible']:
             result['readability_score'] = min(80 + breach_count * 10, 100)
-        elif result['payload_entropy'] < 4.0:  # 低熵值表示可能是明文
+        elif result['payload_entropy'] < 4.0:  # low entropy may indicate plaintext
             result['readability_score'] = 60
         else:
             result['readability_score'] = max(20 - breach_count * 5, 0)
@@ -347,7 +355,7 @@ class E2EEncryptionDetector:
     def generate_e2e_report(self, 
                            traffic_analysis: Dict[str, Any],
                            middleware_analysis: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """GenerateE2E加密检测报告"""
+        """Generate an E2E encryption detection report combining traffic and middleware analysis."""
         report = {
             'test_type': 'e2e_encryption_detection',
             'timestamp': time.time(),
@@ -356,7 +364,7 @@ class E2EEncryptionDetector:
             'middleware_analysis': middleware_analysis or {},
         }
         
-        # 综合判决
+        # Overall judgment
         traffic_verdict = traffic_analysis.get('e2e_encryption_verdict', 'unknown')
         middleware_breach = middleware_analysis.get('e2e_breach_detected', False) if middleware_analysis else False
         
@@ -370,13 +378,13 @@ class E2EEncryptionDetector:
             report['final_verdict'] = 'INCONCLUSIVE'
             report['confidence'] = 'LOW'
         
-        # CalculateE2E评分
+        # Calculate E2E score
         report['e2e_score'] = self._calculate_e2e_score(report)
         
         return report
     
     def _calculate_e2e_score(self, report: Dict[str, Any]) -> int:
-        """CalculateE2E加密评分（0-100）"""
+        """Calculate an integer score (0-100) reflecting E2E encryption strength."""
         verdict = report.get('final_verdict', 'INCONCLUSIVE')
         
         if verdict == 'E2E_ENCRYPTION_DETECTED':
@@ -386,7 +394,7 @@ class E2EEncryptionDetector:
         else:  # INCONCLUSIVE
             base_score = 50
         
-        # 根据置信度调整
+        # Adjust based on confidence
         confidence = report.get('confidence', 'LOW')
         confidence_multiplier = {
             'HIGH': 1.0,
@@ -399,7 +407,7 @@ class E2EEncryptionDetector:
 
 
     def analyze_response(self, response_text: str, probe_context: str = "") -> Dict[str, Any]:
-        """分析agentResponse内容，检测水印泄露和E2E加密有效性"""
+        """Analyze an agent response for watermark leakage and sensitive patterns."""
         analysis = {
             'timestamp': time.time(),
             'probe_context': probe_context,
@@ -407,10 +415,10 @@ class E2EEncryptionDetector:
             'watermark_leakage_detected': False,
             'sensitive_data_leaked': False,
             'leaked_markers': [],
-            'e2e_encryption_score': 100.0  # 默认满分，发现泄露则扣分
+            'e2e_encryption_score': 100.0  # default full score; deductions on leakage
         }
         
-        # 检测注入的水印是否在Response中泄露
+        # Detect whether injected watermarks leak in the response
         for marker in self.payload_markers:
             if marker.get('watermark') and marker['watermark'] in response_text:
                 analysis['watermark_leakage_detected'] = True
@@ -419,7 +427,7 @@ class E2EEncryptionDetector:
                     'content': marker['watermark'],
                     'location': response_text.find(marker['watermark'])
                 })
-                analysis['e2e_encryption_score'] -= 30.0  # 水印泄露严重扣分
+                analysis['e2e_encryption_score'] -= 30.0  # heavy penalty for watermark leakage
                 
             if marker.get('hash') and marker['hash'] in response_text:
                 analysis['watermark_leakage_detected'] = True
@@ -428,9 +436,9 @@ class E2EEncryptionDetector:
                     'content': marker['hash'],
                     'location': response_text.find(marker['hash'])
                 })
-                analysis['e2e_encryption_score'] -= 20.0  # 哈希泄露扣分
+                analysis['e2e_encryption_score'] -= 20.0  # hash leakage penalty
         
-        # 检测敏感数据标记泄露
+        # Detect sensitive data pattern leakage
         sensitive_patterns = [
             r'PLAINTEXT_PROBE_SENSITIVE_DATA',
             r'HIDDEN_MARKER:S2_E2E_WATERMARK_TEST_\d+',
@@ -450,12 +458,12 @@ class E2EEncryptionDetector:
                         'pattern': pattern,
                         'location': response_text.find(match)
                     })
-                analysis['e2e_encryption_score'] -= 15.0 * len(matches)  # 每个敏感泄露扣15分
+                analysis['e2e_encryption_score'] -= 15.0 * len(matches)  # subtract 15 points per sensitive leak
         
-        # 确保分数不低于0
+        # Ensure score is not below 0
         analysis['e2e_encryption_score'] = max(0.0, analysis['e2e_encryption_score'])
         
-        # 判定E2E加密有效性
+        # Determine E2E encryption effectiveness
         if analysis['e2e_encryption_score'] >= 80:
             analysis['e2e_verdict'] = 'SECURE'
         elif analysis['e2e_encryption_score'] >= 50:
@@ -467,15 +475,16 @@ class E2EEncryptionDetector:
 
 
 def create_e2e_detector(watermark: str = "S2_E2E_WATERMARK") -> E2EEncryptionDetector:
-    """CreateE2E加密检测器实例"""
+    """Create an E2E encryption detector instance."""
     return E2EEncryptionDetector(watermark)
 
 
 if __name__ == "__main__":
-    # 测试用例
+    # example usage / test
     detector = create_e2e_detector()
     
-    # 测试payload注入
+    # Test payload injection
+    # test payload injection
     original_payload = {
         'text': 'Hello, this is a test message',
         'sender_id': 'test_sender',
@@ -483,13 +492,13 @@ if __name__ == "__main__":
     }
     
     modified_payload = detector.inject_watermark_payload(original_payload)
-    print(f"修改后的payload: {modified_payload}")
+    print(f"Modified payload: {modified_payload}")
     
-    # 模拟流量分析
+    # simulate traffic analysis
     fake_traffic = "HTTP/1.1 200 OK\nContent-Type: application/json\n\n" + json.dumps(modified_payload)
     traffic_analysis = detector.analyze_intercepted_traffic(fake_traffic)
-    print(f"流量分析结果: {traffic_analysis}")
+    print(f"Traffic analysis result: {traffic_analysis}")
     
-    # 生成报告
+    # generate report
     report = detector.generate_e2e_report(traffic_analysis)
-    print(f"E2E检测报告: {report}")
+    print(f"E2E detection report: {report}")

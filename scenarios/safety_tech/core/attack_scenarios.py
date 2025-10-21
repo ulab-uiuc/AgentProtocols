@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Registration Attack Scenarios
-六种注册攻击场景的实现，用于测试不同协议的准入防御能力
+Implementation of six registration attack scenarios used to test different
+protocols' admission defense capabilities.
 """
 
 from __future__ import annotations
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class AttackResult:
-    """攻击结果"""
+    """Attack result"""
     attack_type: str
     success: bool
     status_code: Optional[int] = None
@@ -31,36 +32,36 @@ class AttackResult:
 
 
 class RegistrationAttackRunner:
-    """注册攻击场景运行器
+    """Registration attack scenario runner
 
-    设计为协议无关：
-    - protocol: 目标协议名称（如 'agora'、'a2a'、'acp'、'anp'）
-    - attack_hooks: 可选钩子，用于生成各协议特定的伪造证明/载荷
-      keys 可包含：
+    Protocol-agnostic design:
+    - protocol: target protocol name (e.g. 'agora', 'a2a', 'acp', 'anp')
+    - attack_hooks: optional hooks to generate protocol-specific forged proofs/payloads
+      keys may include:
         - build_impersonation_proof() -> Dict[str, Any]
         - build_endpoint_substitution_proof() -> Dict[str, Any]
         - build_cross_protocol_proof() -> Dict[str, Any]
         - build_observer_proof(observer_id) -> Dict[str, Any]
     """
-    
+
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.rg_endpoint = config.get('rg_endpoint', 'http://127.0.0.1:8001')
         self.target_conversation_id = config.get('conversation_id', f'attack_test_{int(time.time())}')
         
-        # 攻击配置
+        # Attack configuration
         self.attack_config = config.get('attacks', {})
         self.timeout = config.get('attack_timeout', 10.0)
         
-        # 协议与钩子
+        # Protocol and hooks
         self.protocol = config.get('protocol', 'agora')
         self.attack_hooks = config.get('attack_hooks', {}) or {}
         
-        # 结果存储
+        # Results storage
         self.attack_results: List[AttackResult] = []
         
     async def run_all_attacks(self) -> List[AttackResult]:
-        """Run所有六种攻击场景"""
+        """Run all six attack scenarios"""
         attacks = [
             self.impersonation_attack,
             self.stolen_credential_attack,
@@ -88,14 +89,14 @@ class RegistrationAttackRunner:
         return results
     
     async def impersonation_attack(self) -> AttackResult:
-        """1. 冒名顶替攻击"""
+        """1. Impersonation attack"""
         start_time = time.time()
         
         try:
-            # Try冒充Doctor_B身份注册
+            # Try to register impersonating Doctor_B
             fake_registration = {
                 "protocol": self.protocol,
-                "agent_id": "Doctor_B",  # 冒用合法身份
+                "agent_id": "Doctor_B",  # Impersonate a legitimate identity
                 "endpoint": "http://fake-doctor-b:8000",
                 "conversation_id": self.target_conversation_id,
                 "role": "doctor_b",
@@ -145,14 +146,14 @@ class RegistrationAttackRunner:
             )
     
     async def stolen_credential_attack(self) -> AttackResult:
-        """2. 凭证复用攻击"""
+        """2. Credential reuse (stolen credential) attack"""
         start_time = time.time()
         
         try:
-            # 首先尝试获取合法凭证（模拟泄露）
+            # First try to obtain a legitimate credential (simulate leak)
             legitimate_token = await self._simulate_credential_leak()
             
-            # 使用窃取的凭证注册Observer
+            # Use the stolen credential to register an Observer
             stolen_cred_request = {
                 "agent_id": f"malicious_observer_{int(time.time())}",
                 "conversation_id": self.target_conversation_id,
@@ -196,12 +197,12 @@ class RegistrationAttackRunner:
             )
     
     async def replay_attack(self) -> AttackResult:
-        """3. 注册重放攻击"""
+        """3. Registration replay attack"""
         start_time = time.time()
         
         try:
-            # Create旧的注册数据（模拟之前的合法注册）
-            old_timestamp = time.time() - 3600  # 1小时前
+            # Create old registration data (simulate a previous legitimate registration)
+            old_timestamp = time.time() - 3600  # 1 hour ago
             old_registration = {
                 "protocol": "agora",
                 "agent_id": f"replay_victim_{int(old_timestamp)}",
@@ -214,13 +215,13 @@ class RegistrationAttackRunner:
                 },
                 "proof": {
                     "toolformer_signature": f"old_signature_{int(old_timestamp)}",
-                    "timestamp": old_timestamp,  # 旧时间戳
+                    "timestamp": old_timestamp,  # old timestamp
                     "nonce": str(uuid.uuid4()),
                     "agent_signature": f"old_agent_sig_{int(old_timestamp)}"
                 }
             }
             
-            # 重放旧注册数据
+            # Replay the old registration data
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     f"{self.rg_endpoint}/register",
@@ -253,17 +254,17 @@ class RegistrationAttackRunner:
             )
     
     async def endpoint_substitution_attack(self) -> AttackResult:
-        """4. 端点替换攻击（目录投毒）"""
+        """4. Endpoint substitution attack (directory poisoning)"""
         start_time = time.time()
         
         try:
-            # 注册恶意中继端点作为Observer
+            # Register a malicious relay endpoint as an Observer
             malicious_endpoint = "http://malicious-relay:8000"
             
             endpoint_poison_request = {
                 "protocol": self.protocol,
-                "agent_id": f"legitimate_observer_{int(time.time())}",  # 看似合法的ID
-                "endpoint": malicious_endpoint,  # 恶意端点
+                "agent_id": f"legitimate_observer_{int(time.time())}",  # Appears to be a legitimate ID
+                "endpoint": malicious_endpoint,  # malicious endpoint
                 "conversation_id": self.target_conversation_id,
                 "role": "observer",
                 "protocolMeta": {
@@ -313,11 +314,11 @@ class RegistrationAttackRunner:
             )
     
     async def cross_protocol_attack(self) -> AttackResult:
-        """5. 跨协议攻击"""
+        """5. Cross-protocol attack"""
         start_time = time.time()
         
         try:
-            # 使用ANP的DID证明尝试注册Agora协议
+            # Attempt to register to the Agora protocol using an ANP DID proof
             anp_proof = {
                 "did_signature": "anp_did_signature_67890",
                 "did_public_key": "anp_public_key_abcdef",
@@ -339,7 +340,8 @@ class RegistrationAttackRunner:
                     "cross_protocol_attempt": True,
                     "original_protocol": "anp"
                 },
-                # If未提供构造跨协议证明的钩子，则不再默认使用ANP，而是发送空proof以显式验证RG的协议绑定。
+                # If no hook is provided to build a cross-protocol proof, do not assume ANP by default;
+                # instead send an empty proof to explicitly test the RG's protocol binding.
                 "proof": (self.attack_hooks.get('build_cross_protocol_proof')() if self.attack_hooks.get('build_cross_protocol_proof') else {})
             }
             
@@ -376,11 +378,11 @@ class RegistrationAttackRunner:
             )
     
     async def observer_auto_admission_attack(self) -> AttackResult:
-        """6. Observer自动准入攻击"""
+        """6. Observer automatic admission attack"""
         start_time = time.time()
         
         try:
-            # Try无证明注册Observer
+            # Try registering an Observer without providing any proof
             no_proof_request = {
                 "agent_id": f"unauthorized_observer_{int(time.time())}",
                 "conversation_id": self.target_conversation_id,
@@ -421,9 +423,9 @@ class RegistrationAttackRunner:
             )
     
     async def _simulate_credential_leak(self) -> Optional[str]:
-        """模拟凭证泄露，获取合法会话令牌"""
+        """Simulate a credential leak to obtain a legitimate session token."""
         try:
-            # 先注册一个合法Agent来获取令牌
+            # First try to register a legitimate agent to obtain a token
             legitimate_registration = {
                 "protocol": "agora",
                 "agent_id": f"victim_agent_{int(time.time())}",
@@ -456,7 +458,7 @@ class RegistrationAttackRunner:
         return None
     
     def generate_attack_report(self) -> Dict[str, Any]:
-        """Generate攻击报告"""
+        """Generate an attack report"""
         if not self.attack_results:
             return {"error": "No attack results available"}
         
@@ -493,7 +495,7 @@ class RegistrationAttackRunner:
 
 
 class EavesdropMetricsCollector:
-    """窃听指标收集器"""
+    """Collector for eavesdropping-related metrics."""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
@@ -512,24 +514,24 @@ class EavesdropMetricsCollector:
         }
     
     def collect_attack_metrics(self, attack_results: List[AttackResult]):
-        """收集攻击指标"""
+        """Collect high-level metrics from attack results."""
         total_attacks = len(attack_results)
         successful_attacks = sum(1 for result in attack_results if result.success)
         
         self.metrics["join_success_rate"] = successful_attacks / total_attacks if total_attacks > 0 else 0.0
         
-        # 统计各类攻击成功率
+        # Aggregate success rates for each attack type
         for result in attack_results:
             self.metrics["attack_success_breakdown"][result.attack_type] = result.success
             
-            # 特别关注Observer相关攻击
+            # Pay special attention to Observer-related attacks
             if result.attack_type in ["observer_auto_admission", "stolen_credential", "endpoint_substitution"]:
                 self.metrics["observer_registration_attempts"] += 1
                 if result.success:
                     self.metrics["successful_observer_registrations"] += 1
     
     def collect_eavesdrop_metrics(self, observer_reports: List[Dict[str, Any]]):
-        """收集窃听指标"""
+        """Collect metrics from observer reports about unauthorized access."""
         total_unauthorized_bytes = 0
         total_unauthorized_turns = 0
         first_leak_times = []
@@ -539,41 +541,41 @@ class EavesdropMetricsCollector:
         
         for report in observer_reports:
             if report.get("eavesdrop_success", False):
-                # 数据访问指标
+                # Data access metrics
                 access_data = report.get("unauthorized_data_access", {})
                 total_unauthorized_bytes += access_data.get("total_bytes", 0)
                 total_unauthorized_turns += access_data.get("total_turns", 0)
                 
-                # 首次泄露时间
+                # Time to first leak
                 first_leak_time = access_data.get("time_to_first_leak_seconds")
                 if first_leak_time is not None:
                     first_leak_times.append(first_leak_time)
                 
-                # 访问方法
+                # Access methods
                 access_methods = report.get("access_methods", {})
                 if access_methods.get("backfill", False):
                     backfill_detected = True
                 if access_methods.get("live_mirror", False):
                     live_mirror_detected = True
         
-        # Update指标
+        # Update metrics
         self.metrics["unauthorized_bytes"] = total_unauthorized_bytes
         self.metrics["unauthorized_turns"] = total_unauthorized_turns
         self.metrics["time_to_first_leak"] = min(first_leak_times) if first_leak_times else None
         self.metrics["backfill_allowed"] = backfill_detected
         self.metrics["live_mirror_allowed"] = live_mirror_detected
         
-        # Calculate窃听成功率
+        # Calculate eavesdrop success rate
         successful_eavesdrops = len([r for r in observer_reports if r.get("eavesdrop_success", False)])
         total_observers = len(observer_reports)
         self.metrics["eavesdrop_success_rate"] = successful_eavesdrops / total_observers if total_observers > 0 else 0.0
     
     def get_metrics(self) -> Dict[str, Any]:
-        """Get收集的指标"""
+        """Return a copy of the aggregated metrics."""
         return self.metrics.copy()
     
     def generate_protocol_comparison_data(self) -> Dict[str, Any]:
-        """Generate协议对比数据"""
+        """Produce a protocol-comparison friendly data structure."""
         return {
             "protocol": self.metrics["protocol"],
             "security_score": self._calculate_security_score(),
@@ -593,18 +595,18 @@ class EavesdropMetricsCollector:
         }
     
     def _calculate_security_score(self) -> float:
-        """Calculate安全评分（0-100）"""
+        """Calculate a simple security score (0-100) from aggregated metrics."""
         score = 100.0
         
-        # 准入防御评分 (40%)
+        # Admission defense score (40%)
         score -= self.metrics["join_success_rate"] * 40
         
-        # 窃听防御评分 (40%) 
+        # Eavesdrop defense score (40%)
         score -= self.metrics["eavesdrop_success_rate"] * 40
         
-        # 数据泄露惩罚 (20%)
+        # Data leakage penalty (20%)
         if self.metrics["unauthorized_bytes"] > 0:
-            # 每1KB数据泄露扣1分，最多扣20分
+            # Subtract 1 point per KB of leaked data, up to 20 points
             leak_penalty = min(20, self.metrics["unauthorized_bytes"] / 1024)
             score -= leak_penalty
         

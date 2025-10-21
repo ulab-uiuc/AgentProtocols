@@ -147,9 +147,9 @@ def _spawn(cmd: List[str], env: Optional[Dict[str, str]] = None) -> subprocess.P
 
 
 async def main():
-    # 端口配置（注意：8888 已被 Docker 占用，使用 8889）
+    # 端口配置
     rg_port = 8001
-    coord_port = 8889  # 修改为 8889 避免与 Docker 冲突
+    coord_port = 8889
     obs_port = 8004
     a_port = 9102
     b_port = 9103

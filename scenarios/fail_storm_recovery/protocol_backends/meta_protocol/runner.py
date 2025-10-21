@@ -434,7 +434,7 @@ class MetaProtocolRunner(FailStormRunnerBase):
                         else:
                             continue
                         
-                        # Initialize统一加超时（所有协议都建议加）
+                        # Initialize with a unified timeout (recommended for all protocols)
                         try:
                             await asyncio.wait_for(adapter.initialize(), timeout=10.0)
                         except asyncio.TimeoutError:

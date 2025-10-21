@@ -19,20 +19,20 @@ class MetaWorkerMetrics:
     worker_id: str
     protocol: str
     
-    # 任务完成统计
+    # Task completion statistics
     completed_tasks: int = 0
     failed_tasks: int = 0
     timeout_tasks: int = 0
     
-    # Response时间统计
+    # Response time statistics
     response_times: List[float] = field(default_factory=list)
     
-    # Connect统计
+    # Connection statistics
     connection_retries: int = 0
     network_errors: int = 0
     total_requests: int = 0
     
-    # Meta协议特有指标
+    # Meta-protocol specific metrics
     cross_protocol_calls: int = 0
     llm_routing_decisions: int = 0
 
@@ -42,20 +42,20 @@ class MetaProtocolMetrics:
     """Aggregated metrics at the Meta protocol level"""
     protocol_name: str
     
-    # 聚合统计
+    # Aggregated statistics
     total_completed: int = 0
     total_failed: int = 0
     total_timeout: int = 0
     total_retries: int = 0
     total_network_errors: int = 0
     
-    # Response时间统计
+    # Response time statistics
     all_response_times: List[float] = field(default_factory=list)
     
-    # Worker分布
+    # Worker distribution
     worker_completion_counts: Dict[str, int] = field(default_factory=dict)
     
-    # Meta协议特有统计
+    # Meta-protocol specific statistics
     cross_protocol_efficiency: float = 0.0
     llm_routing_accuracy: float = 0.0
 
@@ -69,11 +69,11 @@ class MetaPerformanceMetricsCollector:
         self.test_start_time: Optional[float] = None
         self.test_end_time: Optional[float] = None
         
-        # Meta协议特有指标
+        # Meta-protocol specific metrics
         self.protocol_mix_stats: Dict[str, int] = defaultdict(int)
         self.routing_decisions: List[Dict[str, Any]] = []
         
-        # 全局Setup
+        # Global setup
         self.response_timeout: float = 60.0
         
     def register_worker(self, worker_id: str, protocol: str) -> None:
@@ -86,7 +86,7 @@ class MetaPerformanceMetricsCollector:
         if protocol not in self.protocol_metrics:
             self.protocol_metrics[protocol] = MetaProtocolMetrics(protocol_name=protocol)
             
-        # Record协议混合统计
+        # Record protocol mix statistics
         self.protocol_mix_stats[protocol] += 1
     
     def start_test(self) -> None:
@@ -122,7 +122,7 @@ class MetaPerformanceMetricsCollector:
             protocol.all_response_times.append(response_time)
             protocol.worker_completion_counts[worker_id] = worker.completed_tasks
         else:
-            # Check是否是超时
+            # Check whether this was a timeout
             if response_time >= self.response_timeout:
                 worker.timeout_tasks += 1
                 protocol.total_timeout += 1
@@ -142,7 +142,7 @@ class MetaPerformanceMetricsCollector:
             "timestamp": time.time()
         })
         
-        # Update所有worker的路由决策计数
+        # Update routing decision counts for all workers
         for worker in self.worker_metrics.values():
             worker.llm_routing_decisions += 1
     
@@ -327,7 +327,7 @@ class MetaPerformanceMetricsCollector:
         return report
     
     def print_meta_performance_summary(self, output=None) -> None:
-        """打印Meta协议专用的性能总结"""
+        """Print the Meta-protocol specific performance summary"""
         report = self.get_comprehensive_report()
         
         def _print(level: str, msg: str):
@@ -345,7 +345,7 @@ class MetaPerformanceMetricsCollector:
         _print("system", f"Total Retries: {summary.get('total_retries', 0)}")
         _print("system", f"Network Errors: {summary.get('total_network_errors', 0)}")
         
-        # Meta协议特有统计
+        # Meta-protocol specific statistics
         meta_stats = report.get("meta_specific", {})
         if meta_stats:
             _print("info", "=== Meta Protocol Specific ===")
@@ -354,7 +354,7 @@ class MetaPerformanceMetricsCollector:
             _print("progress", f"LLM Routing Decisions: {meta_stats.get('total_routing_decisions', 0)}")
             _print("progress", f"Cross-Protocol Efficiency: {meta_stats.get('cross_protocol_efficiency', 0):.2%}")
         
-        # Response时间统计
+        # Response time statistics
         if "global_average_response_time" in summary:
             _print("info", "=== Response Time Analysis ===")
             _print("progress", f"Average: {summary.get('global_average_response_time', 0):.2f}s")
@@ -363,7 +363,7 @@ class MetaPerformanceMetricsCollector:
             _print("progress", f"Std Dev: {summary.get('global_response_time_std', 0):.2f}s")
             _print("progress", f"Median: {summary.get('global_median_response_time', 0):.2f}s")
         
-        # 协议级别统计
+        # Protocol-level statistics
         protocols = report.get("protocols", {})
         if protocols:
             _print("info", "=== Protocol Performance ===")
@@ -376,7 +376,7 @@ class MetaPerformanceMetricsCollector:
                 _print("progress", f"  Network Errors: {stats.get('total_network_errors', 0)}")
                 _print("progress", f"  Retries: {stats.get('total_retries', 0)}")
         
-        # Worker级别统计
+        # Worker-level statistics
         workers = report.get("workers", {})
         if workers:
             _print("info", "=== Worker Performance ===")

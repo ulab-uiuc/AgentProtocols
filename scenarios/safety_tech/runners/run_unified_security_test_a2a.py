@@ -100,9 +100,9 @@ async def _wait_http_ok(url: str, timeout_s: float = 20.0) -> None:
 
 
 async def main():
-    # 端口配置（注意：8888 已被 Docker 占用，使用 8889）
+    # 端口配置
     rg_port = 8001
-    coord_port = 8889  # 修改为 8889 避免与 Docker 冲突
+    coord_port = 8889
     obs_port = 8004
     a_port = 9202
     b_port = 9203

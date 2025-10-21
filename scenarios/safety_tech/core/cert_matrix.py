@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-S2证书有效性矩阵测试
-系统化测试各种证书问题：过期、主机名不匹配、自签名、链不完整等
+S2 certificate validity matrix tests
+
+Systematically test various certificate issues: expiration, hostname mismatch,
+self-signed certificates, incomplete chains, weak ciphers, and TLS downgrades.
 """
 
 import ssl
@@ -16,7 +18,7 @@ import httpx
 
 
 class CertificateMatrixTester:
-    """证书有效性矩阵测试器"""
+    """Certificate matrix tester."""
     
     def __init__(self):
         self.temp_dir = Path(tempfile.gettempdir()) / "s2_cert_test"
@@ -24,54 +26,54 @@ class CertificateMatrixTester:
         self.test_results = {}
     
     async def run_cert_matrix_test(self, target_host: str = "127.0.0.1", target_port: int = 8888) -> Dict[str, Any]:
-        """Run完整的证书矩阵测试"""
+        """Run the full certificate matrix tests."""
         results = {
             "target": f"{target_host}:{target_port}",
             "test_timestamp": datetime.now().isoformat(),
             "tests": {}
         }
         
-        # 1. 过期证书测试
+        # 1. Expired certificate test
         results["tests"]["expired_cert"] = await self._test_expired_certificate(target_host, target_port)
         
-        # 2. 主机名不匹配测试
+        # 2. Hostname mismatch test
         results["tests"]["hostname_mismatch"] = await self._test_hostname_mismatch(target_host, target_port)
         
-        # 3. 自签名证书测试
+        # 3. Self-signed certificate test
         results["tests"]["self_signed"] = await self._test_self_signed_cert(target_host, target_port)
         
-        # 4. 证书链不完整测试
+        # 4. Incomplete certificate chain test
         results["tests"]["incomplete_chain"] = await self._test_incomplete_chain(target_host, target_port)
         
-        # 5. 弱加密套件测试
+        # 5. Weak cipher suites test
         results["tests"]["weak_cipher"] = await self._test_weak_cipher_suites(target_host, target_port)
         
-        # 6. TLS版本降级测试
+        # 6. TLS version downgrade test
         results["tests"]["tls_downgrade"] = await self._test_tls_version_downgrade(target_host, target_port)
         
-        # Calculate总体评分
+        # Calculate overall matrix score
         results["matrix_score"] = self._calculate_matrix_score(results["tests"])
         
         return results
     
     async def _test_expired_certificate(self, host: str, port: int) -> Dict[str, Any]:
-        """Test过期证书拒绝"""
+        """Test rejection of expired certificates."""
         test_result = {
-            "test_name": "过期证书测试",
-            "description": "使用过期证书连接，验证是否被正确拒绝",
+            "test_name": "Expired certificate test",
+            "description": "Attempt to connect using an expired certificate and verify it is correctly rejected",
             "status": "unknown",
             "blocked": False,
             "error_type": None
         }
         
         try:
-            # 生成过期的自签名证书
+            # Generate an expired self-signed certificate
             expired_cert_path, expired_key_path = self._generate_expired_certificate(host)
-            
-            # Try使用过期证书连接
+
+            # Try connecting using the expired certificate
             ssl_context = ssl.create_default_context()
             ssl_context.load_cert_chain(expired_cert_path, expired_key_path)
-            ssl_context.check_hostname = False  # 绕过主机名检查，专门测试过期
+            ssl_context.check_hostname = False  # Skip hostname check for expired-certificate test
             
             try:
                 async with httpx.AsyncClient(verify=False) as client:
@@ -99,26 +101,26 @@ class CertificateMatrixTester:
         return test_result
     
     async def _test_hostname_mismatch(self, host: str, port: int) -> Dict[str, Any]:
-        """Test主机名不匹配证书拒绝"""
+        """Test rejection for hostname-mismatched certificates."""
         test_result = {
-            "test_name": "主机名不匹配测试",
-            "description": "使用错误主机名的证书连接",
+            "test_name": "Hostname mismatch test",
+            "description": "Connect using a certificate with the wrong hostname",
             "status": "unknown",
             "blocked": False
         }
         
         try:
-            # 生成主机名不匹配的证书（为example.com生成，但连接localhost）
+            # Generate a certificate with a mismatched hostname (e.g. example.com while connecting to localhost)
             wrong_host = "wrong.example.com" if host == "127.0.0.1" else "127.0.0.1"
             cert_path, key_path = self._generate_certificate(wrong_host)
             
-            # 使用strict hostname checking
+            # Use strict hostname checking
             ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = True
             ssl_context.verify_mode = ssl.CERT_REQUIRED
             
             try:
-                # 这里应该会因为hostname不匹配而失败
+                # This should fail due to hostname mismatch
                 with socket.create_connection((host, port), timeout=5) as sock:
                     with ssl_context.wrap_socket(sock, server_hostname=host) as ssock:
                         test_result["status"] = "connection_succeeded"
@@ -143,16 +145,16 @@ class CertificateMatrixTester:
         return test_result
     
     async def _test_self_signed_cert(self, host: str, port: int) -> Dict[str, Any]:
-        """Test自签名证书处理"""
+        """Test handling of self-signed certificates."""
         test_result = {
-            "test_name": "自签名证书测试",
-            "description": "使用自签名证书连接，检查是否需要明确信任",
+            "test_name": "Self-signed certificate test",
+            "description": "Connect using a self-signed certificate and check whether explicit trust is required",
             "status": "unknown",
             "blocked": False
         }
         
         try:
-            # 使用默认严格验证模式连接
+            # Connect using default strict verification mode
             async with httpx.AsyncClient(verify=True) as client:
                 response = await client.get(f"https://{host}:{port}/health", timeout=5.0)
                 test_result["status"] = "connection_succeeded"
@@ -161,7 +163,7 @@ class CertificateMatrixTester:
                 
         except Exception as e:
             test_result["status"] = "ssl_error"
-            test_result["blocked"] = True  # 好事，正确拒绝了自签名证书
+            test_result["blocked"] = True  # Good — correctly rejected the self-signed certificate
             test_result["error_type"] = "SSLError"
             test_result["error_message"] = str(e)
             
@@ -174,30 +176,30 @@ class CertificateMatrixTester:
         return test_result
     
     async def _test_incomplete_chain(self, host: str, port: int) -> Dict[str, Any]:
-        """Test证书链不完整的处理"""
+        """Test handling of incomplete certificate chains."""
         return {
-            "test_name": "证书链不完整测试",
+            "test_name": "Incomplete chain test",
             "status": "skipped",
-            "reason": "需要复杂的CA链Setup，暂时跳过",
+            "reason": "Requires a complex CA chain setup; skipped for now",
             "blocked": None
         }
     
     async def _test_weak_cipher_suites(self, host: str, port: int) -> Dict[str, Any]:
-        """Test弱加密套件拒绝"""
+        """Test rejection of weak cipher suites."""
         test_result = {
-            "test_name": "弱加密套件测试",
-            "description": "尝试使用弱加密套件连接",
+            "test_name": "Weak cipher suites test",
+            "description": "Attempt to connect using weak cipher suites",
             "status": "unknown",
             "blocked": False,
             "cipher_results": {}
         }
         
-        # 测试各种弱加密套件
+        # Test various weak cipher suites
         weak_ciphers = [
             "DES-CBC3-SHA",     # 3DES
             "RC4-MD5",          # RC4
-            "NULL-MD5",         # NULL加密
-            "EXPORT-RC4-40-MD5" # 40位导出级加密
+            "NULL-MD5",         # NULL cipher (no encryption)
+            "EXPORT-RC4-40-MD5" # 40-bit export cipher
         ]
         
         for cipher in weak_ciphers:
@@ -233,7 +235,7 @@ class CertificateMatrixTester:
                     "setup_error": str(e)
                 }
         
-        # Calculate总体阻断率
+        # Calculate overall block rate
         total_tests = len(weak_ciphers)
         blocked_count = sum(1 for result in test_result["cipher_results"].values() 
                           if result.get("blocked", False))
@@ -245,15 +247,15 @@ class CertificateMatrixTester:
         return test_result
     
     async def _test_tls_version_downgrade(self, host: str, port: int) -> Dict[str, Any]:
-        """TestTLS版本降级拒绝"""
+        """Test rejection of TLS version downgrades."""
         test_result = {
-            "test_name": "TLS版本降级测试",
-            "description": "尝试使用旧版本TLS连接",
+            "test_name": "TLS version downgrade test",
+            "description": "Attempt to connect using older TLS versions",
             "status": "unknown",
             "version_results": {}
         }
         
-        # 测试各种TLS版本
+        # Test various TLS versions (older versions are expected to be rejected)
         tls_versions = [
             ("TLS 1.0", ssl.PROTOCOL_TLSv1),
             ("TLS 1.1", ssl.PROTOCOL_TLSv1_1),
@@ -291,7 +293,7 @@ class CertificateMatrixTester:
                     "setup_error": str(e)
                 }
         
-        # Calculate阻断率
+        # Calculate block rate
         total_tests = len(tls_versions)
         blocked_count = sum(1 for result in test_result["version_results"].values() 
                           if result.get("blocked", False))
@@ -302,25 +304,25 @@ class CertificateMatrixTester:
         return test_result
     
     def _generate_expired_certificate(self, hostname: str) -> tuple:
-        """Generate过期的自签名证书"""
-        # Create密钥对
+        """Generate an expired self-signed certificate."""
+        # Create key pair
         key = crypto.PKey()
         key.generate_key(crypto.TYPE_RSA, 2048)
-        
-        # Create证书
+
+        # Create certificate
         cert = crypto.X509()
         cert.get_subject().CN = hostname
         cert.set_serial_number(1000)
         
-        # Setup为已过期（昨天到期）
-        cert.gmtime_adj_notBefore(-86400 * 2)  # 2天前开始
-        cert.gmtime_adj_notAfter(-86400)       # 昨天过期
+        # Set certificate to be expired (expired yesterday)
+        cert.gmtime_adj_notBefore(-86400 * 2)  # valid starting 2 days ago
+        cert.gmtime_adj_notAfter(-86400)       # expired yesterday
         
         cert.set_issuer(cert.get_subject())
         cert.set_pubkey(key)
         cert.sign(key, 'sha256')
         
-        # 保存到临时文件
+        # Save to temporary files
         cert_path = self.temp_dir / f"expired_{hostname}.crt"
         key_path = self.temp_dir / f"expired_{hostname}.key"
         
@@ -333,22 +335,22 @@ class CertificateMatrixTester:
         return str(cert_path), str(key_path)
     
     def _generate_certificate(self, hostname: str) -> tuple:
-        """Generate有效的自签名证书"""
-        # Create密钥对
+        """Generate a valid self-signed certificate."""
+        # Create key pair
         key = crypto.PKey()
         key.generate_key(crypto.TYPE_RSA, 2048)
-        
-        # Create证书
+
+        # Create certificate
         cert = crypto.X509()
         cert.get_subject().CN = hostname
         cert.set_serial_number(1000)
         cert.gmtime_adj_notBefore(0)
-        cert.gmtime_adj_notAfter(86400 * 365)  # 1年有效期
+        cert.gmtime_adj_notAfter(86400 * 365)  # 1 year validity
         cert.set_issuer(cert.get_subject())
         cert.set_pubkey(key)
         cert.sign(key, 'sha256')
         
-        # 保存到临时文件
+        # Save to temporary files
         cert_path = self.temp_dir / f"test_{hostname}.crt"
         key_path = self.temp_dir / f"test_{hostname}.key"
         
@@ -361,7 +363,7 @@ class CertificateMatrixTester:
         return str(cert_path), str(key_path)
     
     def _calculate_matrix_score(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
-        """Calculate证书矩阵测试的综合评分"""
+        """Calculate aggregate score for the certificate matrix tests."""
         scores = {
             "expired_cert": 0,
             "hostname_mismatch": 0,
@@ -370,27 +372,27 @@ class CertificateMatrixTester:
             "tls_downgrade": 0
         }
         
-        # 过期证书：被阻止=100分，未阻止=0分
+        # Expired certificate: blocked = 100 points, not blocked = 0 points
         if test_results.get("expired_cert", {}).get("blocked"):
             scores["expired_cert"] = 100
             
-        # 主机名不匹配：被阻止=100分
+        # Hostname mismatch: blocked = 100 points
         if test_results.get("hostname_mismatch", {}).get("blocked"):
             scores["hostname_mismatch"] = 100
             
-        # 自签名证书：被阻止=100分
+        # Self-signed certificate: blocked = 100 points
         if test_results.get("self_signed", {}).get("blocked"):
             scores["self_signed"] = 100
             
-        # 弱加密套件：按阻断率评分
+        # Weak cipher suites: score according to block rate
         weak_cipher_rate = test_results.get("weak_cipher", {}).get("block_rate", 0)
         scores["weak_cipher"] = int(weak_cipher_rate * 100)
         
-        # TLS版本降级：按阻断率评分
+        # TLS version downgrade: score according to block rate
         tls_downgrade_rate = test_results.get("tls_downgrade", {}).get("block_rate", 0)
         scores["tls_downgrade"] = int(tls_downgrade_rate * 100)
         
-        # Calculate加权总分
+        # Calculate weighted total score
         total_score = (
             scores["expired_cert"] * 0.25 +      # 25%
             scores["hostname_mismatch"] * 0.25 + # 25% 
@@ -406,7 +408,7 @@ class CertificateMatrixTester:
         }
     
     def _get_security_grade(self, score: float) -> str:
-        """根据分数获取安全等级"""
+        """Get security grade based on score."""
         if score >= 90:
             return "EXCELLENT"
         elif score >= 75:
@@ -420,7 +422,7 @@ class CertificateMatrixTester:
 
 
 async def run_cert_matrix_test(host: str = "127.0.0.1", port: int = 8888) -> Dict[str, Any]:
-    """Run证书矩阵测试的入口函数"""
+    """Entry point to run the certificate matrix tests."""
     tester = CertificateMatrixTester()
     return await tester.run_cert_matrix_test(host, port)
 
@@ -430,6 +432,6 @@ if __name__ == "__main__":
     
     async def test():
         results = await run_cert_matrix_test()
-        print(f"证书矩阵测试结果: {results}")
+        print(f"Certificate matrix test results: {results}")
     
     asyncio.run(test())
