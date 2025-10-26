@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-ANP Protocol Server - 符合官方ANP协议规范
-- 基于HTTP的ANP协议实现，不使用WebSocket
-- 使用DID进行身份验证
-- 提供标准的ANP端点：/agents, /health, /runs
-- 支持Agent间的直接HTTP通信
+ANP Protocol Server - Complies with official ANP protocol specification
+- HTTP-based ANP protocol implementation, does not use WebSocket
+- Uses DID for authentication
+- Provides standard ANP endpoints: /agents, /health, /runs
+- Supports direct HTTP communication between Agents
 """
 
 from __future__ import annotations
@@ -39,7 +39,7 @@ class RunsRequest(BaseModel):
     input: Dict[str, Any]
 
 class ANPServer:
-    """ANP协议服务器 - 符合官方规范的HTTP实现"""
+    """ANP protocol server - HTTP implementation complying with official specification"""
     
     def __init__(self, agent_name: str, port: int, doctor_role: str, coordinator_port: int = 8001):
         self.agent_name = agent_name
@@ -48,90 +48,90 @@ class ANPServer:
         self.coordinator_port = coordinator_port
         self.app = FastAPI(title=f"ANP {agent_name}")
         
-        # 生成真实的DID和密钥对 - 必须成功，否则报错
-        # ImportDID生成工具
+        # Generate real DID and key pair - must succeed, otherwise error
+        # Import DID generation tool
         sys.path.insert(0, str(PROJECT_ROOT / "agentconnect_src"))
-        from utils.did_generate import did_generate
+        from agent_connect.utils.did_generate import did_generate
         
-        # 生成真实的DID、密钥对和DID文档
-        communication_endpoint = f"ws://127.0.0.1:{port + 100}"  # WebSocket端点
+        # Generate real DID, key pair and DID document
+        communication_endpoint = f"ws://127.0.0.1:{port + 100}"  # WebSocket endpoint
         self.private_key, self.public_key, self.did, self.did_document_json = did_generate(
             communication_endpoint,
             did_server_domain="127.0.0.1",
             did_server_port=str(port)
         )
         
-        # 从DID文档中提取公钥十六进制表示
+        # Extract public key hexadecimal representation from DID document
         import json
-        from utils.crypto_tool import get_hex_from_public_key
+        from agent_connect.utils.crypto_tool import get_hex_from_public_key
         self.public_key_hex = get_hex_from_public_key(self.public_key)
         
-        print(f"[ANP-{self.agent_name}] 生成真实DID: {self.did}")
-        print(f"[ANP-{self.agent_name}] 公钥: {self.public_key_hex[:20]}...")
+        print(f"[ANP-{self.agent_name}] Generated real DID: {self.did}")
+        print(f"[ANP-{self.agent_name}] Public key: {self.public_key_hex[:20]}...")
         
-        # 存储其他agent的信息
+        # Store other agents' information
         self.peer_agents = {}
         
         self._setup_routes()
-        print(f"[ANP-{self.agent_name}] 初始化完成，DID: {self.did}")
+        print(f"[ANP-{self.agent_name}] Initialization complete, DID: {self.did}")
 
     def _setup_routes(self):
-        """SetupANP标准路由"""
+        """Setup ANP standard routes"""
         
         @self.app.get("/health")
         async def health():
-            """健康检查端点"""
+            """Health check endpoint"""
             return {"status": "healthy", "agent": self.agent_name, "did": self.did}
         
         @self.app.get("/agents")
         async def agents():
-            """ANP标准agents端点 - 返回agent信息"""
+            """ANP standard agents endpoint - return agent information"""
             return {
                 "agents": [{
                     "name": self.agent_name,
                     "did": self.did,
-                    "description": f"医生Agent - {self.doctor_role}",
+                    "description": f"Doctor Agent - {self.doctor_role}",
                     "capabilities": ["medical_consultation", "patient_discussion"]
                 }]
             }
         
         @self.app.get("/did")
         async def get_did():
-            """返回DID信息"""
+            """Return DID information"""
             return {"did": self.did}
         
         @self.app.get("/registration_proof")
         async def get_registration_proof():
-            """返回注册证明信息"""
-            # 必须有有效的密钥对，否则抛出异常
+            """Return registration proof information"""
+            # Must have valid key pair, otherwise throw exception
             if not (self.public_key_hex and self.private_key):
                 raise HTTPException(status_code=500, detail="No valid keys available")
             
-            # 生成真实的签名
+            # Generate real signature
             timestamp = float(time.time())
             message = {"did": self.did, "timestamp": timestamp}
             
-            from utils.crypto_tool import generate_signature_for_json
+            from agent_connect.utils.crypto_tool import generate_signature_for_json
             signature = generate_signature_for_json(self.private_key, message)
             
             return {
                 "did": self.did,
                 "did_public_key": self.public_key_hex,
                 "did_signature": signature,
-                "timestamp": str(timestamp),  # 注册网关会用float()解析这个字符串
+                "timestamp": str(timestamp),  # Registration gateway will parse this string with float()
                 "agent_name": self.agent_name
             }
         
         @self.app.post("/runs")
         async def runs(request: RunsRequest):
-            """ANP标准runs端点 - 处理任务请求"""
+            """ANP standard runs endpoint - handle task requests"""
             try:
-                # 从input中提取文本内容
+                # Extract text content from input
                 content = request.input.get("content", [])
                 if not content or not isinstance(content, list):
                     raise HTTPException(status_code=400, detail="Invalid input format")
                 
-                # Extract第一个文本内容
+                # Extract first text content
                 text_content = None
                 for item in content:
                     if isinstance(item, dict) and item.get("type") == "text":
@@ -141,9 +141,9 @@ class ANPServer:
                 if not text_content:
                     raise HTTPException(status_code=400, detail="No text content found")
                 
-                print(f"[ANP-{self.agent_name}] 处理runs请求: {text_content[:50]}...")
+                print(f"[ANP-{self.agent_name}] Processing runs request: {text_content[:50]}...")
                 
-                # 生成医生回复
+                # Generate doctor reply
                 reply = generate_doctor_reply(self.doctor_role, text_content)
                 
                 return {
@@ -155,19 +155,19 @@ class ANPServer:
                 }
                 
             except Exception as e:
-                print(f"[ANP-{self.agent_name}] 处理runs请求失败: {e}")
+                print(f"[ANP-{self.agent_name}] Processing runs request failed: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
         
         @self.app.post("/message")
         async def message(request: MessageRequest):
-            """消息端点 - 兼容现有测试"""
+            """Message endpoint - compatible with existing tests"""
             try:
                 print(f"[ANP-{self.agent_name}] processing message: {request.text[:50]}...")
                 
-                # 生成医生回复
+                # Generate doctor reply
                 reply = generate_doctor_reply(self.doctor_role, request.text)
                 
-                # If有correlation_id，投递回执到协调器
+                # If correlation_id exists, deliver receipt to coordinator
                 if request.correlation_id:
                     await self._deliver_receipt(request.correlation_id, reply)
                 
@@ -181,16 +181,16 @@ class ANPServer:
                 }
                 
             except Exception as e:
-                print(f"[ANP-{self.agent_name}] processing message失败: {e}")
+                print(f"[ANP-{self.agent_name}] Processing message failed: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
         
         @self.app.post("/communicate")
         async def communicate_with_peer(target_agent: str, message: str):
-            """与其他ANP Agent通信"""
+            """Communicate with other ANP Agents"""
             try:
-                # 查找目标agent的信息
+                # Look up target agent information
                 if target_agent not in self.peer_agents:
-                    # Try发现目标agent
+                    # Try to discover target agent
                     await self._discover_agent(target_agent)
                 
                 if target_agent not in self.peer_agents:
@@ -198,7 +198,7 @@ class ANPServer:
                 
                 peer_info = self.peer_agents[target_agent]
                 
-                # SendHTTP请求到目标agent
+                # Send HTTP request to target agent
                 async with httpx.AsyncClient() as client:
                     response = await client.post(
                         f"{peer_info['url']}/runs",
@@ -210,7 +210,7 @@ class ANPServer:
                             }
                         },
                         headers={
-                            "Authorization": f"DID {self.did}",  # 简化的DID认证
+                            "Authorization": f"DID {self.did}",  # Simplified DID authentication
                             "Content-Type": "application/json"
                         }
                     )
@@ -221,12 +221,12 @@ class ANPServer:
                         raise HTTPException(status_code=response.status_code, detail=response.text)
                         
             except Exception as e:
-                print(f"[ANP-{self.agent_name}] 与{target_agent}communication failed: {e}")
+                print(f"[ANP-{self.agent_name}] Communication with {target_agent} failed: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
     
     async def _discover_agent(self, agent_name: str):
-        """发现其他ANP Agent"""
-        # Try常见端口
+        """Discover other ANP Agents"""
+        # Try common ports
         common_ports = [9102, 9103, 9104, 9105]
         
         for port in common_ports:
@@ -243,13 +243,13 @@ class ANPServer:
                                     "did": agent.get("did"),
                                     "url": f"http://127.0.0.1:{port}"
                                 }
-                                print(f"[ANP-{self.agent_name}] 发现agent: {agent_name} at {port}")
+                                print(f"[ANP-{self.agent_name}] Discovered agent: {agent_name} at {port}")
                                 return
             except:
                 continue
     
     async def _deliver_receipt(self, correlation_id: str, reply: str):
-        """投递回执到协调器"""
+        """Deliver receipt to coordinator"""
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -262,15 +262,15 @@ class ANPServer:
                     timeout=5.0
                 )
                 if response.status_code == 200:
-                    print(f"[ANP-{self.agent_name}] 回执投递成功: CID={correlation_id}")
+                    print(f"[ANP-{self.agent_name}] Receipt delivery successful: CID={correlation_id}")
                 else:
-                    print(f"[ANP-{self.agent_name}] 回执投递失败: {response.status_code}")
+                    print(f"[ANP-{self.agent_name}] Receipt delivery failed: {response.status_code}")
         except Exception as e:
-            print(f"[ANP-{self.agent_name}] 回执投递异常: {e}")
+            print(f"[ANP-{self.agent_name}] Receipt delivery exception: {e}")
 
     def run(self) -> None:
-        """启动ANP服务器"""
-        print(f"[ANP-{self.agent_name}] 启动HTTP服务器在端口 {self.port}")
+        """Start ANP server"""
+        print(f"[ANP-{self.agent_name}] Starting HTTP server on port {self.port}")
         uvicorn.run(
             self.app,
             host="127.0.0.1",
@@ -280,11 +280,11 @@ class ANPServer:
         )
 
 def create_doctor_a_server(port: int) -> ANPServer:
-    """Create医生A服务器"""
+    """Create Doctor A server"""
     return ANPServer("ANP_Doctor_A", port, "doctor_a")
 
 def create_doctor_b_server(port: int) -> ANPServer:
-    """Create医生B服务器"""
+    """Create Doctor B server"""
     return ANPServer("ANP_Doctor_B", port, "doctor_b")
 
 if __name__ == "__main__":

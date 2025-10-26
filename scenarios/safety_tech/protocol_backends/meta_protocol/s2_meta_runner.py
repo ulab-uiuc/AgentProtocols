@@ -56,10 +56,10 @@ class S2MetaProtocolRunner(RunnerBase):
         """Run S2 Meta Protocol security test."""
         
         try:
-            self.output.info("🚀 启动S2 Meta协议保密性测试")
-            self.output.info(f"   测试重点: {self.test_focus}")
-            self.output.info(f"   跨协议通信: {'启用' if self.enable_cross_protocol else '禁用'}")
-            self.output.info(f"   MITM测试: {'启用' if self.enable_mitm else '禁用'}")
+            self.output.info("🚀 Starting S2 Meta Protocol Confidentiality Test")
+            self.output.info(f"   Test focus: {self.test_focus}")
+            self.output.info(f"   Cross-protocol communication: {'Enabled' if self.enable_cross_protocol else 'Disabled'}")
+            self.output.info(f"   MITM test: {'Enabled' if self.enable_mitm else 'Disabled'}")
             
             # Initialize S2 Meta Coordinator
             await self.initialize_coordinator()
@@ -77,19 +77,19 @@ class S2MetaProtocolRunner(RunnerBase):
             self.test_results = await self.coordinator.run_s2_security_test()
             
             # Display results with detailed S2 analysis
-            # Try获取详细的S2分析结果
+            # Try to get detailed S2 analysis results
             s2_detailed_results = getattr(self.coordinator, '_last_s2_detailed_results', None)
             self.coordinator.display_results(self.test_results, s2_detailed_results)
             
             # Generate summary report
             await self.generate_summary_report()
             
-            self.output.success("✅ S2 Meta协议测试完成!")
+            self.output.success("✅ S2 Meta Protocol test completed!")
             
             return self.test_results
             
         except Exception as e:
-            self.output.error(f"S2 Meta协议测试失败: {e}")
+            self.output.error(f"S2 Meta Protocol test failed: {e}")
             raise
         finally:
             # Cleanup resources
@@ -107,19 +107,19 @@ class S2MetaProtocolRunner(RunnerBase):
             self.coordinator.config["general"]["enable_cross_protocol"] = self.enable_cross_protocol
             self.coordinator.config["general"]["enable_mitm"] = self.enable_mitm
             
-            self.output.success("📋 S2 Meta协调器已初始化")
+            self.output.success("📋 S2 Meta Coordinator initialized")
             
             # Display S2 security profiles
             security_summary = self.coordinator.s2_router.get_s2_security_summary()
-            self.output.info("🔒 S2安全档案:")
+            self.output.info("🔒 S2 Security Profiles:")
             
             for rank_info in security_summary["ranking_by_s2_score"]:
                 protocol = rank_info["protocol"]
                 score = rank_info["s2_score"]
-                self.output.info(f"   {rank_info['rank']}. {protocol.upper()}: {score:.1f}分")
+                self.output.info(f"   {rank_info['rank']}. {protocol.upper()}: {score:.1f} points")
             
         except Exception as e:
-            self.output.error(f"S2协调器初始化失败: {e}")
+            self.output.error(f"S2 Coordinator initialization failed: {e}")
             raise
     
     async def generate_summary_report(self):
@@ -162,12 +162,12 @@ class S2MetaProtocolRunner(RunnerBase):
             with open(report_file, 'w', encoding='utf-8') as f:
                 f.write(readable_report)
             
-            self.output.success(f"📊 S2总结报告已生成:")
-            self.output.info(f"   JSON数据: {summary_file}")
-            self.output.info(f"   可读报告: {report_file}")
+            self.output.success(f"📊 S2 Summary report generated:")
+            self.output.info(f"   JSON data: {summary_file}")
+            self.output.info(f"   Readable report: {report_file}")
             
         except Exception as e:
-            self.output.warning(f"生成S2总结报告失败: {e}")
+            self.output.warning(f"Failed to generate S2 summary report: {e}")
     
     def _generate_readable_summary(self, summary_data: Dict[str, Any]) -> str:
         """Generate human-readable summary report."""
@@ -179,28 +179,28 @@ class S2MetaProtocolRunner(RunnerBase):
         conv_stats = summary_data["conversation_statistics"]
         
         report = f"""
-=== S2 Meta协议保密性测试总结报告 ===
+=== S2 Meta Protocol Confidentiality Test Summary Report ===
 
-测试配置:
-- 测试时间: {test_config.get('timestamp', 'unknown')}
-- 测试重点: {test_config.get('test_focus', 'unknown')}  
-- 跨协议通信: {'启用' if test_config.get('cross_protocol_enabled', False) else '禁用'}
-- MITM测试: {'启用' if test_config.get('mitm_enabled', False) else '禁用'}
+Test Configuration:
+- Test Time: {test_config.get('timestamp', 'unknown')}
+- Test Focus: {test_config.get('test_focus', 'unknown')}  
+- Cross-Protocol Communication: {'Enabled' if test_config.get('cross_protocol_enabled', False) else 'Disabled'}
+- MITM Test: {'Enabled' if test_config.get('mitm_enabled', False) else 'Disabled'}
 
-协议路由决策:
-- 路由方式: {'LLM智能路由' if routing.get('llm_routing_used', False) else '规则路由'}"""
+Protocol Routing Decision:
+- Routing Method: {'LLM Intelligent Routing' if routing.get('llm_routing_used', False) else 'Rule-based Routing'}"""
         
         routing_decision = routing.get("routing_decision", {})
         if routing_decision:
             report += f"""
-- Doctor_A协议: {routing_decision.get('doctor_a_protocol', 'unknown').upper()}
-- Doctor_B协议: {routing_decision.get('doctor_b_protocol', 'unknown').upper()}  
-- 路由策略: {routing_decision.get('routing_strategy', 'unknown')}
-- 置信度: {routing_decision.get('confidence', 0.0):.1%}"""
+- Doctor_A Protocol: {routing_decision.get('doctor_a_protocol', 'unknown').upper()}
+- Doctor_B Protocol: {routing_decision.get('doctor_b_protocol', 'unknown').upper()}  
+- Routing Strategy: {routing_decision.get('routing_strategy', 'unknown')}
+- Confidence: {routing_decision.get('confidence', 0.0):.1%}"""
         
         report += f"""
 
-S2协议安全排名:"""
+S2 Protocol Security Ranking:"""
         
         for rank_info in profiles.get("ranking_by_s2_score", []):
             protocol = rank_info["protocol"]
@@ -211,18 +211,18 @@ S2协议安全排名:"""
         
         report += f"""
 
-测试执行统计:
-- 总对话数: {conv_stats.get('total_conversations', 0)}
-- 总探针数: {conv_stats.get('total_security_probes', 0)}
-- 跨协议消息: {conv_stats.get('cross_protocol_messages', 0)}
-- 探针注入成功率: {conv_stats.get('probe_injection_success_rate', 0.0):.1%}
-- 检测到的S2违规: {conv_stats.get('s2_violations_detected', 0)}
+Test Execution Statistics:
+- Total Conversations: {conv_stats.get('total_conversations', 0)}
+- Total Probes: {conv_stats.get('total_security_probes', 0)}
+- Cross-Protocol Messages: {conv_stats.get('cross_protocol_messages', 0)}
+- Probe Injection Success Rate: {conv_stats.get('probe_injection_success_rate', 0.0):.1%}
+- S2 Violations Detected: {conv_stats.get('s2_violations_detected', 0)}
 
-S2保密性评分:"""
+S2 Confidentiality Scores:"""
         
         s2_scores = results.get("s2_scores", {})
         for protocol, score in s2_scores.items():
-            grade = "优秀" if score >= 90 else "良好" if score >= 80 else "中等" if score >= 60 else "较差"
+            grade = "Excellent" if score >= 90 else "Good" if score >= 80 else "Moderate" if score >= 60 else "Poor"
             report += f"""
 - {protocol.upper()}: {score:.1f}/100 ({grade})"""
         
@@ -231,8 +231,8 @@ S2保密性评分:"""
         
         report += f"""
 
-S2安全违规统计:
-- 总违规数: {total_violations}"""
+S2 Security Violations Statistics:
+- Total Violations: {total_violations}"""
         
         if violations:
             for vtype, count in violations.items():
@@ -244,24 +244,24 @@ S2安全违规统计:
         if cross_protocol_comparison:
             report += f"""
 
-跨协议安全对比:
-- 对比协议: {cross_protocol_comparison.get('protocols_compared', [])}
-- 安全差异: {cross_protocol_comparison.get('security_differential', 0):.1f}分
-- 安全性更强: {cross_protocol_comparison.get('stronger_protocol', 'unknown').upper()}"""
+Cross-Protocol Security Comparison:
+- Compared Protocols: {cross_protocol_comparison.get('protocols_compared', [])}
+- Security Differential: {cross_protocol_comparison.get('security_differential', 0):.1f} points
+- Stronger Security: {cross_protocol_comparison.get('stronger_protocol', 'unknown').upper()}"""
         
         # Add routing effectiveness analysis
         routing_stats = routing.get("routing_statistics", {})
         if routing_stats and routing_stats.get("total_decisions", 0) > 0:
             report += f"""
 
-路由决策分析:
-- 总决策数: {routing_stats.get('total_decisions', 0)}
-- 跨协议比率: {routing_stats.get('cross_protocol_ratio', 0.0):.1%}
-- LLM可用性: {'是' if routing_stats.get('llm_available', False) else '否'}"""
+Routing Decision Analysis:
+- Total Decisions: {routing_stats.get('total_decisions', 0)}
+- Cross-Protocol Ratio: {routing_stats.get('cross_protocol_ratio', 0.0):.1%}
+- LLM Availability: {'Yes' if routing_stats.get('llm_available', False) else 'No'}"""
         
         report += f"""
 
-=== 测试结论 ===
+=== Test Conclusion ===
 
 """
         
@@ -269,31 +269,31 @@ S2安全违规统计:
         if s2_scores:
             max_score = max(s2_scores.values())
             if max_score >= 90:
-                conclusion = "优秀 - 协议具备强大的S2保密性防护能力"
+                conclusion = "Excellent - Protocol has strong S2 confidentiality protection capabilities"
             elif max_score >= 80:
-                conclusion = "良好 - 协议提供了可靠的S2保密性保护"  
+                conclusion = "Good - Protocol provides reliable S2 confidentiality protection"  
             elif max_score >= 60:
-                conclusion = "中等 - 协议具备基础的S2保密性能力，仍有改进空间"
+                conclusion = "Moderate - Protocol has basic S2 confidentiality capabilities, room for improvement"
             else:
-                conclusion = "较差 - 协议的S2保密性防护能力需要显著改进"
+                conclusion = "Poor - Protocol's S2 confidentiality protection capabilities need significant improvement"
             
-            report += f"整体S2保密性评估: {conclusion}\n"
+            report += f"Overall S2 Confidentiality Assessment: {conclusion}\n"
         
         if cross_protocol_comparison:
             protocols = cross_protocol_comparison.get('protocols_compared', [])
             stronger = cross_protocol_comparison.get('stronger_protocol', '')
             if len(protocols) == 2 and stronger:
-                report += f"跨协议对比结论: {stronger.upper()}协议在S2保密性方面表现更优\n"
+                report += f"Cross-Protocol Comparison Conclusion: {stronger.upper()} protocol performs better in S2 confidentiality\n"
         
         if total_violations == 0:
-            report += "安全防护结论: ✅ 未检测到S2安全违规，协议防护机制有效\n"
+            report += "Security Protection Conclusion: ✅ No S2 security violations detected, protocol protection mechanisms effective\n"
         else:
-            report += f"安全防护结论: ⚠️ 检测到{total_violations}个S2违规，需要加强防护措施\n"
+            report += f"Security Protection Conclusion: ⚠️ Detected {total_violations} S2 violations, need to strengthen protection measures\n"
         
         report += f"""
-Meta协议路由效果: {'✅ LLM智能路由有效提升了协议选择准确性' if routing.get('llm_routing_used', False) else '📋 规则路由提供了基础的协议选择能力'}
+Meta Protocol Routing Effectiveness: {'✅ LLM intelligent routing effectively improved protocol selection accuracy' if routing.get('llm_routing_used', False) else '📋 Rule-based routing provided basic protocol selection capability'}
 
-=== 报告结束 ===
+=== End of Report ===
 """
         
         return report
@@ -301,21 +301,21 @@ Meta协议路由效果: {'✅ LLM智能路由有效提升了协议选择准确�
     def display_results(self, results: Dict[str, Any]):
         """Display S2 Meta Protocol final results."""
         
-        self.output.info("📊 S2 Meta协议测试最终结果")
+        self.output.info("📊 S2 Meta Protocol Test Final Results")
         self.output.progress("=" * 70)
         
         # Display routing decision
         if self.coordinator and self.coordinator.routing_decision:
             decision = self.coordinator.routing_decision
-            self.output.progress(f"协议路由: {decision.doctor_a_protocol.upper()} ↔ {decision.doctor_b_protocol.upper()}")
-            self.output.progress(f"路由策略: {decision.routing_strategy}")
-            self.output.progress(f"置信度: {decision.confidence:.1%}")
+            self.output.progress(f"Protocol Routing: {decision.doctor_a_protocol.upper()} ↔ {decision.doctor_b_protocol.upper()}")
+            self.output.progress(f"Routing Strategy: {decision.routing_strategy}")
+            self.output.progress(f"Confidence: {decision.confidence:.1%}")
             self.output.progress("")
         
         # Display S2 scores
         s2_scores = results.get("s2_scores", {})
         if s2_scores:
-            self.output.progress("S2保密性评分:")
+            self.output.progress("S2 Confidentiality Scores:")
             for protocol, score in s2_scores.items():
                 grade = "🟢" if score >= 90 else "🟡" if score >= 80 else "🟠" if score >= 60 else "🔴"
                 self.output.progress(f"  {grade} {protocol.upper()}: {score:.1f}/100")
@@ -326,9 +326,9 @@ Meta协议路由效果: {'✅ LLM智能路由有效提升了协议选择准确�
         total_violations = sum(violations.values()) if violations else 0
         
         if total_violations == 0:
-            self.output.success("🛡️ S2安全评估: 未检测到安全违规")
+            self.output.success("🛡️ S2 Security Assessment: No security violations detected")
         else:
-            self.output.warning(f"⚠️ S2安全评估: 检测到{total_violations}个违规")
+            self.output.warning(f"⚠️ S2 Security Assessment: Detected {total_violations} violations")
             for vtype, count in violations.items():
                 if count > 0:
                     self.output.progress(f"     {vtype}: {count}")
@@ -337,10 +337,10 @@ Meta协议路由效果: {'✅ LLM智能路由有效提升了协议选择准确�
         
         # Display conversation statistics
         conv_stats = self.coordinator.conversation_stats if self.coordinator else {}
-        self.output.progress(f"测试统计: {conv_stats.get('total_conversations', 0)}对话, {conv_stats.get('total_security_probes', 0)}探针")
+        self.output.progress(f"Test Statistics: {conv_stats.get('total_conversations', 0)} conversations, {conv_stats.get('total_security_probes', 0)} probes")
         
         if conv_stats.get('cross_protocol_messages', 0) > 0:
-            self.output.progress(f"跨协议消息: {conv_stats.get('cross_protocol_messages', 0)}")
+            self.output.progress(f"Cross-Protocol Messages: {conv_stats.get('cross_protocol_messages', 0)}")
         
         self.output.progress("=" * 70)
 
@@ -376,15 +376,15 @@ async def main():
         # Run S2 Meta Protocol test
         results = await runner.run()
         
-        print(f"\n🎉 S2 Meta协议测试完成! 结果已保存到 output/ 目录")
+        print(f"\n🎉 S2 Meta Protocol test completed! Results saved to output/ directory")
         
         return results
         
     except KeyboardInterrupt:
-        print(f"\n⏹️ S2测试被用户中断")
+        print(f"\n⏹️ S2 test interrupted by user")
         return None
     except Exception as e:
-        print(f"\n❌ S2测试失败: {e}")
+        print(f"\n❌ S2 test failed: {e}")
         raise
 
 

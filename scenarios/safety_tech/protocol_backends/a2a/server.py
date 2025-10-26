@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 A2A Protocol Server for Safety Tech
-简化的A2A协议服务器实现，支持Doctor A/B代理、健康检查、回执投递等
+Simplified A2A protocol server implementation, supporting Doctor A/B agents, health checks, receipt delivery, etc.
 """
 
 from __future__ import annotations
@@ -32,16 +32,16 @@ except Exception:
 
 
 class A2ADoctorExecutor(AgentExecutor):
-    """A2A医生代理执行器"""
+    """A2A doctor agent executor"""
     
     def __init__(self, agent_name: str):
         self.agent_name = agent_name
         self.coord_endpoint = os.environ.get('COORD_ENDPOINT', 'http://127.0.0.1:8888')
     
     async def execute(self, context: "RequestContext", event_queue: "EventQueue") -> None:
-        """ExecuteA2A代理逻辑"""
+        """Execute A2A agent logic"""
         try:
-            # 从context获取输入消息（优先使用A2A SDK提供的API）
+            # Get input message from context (prioritize A2A SDK provided API)
             task_input = ""
             try:
                 if hasattr(context, 'get_user_input'):
@@ -50,7 +50,7 @@ class A2ADoctorExecutor(AgentExecutor):
                 task_input = ""
             if not task_input:
                 if hasattr(context, 'message') and context.message:
-                    # 从消息中提取文本内容
+                    # Extract text content from message
                     if hasattr(context.message, 'text'):
                         task_input = context.message.text
                     elif hasattr(context.message, 'content'):
@@ -58,7 +58,7 @@ class A2ADoctorExecutor(AgentExecutor):
                     else:
                         task_input = str(context.message)
             
-            # Extractcorrelation_id前缀 [CID:...]
+            # Extract correlation_id prefix [CID:...]
             correlation_id = None
             text = task_input
             
@@ -72,30 +72,30 @@ class A2ADoctorExecutor(AgentExecutor):
                     correlation_id = None
             
             role = self.agent_name.split('_')[-1].lower()  # A2A_Doctor_A -> a
-            print(f"[A2A-{self.agent_name}] 处理请求: text='{text[:100]}...', correlation_id={correlation_id}")
+            print(f"[A2A-{self.agent_name}] Processing request: text='{text[:100]}...', correlation_id={correlation_id}")
             
-            # 生成医生回复
+            # Generate doctor reply
             reply = generate_doctor_reply(f'doctor_{role}', text)
-            print(f"[A2A-{self.agent_name}] 生成回复: '{reply[:100]}...'")
+            print(f"[A2A-{self.agent_name}] Generated reply: '{reply[:100]}...'")
             
-            # Send回复到事件队列
+            # Send reply to event queue
             from a2a.utils import new_agent_text_message
             # A2A SDK EventQueue may return awaitable
             res = event_queue.enqueue_event(new_agent_text_message(reply))
             if hasattr(res, "__await__"):
                 await res
             
-            # 异步回投协调器/deliver
+            # Async deliver receipt to coordinator/deliver
             if correlation_id:
                 asyncio.create_task(self._deliver_receipt(correlation_id, reply))
             else:
-                print(f"[A2A-{self.agent_name}] 警告: 无correlation_id，跳过回执投递")
+                print(f"[A2A-{self.agent_name}] Warning: no correlation_id, skipping receipt delivery")
             
         except Exception as e:
-            print(f"[A2A-{self.agent_name}] 执行异常: {e}")
+            print(f"[A2A-{self.agent_name}] Execution exception: {e}")
             import traceback
             traceback.print_exc()
-            # Send错误消息
+            # Send error message
             from a2a.utils import new_agent_text_message
             from a2a.utils import new_agent_text_message
             res = event_queue.enqueue_event(new_agent_text_message(f"Error: {str(e)}"))
@@ -103,12 +103,12 @@ class A2ADoctorExecutor(AgentExecutor):
                 await res
     
     async def cancel(self, context: "RequestContext", event_queue: "EventQueue") -> None:
-        """取消任务"""
-        print(f"[A2A-{self.agent_name}] 取消任务请求")
-        # 简单实现，不需要特殊处理
+        """Cancel task"""
+        print(f"[A2A-{self.agent_name}] Cancel task request")
+        # Simple implementation, no special handling needed
     
     async def _deliver_receipt(self, correlation_id: str, reply: str):
-        """回投回执到协调器"""
+        """Deliver receipt back to coordinator"""
         try:
             payload = {
                 "sender_id": self.agent_name,
@@ -120,20 +120,20 @@ class A2ADoctorExecutor(AgentExecutor):
             async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.post(f"{self.coord_endpoint}/deliver", json=payload)
                 if response.status_code not in (200, 201, 202):
-                    print(f"[A2A-{self.agent_name}] 回执投递失败: HTTP {response.status_code} - {response.text}")
+                    print(f"[A2A-{self.agent_name}] Receipt delivery failed: HTTP {response.status_code} - {response.text}")
                 else:
-                    print(f"[A2A-{self.agent_name}] 回执投递成功: correlation_id={correlation_id}")
+                    print(f"[A2A-{self.agent_name}] Receipt delivery successful: correlation_id={correlation_id}")
                     
         except Exception as e:
-            print(f"[A2A-{self.agent_name}] 回执投递异常: {e}")
+            print(f"[A2A-{self.agent_name}] Receipt delivery exception: {e}")
 
 
 def create_doctor_app(agent_name: str, port: int):
-    """CreateA2A医生代理应用（使用本项目A2A适配器，内置/health与/message）"""
-    # Create执行器
+    """Create A2A doctor agent application (uses project A2A adapter, built-in /health and /message)"""
+    # Create executor
     executor = A2ADoctorExecutor(agent_name)
 
-    # 构造Agent Card（传给适配器用于/.well-known）
+    # Construct Agent Card (pass to adapter for /.well-known)
     agent_card = {
         "name": f"Medical Doctor {agent_name.split('_')[-1]}",
         "description": f"A2A-enabled medical doctor {agent_name} for safety testing",
@@ -164,27 +164,24 @@ def create_doctor_app(agent_name: str, port: int):
         ],
     }
 
-    # 使用项目自带A2A Starlette应用（内置/health）
-    try:
-        from src.server_adapters.a2a_adapter import A2AStarletteApplication as WrappedA2AApp
-    except Exception:
-        from scenarios.safety_tech.src.server_adapters.a2a_adapter import A2AStarletteApplication as WrappedA2AApp  # 兜底
+    # Use project built-in A2A Starlette application (built-in /health)
+    from src.server_adapters.a2a_adapter import A2AStarletteApplication as WrappedA2AApp
 
     app_builder = WrappedA2AApp(agent_card=agent_card, executor=executor)
     return app_builder
 
 
 def run_server(agent_name: str, port: int):
-    """RunA2A服务器"""
+    """Run A2A server"""
     import uvicorn
     
-    print(f"[A2A Server] 启动 {agent_name} 在端口 {port}")
+    print(f"[A2A Server] Starting {agent_name} on port {port}")
     
     try:
         app = create_doctor_app(agent_name, port)
         asgi_app = app.build()
 
-        print(f"[A2A Server] {agent_name} 服务器已创建，准备启动...")
+        print(f"[A2A Server] {agent_name} server created, ready to start...")
         uvicorn.run(
             asgi_app,
             host="127.0.0.1",
@@ -194,14 +191,14 @@ def run_server(agent_name: str, port: int):
         )
         
     except Exception as e:
-        print(f"[A2A Server] 启动失败: {e}")
+        print(f"[A2A Server] Startup failed: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
 
 
 if __name__ == "__main__":
-    # 从环境变量获取配置
+    # Get configuration from environment variables
     a_port = int(os.environ.get('A2A_A_PORT', '8010'))
     b_port = int(os.environ.get('A2A_B_PORT', '8011'))
     
@@ -214,5 +211,5 @@ if __name__ == "__main__":
             print("Usage: python server.py [doctor_a|doctor_b]")
             sys.exit(1)
     else:
-        # 默认启动Doctor A
+        # Default start Doctor A
         run_server("A2A_Doctor_A", a_port)

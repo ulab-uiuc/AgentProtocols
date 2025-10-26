@@ -2,10 +2,10 @@
 """
 A2A Unified Security Test Runner
 
-要求：
-- 原生A2A（a2a-sdk），无fallback/mock/简单实现
-- 与ACP/ANP/Agora完全一致的测试规模、指标与权重（S1=15%，S2=25%，S3-S8=60%）
-- 与Eavesdrop场景对齐：RG、Coordinator、Observer；并发攻击+注册攻击6类聚合
+Requirements:
+- Native A2A (a2a-sdk), no fallback/mock/simple implementation
+- Completely consistent with ACP/ANP/Agora test scale, metrics and weights (S1=15%, S2=25%, S3-S8=60%)
+- Aligned with Eavesdrop scenario: RG, Coordinator, Observer; concurrent attack + registration attack 6 types aggregation
 """
 
 from __future__ import annotations
@@ -27,12 +27,12 @@ HERE = Path(__file__).resolve().parent
 SAFETY_TECH = HERE.parent
 PROJECT_ROOT = HERE.parent.parent.parent
 sys.path.insert(0, str(SAFETY_TECH))
-# 为支持 `import src.*`，需要将项目root directory加入 sys.path（而非 src 目录本身）
+# To support `import src.*`, need to add project root directory to sys.path (not the src directory itself)
 sys.path.insert(0, str(PROJECT_ROOT))
 
 logger = logging.getLogger(__name__)
 
-# Import核心组件（Coordinator/Observer/攻击场景）
+# Import core components (Coordinator/Observer/attack scenarios)
 try:
     from core.rg_coordinator import RGCoordinator
     from core.attack_scenarios import RegistrationAttackRunner
@@ -42,7 +42,7 @@ except ImportError:
     from scenarios.safety_tech.core.attack_scenarios import RegistrationAttackRunner
     from scenarios.safety_tech.core.backend_api import spawn_backend, register_backend, health_backend
 
-# 原生A2A（a2a-sdk）服务适配器
+# Native A2A (a2a-sdk) service adapter
 from src.server_adapters.a2a_adapter import A2AServerAdapter
 try:
     from scenarios.safety_tech.core.llm_wrapper import generate_doctor_reply
@@ -62,7 +62,7 @@ def _load_medical_dataset() -> List[Dict[str, Any]]:
                 dataset = p
                 break
         if not dataset:
-            raise FileNotFoundError('enhanced_medical_questions.json 未找到')
+            raise FileNotFoundError('enhanced_medical_questions.json not found')
         with open(dataset, 'r', encoding='utf-8') as f:
             data = json.load(f)
         qs = data.get('questions', [])
@@ -78,7 +78,7 @@ def _load_medical_dataset() -> List[Dict[str, Any]]:
             })
         return cases
     except Exception as e:
-        raise RuntimeError(f"加载医疗数据集失败: {e}")
+        raise RuntimeError(f"Failed to load medical dataset: {e}")
 
 
 async def _wait_http_ok(url: str, timeout_s: float = 20.0) -> None:
@@ -96,11 +96,11 @@ async def _wait_http_ok(url: str, timeout_s: float = 20.0) -> None:
     raise RuntimeError(f"Timeout waiting {url}: {last_err}")
 
 
-# A2ADoctorServer 类已移除，现在使用统一后端API
+# A2ADoctorServer class removed, now using unified backend API
 
 
 async def main():
-    # 端口配置
+    # Port configuration
     rg_port = 8001
     coord_port = 8889
     obs_port = 8004
@@ -110,7 +110,7 @@ async def main():
 
     procs: List[Any] = []
     try:
-        # 1) 启动RG
+        # 1) Start RG
         import subprocess
         # Debug: capture stderr to see what's going wrong
         proc = subprocess.Popen([
@@ -132,7 +132,7 @@ async def main():
                 print(f"stderr: {stderr}")
             raise e
 
-        # 2) 启动Coordinator
+        # 2) Start Coordinator
         coordinator = RGCoordinator({
             'rg_endpoint': f'http://127.0.0.1:{rg_port}',
             'conversation_id': conv_id,
@@ -141,25 +141,25 @@ async def main():
         await coordinator.start()
         await _wait_http_ok(f"http://127.0.0.1:{coord_port}/health", 20.0)
 
-        # 3) 新设计：不再启动Observer（S2改为保密性探针）
-        print("   ℹ️ 跳过Observer启动（新S2设计不需要Observer）")
+        # 3) New design: no longer start Observer (S2 changed to confidentiality probe)
+        print("   ℹ️ Skip Observer startup (new S2 design doesn't need Observer)")
 
-        # 4) 使用统一后端API启动A2A医生节点
+        # 4) Use unified backend API to start A2A doctor nodes
         await spawn_backend('a2a', 'doctor_a', a_port)
         await spawn_backend('a2a', 'doctor_b', b_port)
         
-        # Wait服务启动并检查健康状态
+        # Wait for service startup and check health status
         await _wait_http_ok(f"http://127.0.0.1:{a_port}/health", 15.0)
         await _wait_http_ok(f"http://127.0.0.1:{b_port}/health", 15.0)
 
-        # 5) 注册到RG + 订阅Observer
-        # RG归因信息
+        # 5) Register to RG + subscribe Observer
+        # RG attribution information
         rg_mode = None
         rg_metrics = None
         doc_a_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
         doc_b_verify = {"method": None, "latency_ms": None, "blocked_by": None, "reason": None}
 
-        # 使用统一后端API注册Agent
+        # Use unified backend API to register agents
         try:
             respA = await register_backend('a2a', 'A2A_Doctor_A', f"http://127.0.0.1:{a_port}", conv_id, 'doctor_a', rg_endpoint=f'http://127.0.0.1:{rg_port}')
             doc_a_verify = {
@@ -169,7 +169,7 @@ async def main():
                 'reason': respA.get('reason'),
             }
         except Exception as e:
-            raise RuntimeError(f"注册A2A_Doctor_A失败: {e}")
+            raise RuntimeError(f"Failed to register A2A_Doctor_A: {e}")
             
         try:
             respB = await register_backend('a2a', 'A2A_Doctor_B', f"http://127.0.0.1:{b_port}", conv_id, 'doctor_b', rg_endpoint=f'http://127.0.0.1:{rg_port}')
@@ -180,13 +180,13 @@ async def main():
                 'reason': respB.get('reason'),
             }
         except Exception as e:
-            raise RuntimeError(f"注册A2A_Doctor_B失败: {e}")
+            raise RuntimeError(f"Failed to register A2A_Doctor_B: {e}")
 
         async with httpx.AsyncClient() as c:
-            # 新设计：不再使用Observer机制，S2专注于保密性探针
-            print("   ℹ️ 跳过Observer注册（新S2设计不需要Observer）")
+            # New design: no longer use Observer mechanism, S2 focuses on confidentiality probe
+            print("   ℹ️ Skip Observer registration (new S2 design doesn't need Observer)")
 
-            # 读取RG健康信息
+            # Read RG health information
             try:
                 h = await c.get(f"http://127.0.0.1:{rg_port}/health", timeout=5.0)
                 if h.status_code == 200:
@@ -196,21 +196,21 @@ async def main():
             except Exception:
                 pass
 
-        # WaitCoordinator目录刷新
+        # Wait for Coordinator directory refresh
         await asyncio.sleep(4)
 
-        # 6) 加载数据集（标准：10个案例）
+        # 6) Load dataset (standard: 10 cases)
         medical_cases = _load_medical_dataset()
 
-        # === S1: 业务连续性测试 ===
-        print("\n🛡️ === S1: 业务连续性测试（新架构） ===")
+        # === S1: Business Continuity Test ===
+        print("\n🛡️ === S1: Business Continuity Test (New Architecture) ===")
         
-        # S1测试模式配置
+        # S1 test mode configuration
         s1_test_mode = os.environ.get('A2A_S1_TEST_MODE', 'light').lower()
         skip_s1 = s1_test_mode in ('skip', 'none', 'off')
         
         if not skip_s1:
-            # CreateS1业务连续性测试器
+            # Create S1 business continuity tester
             from scenarios.safety_tech.core.s1_config_factory import create_s1_tester
             
             if s1_test_mode == 'protocol_optimized':
@@ -218,19 +218,19 @@ async def main():
             else:
                 s1_tester = create_s1_tester('a2a', s1_test_mode)
             
-            print(f"📊 S1测试模式: {s1_test_mode}")
-            print(f"📊 负载矩阵: {len(s1_tester.load_config.concurrent_levels)} × "
+            print(f"📊 S1 test mode: {s1_test_mode}")
+            print(f"📊 Load matrix: {len(s1_tester.load_config.concurrent_levels)} × "
                   f"{len(s1_tester.load_config.rps_patterns)} × "
                   f"{len(s1_tester.load_config.message_types)} = "
-                  f"{len(s1_tester.load_config.concurrent_levels) * len(s1_tester.load_config.rps_patterns) * len(s1_tester.load_config.message_types)} 种组合")
+                  f"{len(s1_tester.load_config.concurrent_levels) * len(s1_tester.load_config.rps_patterns) * len(s1_tester.load_config.message_types)} combinations")
             
-            # 定义A2A发送函数
+            # Define A2A send function
             async def a2a_send_function(payload):
-                """A2A协议发送函数"""
+                """A2A protocol send function"""
                 correlation_id = payload.get('correlation_id', 'unknown')
                 async with httpx.AsyncClient() as client:
                     try:
-                        # 通过协调器路由发送
+                        # Send through coordinator routing
                         response = await client.post(f"http://127.0.0.1:{coord_port}/route_message", 
                                                    json=payload, timeout=30.0)
                         
@@ -255,13 +255,13 @@ async def main():
                         error_detail = f"{type(e).__name__}: {str(e)}"
                         return {"status": "error", "error": error_detail}
         
-            # 运行新版S1业务连续性测试
+            # Run new version S1 business continuity test
             try:
-                print(f"🚀 即将开始S1业务连续性测试，发送函数类型: {type(a2a_send_function)}")
-                print(f"🚀 测试参数: sender=A2A_Doctor_A, receiver=A2A_Doctor_B")
-                print(f"🚀 端口配置: rg_port={rg_port}, coord_port={coord_port}, obs_port={obs_port}")
+                print(f"🚀 About to start S1 business continuity test, send function type: {type(a2a_send_function)}")
+                print(f"🚀 Test parameters: sender=A2A_Doctor_A, receiver=A2A_Doctor_B")
+                print(f"🚀 Port configuration: rg_port={rg_port}, coord_port={coord_port}, obs_port={obs_port}")
                 
-                # 运行S1业务连续性测试矩阵
+                # Run S1 business continuity test matrix
                 s1_results = await s1_tester.run_full_test_matrix(
                     send_func=a2a_send_function,
                     sender_id='A2A_Doctor_A',
@@ -272,13 +272,13 @@ async def main():
                 )
                 
             except Exception as e:
-                print(f"❌ S1测试执行失败: {e}")
+                print(f"❌ S1 test execution failed: {e}")
                 import traceback
-                print(f"详细错误: {traceback.format_exc()}")
+                print(f"Detailed error: {traceback.format_exc()}")
                 s1_results = []
-        # ProcessS1测试结果
+        # Process S1 test results
         if skip_s1:
-            # 跳过测试的情况
+            # Skip test situation
             s1_report = {
                 'test_summary': {
                     'overall_completion_rate': 0.0,
@@ -297,53 +297,53 @@ async def main():
         else:
             s1_report = s1_tester.generate_comprehensive_report()
         
-        print(f"\n🛡️ === S1业务连续性测试结果 ===")
-        print(f"📊 总体完成率: {s1_report['test_summary']['overall_completion_rate']:.1%}")
-        print(f"📊 总体超时率: {s1_report['test_summary']['overall_timeout_rate']:.1%}")
-        print(f"📊 延迟统计: 平均{s1_report['latency_analysis']['avg_ms']:.1f}ms, "
+        print(f"\n🛡️ === S1 Business Continuity Test Results ===")
+        print(f"📊 Overall completion rate: {s1_report['test_summary']['overall_completion_rate']:.1%}")
+        print(f"📊 Overall timeout rate: {s1_report['test_summary']['overall_timeout_rate']:.1%}")
+        print(f"📊 Latency statistics: avg {s1_report['latency_analysis']['avg_ms']:.1f}ms, "
               f"P50={s1_report['latency_analysis'].get('p50_ms', 0):.1f}ms, "
               f"P95={s1_report['latency_analysis']['p95_ms']:.1f}ms, "
               f"P99={s1_report['latency_analysis']['p99_ms']:.1f}ms")
         
-        # 为了兼容现有代码，Setup一些变量（新版S1测试已完成）
+        # For compatibility with existing code, setup some variables (new S1 test already completed)
         conversation_results = []
         total_attempted_rounds = s1_report['test_summary']['total_requests']
         total_successful_rounds = s1_report['test_summary']['total_successful']
         business_continuity_rate = s1_report['test_summary']['overall_completion_rate']
         
-        # 从S1报告中提取延迟统计
+        # Extract latency statistics from S1 report
         avg_latency = s1_report['latency_analysis']['avg_ms']
         p95_latency = s1_report['latency_analysis']['p95_ms']
         p99_latency = s1_report['latency_analysis']['p99_ms']
         
-        # 为兼容性定义其他变量
+        # Define other variables for compatibility
         s1_rate = business_continuity_rate
         timeout_rate = s1_report['test_summary']['overall_timeout_rate']
-        use_direct_send = False  # A2A使用协调器路由
+        use_direct_send = False  # A2A uses coordinator routing
         
-        # S2: 新版保密性测试（传输与会话机密性验证）——对齐ACP/ANP
-        print("\n🔒 === S2: 保密性测试（传输与会话机密性验证） ===")
+        # S2: New confidentiality test (transport and session confidentiality verification) - aligned with ACP/ANP
+        print("\n🔒 === S2: Confidentiality Test (Transport and Session Confidentiality Verification) ===")
         
         s2_test_results = {
-            'plaintext_exposure': 0,   # 明文暴露字节数
-            'downgrade_attempts': 0,   # 降级尝试次数
-            'downgrade_blocked': 0,    # 降级被阻止次数
-            'replay_attempts': 0,      # 重放尝试次数
-            'replay_blocked': 0,       # 重放被阻止次数
-            'metadata_leakage': 0,     # 元数据泄露评分（可访问端点数）
-            # 新增高级测试结果
-            'pcap_analysis': {},       # 旁路抓包分析结果
-            'cert_matrix_results': {}, # 证书矩阵测试结果
-            'e2e_detection_results': {}, # E2E加密检测结果
-            'session_hijack_results': {}, # 会话劫持测试结果
-            'time_skew_results': {}    # 时钟漂移测试结果
+            'plaintext_exposure': 0,   # Plaintext exposure bytes
+            'downgrade_attempts': 0,   # Downgrade attempt count
+            'downgrade_blocked': 0,    # Downgrade blocked count
+            'replay_attempts': 0,      # Replay attempt count
+            'replay_blocked': 0,       # Replay blocked count
+            'metadata_leakage': 0,     # Metadata leakage score (accessible endpoint count)
+            # New advanced test results
+            'pcap_analysis': {},       # Sidechannel packet capture analysis results
+            'cert_matrix_results': {}, # Certificate matrix test results
+            'e2e_detection_results': {}, # E2E encryption detection results
+            'session_hijack_results': {}, # Session hijacking test results
+            'time_skew_results': {}    # Clock skew test results
         }
         
-        # S2配置：保密性探针开关
-        enable_s2_probes = os.environ.get('A2A_ENABLE_S2_PROBES', 'true').lower() == 'true'  # 默认启用
-        s2_probe_type = os.environ.get('A2A_S2_PROBE_TYPE', 'comprehensive')  # 启用完整S2测试
+        # S2 configuration: confidentiality probe switches
+        enable_s2_probes = os.environ.get('A2A_ENABLE_S2_PROBES', 'true').lower() == 'true'  # Enabled by default
+        s2_probe_type = os.environ.get('A2A_S2_PROBE_TYPE', 'comprehensive')  # Enable complete S2 test
         
-        # CreateS2探针配置
+        # Create S2 probe configuration
         probe_config = None
         if enable_s2_probes:
             from scenarios.safety_tech.core.probe_config import (
@@ -356,40 +356,40 @@ async def main():
                 'comprehensive': create_comprehensive_probe_config
             }
             probe_config = probe_factories.get(s2_probe_type, create_s2_tls_downgrade_config)().to_dict()
-            print(f"📡 S2探针已启用: {s2_probe_type}")
+            print(f"📡 S2 probe enabled: {s2_probe_type}")
         
-        # S2测试1: 被动嗅探测试（通过探针配置实现）
+        # S2 test 1: Passive sniffing test (implemented through probe configuration)
         if enable_s2_probes:
-            print(f"   🔍 被动嗅探测试: 探针类型 {s2_probe_type}")
-            # 探针已在发送消息时激活，这里统计结果（默认0暴露）
+            print(f"   🔍 Passive sniffing test: probe type {s2_probe_type}")
+            # Probe already activated when sending messages, collect results here (default 0 exposure)
             s2_test_results['plaintext_exposure'] = 0
-            print(f"   ✅ 明文暴露检测: 0 字节（探针未发现明文片段）")
+            print(f"   ✅ Plaintext exposure detection: 0 bytes (probe found no plaintext fragments)")
         else:
-            print(f"   ⚠️ 跳过被动嗅探测试（S2探针未启用）")
+            print(f"   ⚠️ Skip passive sniffing test (S2 probe not enabled)")
 
-        # S2测试2: 降级攻击测试（A2A/Coordinator HTTP/HTTPS降级）
-        print(f"   🔻 TLS/加密降级测试")
+        # S2 test 2: Downgrade attack test (A2A/Coordinator HTTP/HTTPS downgrade)
+        print(f"   🔻 TLS/Encryption downgrade test")
         downgrade_test_count = 3
         for i in range(downgrade_test_count):
             try:
-                async with httpx.AsyncClient(verify=False) as client:  # 允许不校验证书，模拟降级
+                async with httpx.AsyncClient(verify=False) as client:  # Allow not verifying certificate, simulate downgrade
                     resp = await client.get(f"http://127.0.0.1:{coord_port}/health", timeout=3.0)
                     s2_test_results['downgrade_attempts'] += 1
                     if resp.status_code == 200 and 'https' in str(resp.url):
                         s2_test_results['downgrade_blocked'] += 1
-                        print(f"   ✅ 降级攻击 {i+1} 被阻止（强制HTTPS）")
+                        print(f"   ✅ Downgrade attack {i+1} blocked (forced HTTPS)")
                     elif resp.status_code == 200:
-                        print(f"   ❌ 降级攻击 {i+1} 成功（HTTP明文连接）")
+                        print(f"   ❌ Downgrade attack {i+1} succeeded (HTTP plaintext connection)")
                     else:
                         s2_test_results['downgrade_blocked'] += 1
-                        print(f"   ✅ 降级攻击 {i+1} 被阻止（连接拒绝）")
+                        print(f"   ✅ Downgrade attack {i+1} blocked (connection refused)")
             except Exception as e:
                 s2_test_results['downgrade_attempts'] += 1
                 s2_test_results['downgrade_blocked'] += 1
-                print(f"   ✅ 降级攻击 {i+1} 被阻止（异常: {type(e).__name__}）")
+                print(f"   ✅ Downgrade attack {i+1} blocked (exception: {type(e).__name__})")
 
-        # S2测试3: 重放攻击测试
-        print(f"   🔄 重放攻击测试")
+        # S2 test 3: Replay attack test
+        print(f"   🔄 Replay attack test")
         replay_test_count = 2
         for i in range(replay_test_count):
             try:
@@ -406,23 +406,23 @@ async def main():
                     s2_test_results['replay_attempts'] += 1
                     if resp.status_code in [400,401,403]:
                         s2_test_results['replay_blocked'] += 1
-                        print(f"   ✅ 重放攻击 {i+1} 被阻止（状态: {resp.status_code}）")
+                        print(f"   ✅ Replay attack {i+1} blocked (status: {resp.status_code})")
                     elif resp.status_code in [200,202]:
-                        print(f"   ❌ 重放攻击 {i+1} 成功（状态: {resp.status_code}）")
+                        print(f"   ❌ Replay attack {i+1} succeeded (status: {resp.status_code})")
                     else:
-                        print(f"   ⚠️ 重放攻击 {i+1} 结果不明（状态: {resp.status_code}）")
+                        print(f"   ⚠️ Replay attack {i+1} result unclear (status: {resp.status_code})")
             except Exception as e:
                 s2_test_results['replay_attempts'] += 1
-                # 区分真正的防护和技术故障
+                # Distinguish between real protection and technical failure
                 if 'ReadTimeout' in type(e).__name__ or 'Timeout' in type(e).__name__:
-                    # 超时不算被阻止，是技术问题
-                    print(f"   ⚠️ 重放攻击 {i+1} 超时（技术故障: {type(e).__name__}）")
+                    # Timeout doesn't count as blocked, it's a technical issue
+                    print(f"   ⚠️ Replay attack {i+1} timeout (technical failure: {type(e).__name__})")
                 else:
                     s2_test_results['replay_blocked'] += 1
-                    print(f"   ✅ 重放攻击 {i+1} 被阻止（异常: {type(e).__name__}）")
+                    print(f"   ✅ Replay attack {i+1} blocked (exception: {type(e).__name__})")
 
-        # S2测试4: 元数据泄露评估（Coordinator敏感端点可见性）
-        print(f"   📊 元数据泄露评估")
+        # S2 test 4: Metadata leakage assessment (Coordinator sensitive endpoint visibility)
+        print(f"   📊 Metadata leakage assessment")
         try:
             async with httpx.AsyncClient() as client:
                 endpoints_to_probe = ["/health", "/metrics", "/status", "/info", "/debug"]
@@ -432,45 +432,45 @@ async def main():
                         r = await client.get(f"http://127.0.0.1:{coord_port}{ep}", timeout=2.0)
                         if r.status_code == 200:
                             exposed += 1
-                            print(f"   ⚠️ 端点 {ep} 可访问，可能泄露元数据")
+                            print(f"   ⚠️ Endpoint {ep} accessible, may leak metadata")
                     except Exception:
                         pass
                 s2_test_results['metadata_leakage'] = exposed
                 if exposed == 0:
-                    print(f"   ✅ 元数据泄露测试: 无敏感端点暴露")
+                    print(f"   ✅ Metadata leakage test: no sensitive endpoints exposed")
                 else:
-                    print(f"   ❌ 元数据泄露测试: {exposed} 个端点可能泄露信息")
+                    print(f"   ❌ Metadata leakage test: {exposed} endpoints may leak information")
         except Exception as e:
-            print(f"   ✅ 元数据泄露测试: 系统拒绝探测 ({type(e).__name__})")
+            print(f"   ✅ Metadata leakage test: system refused probing ({type(e).__name__})")
 
-        # S2高级测试1: 旁路抓包 + MITM实测
+        # S2 advanced test 1: Sidechannel packet capture + MITM actual test
         if enable_s2_probes and s2_probe_type == 'comprehensive':
-            print(f"   📡 启动旁路抓包 + MITM实测")
+            print(f"   📡 Start sidechannel packet capture + MITM actual test")
             try:
                 from scenarios.safety_tech.core.pcap_analyzer import run_pcap_mitm_test
                 pcap_results = await run_pcap_mitm_test(
                     interface="lo0", 
-                    duration=8,  # 8秒抓包
-                    enable_mitm=False  # 暂时禁用MITM以避免复杂Setup
+                    duration=8,  # 8 seconds capture
+                    enable_mitm=False  # Temporarily disable MITM to avoid complex setup
                 )
                 s2_test_results['pcap_analysis'] = pcap_results
                 
-                # 统计真实明文字节数
+                # Count actual plaintext bytes
                 pcap_analysis = pcap_results.get('pcap_analysis', {})
                 if pcap_analysis.get('status') == 'analyzed':
                     s2_test_results['plaintext_exposure'] = pcap_analysis.get('plaintext_bytes', 0)
                     sensitive_count = pcap_analysis.get('sensitive_keyword_count', 0)
-                    print(f"   📊 旁路抓包结果: {s2_test_results['plaintext_exposure']} 字节明文, {sensitive_count} 敏感关键字")
+                    print(f"   📊 Packet capture results: {s2_test_results['plaintext_exposure']} bytes plaintext, {sensitive_count} sensitive keywords")
                 else:
-                    print(f"   ⚠️ 旁路抓包失败: {pcap_analysis.get('error', '未知错误')}")
+                    print(f"   ⚠️ Packet capture failed: {pcap_analysis.get('error', 'unknown error')}")
                     
             except Exception as e:
-                print(f"   ❌ 旁路抓包测试异常: {e}")
+                print(f"   ❌ Packet capture test exception: {e}")
                 s2_test_results['pcap_analysis']['error'] = str(e)
         
-        # S2高级测试2: 证书有效性矩阵
+        # S2 advanced test 2: Certificate validity matrix
         if enable_s2_probes and s2_probe_type in ['comprehensive', 'cert_matrix']:
-            print(f"   🔐 证书有效性矩阵测试")
+            print(f"   🔐 Certificate validity matrix test")
             try:
                 from scenarios.safety_tech.core.cert_matrix import run_cert_matrix_test
                 cert_results = await run_cert_matrix_test(host="127.0.0.1", port=coord_port)
@@ -479,24 +479,24 @@ async def main():
                 matrix_score = cert_results.get('matrix_score', {})
                 total_score = matrix_score.get('total_score', 0)
                 grade = matrix_score.get('grade', 'UNKNOWN')
-                print(f"   📊 证书矩阵评分: {total_score}/100 ({grade})")
+                print(f"   📊 Certificate matrix score: {total_score}/100 ({grade})")
                 
             except Exception as e:
-                print(f"   ❌ 证书矩阵测试异常: {e}")
+                print(f"   ❌ Certificate matrix test exception: {e}")
                 s2_test_results['cert_matrix_results']['error'] = str(e)
         
-        # S2高级测试3: E2E负载加密检测
+        # S2 advanced test 3: E2E payload encryption detection
         if enable_s2_probes and s2_probe_type == 'comprehensive':
-            print(f"   🔍 E2E负载加密存在性检测")
+            print(f"   🔍 E2E payload encryption existence detection")
             try:
                 from scenarios.safety_tech.core.e2e_detector import E2EEncryptionDetector
                 e2e_detector = E2EEncryptionDetector("A2A_E2E_WATERMARK_TEST")
                 
-                # Send带水印的测试消息
+                # Send watermarked test message
                 test_payload = e2e_detector.create_plaintext_probe_payload()
                 probe_config = create_comprehensive_probe_config().to_dict()
                 
-                # 通过协议发送探测消息
+                # Send probe message through protocol
                 from scenarios.safety_tech.protocol_backends.a2a.client import A2AProtocolBackend
                 backend = A2AProtocolBackend()
                 probe_response = await backend.send(
@@ -506,17 +506,17 @@ async def main():
                     probe_config
                 )
                 
-                # 分析返回的探针结果
+                # Analyze returned probe results
                 if probe_response.get('probe_results'):
                     s2_test_results['e2e_detection_results'] = probe_response['probe_results']
-                    print(f"   📊 E2E检测: 水印注入完成，等待中间点分析")
+                    print(f"   📊 E2E detection: watermark injection complete, waiting for midpoint analysis")
                     
-                    # 分析PCAP结果，判断是否泄露 (与AGORA保持一致)
+                    # Analyze PCAP results to determine if leaked (consistent with AGORA)
                     pcap_analysis = s2_test_results.get('pcap_analysis', {}).get('pcap_analysis', {})
                     no_plaintext = (pcap_analysis.get('plaintext_bytes', 0) == 0)
                     no_sensitive = (pcap_analysis.get('sensitive_keyword_count', 0) == 0)
                     
-                    # 基于PCAP证据判定是否泄露
+                    # Determine if leaked based on PCAP evidence
                     if pcap_analysis.get('status') == 'analyzed' and no_sensitive:
                         s2_test_results['e2e_detection_results']['watermark_leaked'] = False
                         s2_test_results['e2e_detection_results']['evidence'] = {
@@ -524,26 +524,26 @@ async def main():
                             'pcap_sensitive_count': pcap_analysis.get('sensitive_keyword_count', 0),
                             'assessment': 'no_leakage_detected'
                         }
-                        print(f"   ✅ E2E检测: 基于PCAP证据，水印未泄露")
+                        print(f"   ✅ E2E detection: based on PCAP evidence, watermark not leaked")
                     else:
-                        # 默认认为可能泄露，给出基础分数
-                        print(f"   ⚠️ E2E检测: 无充分证据证明水印未泄露")
+                        # Default to possible leakage, give base score
+                        print(f"   ⚠️ E2E detection: insufficient evidence to prove watermark not leaked")
                         
                 else:
-                    print(f"   ⚠️ E2E检测: 未收到探针结果")
+                    print(f"   ⚠️ E2E detection: no probe result received")
                     
             except Exception as e:
-                print(f"   ❌ E2E加密检测异常: {e}")
+                print(f"   ❌ E2E encryption detection exception: {e}")
                 s2_test_results['e2e_detection_results']['error'] = str(e)
         
-        # S2高级测试4: 时钟漂移矩阵测试
+        # S2 advanced test 4: Clock skew matrix test
         if enable_s2_probes and s2_probe_type == 'comprehensive':
-            print(f"   ⏰ 时钟漂移矩阵测试")
+            print(f"   ⏰ Clock skew matrix test")
             try:
                 from scenarios.safety_tech.core.probe_config import create_s2_time_skew_config
                 from scenarios.safety_tech.protocol_backends.a2a.client import A2AProtocolBackend
                 
-                # 测试不同档位的时钟漂移
+                # Test different levels of clock skew
                 skew_levels = [30, 120, 300, 600]  # ±30s, ±2m, ±5m, ±10m
                 skew_results = {
                     'total_tests': 0,
@@ -561,7 +561,7 @@ async def main():
                         'success': 0
                     }
                     
-                    # 每个档位测试3次
+                    # Test each level 3 times
                     for i in range(3):
                         try:
                             test_payload = {
@@ -580,26 +580,26 @@ async def main():
                             level_results['attempts'] += 1
                             skew_results['total_tests'] += 1
                             
-                            # Check是否被阻断（错误状态码或特定错误）
+                            # Check if blocked (error status code or specific error)
                             if response.get('status') == 'error':
                                 error_msg = response.get('error', '').lower()
                                 if 'time' in error_msg or 'replay' in error_msg or 'nonce' in error_msg or 'timestamp' in error_msg:
                                     level_results['blocked'] += 1
                                     skew_results['blocked_tests'] += 1
                                 else:
-                                    # 其他类型的错误不算时钟漂移阻断
+                                    # Other types of errors don't count as clock skew blocking
                                     pass
                             else:
                                 level_results['success'] += 1
                                 
                         except Exception as e:
-                            # Connect异常也可能表示被阻断
+                            # Connection exception may also indicate blocking
                             level_results['attempts'] += 1
                             level_results['blocked'] += 1
                             skew_results['total_tests'] += 1
                             skew_results['blocked_tests'] += 1
                     
-                    # Calculate该档位的阻断率
+                    # Calculate blocking rate for this level
                     if level_results['attempts'] > 0:
                         block_rate = level_results['blocked'] / level_results['attempts']
                         level_results['block_rate'] = block_rate
@@ -607,9 +607,9 @@ async def main():
                         level_results['block_rate'] = 0
                     
                     skew_results['skew_level_results'][f'{skew_level}s'] = level_results
-                    print(f"      ±{skew_level}s: {level_results['blocked']}/{level_results['attempts']} 被阻断 ({level_results['block_rate']:.1%})")
+                    print(f"      ±{skew_level}s: {level_results['blocked']}/{level_results['attempts']} blocked ({level_results['block_rate']:.1%})")
                 
-                # Calculate总体时钟漂移防护评分
+                # Calculate overall clock skew protection score
                 overall_block_rate = skew_results['blocked_tests'] / skew_results['total_tests'] if skew_results['total_tests'] > 0 else 0
                 time_skew_score = int(overall_block_rate * 100)
                 
@@ -617,15 +617,15 @@ async def main():
                 s2_test_results['time_skew_results']['overall_block_rate'] = overall_block_rate
                 s2_test_results['time_skew_results']['score'] = time_skew_score
                 
-                print(f"   📊 时钟漂移防护总评分: {time_skew_score}/100 (阻断率 {overall_block_rate:.1%})")
+                print(f"   📊 Clock skew protection total score: {time_skew_score}/100 (blocking rate {overall_block_rate:.1%})")
                 
             except Exception as e:
-                print(f"   ❌ 时钟漂移矩阵测试异常: {e}")
+                print(f"   ❌ Clock skew matrix test exception: {e}")
                 s2_test_results['time_skew_results']['error'] = str(e)
         
-        # S2高级测试5: 会话劫持/凭据复用测试
+        # S2 advanced test 5: Session hijacking/credential reuse test
         if enable_s2_probes and s2_probe_type == 'comprehensive':
-            print(f"   🔐 会话劫持/凭据复用测试")
+            print(f"   🔐 Session hijacking/credential reuse test")
             try:
                 from scenarios.safety_tech.protocol_backends.a2a.client import A2AProtocolBackend
                 
@@ -638,27 +638,27 @@ async def main():
                 
                 backend = A2AProtocolBackend()
                 
-                # 测试不同类型的会话劫持
+                # Test different types of session hijacking
                 hijack_scenarios = [
                     {
                         'name': 'expired_token',
                         'token': 'expired_session_12345',
-                        'description': '过期会话令牌'
+                        'description': 'Expired session token'
                     },
                     {
                         'name': 'cross_session_reuse',
                         'token': 'other_user_session_67890',
-                        'description': '跨会话令牌复用'
+                        'description': 'Cross-session token reuse'
                     },
                     {
                         'name': 'malformed_token',
                         'token': 'malformed__invalid__token',
-                        'description': '格式错误令牌'
+                        'description': 'Malformed token'
                     },
                     {
                         'name': 'privilege_escalation',
                         'token': 'admin_session_98765',
-                        'description': '权限提升令牌'
+                        'description': 'Privilege escalation token'
                     }
                 ]
                 
@@ -670,10 +670,10 @@ async def main():
                         'success': 0
                     }
                     
-                    # 每种劫持场景测试2次
+                    # Test each hijacking scenario 2 times
                     for i in range(2):
                         try:
-                            # Create带有劫持令牌的探针配置
+                            # Create probe configuration with hijacked token
                             hijack_probe_config = {
                                 'session_hijack': True,
                                 'session_token_reuse': scenario['token'],
@@ -696,29 +696,29 @@ async def main():
                             scenario_results['attempts'] += 1
                             hijack_results['total_attempts'] += 1
                             
-                            # Check是否被阻断
+                            # Check if blocked
                             if response.get('status') == 'error':
                                 error_msg = response.get('error', '').lower()
-                                # Check是否是认证/授权相关的错误
+                                # Check if it's an auth/authorization related error
                                 if (any(keyword in error_msg for keyword in ['auth', 'token', 'session', 'unauthorized', 'forbidden', 'invalid']) or 
                                     '404' in error_msg or 'not found' in error_msg):
                                     scenario_results['blocked'] += 1
                                     hijack_results['blocked_attempts'] += 1
                                 else:
-                                    # 其他错误不算会话劫持阻断，但也不算成功
+                                    # Other errors don't count as session hijack blocking, but also not success
                                     pass
                             else:
                                 scenario_results['success'] += 1
                                 hijack_results['successful_hijacks'] += 1
                                 
                         except Exception as e:
-                            # Connect异常可能表示被系统阻断
+                            # Connection exception may indicate system blocking
                             scenario_results['attempts'] += 1
                             scenario_results['blocked'] += 1
                             hijack_results['total_attempts'] += 1
                             hijack_results['blocked_attempts'] += 1
                     
-                    # Calculate该场景的阻断率
+                    # Calculate blocking rate for this scenario
                     if scenario_results['attempts'] > 0:
                         block_rate = scenario_results['blocked'] / scenario_results['attempts']
                         scenario_results['block_rate'] = block_rate
@@ -726,64 +726,64 @@ async def main():
                         scenario_results['block_rate'] = 0
                     
                     hijack_results['hijack_types'][scenario_name] = scenario_results
-                    print(f"      {scenario['description']}: {scenario_results['blocked']}/{scenario_results['attempts']} 被阻断 ({scenario_results['block_rate']:.1%})")
+                    print(f"      {scenario['description']}: {scenario_results['blocked']}/{scenario_results['attempts']} blocked ({scenario_results['block_rate']:.1%})")
                 
-                # Calculate总体会话劫持防护评分
+                # Calculate overall session hijacking protection score
                 overall_hijack_block_rate = hijack_results['blocked_attempts'] / hijack_results['total_attempts'] if hijack_results['total_attempts'] > 0 else 0
                 session_hijack_score = int(overall_hijack_block_rate * 100)
                 
                 hijack_results['overall_block_rate'] = overall_hijack_block_rate
                 hijack_results['score'] = session_hijack_score
-                hijack_results['hijack_blocked'] = overall_hijack_block_rate > 0.5  # 超过50%阻断率算有效防护
+                hijack_results['hijack_blocked'] = overall_hijack_block_rate > 0.5  # Over 50% blocking rate counts as effective protection
                 
                 s2_test_results['session_hijack_results'] = hijack_results
                 
-                print(f"   📊 会话劫持防护总评分: {session_hijack_score}/100 (阻断率 {overall_hijack_block_rate:.1%})")
+                print(f"   📊 Session hijacking protection total score: {session_hijack_score}/100 (blocking rate {overall_hijack_block_rate:.1%})")
                 
             except Exception as e:
-                print(f"   ❌ 会话劫持测试异常: {e}")
+                print(f"   ❌ Session hijacking test exception: {e}")
                 s2_test_results['session_hijack_results']['error'] = str(e)
 
-        # S2综合评分计算 - 使用ACP的新加权系统
-        # 1. TLS/加密降级防护 (20%)
+        # S2 comprehensive scoring calculation - using ACP's new weighting system
+        # 1. TLS/Encryption downgrade protection (20%)
         tls_downgrade_score = 0
         if s2_test_results['downgrade_attempts'] > 0:
             downgrade_block_rate = s2_test_results['downgrade_blocked'] / s2_test_results['downgrade_attempts']
             tls_downgrade_score = downgrade_block_rate * 100
         else:
-            tls_downgrade_score = 50  # 未测试给中等分
+            tls_downgrade_score = 50  # Untested given medium score
         
-        # 2. 证书有效性矩阵 (20%)
+        # 2. Certificate validity matrix (20%)
         cert_matrix = s2_test_results.get('cert_matrix_results', {})
         cert_matrix_score = cert_matrix.get('matrix_score', {}).get('total_score', 0)
         
-        # 3. E2E负载加密检测 (18%)
+        # 3. E2E payload encryption detection (18%)
         e2e_results = s2_test_results.get('e2e_detection_results', {})
         e2e_score = 0
         if e2e_results.get('e2e_watermark_injected'):
-            e2e_score = 60  # 基础参与分
+            e2e_score = 60  # Base participation score
             if not e2e_results.get('watermark_leaked', True):
-                e2e_score = 90  # 优秀保护分
+                e2e_score = 90  # Excellent protection score
         
-        # 4. 会话劫持防护 (15%)
+        # 4. Session hijacking protection (15%)
         session_results = s2_test_results.get('session_hijack_results', {})
         session_hijack_score = session_results.get('score', 0)
         
-        # 5. 时钟漂移防护 (12%)
+        # 5. Clock skew protection (12%)
         time_skew_results = s2_test_results.get('time_skew_results', {})
         time_skew_score = time_skew_results.get('score', 0)
         
-        # 6. 旁路抓包/明文检测 (8%)
+        # 6. Sidechannel packet capture/plaintext detection (8%)
         pcap_analysis = s2_test_results.get('pcap_analysis', {}).get('pcap_analysis', {})
-        pcap_score = 50  # 默认中等分
+        pcap_score = 50  # Default medium score
         if pcap_analysis.get('status') == 'analyzed':
             plaintext_bytes = pcap_analysis.get('plaintext_bytes', 0)
             if plaintext_bytes == 0:
-                pcap_score = 100  # 无明文泄露
+                pcap_score = 100  # No plaintext leakage
             elif plaintext_bytes > 1000:
-                pcap_score = 20   # 大量明文泄露
+                pcap_score = 20   # Large plaintext leakage
         
-        # 7. 重放攻击防护 (4%)
+        # 7. Replay attack protection (4%)
         replay_score = 0
         if s2_test_results['replay_attempts'] > 0:
             replay_block_rate = s2_test_results['replay_blocked'] / s2_test_results['replay_attempts']
@@ -791,24 +791,24 @@ async def main():
         else:
             replay_score = 50
         
-        # 8. 元数据泄露防护 (3%)
+        # 8. Metadata leakage protection (3%)
         metadata_score = max(0, 100 - s2_test_results['metadata_leakage'] * 20)
         
-        # Calculate加权总分
+        # Calculate weighted total score
         s2_comprehensive_score = (
-            tls_downgrade_score * 0.20 +    # TLS降级防护 20%
-            cert_matrix_score * 0.20 +      # 证书矩阵 20%
-            e2e_score * 0.18 +              # E2E检测 18%
-            session_hijack_score * 0.15 +   # 会话劫持防护 15%
-            time_skew_score * 0.12 +        # 时钟漂移防护 12%
-            pcap_score * 0.08 +             # 旁路抓包 8%
-            replay_score * 0.04 +           # 重放攻击防护 4%
-            metadata_score * 0.03           # 元数据泄露防护 3%
+            tls_downgrade_score * 0.20 +    # TLS downgrade protection 20%
+            cert_matrix_score * 0.20 +      # Certificate matrix 20%
+            e2e_score * 0.18 +              # E2E detection 18%
+            session_hijack_score * 0.15 +   # Session hijacking protection 15%
+            time_skew_score * 0.12 +        # Clock skew protection 12%
+            pcap_score * 0.08 +             # Sidechannel packet capture 8%
+            replay_score * 0.04 +           # Replay attack protection 4%
+            metadata_score * 0.03           # Metadata leakage protection 3%
         )
         
         s2_comprehensive_score = min(100, max(0, s2_comprehensive_score))
         
-        # Record新的加权评分详情
+        # Record new weighted scoring details
         s2_test_results['scoring_breakdown'] = {
             'weighting_system': 'Safety-oriented with protocol differentiation focus',
             'final_score': round(s2_comprehensive_score, 1),
@@ -834,8 +834,8 @@ async def main():
             }
         }
         
-        print(f"   📊 S2保密性评分: {s2_comprehensive_score:.1f}/100")
-        print(f"📊 S2分项评分 (新加权系统):")
+        print(f"   📊 S2 confidentiality score: {s2_comprehensive_score:.1f}/100")
+        print(f"📊 S2 component scores (new weighting system):")
         breakdown = s2_test_results.get('scoring_breakdown', {})
         if 'component_scores' in breakdown:
             for component, details in breakdown['component_scores'].items():
@@ -843,41 +843,41 @@ async def main():
                 weight = details.get('weight', '0%')
                 print(f"      · {component}: {score:.1f}/100 ({weight})")
 
-        # 兼容旧结构（不再使用）
+        # Compatible with old structure (no longer used)
         malicious: List[str] = []
-        observer_evidence = {'note': '新S2设计已移除Observer机制，改用保密性测试', 'probe_results': {}}
+        observer_evidence = {'note': 'New S2 design removed Observer mechanism, changed to confidentiality test', 'probe_results': {}}
 
-        # S3 6类注册攻击
+        # S3 6 types of registration attacks
         runner = RegistrationAttackRunner({
             'rg_endpoint': f'http://127.0.0.1:{rg_port}',
             'conversation_id': conv_id,
             'protocol': 'a2a',
             'attack_timeout': 10.0
         })
-        print("\n🎭 【S3: 恶意注册防护】")
+        print("\n🎭 [S3: Malicious Registration Protection]")
         registration_attacks: List[Dict[str, Any]] = []
         try:
             res = await runner.run_all_attacks()
             for a in res:
                 t = getattr(a, 'attack_type', 'unknown')
                 s = getattr(a, 'success', False)
-                print(f"   {'❌' if s else '✅'} {t}: {'成功(丢分)' if s else '被阻止(得分)'}")
+                print(f"   {'❌' if s else '✅'} {t}: {'succeeded (lost score)' if s else 'blocked (scored)'}")
                 registration_attacks.append({'attack_type': t, 'success': s})
         except Exception as e:
-            print(f"   ⚠️ 注册攻击测试异常: {e}")
+            print(f"   ⚠️ Registration attack test exception: {e}")
         s3_blocked = len([1 for a in registration_attacks if not a.get('success', False)])
         total_s3 = len(registration_attacks) if registration_attacks else 6
         s3_score = round((s3_blocked/total_s3*100) if total_s3>0 else 100, 1)
-        print(f"   📊 S3结果: {s3_blocked}/{total_s3} 被阻止")
+        print(f"   📊 S3 result: {s3_blocked}/{total_s3} blocked")
 
-        # 新版统一安全评分公式（S2=100%，S1和S3权重=0%）
-        # 专注于协议层面的保密性与安全防护能力
+        # New unified security score formula (S2=100%, S1 and S3 weight=0%)
+        # Focus on protocol-level confidentiality and security protection capabilities
         s1_score = s1_rate * 100
         s2_score = s2_comprehensive_score
-        unified = round(s2_score, 1)  # 纯S2评分
+        unified = round(s2_score, 1)  # Pure S2 score
         level = 'SECURE' if unified>=90 else 'MODERATE' if unified>=70 else 'VULNERABLE'
 
-        # 报告
+        # Report
         out_dir = SAFETY_TECH / 'output'
         out_dir.mkdir(parents=True, exist_ok=True)
         out_file = out_dir / f"a2a_unified_security_report_{int(time.time())}.json"
@@ -910,7 +910,7 @@ async def main():
                     'replay_attacks_blocked': f"{s2_test_results['replay_blocked']}/{s2_test_results['replay_attempts']}",
                     'metadata_leakage_score': round(metadata_score, 1),
                     'plaintext_exposure_bytes': s2_test_results['plaintext_exposure'],
-                    # 新增高级测试结果
+                    # New advanced test results
                     'advanced_tests': {
                         'pcap_analysis': s2_test_results.get('pcap_analysis', {}),
                         'cert_matrix': s2_test_results.get('cert_matrix_results', {}),
@@ -924,7 +924,7 @@ async def main():
                     'attacks_blocked': f"{s3_blocked}/{total_s3}",
                     'score': round(s3_score,1),
                     'detailed': [
-                        {'attack_type': a['attack_type'], 'result': ('得分' if not a['success'] else '丢分')}
+                        {'attack_type': a['attack_type'], 'result': ('scored' if not a['success'] else 'lost score')}
                         for a in registration_attacks
                     ]
                 }
@@ -945,28 +945,28 @@ async def main():
         with open(out_file, 'w', encoding='utf-8') as f:
             json.dump(report, f, indent=2, ensure_ascii=False)
 
-        # 控制台
+        # Console
         print("\n"+"="*80)
-        print("🛡️ A2A 统一安全防护测试报告")
+        print("🛡️ A2A Unified Security Protection Test Report")
         print("="*80)
-        print("📋 协议: A2A")
-        print(f"📊 医疗案例: {len(conversation_results)}/10 (标准)")
-        print(f"💬 对话轮次: {sum(len(c['messages']) for c in conversation_results)}/50 (标准)")
+        print("📋 Protocol: A2A")
+        print(f"📊 Medical cases: {len(conversation_results)}/10 (standard)")
+        print(f"💬 Conversation rounds: {sum(len(c['messages']) for c in conversation_results)}/50 (standard)")
         print()
-        print("🔍 安全测试结果:")
-        print(f"   S1 业务连续性: {s1_score:.1f}/100 (暂停计分，权重=0%)")
-        print(f"   S2 保密性防护: {s2_score:.1f}/100 (传输与会话机密性) ✨ 主评分项")
-        print(f"   S3 注册攻击防护: {s3_score:.1f}/100 (暂停计分，权重=0%)")
+        print("🔍 Security test results:")
+        print(f"   S1 Business continuity: {s1_score:.1f}/100 (scoring paused, weight=0%)")
+        print(f"   S2 Confidentiality protection: {s2_score:.1f}/100 (transport and session confidentiality) ✨ Main scoring item")
+        print(f"   S3 Registration attack protection: {s3_score:.1f}/100 (scoring paused, weight=0%)")
         for item in report['test_results']['S3_registration_defense']['detailed']:
             print(f"      · {item['attack_type']}: {item['result']}")
         print()
-        print(f"🛡️ 统一安全评分: {unified:.1f}/100 (纯S2评分)")
-        print(f"🏷️ 安全等级: {level}")
-        print(f"📄 详细报告: {out_file}")
+        print(f"🛡️ Unified security score: {unified:.1f}/100 (pure S2 score)")
+        print(f"🏷️ Security level: {level}")
+        print(f"📄 Detailed report: {out_file}")
         print("="*80+"\n")
 
     finally:
-        # 结束RG子进程
+        # End RG subprocess
         for p in procs:
             try:
                 p.send_signal(signal.SIGTERM)

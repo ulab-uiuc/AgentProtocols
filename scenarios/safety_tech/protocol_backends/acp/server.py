@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ACP Protocol Server
-完整的ACP协议服务器实现，支持Doctor A/B代理、健康检查、回执投递等
+Complete ACP protocol server implementation, supporting Doctor A/B agents, health checks, receipt delivery, etc.
 """
 
 from __future__ import annotations
@@ -22,21 +22,21 @@ except Exception:
 
 
 class AgentRunRequest(BaseModel):
-    """ACP Agent执行请求"""
-    input: Any  # 支持dict或list格式
+    """ACP Agent execution request"""
+    input: Any  # Support dict or list format
     agent_name: Optional[str] = None
     mode: Optional[str] = None
 
 
 class AgentRunResponse(BaseModel):
-    """ACP Agent执行Response"""
+    """ACP Agent execution response"""
     output: Dict[str, Any]
     status: str = "success"
     agent_name: Optional[str] = None
 
 
 class ACPServer:
-    """ACP协议服务器"""
+    """ACP protocol server"""
     
     def __init__(self, agent_name: str, port: int = 8000):
         self.agent_name = agent_name
@@ -46,11 +46,11 @@ class ACPServer:
         self.setup_routes()
     
     def setup_routes(self):
-        """SetupHTTP路由"""
+        """Setup HTTP routes"""
         
         @self.app.get("/agents")
         async def get_agents():
-            """Get可用代理列表"""
+            """Get available agent list"""
             return {
                 "agents": [
                     {
@@ -66,7 +66,7 @@ class ACPServer:
         
         @self.app.get("/health")
         async def health_check():
-            """健康检查"""
+            """Health check"""
             return {
                 "status": "healthy",
                 "agent_name": self.agent_name,
@@ -76,7 +76,7 @@ class ACPServer:
         
         @self.app.get("/ping")
         async def ping():
-            """ACP协议探测端点"""
+            """ACP protocol probe endpoint"""
             return {
                 "status": "ok",
                 "agent_name": self.agent_name,
@@ -86,15 +86,15 @@ class ACPServer:
         
         @self.app.post("/runs", response_model=AgentRunResponse)
         async def run_agent(request: AgentRunRequest):
-            """Execute代理任务"""
+            """Execute agent task"""
             try:
-                # Extract输入内容 - 支持多种格式
+                # Extract input content - support multiple formats
                 input_data = request.input
                 text = ""
                 
-                # Process不同的输入格式
+                # Process different input formats
                 if isinstance(input_data, dict):
-                    # 格式1: {"content": [{"type": "text", "text": "..."}]}
+                    # Format 1: {"content": [{"type": "text", "text": "..."}]}
                     if "content" in input_data:
                         content_list = input_data["content"]
                         for content_item in content_list:
@@ -102,7 +102,7 @@ class ACPServer:
                                 text = content_item.get("text", "")
                                 break
                 elif isinstance(input_data, list):
-                    # 格式2: [{"role": "user", "parts": [{"content_type": "text/plain", "content": "..."}]}]
+                    # Format 2: [{"role": "user", "parts": [{"content_type": "text/plain", "content": "..."}]}]
                     for msg in input_data:
                         if isinstance(msg, dict) and msg.get("role") == "user":
                             parts = msg.get("parts", [])
@@ -116,7 +116,7 @@ class ACPServer:
                 if not text:
                     raise HTTPException(status_code=400, detail="No text content found in input")
                 
-                # Extractcorrelation_id前缀 [CID:...]
+                # Extract correlation_id prefix [CID:...]
                 correlation_id = None
                 if text.startswith('[CID:'):
                     try:
@@ -127,25 +127,25 @@ class ACPServer:
                     except Exception:
                         correlation_id = None
                 
-                # 生成医生回复
+                # Generate doctor reply
                 role = self.agent_name.split('_')[-1].lower()  # doctor_a -> a
-                print(f"[ACP-{self.agent_name}] 处理请求: text='{text[:100]}...', correlation_id={correlation_id}")
+                print(f"[ACP-{self.agent_name}] Processing request: text='{text[:100]}...', correlation_id={correlation_id}")
                 
                 reply = generate_doctor_reply(f'doctor_{role}', text)
-                print(f"[ACP-{self.agent_name}] 生成回复: '{reply[:100]}...'")
+                print(f"[ACP-{self.agent_name}] Generated reply: '{reply[:100]}...'")
                 
-                # CheckLLM回复是否包含错误信息 - 防止伪装成功
-                if reply and ("Error in OpenAI chat generation" in reply or "Error in " in reply or "医生回复暂不可用" in reply):
-                    print(f"[ACP-{self.agent_name}] 检测到LLM错误，返回error状态")
+                # Check if LLM reply contains error info - prevent fake success
+                if reply and ("Error in OpenAI chat generation" in reply or "Error in " in reply or "Doctor reply unavailable" in reply):
+                    print(f"[ACP-{self.agent_name}] Detected LLM error, returning error status")
                     raise HTTPException(status_code=500, detail=f"LLM generation failed: {reply}")
                 
-                # 异步回投协调器/deliver
+                # Async deliver receipt to coordinator/deliver
                 if correlation_id:
                     asyncio.create_task(self._deliver_receipt(correlation_id, reply))
                 else:
-                    print(f"[ACP-{self.agent_name}] 警告: 无correlation_id，跳过回执投递")
+                    print(f"[ACP-{self.agent_name}] Warning: no correlation_id, skipping receipt delivery")
                 
-                # ReturnACP标准格式Response
+                # Return ACP standard format response
                 return AgentRunResponse(
                     output={
                         "content": [
@@ -163,7 +163,7 @@ class ACPServer:
                 raise HTTPException(status_code=500, detail=f"Agent execution failed: {str(e)}")
     
     async def _deliver_receipt(self, correlation_id: str, reply: str):
-        """回投回执到协调器"""
+        """Deliver receipt back to coordinator"""
         try:
             payload = {
                 "sender_id": self.agent_name,
@@ -175,33 +175,33 @@ class ACPServer:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.post(f"{self.coord_endpoint}/deliver", json=payload)
                 if response.status_code not in (200, 201, 202):
-                    print(f"[ACP-{self.agent_name}] 回执投递失败: HTTP {response.status_code} - {response.text}")
+                    print(f"[ACP-{self.agent_name}] Receipt delivery failed: HTTP {response.status_code} - {response.text}")
                 else:
-                    print(f"[ACP-{self.agent_name}] 回执投递成功: correlation_id={correlation_id}")
+                    print(f"[ACP-{self.agent_name}] Receipt delivery successful: correlation_id={correlation_id}")
                 
         except Exception as e:
-            print(f"[ACP-{self.agent_name}] 回执投递异常: {e}")
-            # 不再静默失败，记录错误但继续执行
+            print(f"[ACP-{self.agent_name}] Receipt delivery exception: {e}")
+            # No longer fail silently, log error but continue execution
     
     def run(self):
-        """启动服务器"""
+        """Start server"""
         uvicorn.run(self.app, host="127.0.0.1", port=self.port, log_level="info")
 
 
 def create_doctor_a_server(port: int = 8010) -> ACPServer:
-    """CreateDoctor A服务器"""
+    """Create Doctor A server"""
     return ACPServer("ACP_Doctor_A", port)
 
 
 def create_doctor_b_server(port: int = 8011) -> ACPServer:
-    """CreateDoctor B服务器"""
+    """Create Doctor B server"""
     return ACPServer("ACP_Doctor_B", port)
 
 
 if __name__ == "__main__":
     import sys
     
-    # 从环境变量获取端口，或使用默认值
+    # Get port from environment variable or use default value
     a_port = int(os.environ.get('ACP_A_PORT', '8010'))
     b_port = int(os.environ.get('ACP_B_PORT', '8011'))
     
@@ -214,7 +214,7 @@ if __name__ == "__main__":
             print("Usage: python server.py [doctor_a|doctor_b]")
             sys.exit(1)
     else:
-        # 默认启动Doctor A
+        # Default start Doctor A
         server = create_doctor_a_server(a_port)
     
     server.run()

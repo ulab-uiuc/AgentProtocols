@@ -27,7 +27,7 @@ __all__ = [
 ]
 
 
-# Auto-register发送后端
+# Auto-register send backend
 try:
     from scenarios.safety_tech.protocol_backends.common.interfaces import register_backend
     from .client import A2AProtocolBackend

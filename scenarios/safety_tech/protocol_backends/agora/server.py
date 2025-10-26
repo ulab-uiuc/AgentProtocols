@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Agora 原生服务端（ReceiverServer），使用基于 llm_wrapper 的 Toolformer。
-禁止mock/fallback；严格依赖 agora-protocol。
+Agora native server (ReceiverServer), using llm_wrapper-based Toolformer.
+No mock/fallback allowed; strictly depends on agora-protocol.
 """
 
 from __future__ import annotations
@@ -12,20 +12,20 @@ from typing import Any, Dict, Callable, Optional, TypedDict
 
 import uvicorn
 
-# 定义与client.py兼容的Response类型
+# Define response type compatible with client.py
 class AgoraTextResponse(TypedDict):
     text: str
 
 
 def _build_receiver_with_llm_wrapper(agent_name: str):
-    # 严格导入官方SDK
+    # Strictly import official SDK
     import agora  # type: ignore
     try:
         from scenarios.safety_tech.core.llm_wrapper import generate_doctor_reply
     except Exception:
         from core.llm_wrapper import generate_doctor_reply
 
-    # 构造与 LangChain 兼容的Runnable模型
+    # Construct LangChain-compatible Runnable model
     try:
         from langchain_core.runnables import Runnable
         from langchain_core.messages import BaseMessage, AIMessage
@@ -57,7 +57,7 @@ def _build_receiver_with_llm_wrapper(agent_name: str):
                 self._tools = tools
                 return self
     except ImportError:
-        # 回退到简单实现
+        # Fallback to simple implementation
         class _LLMWrapperModel:
             def __init__(self, role_hint: str) -> None:
                 self._role = role_hint
@@ -83,29 +83,29 @@ def _build_receiver_with_llm_wrapper(agent_name: str):
                         self.content = content
                 return _Msg(reply)
 
-    # doctor_a / doctor_b 角色
+    # doctor_a / doctor_b role
     role = 'doctor_a' if agent_name.endswith('_A') else 'doctor_b'
 
-    # 基于 llm_wrapper 的 Toolformer
+    # llm_wrapper-based Toolformer
     try:
         from agora.toolformers.langchain import LangChainToolformer  # type: ignore
         toolformer = LangChainToolformer(_LLMWrapperModel(role))
     except Exception:
-        # Try备用导入路径
+        # Try alternative import path
         from agora import toolformers  # type: ignore
         toolformer = toolformers.LangChainToolformer(_LLMWrapperModel(role))
 
-    # 显式注册 echo_tool，使用官方 Tool 封装，避免找不到定义
+    # Explicitly register echo_tool, use official Tool wrapper to avoid missing definition
     from agora.common.toolformers.base import Tool as AgoraTool  # type: ignore
 
     def echo_tool(text: str):
         """Echo response for protocol routines.
 
         Args:
-            text: 输入文本
+            text: Input text
 
         Returns:
-            符合Agora协议的文本Response
+            Text response conforming to Agora protocol
         """
         try:
             from scenarios.safety_tech.core.llm_wrapper import generate_doctor_reply
@@ -114,7 +114,7 @@ def _build_receiver_with_llm_wrapper(agent_name: str):
         reply = generate_doctor_reply(role, text)
         return {"text": reply}
 
-    # 手动指定return schema，避免类型推断问题
+    # Manually specify return schema to avoid type inference issues
     echo_tool_wrapped = AgoraTool.from_function(
         echo_tool,
         return_schema={
@@ -132,24 +132,24 @@ def _build_receiver_with_llm_wrapper(agent_name: str):
 
 
 def spawn_doctor(agent_name: str, port: int) -> None:
-    """启动基于 llm_wrapper 的 Agora ReceiverServer。"""
+    """Start llm_wrapper-based Agora ReceiverServer."""
     server = _build_receiver_with_llm_wrapper(agent_name)
     
-    # Try为Agora服务器添加健康检查端点
+    # Try to add health check endpoint for Agora server
     try:
-        # Check服务器是否有添加路由的方法
+        # Check if server has method to add routes
         if hasattr(server, 'app') and hasattr(server.app, 'get'):
             @server.app.get("/health")
             def health_check():
                 return {"status": "healthy", "agent": agent_name, "timestamp": time.time()}
-            print(f"🔍 [Agora服务器] 已为 {agent_name} 添加健康检查端点")
+            print(f"🔍 [Agora Server] Health check endpoint added for {agent_name}")
 
         else:
-            print(f"🔍 [Agora服务器] 无法为 {agent_name} 添加健康检查端点，使用默认方式")
+            print(f"🔍 [Agora Server] Unable to add health check endpoint for {agent_name}, using default method")
     except Exception as e:
-        print(f"🔍 [Agora服务器] 添加健康检查端点失败: {e}")
+        print(f"🔍 [Agora Server] Failed to add health check endpoint: {e}")
     
-    # ReceiverServer 自带 run(port=)，这里通过其run启动
+    # ReceiverServer has built-in run(port=), start through its run method
     server.run(port=port)
 
 

@@ -27,27 +27,27 @@ scenario:
   # Agent reconnection configuration
   enable_reconnection: true
   reconnection_delay: 10.0  # How long to wait before attempting reconnection after failure (seconds)
-  reconnection_timeout: 30.0  # 重连超时时间 (秒)
+  reconnection_timeout: 30.0  # Reconnection timeout (seconds)
 
 # Shard QA Task Configuration
 shard_qa:
-  # QA任务的数据目录
+  # Data directory for QA tasks
   data_dir: "shard_qa/data"
   
   # QA task execution configuration
   questions_file: "qa_questions.json"
   fragments_file: "knowledge_fragments.json"
   
-  # 正常阶段持续时间（30秒）
+  # Normal phase duration (30 seconds)
   normal_phase_duration: 30.0
   
-  # 每个QA周期的超时时间
+  # Timeout for each QA cycle
   qa_cycle_timeout: 15.0
   
   # Agent role configuration
   roles:
-    coordinator: 1  # 1个协调器
-    worker: 2       # 2个工作者（总共3个agent时）
+    coordinator: 1  # 1 coordinator
+    worker: 2       # 2 workers (total 3 agents)
 
 # Agent network configuration
 agents:

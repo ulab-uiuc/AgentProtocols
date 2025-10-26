@@ -330,7 +330,7 @@ class RegistrationAttackRunner:
             }
             
             cross_protocol_request = {
-                "protocol": self.protocol,  # 声明为当前协议
+                "protocol": self.protocol,  # Declare as current protocol
                 "agent_id": f"cross_protocol_agent_{int(time.time())}",
                 "endpoint": "http://cross-protocol-endpoint:8000",
                 "conversation_id": self.target_conversation_id,

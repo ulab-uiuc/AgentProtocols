@@ -25,7 +25,7 @@ A comprehensive multi-agent communication framework supporting multiple protocol
 - [Development](#-development)
 - [Monitoring & Observability](#-monitoring--observability)
 - [Contributing](#-contributing)
-- [中文文档 (简体中文)](README_zh_CN.md)
+- [Chinese Documentation (Simplified Chinese)](README_zh_CN.md)
 
 ## 🚀 Quick Start
 
@@ -79,7 +79,7 @@ python -m scenarios.gaia.runners.run_a2a        # A2A Protocol
 python -m scenarios.gaia.runners.run_acp        # ACP Protocol
 python -m scenarios.gaia.runners.run_agora      # Agora Protocol
 
-# Meta-protocol coordination
+# Protocol Router coordination
 python -m scenarios.gaia.runners.run_meta_protocol
 ```
 
@@ -106,7 +106,7 @@ python -m scenarios.streaming_queue.runner.run_a2a     # A2A Streaming
 python -m scenarios.streaming_queue.runner.run_acp     # ACP Streaming
 python -m scenarios.streaming_queue.runner.run_agora   # Agora Streaming
 
-# Meta-network coordination
+# Protocol Router coordination
 python -m scenarios.streaming_queue.runner.run_meta_network
 ```
 
@@ -133,14 +133,14 @@ python -m scenarios.safety_tech.runners.run_unified_security_test_a2a
 python -m scenarios.safety_tech.runners.run_unified_security_test_acp
 python -m scenarios.safety_tech.runners.run_unified_security_test_agora
 
-# S2 Meta-protocol security analysis
+# Protocol Router security analysis
 python -m scenarios.safety_tech.runners.run_s2_meta
 ```
 
 ### 4. 🔄 Fail Storm Recovery
 **Purpose**: Fault-tolerant systems with automatic recovery mechanisms
 
-**Supported Protocols**: ANP, A2A, ACP, Agora, Meta-Protocol
+**Supported Protocols**: ANP, A2A, ACP, Agora, Protocol Router
 
 **Usage**:
 ```bash
@@ -152,7 +152,7 @@ python -m scenarios.fail_storm_recovery.runners.run_a2a
 python -m scenarios.fail_storm_recovery.runners.run_acp
 python -m scenarios.fail_storm_recovery.runners.run_agora
 
-# Meta-protocol coordination
+# Protocol Router coordination
 python -m scenarios.fail_storm_recovery.runners.run_meta # no adapter
 python -m scenarios.fail_storm_recovery.runners.run_meta_network # with adapter
 ```
@@ -201,7 +201,7 @@ python /root/Multiagent-Protocol/routerbench/run_benchmark.py
 - **Use Cases**: Tool-enabled agents, LLM-powered workflows
 - **Dependencies**: `agora-protocol`, `langchain`
 
-### Meta-Protocol
+### Protocol Router
 - **Features**: Protocol abstraction, adaptive routing, multi-protocol support
 - **Use Cases**: Protocol-agnostic applications, seamless migration
 
@@ -255,15 +255,15 @@ workflow:
 │                    Multiagent-Protocol                      │
 ├─────────────────────────────────────────────────────────────┤
 │  Scenarios                                                  │
-│  ┌─────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ │
-│  │  GAIA   │ │  Streaming  │ │ Safety Tech │ │ Fail Storm  │ │
-│  │         │ │    Queue    │ │             │ │  Recovery   │ │
-│  └─────────┘ └─────────────┘ └─────────────┘ └─────────────┘ │
+│  ┌─────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐│
+│  │  GAIA   │ │  Streaming  │ │ Safety Tech │ │ Fail Storm  ││
+│  │         │ │    Queue    │ │             │ │  Recovery   ││
+│  └─────────┘ └─────────────┘ └─────────────┘ └─────────────┘│
 ├─────────────────────────────────────────────────────────────┤
 │  Protocol Backends                                          │
-│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────────────┐             │
-│  │ ANP │ │ A2A │ │ ACP │ │Agora│ │Meta-Protocol│             │
-│  └─────┘ └─────┘ └─────┘ └─────┘ └─────────────┘             │
+│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌───────────────┐          │
+│  │ ANP │ │ A2A │ │ ACP │ │Agora│ │Protocol Router│          │
+│  └─────┘ └─────┘ └─────┘ └─────┘ └───────────────┘          │
 ├─────────────────────────────────────────────────────────────┤
 │  Core Infrastructure                                        │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐            │

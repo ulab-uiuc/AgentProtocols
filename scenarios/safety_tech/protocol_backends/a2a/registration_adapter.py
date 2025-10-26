@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 A2A Protocol Registration Adapter
-使用原生 A2A 服务器接口进行注册配合（无 mock / 无 fallback）
+Uses native A2A server interface for registration coordination (no mock / no fallback)
 """
 
 from __future__ import annotations
@@ -14,12 +14,12 @@ import httpx
 
 
 class A2ARegistrationAdapter:
-    """A2A 协议注册适配器（配合 RegistrationGateway）
+    """A2A protocol registration adapter (works with RegistrationGateway)
     
-    设计目标：
-    - 使用原生 A2A 服务接口进行端点探测与证明构造（/health）
-    - 不使用任何 mock、fallback 或虚拟模式
-    - 与其他协议适配器提供一致的外部方法签名
+    Design goals:
+    - Use native A2A service interface for endpoint probing and proof construction (/health)
+    - Do not use any mock, fallback or virtual mode
+    - Provide consistent external method signature with other protocol adapters
     """
 
     def __init__(self, config: Dict[str, Any]):
@@ -33,18 +33,18 @@ class A2ARegistrationAdapter:
         conversation_id: str,
         role: str = "doctor",
     ) -> Dict[str, Any]:
-        """注册 A2A Agent 到 RG
+        """Register A2A Agent to RG
         
-        要求：endpoint 必须是原生 A2A 服务器根地址（可直接访问 /health）
+        Requirements: endpoint must be native A2A server root address (can directly access /health)
         """
-        # 探测 A2A 端点健康状态
+        # Probe A2A endpoint health status
         base = endpoint.rstrip("/")
         async with httpx.AsyncClient() as client:
             health_resp = await client.get(f"{base}/health", timeout=10.0)
             if health_resp.status_code != 200:
                 raise RuntimeError(f"A2A /health probe failed: {health_resp.status_code}")
             
-        # 构造 A2A 原生证明
+        # Construct A2A native proof
         proof = {
             "timestamp": time.time(),
             "nonce": str(uuid.uuid4()),
@@ -81,7 +81,7 @@ class A2ARegistrationAdapter:
         conversation_id: str,
         endpoint: str = "",
     ) -> Dict[str, Any]:
-        """订阅 Observer 到 RG（独立于 A2A 服务器）"""
+        """Subscribe Observer to RG (independent of A2A server)"""
         proof = {
             "timestamp": time.time(),
             "nonce": str(uuid.uuid4()),

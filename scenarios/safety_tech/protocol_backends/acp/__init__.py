@@ -14,13 +14,13 @@ from .agents import (
 )
 from .analyzer import ACPPrivacyAnalyzer, analyze_acp_privacy
 
-# Auto-register发送后端
+# Auto-register send backend
 try:
     from scenarios.safety_tech.protocol_backends.common.interfaces import register_backend
     from .client import ACPProtocolBackend
     register_backend('acp', ACPProtocolBackend())
 except Exception:
-    # 注册失败不应阻塞module导入；运行时会显式报错
+    # Registration failure should not block module import; will explicitly error at runtime
     pass
 
 __all__ = [

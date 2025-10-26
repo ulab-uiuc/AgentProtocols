@@ -49,7 +49,7 @@ def create_safe_privacy_message(message_type: str, payload: dict, target: str = 
         "payload": safe_payload,
         "target": str(target) if target else None,
         "message_id": str(uuid.uuid4()),
-        "protocol": "a2a_privacy"  # 标识隐私测试协议
+        "protocol": "a2a_privacy"  # Identify privacy testing protocol
     }
 
 
@@ -132,7 +132,7 @@ class A2ACommBackend(BaseCommBackend):
                     "message": a2a_message,
                     "receiver_id": dst_id,
                     "sender_id": src_id,
-                    "privacy_context": True  # 标识隐私测试上下文
+                    "privacy_context": True  # Identify privacy testing context
                 }
             )
 

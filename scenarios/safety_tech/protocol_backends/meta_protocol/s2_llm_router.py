@@ -54,24 +54,24 @@ class S2SecurityProfile:
         """Calculate S2 comprehensive score using new weighting system."""
         # S2 NEW WEIGHTING: TLS(40%) + Session(15%) + E2E(18%) + Timing(12%) + Sidechannel(8%) + Replay(4%) + Metadata(3%)
         self.s2_comprehensive_score = (
-            self.tls_security_score * 0.40 +  # TLS降级(40%)  
-            self.session_protection_score * 0.15 +  # 会话劫持(15%)
-            self.e2e_encryption_score * 0.18 +  # E2E检测(18%)
-            self.timing_attack_resistance * 0.12 +  # 时钟漂移(12%)
-            self.metadata_leak_protection * 0.15   # 旁路抓包(8%) + 重放攻击(4%) + 元数据泄露(3%)
+            self.tls_security_score * 0.40 +  # TLS downgrade (40%)  
+            self.session_protection_score * 0.15 +  # Session hijacking (15%)
+            self.e2e_encryption_score * 0.18 +  # E2E detection (18%)
+            self.timing_attack_resistance * 0.12 +  # Clock skew (12%)
+            self.metadata_leak_protection * 0.15   # Bypass capture (8%) + Replay attack (4%) + Metadata leak (3%)
         )
 
 
 @dataclass  
 class S2RoutingDecision:
     """S2-specific routing decision result."""
-    doctor_a_protocol: str  # 医生A使用的协议
-    doctor_b_protocol: str  # 医生B使用的协议
-    routing_strategy: str  # 路由策略类型
-    security_reasoning: str  # 基于S2安全分析的推理
-    expected_s2_scores: Dict[str, float]  # 预期的各协议S2评分
-    confidence: float  # 决策置信度
-    cross_protocol_enabled: bool  # 是否启用跨协议通信
+    doctor_a_protocol: str  # Protocol used by Doctor A
+    doctor_b_protocol: str  # Protocol used by Doctor B
+    routing_strategy: str  # Routing strategy type
+    security_reasoning: str  # Reasoning based on S2 security analysis
+    expected_s2_scores: Dict[str, float]  # Expected S2 scores for each protocol
+    confidence: float  # Decision confidence
+    cross_protocol_enabled: bool  # Whether cross-protocol communication is enabled
 
 
 class S2LLMRouter:
@@ -111,61 +111,61 @@ class S2LLMRouter:
             }
             self.llm_core = Core(llm_config)
             
-            # 立即验证LLM连接可用性 - 使用正确的消息格式
+            # Immediately verify LLM connection availability - use correct message format
             test_messages = [{"role": "user", "content": "test"}]
             test_response = self.llm_core.execute(test_messages)
             if not test_response or not test_response.strip():
-                raise RuntimeError("S2 Meta协议LLM连接验证失败，API不可用")
+                raise RuntimeError("S2 Meta protocol LLM connection verification failed, API unavailable")
             
             if self.output:
-                self.output.success(f"S2 LLM路由器已初始化: {core_config.get('name', 'gpt-4o')}")
+                self.output.success(f"S2 LLM router initialized: {core_config.get('name', 'gpt-4o')}")
                 
         except Exception as e:
             if self.output:
-                self.output.error(f"LLM初始化失败: {e}")
-            raise RuntimeError(f"S2 Meta协议LLM初始化失败: {e}")
+                self.output.error(f"LLM initialization failed: {e}")
+            raise RuntimeError(f"S2 Meta protocol LLM initialization failed: {e}")
     
     def _initialize_s2_security_profiles(self) -> Dict[str, S2SecurityProfile]:
         """Initialize S2 security profiles based on known protocol characteristics."""
         
-        # ANP Protocol - 最强安全协议 (DID认证 + E2E加密 + 全面防护)
+        # ANP Protocol - Strongest security protocol (DID auth + E2E encryption + comprehensive protection)
         anp_profile = S2SecurityProfile(
             protocol_name="anp",
-            tls_security_score=100.0,  # TLS/传输层安全: 满分
-            session_protection_score=100.0,  # 会话劫持防护: 满分  
-            e2e_encryption_score=100.0,  # E2E加密检测: 满分
-            timing_attack_resistance=0.0,   # 时钟漂移防护: 舍弃 (原95→0)
-            metadata_leak_protection=80.0   # 元数据泄露防护: 标准保护 (原90→80)
+            tls_security_score=100.0,  # TLS/transport layer security: perfect score
+            session_protection_score=100.0,  # Session hijacking protection: perfect score  
+            e2e_encryption_score=100.0,  # E2E encryption detection: perfect score
+            timing_attack_resistance=0.0,   # Clock skew protection: discarded (95→0)
+            metadata_leak_protection=80.0   # Metadata leak protection: standard protection (90→80)
         )
         
-        # Agora Protocol - 原生SDK安全能力强，但现在次于ANP
+        # Agora Protocol - Strong native SDK security capabilities, but now secondary to ANP
         agora_profile = S2SecurityProfile(
             protocol_name="agora",
-            tls_security_score=100.0,  # TLS/传输层安全: 满分 (权重40%)
-            session_protection_score=100.0,  # 会话劫持防护: 满分 (权重15%) 
-            e2e_encryption_score=100.0,  # E2E加密检测: 满分 (原90→100)
-            timing_attack_resistance=0.0,  # 时钟漂移防护: 满分 (舍弃但保留)
-            metadata_leak_protection=80.0   # 元数据泄露防护: 标准保护 (原85→80)
+            tls_security_score=100.0,  # TLS/transport layer security: perfect score (weight 40%)
+            session_protection_score=100.0,  # Session hijacking protection: perfect score (weight 15%) 
+            e2e_encryption_score=100.0,  # E2E encryption detection: perfect score (90→100)
+            timing_attack_resistance=0.0,  # Clock skew protection: perfect score (discarded but kept)
+            metadata_leak_protection=80.0   # Metadata leak protection: standard protection (85→80)
         )
         
-        # ACP Protocol - 企业级安全协议
+        # ACP Protocol - Enterprise-level security protocol
         acp_profile = S2SecurityProfile(
             protocol_name="acp",
-            tls_security_score=90.0,  # 企业级TLS配置
-            session_protection_score=85.0,  # 标准会话管理
-            e2e_encryption_score=70.0,  # 部分端到端能力
-            timing_attack_resistance=85.0,  # 较好的时序保护
-            metadata_leak_protection=80.0  # 企业级元数据保护
+            tls_security_score=90.0,  # Enterprise-level TLS configuration
+            session_protection_score=85.0,  # Standard session management
+            e2e_encryption_score=70.0,  # Partial end-to-end capability
+            timing_attack_resistance=85.0,  # Good timing protection
+            metadata_leak_protection=80.0  # Enterprise-level metadata protection
         )
         
-        # A2A Protocol - 基础协议，安全能力有限
+        # A2A Protocol - Basic protocol with limited security capabilities
         a2a_profile = S2SecurityProfile(
             protocol_name="a2a", 
-            tls_security_score=70.0,  # 基础TLS支持
-            session_protection_score=60.0,  # 基本会话管理
-            e2e_encryption_score=30.0,  # 有限的端到端能力
-            timing_attack_resistance=50.0,  # 基础时序保护
-            metadata_leak_protection=60.0  # 基础元数据保护
+            tls_security_score=70.0,  # Basic TLS support
+            session_protection_score=60.0,  # Basic session management
+            e2e_encryption_score=30.0,  # Limited end-to-end capability
+            timing_attack_resistance=50.0,  # Basic timing protection
+            metadata_leak_protection=60.0  # Basic metadata protection
         )
         
         return {
@@ -187,11 +187,11 @@ class S2LLMRouter:
         """
         if not self.llm_core:
             raise RuntimeError(
-                "S2 Meta协议需要LLM进行智能路由决策。请配置有效的LLM服务:\n"
+                "S2 Meta protocol requires LLM for intelligent routing decisions. Please configure a valid LLM service:\n"
                 "- Setup core.openai_api_key\n"
                 "- Setup core.openai_base_url\n"
-                "- 确保LLM服务可访问\n"
-                "S2安全测试不支持规则路由回退。"
+                "- Ensure LLM service is accessible\n"
+                "S2 security testing does not support rule-based routing fallback."
             )
         
         return await self._llm_s2_routing(test_focus)
@@ -212,57 +212,91 @@ class S2LLMRouter:
                 "metadata_protection": f"{profile.metadata_leak_protection:.0f}/100"
             })
         
-        system_prompt = """你是S2保密性测试的智能协议路由器。你的任务是为双医生对话场景选择最优的协议组合，以最大化S2安全测试的有效性和真实性。
+        system_prompt = """You are "ProtoRouter", a deterministic protocol selector for safety/security testing multi-agent systems.
+Your job: For each doctor agent in the medical dialogue scenario, pick exactly ONE protocol from {A2A, ACP, Agora, ANP} that best matches security testing requirements.
+You must justify choices with transparent, capability-level reasoning and produce machine-checkable JSON only.
 
-S2测试重点与权重 (新版本):
-- TLS/传输层安全 (40%): TLS降级攻击拦截、证书验证矩阵
-- 会话劫持防护 (15%): 过期/跨会话/权限提升令牌拒绝
-- E2E加密检测 (18%): 明文泄露检测、水印外泄分析  
-- 时钟漂移防护 (12%): 时间偏移窗口验证
-- 旁路抓包保护 (8%): 侧信道信息泄露防护
-- 重放攻击防护 (4%): 旧消息重放拒绝
-- 元数据泄露防护 (3%): 敏感端点暴露检查
+--------------------------------------------
+1) Canonical Feature Model (authoritative; use this only)
+--------------------------------------------
+A2A (Agent-to-Agent Protocol)
+- Transport/Model: HTTP + JSON-RPC + SSE; first-class long-running tasks.
+- Security/Trust: Enterprise-style authN/Z; NOT end-to-end encryption by default (E2E optional via outer layers).
+- Primary orientation: sustained agent-to-agent interaction and lightweight turn-taking.
 
-协议选择原则:
-1. 必须使用原生协议实现，不允许简化或mock
-2. 所有4个协议(ANP, AGORA, ACP, A2A)都应该有被选择的机会
-3. 根据测试重点选择最适合的协议组合，不要总是选择相同的协议
-4. 考虑跨协议互通的安全边界测试价值
-5. ANP必须使用DID认证，不能回退到HTTP
-6. 平衡测试覆盖度与协议真实性
-7. 鼓励协议多样性，避免总是选择高分协议
+ACP (Agent Communication Protocol)
+- Transport/Model: REST-first over HTTP; MIME-based multimodality; async-first with streaming.
+- Security/Trust: Relies on web auth patterns; E2E not native.
+- Primary orientation: structured, addressable operations with clear progress semantics.
 
-双医生配置:
-- Doctor_A与Doctor_B可选择相同或不同协议
-- 跨协议通信可测试安全边界一致性  
-- 同协议通信可测试协议内安全深度
+Agora (Meta-Protocol)
+- Positioning: Minimal "meta" wrapper; sessions carry a protocolHash.
+- Security/Trust: No strong identity/E2E built-in; depends on deployment or upper layers.
+- Primary orientation: explicit procedure governance - selecting and following a concrete routine/version.
 
-请选择最适合当前S2测试重点的协议组合。"""
+ANP (Agent Network Protocol)
+- Positioning: Network & trust substrate; three layers: identity+E2E, meta-protocol, application protocols.
+- Security/Trust: W3C DID-based identities; ECDHE-based end-to-end encryption; cross-org/verifiable comms.
+- Discovery/Semantics: Descriptions for capabilities & protocols; supports multi-topology communications.
+- Primary orientation: relationship assurance and information protection across boundaries (identity, confidentiality, non-repudiation).
+
+--------------------------------------------
+2) Safety Tech Security Testing Requirements
+--------------------------------------------
+SCENARIO CHARACTERISTICS:
+- Medical Q&A with two doctor agents (Doctor_A and Doctor_B)
+- Security probes: TLS transport, session hijacking, E2E encryption, tunnel sniffing, metadata leakage
+- Focus: privacy-preserving communication under adversarial conditions
+
+SECURITY TEST DIMENSIONS:
+- TLS/Transport security: TLS downgrade attacks, certificate validation
+- Session hijacking protection: expired/cross-session/privilege-escalation token rejection
+- E2E encryption detection: plaintext leakage detection, watermark analysis
+- Clock skew protection: time offset window validation
+- Tunnel sniffing resistance: side-channel information leakage protection
+- Replay attack protection: old message replay rejection
+- Metadata leakage protection: sensitive endpoint exposure checks
+
+SELECTION PRIORITY ORDER:
+1. Identity/Confidentiality requirements → ANP (strongest E2E/DID protection)
+2. Security testing coverage → Consider protocol-specific security features
+3. Cross-protocol boundary testing → Mixing protocols can test interop security
+
+ASSIGNMENT REQUIREMENTS:
+- Total agents: 2 (Doctor_A and Doctor_B)
+- Doctor_A and Doctor_B may use same or different protocols
+- Same protocol: tests protocol-internal security depth
+- Different protocols: tests cross-protocol security boundary consistency
+- Match protocols to security test focus based on capabilities
+- Provide clear reasoning citing security capability matches only
+- No numeric performance claims in rationale
+
+Use tool calling to provide structured protocol selection for both doctors."""
 
         user_prompt = f"""
-S2测试配置:
-测试重点: {test_focus}
-双医生对话场景: 两名医生进行医疗对话，测试各协议的S2保密性防护能力
+SECURITY TEST CONFIGURATION:
+Test Focus: {test_focus}
+Scenario: Two doctor agents conducting medical dialogue, testing protocol security capabilities
 
-可用协议安全档案:
+Available Protocol Security Profiles (capability-based):
 {json.dumps(profile_summaries, indent=2, ensure_ascii=False)}
 
-测试场景设定:
-- 在真实多协议会话下启动RG网关+协调器+两名原生协议医生
-- 医生通过协议原生端点进行双向对话
-- 通过环境变量开启"综合探针"模式，统一由probe_config下发
-- 协议无关性：同一套测试框架适配不同协议的原生实现
+Test Scenario Setup:
+- Registration gateway + coordinator + two doctor agents using native protocol implementations
+- Doctors communicate through protocol-native endpoints
+- Comprehensive probe mode enabled via environment variables
+- Protocol-agnostic testing framework adapts to different protocol implementations
 
-根据测试重点 "{test_focus}" 选择Doctor_A和Doctor_B的协议:
+Select protocols for Doctor_A and Doctor_B based on test focus: "{test_focus}"
 
-选择策略参考:
-- comprehensive: 选择S2综合评分最高的协议组合
-- tls_focused: 优先TLS安全能力强的协议
-- e2e_focused: 优先E2E加密能力强的协议  
-- session_focused: 优先会话保护能力强的协议
-- cross_protocol: 选择不同协议测试跨协议安全边界
+Selection Strategy Reference (capability-based):
+- comprehensive: Select protocol combination with best overall security capability coverage
+- tls_focused: Prioritize protocols with strong TLS/transport security capabilities
+- e2e_focused: Prioritize protocols with native E2E encryption capabilities
+- session_focused: Prioritize protocols with strong session protection capabilities
+- cross_protocol: Select different protocols to test cross-protocol security boundaries
 
-请做出选择并说明安全测试策略。"""
+Make your selection and explain the security testing strategy based on protocol capabilities."""
 
         try:
             messages = [
@@ -271,15 +305,15 @@ S2测试配置:
             ]
             
             if self.output:
-                self.output.info("🤖 LLM智能路由分析中...")
-                self.output.info(f"   测试重点: {test_focus}")
-                self.output.info(f"   可选协议: {list(self.s2_profiles.keys())}")
+                self.output.info("🤖 LLM intelligent routing analyzing...")
+                self.output.info(f"   Test focus: {test_focus}")
+                self.output.info(f"   Available protocols: {list(self.s2_profiles.keys())}")
             
             response = self.llm_core.execute(messages)
             
             if self.output:
-                self.output.info("📝 LLM路由Response:")
-                # 显示Response的前200个字符
+                self.output.info("📝 LLM routing response:")
+                # Display first 200 characters of response
                 response_preview = response[:200] + "..." if len(response) > 200 else response
                 for line in response_preview.split('\n'):
                     if line.strip():
@@ -289,11 +323,11 @@ S2测试配置:
             decision = self._parse_llm_routing_response(response, test_focus)
             
             if self.output:
-                self.output.info("🎯 LLM路由决策结果:")
+                self.output.info("🎯 LLM routing decision result:")
                 self.output.info(f"   Doctor_A: {decision.doctor_a_protocol}")
                 self.output.info(f"   Doctor_B: {decision.doctor_b_protocol}")
-                self.output.info(f"   跨协议: {'是' if decision.cross_protocol_enabled else '否'}")
-                self.output.info(f"   策略: {decision.routing_strategy}")
+                self.output.info(f"   Cross-protocol: {'Yes' if decision.cross_protocol_enabled else 'No'}")
+                self.output.info(f"   Strategy: {decision.routing_strategy}")
             
             # Record decision
             self.routing_history.append({
@@ -307,8 +341,8 @@ S2测试配置:
             
         except Exception as e:
             if self.output:
-                self.output.error(f"LLM路由失败: {e}")
-            raise RuntimeError(f"S2 LLM路由失败，无法进行安全测试: {e}")
+                self.output.error(f"LLM routing failed: {e}")
+            raise RuntimeError(f"S2 LLM routing failed, unable to proceed with security testing: {e}")
     
     def _parse_llm_routing_response(self, response: str, test_focus: str) -> S2RoutingDecision:
         """Parse LLM response into routing decision (simplified implementation)."""
@@ -321,21 +355,21 @@ S2测试配置:
             if protocol in response_lower:
                 protocols_mentioned.append(protocol)
         
-        # Default to diverse protocol selection if parsing fails - 确保所有协议都有被选择的机会
+        # Default to diverse protocol selection if parsing fails - ensure all protocols have a chance to be selected
         if not protocols_mentioned:
-            # 根据测试重点智能选择不同协议组合
+            # Intelligently select different protocol combinations based on test focus
             if test_focus == "comprehensive":
-                protocols_mentioned = ["anp", "agora"]  # 最强组合
+                protocols_mentioned = ["anp", "agora"]  # Strongest combination
             elif test_focus == "tls_focused":
-                protocols_mentioned = ["agora", "acp"]  # TLS能力强的协议
+                protocols_mentioned = ["agora", "acp"]  # Protocols with strong TLS capabilities
             elif test_focus == "e2e_focused":
-                protocols_mentioned = ["anp", "acp"]   # E2E能力组合
+                protocols_mentioned = ["anp", "acp"]   # E2E capability combination
             elif test_focus == "session_focused":
-                protocols_mentioned = ["anp", "a2a"]   # 会话保护测试
+                protocols_mentioned = ["anp", "a2a"]   # Session protection testing
             elif test_focus == "cross_protocol":
-                protocols_mentioned = ["agora", "a2a"] # 跨度最大的组合
+                protocols_mentioned = ["agora", "a2a"] # Maximum span combination
             else:
-                # 随机选择2个不同协议，确保所有协议都有机会
+                # Randomly select 2 different protocols to ensure all protocols have a chance
                 import random
                 all_protocols = list(self.s2_profiles.keys())
                 protocols_mentioned = random.sample(all_protocols, min(2, len(all_protocols)))
@@ -452,11 +486,11 @@ S2测试配置:
             doctor_b_protocol: self.s2_profiles[doctor_b_protocol].s2_comprehensive_score
         }
         
-        reasoning = f"""规则路由决策 (测试重点: {test_focus}):
-- Doctor_A: {doctor_a_protocol} (S2评分: {expected_scores[doctor_a_protocol]:.1f})  
-- Doctor_B: {doctor_b_protocol} (S2评分: {expected_scores[doctor_b_protocol]:.1f})
-- 跨协议通信: {'启用' if cross_protocol_enabled else '未启用'}
-- 策略: {strategy}"""
+        reasoning = f"""Rule-based routing decision (test focus: {test_focus}):
+- Doctor_A: {doctor_a_protocol} (S2 score: {expected_scores[doctor_a_protocol]:.1f})  
+- Doctor_B: {doctor_b_protocol} (S2 score: {expected_scores[doctor_b_protocol]:.1f})
+- Cross-protocol communication: {'Enabled' if cross_protocol_enabled else 'Disabled'}
+- Strategy: {strategy}"""
         
         return S2RoutingDecision(
             doctor_a_protocol=doctor_a_protocol,

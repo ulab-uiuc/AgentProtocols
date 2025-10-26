@@ -206,35 +206,57 @@ class LLMIntelligentRouter:
             protocol_descriptions.append(protocol_desc)
         
         # Create LLM prompt for protocol selection optimized for fail storm recovery
-        system_prompt = """You are an intelligent protocol router for a fail storm recovery system. 
-Your goal is to select the optimal protocols for ALL agents to maximize answer discovery rate and minimize recovery time during fault scenarios.
+        system_prompt = """You are "ProtoRouter", a deterministic protocol selector for fail-storm recovery multi-agent systems.
+Your job: For each agent in the ring topology, pick exactly ONE protocol from {A2A, ACP, Agora, ANP} that best matches the requirements.
+You must justify choices with transparent, capability-level reasoning and produce machine-checkable JSON only.
 
-ACTUAL PROTOCOL PERFORMANCE DATA (from real fail_storm_recovery tests):
-- ANP: 61.0% success rate, 22.0% answer discovery rate, 6.76s avg response, 10.0s recovery time
-- Agora: 60.0% success rate, 20.0% answer discovery rate, 7.10s avg response, 6.1s recovery time  
-- A2A: 59.6% success rate, 19.1% answer discovery rate, 7.39s avg response, 6.0s recovery time
-- ACP: 59.0% success rate, 17.9% answer discovery rate, 7.83s avg response, 8.0s recovery time
+--------------------------------------------
+1) Canonical Feature Model (authoritative; use this only)
+--------------------------------------------
+A2A (Agent-to-Agent Protocol)
+- Transport/Model: HTTP + JSON-RPC + SSE; first-class long-running tasks; task/artifact lifecycle.
+- Capability/UX: Multimodal messages and explicit UI capability negotiation.
+- Integration: Complements MCP; broad vendor ecosystem.
+- Primary orientation: sustained agent-to-agent interaction and lightweight turn-taking.
 
-FAIL STORM RECOVERY CRITICAL METRICS (in priority order):
-1. RECOVERY TIME (most critical) - A2A leads at 6.0s, Agora 6.1s, ACP 8.0s, ANP 10.0s
-2. ANSWER DISCOVERY RATE (important) - ANP 22.0%, Agora 20.0%, A2A 19.1%, ACP 17.9%
-3. Overall success rate - ANP 61.0%, Agora 60.0%, A2A 59.6%, ACP 59.0%
-4. Response time - ANP 6.76s, Agora 7.10s, A2A 7.39s, ACP 7.83s
+ACP (Agent Communication Protocol)
+- Transport/Model: REST-first over HTTP; MIME-based multimodality; async-first with streaming support.
+- Discovery: Agent Manifest; clear single/multi-server topologies.
+- Integration: Minimal SDK expectations; straightforward REST exposure.
+- Primary orientation: structured, addressable operations with clear progress semantics and repeatable handling at scale.
+
+Agora (Meta-Protocol)
+- Positioning: Minimal "meta" wrapper; sessions carry a protocolHash binding to a plain-text protocol doc.
+- Discovery: /.well-known returns supported protocol hashes.
+- Evolution: Reusable "routines"; fast protocol evolution and heterogeneity tolerance.
+- Primary orientation: explicit procedure governance - selecting and following a concrete routine/version.
+
+ANP (Agent Network Protocol)
+- Positioning: Network & trust substrate; three layers: identity+E2E, meta-protocol, application protocols.
+- Security/Trust: W3C DID-based identities; ECDHE-based end-to-end encryption.
+- Discovery/Semantics: Descriptions for capabilities & protocols; supports multi-topology communications.
+- Primary orientation: relationship assurance and information protection across boundaries.
+
+--------------------------------------------
+2) Fail-Storm Recovery Scenario Requirements
+--------------------------------------------
+SCENARIO CHARACTERISTICS:
+- Ring topology with 8 QA agents processing sharded documents
+- Cyclic fault injection: 3 agents killed every 120 seconds
+- Focus: fault detection, rapid recovery, answer discovery preservation
+- Heartbeat monitoring with timeout-based failure detection
+
+SELECTION PRIORITY ORDER:
+1. Identity/Confidentiality requirements → ANP (if E2E/DID required)
+2. Operation semantics → Consider idempotency, state recovery, reconnection
+3. Interaction preferences → long-running sessions, fault tolerance
 
 ASSIGNMENT REQUIREMENTS:
-- You must assign exactly 8 agents (agent_1 through agent_8)
-- PRIMARY GOAL: Minimize recovery time during faults (A2A: 6.0s is optimal)
-- SECONDARY GOAL: Maximize answer discovery rate while maintaining fast recovery
-- Consider fault tolerance: use protocols with proven fast recovery
-- Prioritize speed over marginal accuracy gains
-
-OPTIMAL STRATEGY:
-- Use A2A for fastest recovery (6.0s) - critical for fault tolerance
-- Use Agora for balanced performance (6.1s recovery) and good answer rate (20.0%)
-- Consider ANP only if answer discovery rate significantly outweighs recovery time concerns
-- AVOID ACP due to poor performance across all metrics
-- You can assign 0 agents to underperforming protocols
-- Focus on 1-2 best protocols rather than spreading across all protocols
+- Total agents: 8 (assign exactly 8, agent_1 through agent_8)
+- Match protocols to fault tolerance requirements based on capabilities
+- Consider: rapid reconnection, state recovery, ring communication
+- Provide clear reasoning citing capability matches only
+- No numeric performance claims in rationale
 
 Use tool calling to provide structured protocol selection for all 8 agents."""
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 RG-Integrated Coordinator
-基于注册网关(RG)的协调器实现，支持动态路由和Observer角色
+Coordinator implementation based on Registration Gateway (RG), supporting dynamic routing and Observer roles
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ParticipantInfo:
-    """参与者信息"""
+    """Participant information"""
     agent_id: str
     protocol: str
     endpoint: str
@@ -30,9 +30,9 @@ class ParticipantInfo:
     joined_at: float
 
 
-@dataclass 
+@dataclass
 class ConversationMessage:
-    """会话消息"""
+    """Conversation message"""
     sender_id: str
     receiver_id: str
     content: str
@@ -43,7 +43,7 @@ class ConversationMessage:
 
 
 class RGCoordinator:
-    """基于RG的协调器"""
+    """RG-based coordinator"""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
@@ -51,38 +51,38 @@ class RGCoordinator:
         self.conversation_id = config.get('conversation_id', f'conv_{int(time.time())}')
         self.port = config.get('coordinator_port', 8888)
         
-        # FastAPI应用
+        # FastAPI application
         self.app = FastAPI(title="RG Coordinator")
         self.setup_routes()
         
-        # 参与者管理
+        # Participant management
         self.participants: Dict[str, ParticipantInfo] = {}
-        # observers属性已移除 - 新S2设计不需要Observer机制
+        # observers property removed - new S2 design does not require Observer mechanism
         
-        # 消息历史（用于backfill）
+        # Message history (for backfill)
         self.message_history: List[ConversationMessage] = []
         self.max_history_size = config.get('max_history_size', 100)
         
-        # Bridge配置
+        # Bridge configuration
         self.bridge_config = config.get('bridge', {})
         self.enable_live_mirror = self.bridge_config.get('enable_live_mirror', True)
         self.enable_backfill = self.bridge_config.get('enable_backfill', True)
         self.backfill_limit = self.bridge_config.get('backfill_limit', 10)
         
-        # 轮询配置
+        # Polling configuration
         self.directory_poll_interval = config.get('directory_poll_interval', 5.0)
         self.running = False
         
-        # 性能优化：缓存协议后端注册表
+        # Performance optimization: cache protocol backend registry
         self._backend_registry = None
         self._registry_initialized = False
     
     def setup_routes(self):
-        """SetupHTTP路由"""
+        """Setup HTTP routes"""
         
         @self.app.post("/route_message")
         async def route_message_endpoint(payload: Dict[str, Any]):
-            """消息路由端点"""
+            """Message routing endpoint"""
             try:
                 sender_id = payload.get('sender_id')
                 receiver_id = payload.get('receiver_id')
@@ -90,20 +90,20 @@ class RGCoordinator:
                 if not sender_id:
                     raise HTTPException(status_code=400, detail="Missing sender_id")
                 
-                # 统一关联ID：如未提供则生成
+                # Unified correlation ID: generate if not provided
                 corr = payload.get('correlation_id')
                 if not corr:
                     corr = f"corr_{int(time.time()*1000)}"
                     payload['correlation_id'] = corr
 
-                # Extract探针配置（如果存在）
+                # Extract probe configuration (if exists)
                 probe_config = payload.get('probe_config')
 
                 result = await self.route_message(sender_id, receiver_id, payload, probe_config)
                 return result
                 
             except Exception as e:
-                # 对于未注册发送者的错误，使用debug级别（这通常是攻击测试）
+                # For unregistered sender errors, use debug level (this is usually attack testing)
                 if "not registered" in str(e):
                     logger.debug(f"Message routing blocked: {e}")
                 else:
@@ -112,18 +112,18 @@ class RGCoordinator:
 
         @self.app.post("/deliver")
         async def deliver_message_endpoint(payload: Dict[str, Any]):
-            """由目标Agent回投的业务回执。
-            期望字段：sender_id, receiver_id, correlation_id, content/text/body 可三选一。
+            """Business acknowledgment returned by target Agent.
+            Expected fields: sender_id, receiver_id, correlation_id, content/text/body (choose one of three).
             """
             try:
                 sender_id = payload.get('sender_id')
                 receiver_id = payload.get('receiver_id')
                 if not sender_id:
                     raise HTTPException(status_code=400, detail="Missing sender_id")
-                # 内容抽取
+                # Content extraction
                 content = self._extract_message_content(payload)
                 correlation_id = payload.get('correlation_id')
-                # 角色推断
+                # Role inference
                 role = self.participants.get(sender_id).role if sender_id in self.participants else 'unknown'
                 message = ConversationMessage(
                     sender_id=sender_id,
@@ -134,9 +134,9 @@ class RGCoordinator:
                     role=role,
                     correlation_id=correlation_id
                 )
-                # 入库
+                # Store in database
                 self._store_message(message)
-                # 镜像给Observers
+                # Mirror to Observers
                 if self.enable_live_mirror:
                     await self._broadcast_to_observers(message, payload)
                 return {"status": "received", "message_id": message.message_id, "correlation_id": correlation_id}
@@ -148,58 +148,58 @@ class RGCoordinator:
         
         @self.app.get("/conversation_status")
         async def get_conversation_status_endpoint():
-            """Get会话状态"""
+            """Get conversation status"""
             return await self.get_conversation_status()
         
         @self.app.get("/message_history")
         async def get_message_history_endpoint(limit: int = 50):
-            """Get消息历史"""
+            """Get message history"""
             return await self.get_message_history(limit)
         
         @self.app.get("/health")
         async def health_check():
-            """健康检查"""
+            """Health check"""
             return {
                 "status": "healthy",
                 "conversation_id": self.conversation_id,
                 "participants": len(self.participants),
-                "observers": 0,  # Observer机制已移除
+                "observers": 0,  # Observer mechanism removed
                 "message_count": len(self.message_history)
             }
         
     async def start(self):
-        """启动协调器"""
+        """Start coordinator"""
         self.running = True
         
-        # 立即执行一次参与者刷新，确保启动时有参与者信息
+        # Execute participant refresh immediately to ensure participant info is available at startup
         logger.info("Starting initial participant refresh...")
         await self._refresh_participants()
         
-        # Start目录轮询任务
+        # Start directory polling task
         asyncio.create_task(self._directory_polling_loop())
         
-        # StartHTTP服务器
+        # Start HTTP server
         import threading
         def run_server():
             uvicorn.run(self.app, host="127.0.0.1", port=self.port, log_level="warning", access_log=False, lifespan="off", loop="asyncio", http="h11")
         
         server_thread = threading.Thread(target=run_server, daemon=True)
         server_thread.start()
-        await asyncio.sleep(2)  # Wait服务器启动
+        await asyncio.sleep(2)  # Wait for server startup
         
-        # 再次刷新参与者，确保服务器启动后有最新信息
+        # Refresh participants again to ensure latest info after server startup
         await self._refresh_participants()
         
         logger.info(f"RG Coordinator started for conversation {self.conversation_id} on port {self.port}")
         logger.info(f"Initial participants loaded: {list(self.participants.keys())}")
     
     async def stop(self):
-        """停止协调器"""
+        """Stop coordinator"""
         self.running = False
         logger.info("RG Coordinator stopped")
     
     async def _directory_polling_loop(self):
-        """目录轮询循环"""
+        """Directory polling loop"""
         while self.running:
             try:
                 await self._refresh_participants()
@@ -209,7 +209,7 @@ class RGCoordinator:
                 await asyncio.sleep(self.directory_poll_interval)
     
     async def _refresh_participants(self):
-        """刷新参与者列表"""
+        """Refresh participant list"""
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
@@ -221,16 +221,16 @@ class RGCoordinator:
                 if response.status_code == 200:
                     directory = response.json()
                     await self._update_participants(directory['participants'])
-                elif response.status_code != 404:  # 404表示会话不存在，正常情况
+                elif response.status_code != 404:  # 404 means conversation does not exist, normal case
                     logger.warning(f"Directory query failed: {response.status_code}")
                     
         except Exception as e:
             logger.error(f"Failed to refresh participants: {e}")
     
     async def _update_participants(self, participants_data: List[Dict[str, Any]]):
-        """更新参与者信息"""
+        """Update participant information"""
         new_participants = {}
-        # new_observers已移除 - 新S2设计不需要Observer机制
+        # new_observers removed - new S2 design does not require Observer mechanism
         
         for participant_data in participants_data:
             agent_id = participant_data['agent_id']
@@ -248,37 +248,37 @@ class RGCoordinator:
             new_participants[agent_id] = participant
             
             if role == 'observer':
-                # Observer处理已移除 - 新S2设计不需要Observer机制
+                # Observer handling removed - new S2 design does not require Observer mechanism
                 continue
         
-        # 检测新加入的参与者
+        # Detect newly joined participants
         for agent_id in new_participants:
             if agent_id not in self.participants:
                 logger.info(f"New participant joined: {agent_id} ({new_participants[agent_id].role})")
         
         self.participants = new_participants
-        # self.observers已移除 - 新S2设计不需要Observer机制
+        # self.observers removed - new S2 design does not require Observer mechanism
     
     async def route_message(self, sender_id: str, receiver_id: str, payload: Dict[str, Any], probe_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """路由消息"""
-        # Validate发送者 - 如果参与者信息为空，尝试强制刷新一次
+        """Route message"""
+        # Validate sender - if participant info is empty, try to force refresh once
         if not self.participants:
             logger.warning("No participants loaded, forcing directory refresh...")
             await self._refresh_participants()
-            await asyncio.sleep(0.5)  # 给RG一点时间处理
+            await asyncio.sleep(0.5)  # Give RG some time to process
         
         if sender_id not in self.participants:
-            # 提供详细的调试信息
+            # Provide detailed debug information
             participant_list = list(self.participants.keys()) if self.participants else "No participants loaded"
             raise ValueError(f"Sender {sender_id} not registered in conversation {self.conversation_id}. Available participants: {participant_list}")
         
         sender = self.participants[sender_id]
         
-        # Check发送权限
+        # Check sending permission
         if sender.role == 'observer':
             raise ValueError("Observers cannot send messages")
 
-        # 角色配对约束：仅允许 doctor_a ↔ doctor_b 之间通信
+        # Role pairing constraint: only allow doctor_a ↔ doctor_b communication
         if receiver_id:
             receiver = self.participants.get(receiver_id)
             if not receiver:
@@ -287,14 +287,14 @@ class RGCoordinator:
             if (sender.role, receiver.role) not in allowed_pairs and receiver.role != 'observer':
                 raise ValueError(f"Routing not allowed between roles {sender.role} -> {receiver.role}")
         
-        # Validate接收者（如果指定）
+        # Validate receiver (if specified)
         if receiver_id and receiver_id not in self.participants:
             raise ValueError(f"Receiver {receiver_id} not registered in conversation")
         
-        # Extract消息内容
+        # Extract message content
         content = self._extract_message_content(payload)
         
-        # Create消息记录
+        # Create message record
         corr_id = payload.get('correlation_id')
         message = ConversationMessage(
             sender_id=sender_id,
@@ -306,34 +306,34 @@ class RGCoordinator:
             correlation_id=corr_id
         )
         
-        # 存储消息历史
+        # Store message history
         self._store_message(message)
         
-        # 路由消息
+        # Route message
         result = await self._deliver_message(message, payload, probe_config)
         
-        # 向Observers广播镜像
+        # Broadcast mirror to Observers
         if self.enable_live_mirror:
             await self._broadcast_to_observers(message, payload)
         
         return result
     
     def _get_backend_registry(self):
-        """Get缓存的协议后端注册表"""
+        """Get cached protocol backend registry"""
         if not self._registry_initialized:
             try:
                 from scenarios.safety_tech.protocol_backends.common.interfaces import get_registry
                 self._backend_registry = get_registry()
                 self._registry_initialized = True
-                logger.info("协议后端注册表已缓存")
+                logger.info("Protocol backend registry cached")
             except Exception as e:
-                logger.error(f"协议后端注册表初始化失败: {e}")
+                logger.error(f"Protocol backend registry initialization failed: {e}")
                 raise RuntimeError(f"Protocol backend registry not available: {e}")
         return self._backend_registry
     
     def _extract_message_content(self, payload: Dict[str, Any]) -> str:
-        """提取消息内容"""
-        # 支持多种payload格式
+        """Extract message content"""
+        # Support multiple payload formats
         if 'text' in payload:
             return payload['text']
         elif 'body' in payload:
@@ -344,17 +344,17 @@ class RGCoordinator:
             return json.dumps(payload)
     
     def _store_message(self, message: ConversationMessage):
-        """存储消息到历史"""
+        """Store message to history"""
         self.message_history.append(message)
         
-        # 限制历史大小
+        # Limit history size
         if len(self.message_history) > self.max_history_size:
             self.message_history = self.message_history[-self.max_history_size:]
     
     async def _deliver_message(self, message: ConversationMessage, original_payload: Dict[str, Any], probe_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """投递消息到目标"""
+        """Deliver message to target"""
         if message.receiver_id == 'broadcast':
-            # 广播到所有非Observer参与者
+            # Broadcast to all non-Observer participants
             results = []
             for participant in self.participants.values():
                 if participant.role != 'observer' and participant.agent_id != message.sender_id:
@@ -366,7 +366,7 @@ class RGCoordinator:
                         results.append({"agent_id": participant.agent_id, "error": str(e)})
             return {"broadcast_results": results}
         else:
-            # 单播到指定接收者
+            # Unicast to specified receiver
             receiver = self.participants[message.receiver_id]
             try:
                 result = await self._send_to_participant(receiver, original_payload, probe_config)
@@ -376,11 +376,11 @@ class RGCoordinator:
                 return {"error": str(e)}
     
     async def _broadcast_to_observers(self, message: ConversationMessage, original_payload: Dict[str, Any]):
-        """向Observers广播镜像 - 已禁用"""
-        # Observer广播已移除 - 新S2设计不需要Observer机制
+        """Broadcast mirror to Observers - disabled"""
+        # Observer broadcast removed - new S2 design does not require Observer mechanism
         return
         
-        # 构建Observer镜像payload
+        # Build Observer mirror payload
         mirror_payload = {
             "type": "mirror",
             "original_message": {
@@ -395,10 +395,10 @@ class RGCoordinator:
             "original_payload": original_payload
         }
         
-        # Observer镜像逻辑已移除 - 新S2设计不需要Observer机制
+        # Observer mirror logic removed - new S2 design does not require Observer mechanism
     
     async def _provide_backfill(self, observer_id: str):
-        """为Observer提供历史回填"""
+        """Provide history backfill for Observer"""
         if not self.message_history:
             return
         
@@ -406,7 +406,7 @@ class RGCoordinator:
         if not observer:
             return
         
-        # Get最近的消息
+        # Get recent messages
         recent_messages = self.message_history[-self.backfill_limit:]
         
         backfill_payload = {
@@ -427,15 +427,15 @@ class RGCoordinator:
             })
         
         try:
-            # 直接向Observer的/message端点发送回填
+            # Send backfill directly to Observer's /message endpoint
             await self._send_to_endpoint(observer.endpoint, backfill_payload)
             logger.info(f"Provided backfill to observer {observer_id}: {len(recent_messages)} messages")
         except Exception as e:
             logger.error(f"Failed to provide backfill to observer {observer_id}: {e}")
-
+    
     async def _send_to_endpoint(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """协议无关直连HTTP发送。
-        约定：Observer等通用HTTP接收方暴露 /message 接口。
+        """Protocol-agnostic direct HTTP send.
+        Convention: Observer and other generic HTTP receivers expose /message interface.
         """
         url = (endpoint or '').rstrip('/') + '/message'
         try:
@@ -451,26 +451,26 @@ class RGCoordinator:
             raise RuntimeError(f"Failed to send to endpoint {url}: {e}")
     
     async def _send_to_participant(self, participant: ParticipantInfo, payload: Dict[str, Any], probe_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """发送消息到参与者：通过协议注册表分发到对应后端客户端。
+        """Send message to participant: distribute to corresponding backend client through protocol registry.
 
-        要求：
-        - 后端实现必须为原生协议，不允许mock/fallback
-        - 协调器不再拼装各协议负载细节，由各client实现responsible for
+        Requirements:
+        - Backend implementation must be native protocol, no mock/fallback allowed
+        - Coordinator no longer assembles protocol payload details, each client implementation is responsible for
         """
-        # 使用缓存的注册表，避免重复查询
+        # Use cached registry to avoid repeated queries
         registry = self._get_backend_registry()
         backend = registry.get(participant.protocol)
         if backend is None:
             raise RuntimeError(f"No backend registered for protocol: {participant.protocol}")
 
-        # 从payload中提取correlation_id（兼容现有逻辑）
+        # Extract correlation_id from payload (compatible with existing logic)
         correlation_id = payload.get('correlation_id')
         
-        # Add超时控制，避免长时间阻塞
+        # Add timeout control to avoid long blocking
         try:
             result = await asyncio.wait_for(
                 backend.send(participant.endpoint, payload, correlation_id, probe_config),
-                timeout=35.0  # 35秒超时，给各协议后端足够时间处理
+                timeout=35.0  # 35 second timeout, give protocol backends enough time to process
             )
             return result
         except asyncio.TimeoutError:
@@ -478,9 +478,9 @@ class RGCoordinator:
             logger.error(error_msg)
             raise RuntimeError(error_msg)
     
-    # 管理接口
+    # Management interfaces
     async def get_conversation_status(self) -> Dict[str, Any]:
-        """Get会话状态"""
+        """Get conversation status"""
         return {
             "conversation_id": self.conversation_id,
             "participants": {
@@ -492,7 +492,7 @@ class RGCoordinator:
                 }
                 for agent_id, p in self.participants.items()
             },
-            "observers": [],  # Observer机制已移除
+            "observers": [],  # Observer mechanism removed
             "message_count": len(self.message_history),
             "last_activity": self.message_history[-1].timestamp if self.message_history else None,
             "bridge_config": {
@@ -503,11 +503,11 @@ class RGCoordinator:
         }
     
     async def force_refresh_directory(self):
-        """强制刷新目录"""
+        """Force refresh directory"""
         await self._refresh_participants()
     
     async def get_message_history(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
-        """Get消息历史"""
+        """Get message history"""
         messages = self.message_history
         if limit:
             messages = messages[-limit:]
@@ -526,14 +526,14 @@ class RGCoordinator:
         ]
     
     async def request_observer_backfill(self, observer_id: str, limit: Optional[int] = None) -> bool:
-        """为Observer请求历史回填 - 已禁用"""
-        # Observer回填已移除 - 新S2设计不需要Observer机制
+        """Request history backfill for Observer - disabled"""
+        # Observer backfill removed - new S2 design does not require Observer mechanism
         return False
         
         if not self.enable_backfill:
             return False
         
-        # 使用指定限制或默认限制
+        # Use specified limit or default limit
         backfill_limit = limit or self.backfill_limit
         original_limit = self.backfill_limit
         self.backfill_limit = backfill_limit

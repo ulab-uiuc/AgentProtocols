@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-A2A 原生客户端：通过 a2a 服务器的 /message 端点发送。
-禁止 mock/fallback；保持 a2a 载荷结构。
+A2A native client: sends through a2a server's /message endpoint.
+No mock/fallback allowed; maintains a2a payload structure.
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ class A2AProtocolBackend(BaseProtocolBackend):
         probe_results = {}
         client_kwargs = {}
         
-        # 先创建基础消息结构
+        # First create basic message structure
         send_payload: Dict[str, Any] = {
             "params": {
                 "message": {
@@ -41,12 +41,12 @@ class A2AProtocolBackend(BaseProtocolBackend):
             }
         }
         
-        # Process探针配置
+        # Process probe configuration
         if probe_config:
-            # TLS降级探针
+            # TLS downgrade probe
             if probe_config.get('tls_downgrade'):
                 probe_results['tls_downgrade'] = 'attempted'
-                # 配置弱SSL上下文
+                # Configure weak SSL context
                 import ssl
                 ssl_context = ssl.create_default_context()
                 if probe_config.get('tls_version_downgrade') == '1.1':
@@ -56,22 +56,22 @@ class A2AProtocolBackend(BaseProtocolBackend):
                     ssl_context.minimum_version = ssl.TLSVersion.TLSv1
                     ssl_context.maximum_version = ssl.TLSVersion.TLSv1
                 
-                # Setup弱加密套件
+                # Setup weak cipher suite
                 if probe_config.get('cipher_downgrade'):
                     ssl_context.set_ciphers('DES-CBC3-SHA:RC4-MD5:NULL-MD5')
                 
                 client_kwargs['verify'] = ssl_context
                 probe_results['tls_version_used'] = probe_config.get('tls_version_downgrade', 'default')
             
-            # 重放攻击探针
+            # Replay attack probe
             if probe_config.get('replay_attack'):
                 nonce = probe_config.get('replay_nonce', 'default_nonce')
                 timestamp = probe_config.get('replay_timestamp', time.time() - 300)
                 probe_results['replay_attack'] = f"nonce_{nonce}_ts_{timestamp}"
-                # 在消息中注入重放标识
+                # Inject replay identifier in message
                 txt = f"[REPLAY:{nonce}:{timestamp}] {txt}"
             
-            # 明文嗅探探针
+            # Plaintext sniffing probe
             if probe_config.get('plaintext_sniff'):
                 probe_results['plaintext_detected'] = len(txt)
                 keywords = probe_config.get('sniff_keywords') or []
@@ -79,35 +79,35 @@ class A2AProtocolBackend(BaseProtocolBackend):
                 probe_results['sensitive_keywords_detected'] = detected_keywords
                 probe_results['sensitive_data_score'] = len(detected_keywords) * 10
             
-            # DID伪造探针
+            # DID spoofing probe
             if probe_config.get('did_spoofing'):
                 fake_did = probe_config.get('fake_did', 'did:fake:a2a_test')
                 fake_signature = probe_config.get('fake_signature', 'fake_sig_data')
                 probe_results['did_spoofing'] = 'attempted'
                 probe_results['fake_did_used'] = fake_did
-                # 在消息元数据中注入伪造身份
+                # Inject forged identity in message metadata
                 send_payload["params"]["message"]["meta"]["fake_did"] = fake_did
                 send_payload["params"]["message"]["meta"]["fake_signature"] = fake_signature
             
-            # 会话劫持探针
+            # Session hijacking probe
             if probe_config.get('session_hijack'):
                 session_token = probe_config.get('session_token_reuse', 'hijacked_session_token')
                 probe_results['session_hijack'] = 'attempted'
                 probe_results['hijacked_token'] = session_token
-                # 在请求头中注入会话token
+                # Inject session token in request header
                 client_kwargs.setdefault('headers', {})['Authorization'] = f"Bearer {session_token}"
             
-            # E2E负载加密检测探针（新增）
+            # E2E payload encryption detection probe (newly added)
             if probe_config.get('e2e_payload_detection'):
                 from scenarios.safety_tech.core.e2e_detector import E2EEncryptionDetector
                 e2e_detector = E2EEncryptionDetector(probe_config.get('e2e_watermark', 'A2A_E2E_WATERMARK'))
                 
-                # 修改原始payload注入水印
+                # Modify original payload to inject watermark
                 original_payload = {"text": txt, "sender_id": "a2a_probe", "receiver_id": "a2a_target"}
                 modified_payload = e2e_detector.inject_watermark_payload(original_payload)
                 txt = modified_payload.get('text', txt)
                 
-                # Create明文探测payload
+                # Create plaintext detection payload
                 if probe_config.get('e2e_probe_payload'):
                     probe_payload = e2e_detector.create_plaintext_probe_payload()
                     txt += f" [PROBE_PAYLOAD: {probe_payload['probe_markers']['credit_card']}]"
@@ -115,22 +115,22 @@ class A2AProtocolBackend(BaseProtocolBackend):
                 probe_results['e2e_watermark_injected'] = True
                 probe_results['e2e_detector_active'] = True
             
-            # 时钟漂移矩阵探针（新增）
+            # Clock skew matrix probe (newly added)
             if probe_config.get('time_skew_matrix'):
                 import random
                 skew_levels = probe_config.get('time_skew_levels', [30, 120, 300, 600])
                 probe_results['time_skew_matrix_active'] = True
                 probe_results['skew_levels_tested'] = skew_levels
                 
-                # 随机选择一个漂移档位进行测试
+                # Randomly select a skew level for testing
                 if skew_levels:
                     selected_skew = random.choice(skew_levels)
-                    # 随机选择正负漂移
+                    # Randomly select positive or negative skew
                     skew_direction = random.choice([-1, 1])
                     actual_skew = selected_skew * skew_direction
                     old_timestamp = time.time() + actual_skew
                     
-                    # 时间戳注入到A2A消息中
+                    # Inject timestamp into A2A message
                     nonce_id = f"skew_{abs(actual_skew)}_{int(time.time())}"
                     txt = f"[TIME_SKEW:{old_timestamp}][NONCE:{nonce_id}] {txt}"
                     
@@ -138,7 +138,7 @@ class A2AProtocolBackend(BaseProtocolBackend):
                     probe_results['skew_direction'] = 'future' if actual_skew > 0 else 'past'
                     probe_results['skew_nonce'] = nonce_id
                 
-                # 窗口测试：注入重复/乱序标记
+                # Window test: inject repeat/disorder markers
                 if probe_config.get('time_skew_window_test'):
                     window_markers = [
                         f"[WINDOW_REPEAT:{int(time.time())}]",
@@ -148,7 +148,7 @@ class A2AProtocolBackend(BaseProtocolBackend):
                     txt = f"{random.choice(window_markers)} {txt}"
                     probe_results['window_test_marker'] = True
 
-        # Update消息文本（可能已被探针修改）
+        # Update message text (may have been modified by probes)
         send_payload["params"]["message"]["text"] = txt
         send_payload["params"]["message"]["parts"] = [{"type": "text", "text": txt}]
 
@@ -183,17 +183,17 @@ class A2AProtocolBackend(BaseProtocolBackend):
             }
 
     async def spawn(self, role: str, port: int, **kwargs: Any) -> Dict[str, Any]:
-        """启动A2A服务器进程"""
+        """Start A2A server process"""
         try:
             env = os.environ.copy()
             env['COORD_ENDPOINT'] = kwargs.get('coord_endpoint') or os.environ.get('COORD_ENDPOINT', 'http://127.0.0.1:8888')
             
-            # 使用直接代码执行方式，类似ANP的修复方法
+            # Use direct code execution method, similar to ANP fix
             from pathlib import Path
             
-            # 找到项目root directory（包含script目录的地方）
+            # Find project root directory (where script directory is located)
             current_file = Path(__file__).resolve()
-            project_root = current_file.parent.parent.parent.parent.parent  # 从protocol_backends/a2a/client.py回到项目root directory
+            project_root = current_file.parent.parent.parent.parent.parent  # From protocol_backends/a2a/client.py back to project root directory
             
             code = (
                 f"import sys; sys.path.insert(0, '{project_root}');"

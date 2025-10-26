@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Registration Gateway (RG) - 注册网关核心服务
+Registration Gateway (RG) - Core registration service for multi-agent systems.
 
-统一的Agent注册与目录服务，支持多协议准入控制和身份验证。
-提供REST API接口供Agent注册、订阅和目录查询。
+Unified agent registration and directory service with multi-protocol admission control and authentication.
+Provides REST API endpoints for agent registration, subscription, and directory queries.
 """
 
 from __future__ import annotations
@@ -21,23 +21,23 @@ from pathlib import Path
 import logging
 import httpx
 
-# 引入ANP签名校验所需工具（必须可用，否则直接报错）
+# Import ANP signature verification tools (must be available, otherwise raise error)
 try:
-    from agentconnect_src.agent_connect.utils.crypto_tool import (
+    from agent_connect.utils.crypto_tool import (
         get_public_key_from_hex,
         verify_signature_for_json,
     )
 except Exception as e:
     raise RuntimeError(f"Failed to import ANP crypto tools: {e}")
 
-# 配置日志
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 @dataclass 
 class RegistrationRecord:
-    """注册记录数据结构"""
+    """Registration record data structure"""
     agent_id: str
     protocol: str
     endpoint: str
@@ -52,7 +52,7 @@ class RegistrationRecord:
 
 @dataclass
 class ConversationSession:
-    """会话信息数据结构"""
+    """Session information data structure"""
     conversation_id: str
     participants: List[RegistrationRecord]
     created_at: float
@@ -61,41 +61,41 @@ class ConversationSession:
 
 
 class RegistrationGateway:
-    """注册网关核心类"""
+    """Registration Gateway core class"""
     
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
         self.app = FastAPI(title="Registration Gateway", version="1.0.0")
         self.setup_routes()
         
-        # 存储结构
+        # Storage structures
         self.registrations: Dict[str, RegistrationRecord] = {}  # agent_id -> record
         self.conversations: Dict[str, ConversationSession] = {}  # conversation_id -> session
         self.protocol_verifiers: Dict[str, callable] = {}
         self.used_nonces: Set[str] = set()
-        # Validate模式：transparent | native_delegated | strict
-        # 默认使用原生委托（只用协议原生能力做判定，不做RG兜底）
+        # Validate mode: transparent | native_delegated | strict
+        # Default uses native delegation (relies only on protocol-native capabilities, no RG fallback)
         self.verification_mode: str = str(self.config.get('verification_mode', 'native_delegated')).lower()
-        # ANP可选DID文档探针（基准模式仅记录，严格模式强制）
+        # ANP optional DID document probe (baseline mode records only, strict mode enforces)
         self.anp_probe_did_doc: bool = bool(self.config.get('anp_probe_did_doc', False))
-        # 重放/时间窗观测指标（仅记录，不阻断）
+        # Replay/time window observation metrics (record only, no blocking)
         self.metrics = {
             'nonce_reuse_count': 0,
             'timestamp_expired_count': 0,
         }
         
-        # 配置参数
-        self.session_timeout = self.config.get('session_timeout', 3600)  # 1小时
+        # Configuration parameters
+        self.session_timeout = self.config.get('session_timeout', 3600)  # 1 hour
         self.max_observers_per_session = self.config.get('max_observers', 5)
         self.require_proof_for_observers = self.config.get('require_observer_proof', True)
         
-        # 注册协议验证器
+        # Register protocol verifiers
         self._setup_protocol_verifiers()
         
         logger.info("Registration Gateway initialized")
 
     def _setup_protocol_verifiers(self):
-        """Setup协议验证器"""
+        """Setup protocol verifiers"""
         self.protocol_verifiers = {
             'agora': self._verify_agora,
             'a2a': self._verify_a2a,
@@ -106,22 +106,22 @@ class RegistrationGateway:
         
 
     def setup_routes(self):
-        """SetupREST API路由"""
+        """Setup REST API routes"""
         
         @self.app.post("/register")
         async def register_agent(request: Dict[str, Any]):
-            """Agent注册端点"""
+            """Agent registration endpoint"""
             try:
                 return await self._handle_register(request)
             except Exception as e:
                 logger.error(f"Registration failed: {e}")
                 raise HTTPException(status_code=400, detail=str(e))
         
-        # Observer订阅端点已移除 - 新S2设计不需要Observer机制
+        # Observer subscription endpoint removed - new S2 design does not require Observer mechanism
         
         @self.app.get("/directory")
         async def get_directory(conversation_id: str):
-            """Get会话目录"""
+            """Get session directory"""
             try:
                 return await self._handle_directory(conversation_id)
             except Exception as e:
@@ -130,18 +130,18 @@ class RegistrationGateway:
         
         @self.app.get("/health")
         async def health_check():
-            """健康检查"""
+            """Health check"""
             return {"status": "healthy", "timestamp": time.time(), "verification_mode": self.verification_mode, "metrics": self.metrics}
         
         @self.app.post("/cleanup")
         async def cleanup_sessions(background_tasks: BackgroundTasks):
-            """清理过期会话"""
+            """Clean up expired sessions"""
             background_tasks.add_task(self._cleanup_expired_sessions)
             return {"message": "Cleanup task scheduled"}
 
     async def _handle_register(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """HandleAgent注册请求"""
-        # Validate必需字段
+        """Handle agent registration request"""
+        # Validate required fields
         required_fields = ['protocol', 'agent_id', 'endpoint', 'conversation_id']
         for field in required_fields:
             if field not in request:
@@ -151,15 +151,15 @@ class RegistrationGateway:
         agent_id = request['agent_id']
         endpoint = request['endpoint']
         conversation_id = request['conversation_id']
-        role = request.get('role', 'doctor')  # 默认为doctor角色
+        role = request.get('role', 'doctor')  # Default role is doctor
         protocol_meta = request.get('protocolMeta', {})
         proof = request.get('proof', {})
         
-        # Check协议支持
+        # Check protocol support
         if protocol not in self.protocol_verifiers:
             raise ValueError(f"Unsupported protocol: {protocol}")
         
-        # Create注册记录
+        # Create registration record
         record = RegistrationRecord(
             agent_id=agent_id,
             protocol=protocol,
@@ -171,13 +171,13 @@ class RegistrationGateway:
             timestamp=time.time()
         )
         
-        # 协议验证（记录耗时与归因）
+        # Protocol verification (record latency and attribution)
         _verify_start = time.time()
         try:
             verification_result = await self.protocol_verifiers[protocol](record)
         except Exception as e:
             _latency_ms = int((time.time() - _verify_start) * 1000)
-            # Record归因原因
+            # Record attribution reason
             try:
                 reason = str(e)
             except Exception:
@@ -191,13 +191,13 @@ class RegistrationGateway:
         if not record.verified:
             raise ValueError(f"Protocol verification failed: {verification_result.get('error', 'Unknown error')}")
         
-        # Check会话限制
+        # Check session constraints
         await self._validate_session_constraints(record)
         
-        # 存储注册记录
+        # Store registration record
         self.registrations[agent_id] = record
         
-        # Update会话信息
+        # Update session information
         await self._update_conversation_session(record)
         
         logger.info(f"Agent {agent_id} registered successfully for protocol {protocol}")
@@ -216,7 +216,7 @@ class RegistrationGateway:
         }
 
     async def _handle_subscribe(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """HandleObserver订阅请求"""
+        """Handle observer subscription request"""
         agent_id = request.get('agent_id')
         conversation_id = request.get('conversation_id')
         role = request.get('role', 'observer')
@@ -228,35 +228,35 @@ class RegistrationGateway:
         if role != 'observer':
             raise ValueError("Subscribe endpoint only supports observer role")
         
-        # CheckObserver证明要求
+        # Check observer proof requirements
         if self.require_proof_for_observers and not proof:
             raise ValueError("Proof required for observer subscription")
         
-        # Check会话是否存在
+        # Check if session exists
         if conversation_id not in self.conversations:
             raise ValueError(f"Conversation {conversation_id} not found")
         
         session = self.conversations[conversation_id]
         
-        # CheckObserver数量限制
+        # Check observer count limit
         current_observers = len([p for p in session.participants if p.role == 'observer'])
         if current_observers >= self.max_observers_per_session:
             raise ValueError(f"Maximum observers ({self.max_observers_per_session}) reached for conversation")
         
-        # CreateObserver注册记录
+        # Create observer registration record
         observer_record = RegistrationRecord(
             agent_id=agent_id,
-            protocol='observer',  # 特殊协议标识
+            protocol='observer',  # Special protocol identifier
             endpoint=request.get('endpoint', ''),
             role='observer',
             protocol_meta={},
             proof=proof,
             conversation_id=conversation_id,
             timestamp=time.time(),
-            verified=True  # Observer默认通过验证
+            verified=True  # Observers pass verification by default
         )
         
-        # 存储记录
+        # Store record
         self.registrations[agent_id] = observer_record
         session.participants.append(observer_record)
         session.last_activity = time.time()
@@ -272,13 +272,13 @@ class RegistrationGateway:
         }
 
     async def _handle_directory(self, conversation_id: str) -> Dict[str, Any]:
-        """Handle目录查询请求"""
+        """Handle directory query request"""
         if conversation_id not in self.conversations:
             raise ValueError(f"Conversation {conversation_id} not found")
         
         session = self.conversations[conversation_id]
         
-        # 构建参与者目录
+        # Build participant directory
         participants = []
         for record in session.participants:
             participant_info = {
@@ -303,23 +303,23 @@ class RegistrationGateway:
         }
 
     async def _validate_session_constraints(self, record: RegistrationRecord):
-        """验证会话约束条件"""
+        """Validate session constraints"""
         conversation_id = record.conversation_id
         
         if conversation_id in self.conversations:
             session = self.conversations[conversation_id]
             
-            # Check角色冲突
+            # Check role conflicts
             for participant in session.participants:
                 if participant.role == record.role and record.role in ["doctor_a", "doctor_b"]:
                     raise ValueError(f"Role {record.role} already taken in conversation {conversation_id}")
 
     async def _update_conversation_session(self, record: RegistrationRecord):
-        """更新会话信息"""
+        """Update session information"""
         conversation_id = record.conversation_id
         
         if conversation_id not in self.conversations:
-            # Create新会话
+            # Create new session
             session = ConversationSession(
                 conversation_id=conversation_id,
                 participants=[record],
@@ -328,13 +328,13 @@ class RegistrationGateway:
             )
             self.conversations[conversation_id] = session
         else:
-            # Update现有会话
+            # Update existing session
             session = self.conversations[conversation_id]
             session.participants.append(record)
             session.last_activity = time.time()
 
     async def _cleanup_expired_sessions(self):
-        """清理过期会话"""
+        """Clean up expired sessions"""
         current_time = time.time()
         expired_sessions = []
         
@@ -344,7 +344,7 @@ class RegistrationGateway:
         
         for conversation_id in expired_sessions:
             del self.conversations[conversation_id]
-            # Cleanup相关注册记录
+            # Cleanup related registration records
             expired_agents = [aid for aid, record in self.registrations.items() 
                             if record.conversation_id == conversation_id]
             for agent_id in expired_agents:
@@ -354,9 +354,9 @@ class RegistrationGateway:
             logger.info(f"Cleaned up {len(expired_sessions)} expired sessions")
 
 
-    # 协议验证器实现
+    # Protocol verifier implementations
     async def _verify_agora(self, record: RegistrationRecord) -> Dict[str, Any]:
-        """验证Agora协议（基准模式：仅校验protocol_hash与protocol_sources；不做RG层反重放阻断）"""
+        """Verify Agora protocol (baseline mode: only validate protocol_hash and protocol_sources; no RG-level anti-replay blocking)"""
         try:
             from agora.utils import download_and_verify_protocol
         except Exception as e:
@@ -364,11 +364,11 @@ class RegistrationGateway:
 
         proof = record.proof or {}
 
-        # 协议强绑定：仅当record.protocol == 'agora'时接受
+        # Protocol strict binding: only accept when record.protocol == 'agora'
         if record.protocol != 'agora':
             return {"verified": False, "error": "Protocol mismatch for Agora verification"}
 
-        # 校验必需字段（仅hash与sources）
+        # Validate required fields (hash and sources only)
         required = ['protocol_hash', 'protocol_sources']
         for f in required:
             if f not in proof:
@@ -379,7 +379,7 @@ class RegistrationGateway:
         if not isinstance(sources, list) or len(sources) == 0:
             return {"verified": False, "error": "protocol_sources must be a non-empty list"}
 
-        # 使用Agora原生工具校验协议hash与来源
+        # Use Agora native tools to verify protocol hash and sources
         verified_source_found = False
         for src in sources:
             try:
@@ -393,21 +393,21 @@ class RegistrationGateway:
         if not verified_source_found:
             return {"verified": False, "error": "Protocol hash verification failed for all sources"}
 
-        # 可选：端点归属证明（受配置控制，默认关闭）
+        # Optional: endpoint ownership proof (controlled by config, default off)
         require_endpoint_proof = bool(self.config.get('agora_require_endpoint_proof', False))
         if require_endpoint_proof:
             ownership = proof.get('endpoint_ownership_proof')
             if not ownership or not isinstance(ownership, str) or len(ownership) < 8:
                 return {"verified": False, "error": "Invalid or missing endpoint ownership proof"}
 
-        # 通过后生成会话令牌
+        # Generate session token after passing verification
         session_token = f"agora_{record.agent_id}_{int(time.time())}"
         return {"verified": True, "session_token": session_token, "verification_method": "agora_protocol_hash"}
 
     async def _verify_a2a(self, record: RegistrationRecord) -> Dict[str, Any]:
-        """验证A2A协议
-        - 最小要求：a2a_token+timestamp+nonce（始终启用）
-        - 可选：SDK原生challenge-echo探针（a2a_enable_challenge，默认False，以保持公平）
+        """Verify A2A protocol
+        - Minimum requirements: a2a_token+timestamp+nonce (always enabled)
+        - Optional: SDK native challenge-echo probe (a2a_enable_challenge, default False, to maintain fairness)
         """
         proof = record.proof or {}
         required = ['a2a_token', 'timestamp', 'nonce']
@@ -415,32 +415,32 @@ class RegistrationGateway:
             if f not in proof:
                 return {"verified": False, "error": f"Missing required A2A proof field: {f}"}
 
-        # 时间窗与nonce
+        # Time window and nonce
         now = time.time()
         try:
             ts = float(proof.get('timestamp', 0))
         except Exception:
             return {"verified": False, "error": "Invalid A2A proof timestamp"}
         if abs(now - ts) > 300:
-            # 仅记录
+            # Record only
             self.metrics['timestamp_expired_count'] = self.metrics.get('timestamp_expired_count', 0) + 1
             return {"verified": False, "error": "A2A proof timestamp expired"}
 
         nonce = str(proof.get('nonce', ''))
         if not nonce or nonce in self.used_nonces:
-            # Record重放嫌疑
+            # Record replay suspicion
             self.metrics['nonce_reuse_count'] = self.metrics.get('nonce_reuse_count', 0) + 1
             return {"verified": False, "error": "Replay detected: nonce reused or missing"}
         self.used_nonces.add(nonce)
 
-        # 可选：SDK原生challenge-echo探针
+        # Optional: SDK native challenge-echo probe
         if bool(self.config.get('a2a_enable_challenge', False)):
             base = (record.endpoint or '').rstrip('/')
             if not base.startswith('http://') and not base.startswith('https://'):
                 return {"verified": False, "error": "A2A endpoint must be http(s) URL for challenge"}
             try:
                 async with httpx.AsyncClient() as client:
-                    # 通过/message发送标准A2A消息体，要求服务端回执（由adapter统一封装）
+                    # Send standard A2A message body via /message, requiring server acknowledgment (uniformly wrapped by adapter)
                     payload = {
                         "params": {
                             "message": {
@@ -454,7 +454,7 @@ class RegistrationGateway:
                     if r.status_code != 200:
                         return {"verified": False, "error": f"A2A challenge failed: status {r.status_code}"}
                     js = r.json() if r.content else {}
-                    # 统一JSONResponse：包含events数组；若包含至少一个事件即视为回执成功
+                    # Unified JSONResponse: contains events array; if it contains at least one event, it is considered acknowledgment success
                     if not isinstance(js, dict) or not js.get('events'):
                         return {"verified": False, "error": "A2A challenge no events returned"}
                     verification_method = "a2a_challenge_echo"
@@ -467,14 +467,14 @@ class RegistrationGateway:
         return {"verified": True, "session_token": session_token, "verification_method": verification_method}
 
     async def _verify_acp(self, record: RegistrationRecord) -> Dict[str, Any]:
-        """验证ACP协议（原生校验，无任何fallback）"""
+        """Verify ACP protocol (native verification, no fallback)"""
         proof = record.proof or {}
 
-        # 1) 协议强绑定
+        # 1) Protocol strict binding
         if record.protocol != 'acp':
             return {"verified": False, "error": "Protocol mismatch for ACP verification"}
 
-        # 2) 必需字段与时间窗/nonce 防重放
+        # 2) Required fields and time window/nonce anti-replay
         required = ['timestamp', 'nonce', 'acp_agent_name']
         for f in required:
             if f not in proof:
@@ -497,7 +497,7 @@ class RegistrationGateway:
         if not acp_agent_name:
             return {"verified": False, "error": "acp_agent_name must be non-empty"}
 
-        # 3) 端点原生探测：/agents 与 /ping
+        # 3) Native endpoint probe: /agents and /ping
         endpoint = record.endpoint or ''
         if not endpoint.startswith('http://') and not endpoint.startswith('https://'):
             return {"verified": False, "error": "ACP endpoint must be http(s) URL"}
@@ -513,7 +513,7 @@ class RegistrationGateway:
                 names = [a.get('name') for a in agents if isinstance(a, dict) and isinstance(a.get('name'), str)]
                 if acp_agent_name not in names:
                     return {"verified": False, "error": f"ACP agent '{acp_agent_name}' not found in /agents"}
-                # 强制名称绑定：注册时的agent_id必须与/agents中的acp_agent_name一致
+                # Enforce name binding: agent_id during registration must match acp_agent_name in /agents
                 if record.agent_id != acp_agent_name:
                     return {"verified": False, "error": f"ACP agent name binding mismatch: agent_id='{record.agent_id}' != acp_agent_name='{acp_agent_name}'"}
 
@@ -523,25 +523,25 @@ class RegistrationGateway:
         except Exception as e:
             return {"verified": False, "error": f"ACP endpoint probe error: {e}"}
 
-        # 通过校验，签发会话令牌
+        # Pass verification, issue session token
         session_token = f"acp_{record.agent_id}_{int(time.time())}"
         return {"verified": True, "session_token": session_token, "verification_method": "acp_native_endpoint_probe"}
 
     async def _verify_anp(self, record: RegistrationRecord) -> Dict[str, Any]:
-        """验证ANP协议 - 使用原生DID签名验真，不做RG兜底放行"""
+        """Verify ANP protocol - use native DID signature verification, no RG fallback"""
         proof = record.proof or {}
 
-        # 透明模式：仅记录，不放行（交由上层决定），这里仍返回未验证
+        # Transparent mode: record only, do not pass (leave to upper layer decision), still return unverified here
         if self.verification_mode == 'transparent':
             raise ValueError("transparent_mode_no_verification")
 
-        # 必需字段
+        # Required fields
         required_fields = ['did_signature', 'did_public_key', 'timestamp', 'did']
         missing = [f for f in required_fields if f not in proof]
         if missing:
             raise ValueError(f"Missing ANP proof fields: {','.join(missing)}")
 
-        # 时间窗检查（记录重放嫌疑，但基准模式下不作为RG兜底阻断）
+        # Time window check (record replay suspicion, but do not block as RG fallback in baseline mode)
         try:
             ts = float(proof.get('timestamp', 0))
         except Exception:
@@ -566,7 +566,7 @@ class RegistrationGateway:
         if not ok:
             raise ValueError("ANP DID signature verification failed")
 
-        # 可选DID文档探针（严格模式强制通过）
+        # Optional DID document probe (strict mode enforces pass)
         did_doc_probe_ok = None
         if self.anp_probe_did_doc and record.endpoint:
             did_doc_probe_ok = False
@@ -581,7 +581,7 @@ class RegistrationGateway:
             if self.verification_mode == 'strict' and not did_doc_probe_ok:
                 raise ValueError("ANP DID document probe failed under strict mode")
 
-        # 通过后签发会话令牌
+        # Issue session token after passing
         session_token = f"anp_{record.agent_id}_{int(time.time())}"
         result = {"verified": True, "session_token": session_token, "verification_method": "anp_did_signature"}
         if did_doc_probe_ok is not None:
@@ -589,19 +589,19 @@ class RegistrationGateway:
         return result
 
     async def _verify_direct(self, record: RegistrationRecord) -> Dict[str, Any]:
-        """验证Direct协议"""
-        # Direct协议无验证（最弱）
+        """Verify Direct protocol"""
+        # Direct protocol has no verification (weakest)
         session_token = f"direct_{record.agent_id}_{int(time.time())}"
         return {"verified": True, "session_token": session_token, "verification_method": "direct_none"}
 
     def run(self, host: str = "127.0.0.1", port: int = 8000):
-        """Run注册网关服务"""
+        """Run registration gateway service"""
         logger.info(f"Starting Registration Gateway on {host}:{port}")
         uvicorn.run(self.app, host=host, port=port, log_level="warning", access_log=False, lifespan="off", loop="asyncio", http="h11")
 
 
 if __name__ == "__main__":
-    # 示例配置
+    # Example configuration
     config = {
         "session_timeout": 3600,
         "max_observers": 5,
@@ -609,4 +609,4 @@ if __name__ == "__main__":
     }
     
     rg = RegistrationGateway(config)
-    rg.run(port=8001)  # 使用8001端口避免与其他服务冲突
+    rg.run(port=8001)  # Use port 8001 to avoid conflicts with other services

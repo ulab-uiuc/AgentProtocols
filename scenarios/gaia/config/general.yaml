@@ -151,7 +151,7 @@ search:
   # lang: "en"
   # country: "us"
 
-# ================== 沙箱设置 (sandbox) ==================
+# ================== Sandbox Settings (sandbox) ==================
 sandbox:
   use_sandbox: false
   image: "python:3.11-slim"

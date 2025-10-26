@@ -36,20 +36,20 @@ from protocol_backends.common.interfaces import get_registry
 # Import S2 router
 from .s2_llm_router import S2LLMRouter, S2RoutingDecision
 
-# Import Safety Tech meta agents - 使用local实现
+# Import Safety Tech meta agents - use local implementation
 from .acp_meta_agent import ACPSafetyMetaAgent
 from .agora_meta_agent import AgoraSafetyMetaAgent  
 from .a2a_meta_agent import A2ASafetyMetaAgent
 from .anp_meta_agent import ANPSafetyMetaAgent
 
-# Import Safety Tech RG系统组件 - 复用现有架构
+# Import Safety Tech RG system components - reuse existing architecture
 try:
     from scenarios.safety_tech.core.rg_coordinator import RGCoordinator
     from scenarios.safety_tech.core.observer_agent import create_observer_agent  
     from scenarios.safety_tech.core.registration_gateway import RegistrationGateway
     from scenarios.safety_tech.core.backend_api import spawn_backend, register_backend, health_backend
 except ImportError:
-    # 相对导入fallback
+    # Relative import fallback
     from core.rg_coordinator import RGCoordinator
     from core.observer_agent import create_observer_agent
     from core.registration_gateway import RegistrationGateway 
@@ -69,7 +69,7 @@ class S2MetaCoordinator(RunnerBase):
         
         # S2 LLM Router
         self.s2_router = S2LLMRouter(self.config, self.output)
-        # 为了兼容性，也Setup llm_router 别名
+        # For compatibility, also setup llm_router alias
         self.llm_router = self.s2_router
         
         # Agent network and meta agents
@@ -86,7 +86,7 @@ class S2MetaCoordinator(RunnerBase):
         self.probe_config: Dict[str, Any] = {}
         self.security_results: Dict[str, Any] = {}
         
-        # RG系统组件 - 复用Safety Tech架构
+        # RG system components - reuse Safety Tech architecture
         self.rg_port = None
         self.coord_port = None  
         self.obs_port = None
@@ -106,22 +106,22 @@ class S2MetaCoordinator(RunnerBase):
         }
     
     async def setup_real_rg_infrastructure(self) -> bool:
-        """Setup真实的RG基础设施，复用Safety Tech架构"""
+        """Setup real RG infrastructure, reuse Safety Tech architecture"""
         try:
             import subprocess
             import os
             
-            # 分配端口
-            self.rg_port = 8101  # Meta专用RG端口
-            self.coord_port = 8889  # Meta专用协调器端口  
-            self.obs_port = 8104  # Meta专用Observer端口
+            # Allocate ports
+            self.rg_port = 8101  # Meta dedicated RG port
+            self.coord_port = 8889  # Meta dedicated coordinator port  
+            self.obs_port = 8104  # Meta dedicated Observer port
             
-            self.output.info(f"🔧 启动Meta协议RG基础设施...")
-            self.output.info(f"   RG端口: {self.rg_port}")
-            self.output.info(f"   协调器端口: {self.coord_port}")
-            self.output.info(f"   Observer端口: {self.obs_port}")
+            self.output.info(f"🔧 Starting Meta Protocol RG infrastructure...")
+            self.output.info(f"   RG port: {self.rg_port}")
+            self.output.info(f"   Coordinator port: {self.coord_port}")
+            self.output.info(f"   Observer port: {self.obs_port}")
             
-            # 1) 启动 RegistrationGateway 进程
+            # 1) Start RegistrationGateway process
             rg_code = f"""
 import sys
 sys.path.insert(0, '{PROJECT_ROOT}')
@@ -133,12 +133,12 @@ rg.run(host='127.0.0.1', port={self.rg_port})
                 sys.executable, "-c", rg_code
             ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             
-            self.output.info(f"✅ RG进程已启动，PID: {self.rg_process.pid}")
+            self.output.info(f"✅ RG process started，PID: {self.rg_process.pid}")
             
-            # WaitRG启动
+            # Wait for RG startup
             await self._wait_http_ready(f"http://127.0.0.1:{self.rg_port}/health", 15.0)
             
-            # 2) 启动 RGCoordinator 进程
+            # 2) Start RGCoordinator process
             coord_code = f"""
 import sys
 sys.path.insert(0, '{PROJECT_ROOT}')
@@ -153,7 +153,7 @@ async def run():
     }})
     await coord.start()
     print(f"Meta RGCoordinator started on port {self.coord_port}")
-    # 保持进程运行
+    # Keep process running
     try:
         await asyncio.Event().wait()
     except KeyboardInterrupt:
@@ -166,12 +166,12 @@ if __name__ == "__main__":
                 sys.executable, "-c", coord_code
             ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             
-            self.output.info(f"✅ RGCoordinator进程已启动，PID: {self.coord_process.pid}")
+            self.output.info(f"✅ RGCoordinator process started，PID: {self.coord_process.pid}")
             
-            # Wait协调器启动
+            # Wait for coordinator startup
             await self._wait_http_ready(f"http://127.0.0.1:{self.coord_port}/health", 20.0)
             
-            # 3) 启动 Observer Agent (同进程)
+            # 3) Start Observer Agent (same process)
             await create_observer_agent(
                 observer_id="Meta_S2_Observer",
                 config={
@@ -182,18 +182,18 @@ if __name__ == "__main__":
                 port=self.obs_port
             )
             
-            self.output.info(f"✅ Observer Agent已启动在端口: {self.obs_port}")
+            self.output.info(f"✅ Observer Agent started on port: {self.obs_port}")
             
-            self.output.success("🏗️ Meta协议RG基础设施就绪")
+            self.output.success("🏗️ Meta Protocol RG infrastructure ready")
             return True
             
         except Exception as e:
-            self.output.error(f"RG基础设施启动失败: {e}")
+            self.output.error(f"RG infrastructure startup failed: {e}")
             await self.cleanup_rg_infrastructure()
-            raise RuntimeError(f"Meta协议需要完整的RG基础设施: {e}")
+            raise RuntimeError(f"Meta Protocol requires complete RG infrastructure: {e}")
     
     async def _wait_http_ready(self, url: str, timeout_s: float = 20.0) -> None:
-        """等待HTTP服务就绪"""
+        """Wait for HTTP service to be ready"""
         import time
         import httpx
         
@@ -208,10 +208,10 @@ if __name__ == "__main__":
             except Exception as e:
                 last_err = e
             await asyncio.sleep(0.5)
-        raise RuntimeError(f"等待服务超时 {url}: {last_err}")
+        raise RuntimeError(f"Service wait timeout {url}: {last_err}")
     
     async def cleanup_rg_infrastructure(self) -> None:
-        """清理RG基础设施"""
+        """Cleanup RG infrastructure"""
         try:
             import signal
             
@@ -223,18 +223,18 @@ if __name__ == "__main__":
                 self.rg_process.send_signal(signal.SIGTERM)
                 self.rg_process.wait(timeout=5)
                 
-            self.output.info("🧹 RG基础设施已清理")
+            self.output.info("🧹 RG infrastructure cleaned up")
         except Exception as e:
-            self.output.error(f"RG基础设施清理失败: {e}")
+            self.output.error(f"RG infrastructure cleanup failed: {e}")
     
     async def create_network(self) -> AgentNetwork:
         """Create S2 meta network using src/core/network.py"""
         try:
             self.agent_network = AgentNetwork()
-            self.output.success("S2 Meta协议网络基础设施已创建")
+            self.output.success("S2 Meta Protocol network infrastructure created")
             return self.agent_network
         except Exception as e:
-            self.output.error(f"创建S2 Meta网络失败: {e}")
+            self.output.error(f"Failed to create S2 Meta network: {e}")
             raise
     
     async def setup_s2_doctors(self, test_focus: str = "comprehensive") -> Dict[str, Any]:
@@ -243,11 +243,11 @@ if __name__ == "__main__":
             # Get routing decision from S2 LLM router
             self.routing_decision = await self.s2_router.route_for_s2_security_test(test_focus)
             
-            self.output.info(f"🔒 S2路由决策:")
+            self.output.info(f"🔒 S2 Routing Decision:")
             self.output.info(f"   Doctor_A: {self.routing_decision.doctor_a_protocol}")
             self.output.info(f"   Doctor_B: {self.routing_decision.doctor_b_protocol}")
-            self.output.info(f"   跨协议通信: {'启用' if self.routing_decision.cross_protocol_enabled else '禁用'}")
-            self.output.info(f"   策略: {self.routing_decision.routing_strategy}")
+            self.output.info(f"   Cross-protocol communication: {'Enabled' if self.routing_decision.cross_protocol_enabled else 'Disabled'}")
+            self.output.info(f"   Strategy: {self.routing_decision.routing_strategy}")
             
             agents = {}
             
@@ -291,12 +291,12 @@ if __name__ == "__main__":
             # Initialize S2 probe configuration
             await self.initialize_s2_probe_config()
             
-            self.output.success(f"✅ S2双医生配置完成: Doctor_A({self.routing_decision.doctor_a_protocol}) ↔ Doctor_B({self.routing_decision.doctor_b_protocol})")
+            self.output.success(f"✅ S2 two-doctor configuration completed: Doctor_A({self.routing_decision.doctor_a_protocol}) ↔ Doctor_B({self.routing_decision.doctor_b_protocol})")
             
             return agents
             
         except Exception as e:
-            self.output.error(f"S2双医生Setup失败: {e}")
+            self.output.error(f"S2 two-doctor setup failed: {e}")
             raise
     
     async def _create_meta_agent(self, agent_id: str, protocol: str, port: int) -> Any:
@@ -304,25 +304,25 @@ if __name__ == "__main__":
         
         protocol = protocol.lower()
         
-        # 统一使用Safety Techlocal实现 - 无fallback，失败直接报错
+        # Uniformly use Safety Tech local implementation - no fallback, fail directly with error
         try:
             if protocol == "anp":
-                self.output.info(f"🔄 创建Safety Tech ANP meta agent: {agent_id}")
+                self.output.info(f"🔄 Creating Safety Tech ANP meta agent: {agent_id}")
                 return ANPSafetyMetaAgent(agent_id, self.config, "doctor", self.output)
             elif protocol == "agora":
-                self.output.info(f"🔄 创建Safety Tech Agora meta agent: {agent_id}")
+                self.output.info(f"🔄 Creating Safety Tech Agora meta agent: {agent_id}")
                 return AgoraSafetyMetaAgent(agent_id, self.config, "doctor", self.output)
             elif protocol == "acp":
-                self.output.info(f"🔄 创建Safety Tech ACP meta agent: {agent_id}")
+                self.output.info(f"🔄 Creating Safety Tech ACP meta agent: {agent_id}")
                 return ACPSafetyMetaAgent(agent_id, self.config, "doctor", self.output)
             elif protocol == "a2a":
-                self.output.info(f"🔄 创建Safety Tech A2A meta agent: {agent_id}")
+                self.output.info(f"🔄 Creating Safety Tech A2A meta agent: {agent_id}")
                 return A2ASafetyMetaAgent(agent_id, self.config, "doctor", self.output)
             else:
-                raise ValueError(f"不支持的协议: {protocol}")
+                raise ValueError(f"Unsupported protocol: {protocol}")
         except Exception as e:
-            # S2测试需要完整的协议实现，不允许fallback
-            raise RuntimeError(f"S2 Meta协议 {protocol} agent创建失败，S2安全测试需要完整的协议实现: {e}")
+            # S2 test requires complete protocol implementation, no fallback allowed
+            raise RuntimeError(f"S2 Meta Protocol {protocol} agent creation failed, S2 security test requires complete protocol implementation: {e}")
     
     async def initialize_s2_probe_config(self):
         """Initialize S2 security probe configuration."""
@@ -330,7 +330,7 @@ if __name__ == "__main__":
         general_config = self.config.get("general", {})
         
         self.probe_config = {
-            # TLS降级探测 (权重40%)
+            # TLS downgrade probe (weight40%)
             "tls_downgrade": {
                 "enabled": True,
                 "weak_versions": ["TLSv1.0", "TLSv1.1"],
@@ -339,7 +339,7 @@ if __name__ == "__main__":
                 "mitm_detection": general_config.get("enable_mitm", False)
             },
             
-            # E2E加密检测探测 (权重18%)
+            # E2E encryption detection probe (weight18%)
             "e2e_payload_detection": {
                 "enabled": True,
                 "watermarks": ["HIDDEN_MARKER:S2_E2E_WATERMARK_TEST_", "PLAINTEXT_PROBE_"],
@@ -348,7 +348,7 @@ if __name__ == "__main__":
                 "tcpdump_duration": 10
             },
             
-            # 会话劫持探测 (权重15%)
+            # Session hijacking probe (weight15%)
             "session_hijacking": {
                 "enabled": True,
                 "expired_tokens": ["expired_session_", "invalid_jwt_"],
@@ -357,7 +357,7 @@ if __name__ == "__main__":
                 "privilege_escalation": ["admin_", "root_", "elevated_"]
             },
             
-            # 时钟漂移探测 (权重12%)
+            # Clock skew probe (weight12%)
             "time_skew_matrix": {
                 "enabled": True,
                 "skew_offsets": [30, 120, 300, 600],  # 30s, 2m, 5m, 10m
@@ -365,7 +365,7 @@ if __name__ == "__main__":
                 "nonce_replay": True
             },
             
-            # 旁路抓包保护探测 (权重8%)
+            # Bypass capture protection probe (weight8%)
             "sidechannel_protection": {
                 "enabled": True,
                 "pcap_analysis": True,
@@ -374,7 +374,7 @@ if __name__ == "__main__":
                 "metadata_extraction": ["content-length", "timing", "patterns"]
             },
             
-            # 重放攻击探测 (权重4%)  
+            # Replay attack probe (weight4%)  
             "replay_attack": {
                 "enabled": True,
                 "replay_count": 2,
@@ -382,7 +382,7 @@ if __name__ == "__main__":
                 "nonce_validation": True
             },
             
-            # 元数据泄露探测 (权重3%)
+            # Metadata leakage probe (weight3%)
             "metadata_leak": {
                 "enabled": True,
                 "endpoints_to_probe": ["/health", "/metrics", "/status", "/info", "/debug"],
@@ -390,17 +390,17 @@ if __name__ == "__main__":
             }
         }
         
-        self.output.success("🔍 S2综合探针配置已初始化")
-        self.output.info(f"   TLS降级探测: {self.probe_config['tls_downgrade']['enabled']}")
-        self.output.info(f"   E2E加密检测: {self.probe_config['e2e_payload_detection']['enabled']}")
-        self.output.info(f"   会话劫持探测: {self.probe_config['session_hijacking']['enabled']}")
-        self.output.info(f"   时钟漂移探测: {self.probe_config['time_skew_matrix']['enabled']}")
-        self.output.info(f"   旁路抓包分析: {self.probe_config['sidechannel_protection']['enabled']}")
+        self.output.success("🔍 S2 comprehensive probe configuration initialized")
+        self.output.info(f"   TLS downgrade probe: {self.probe_config['tls_downgrade']['enabled']}")
+        self.output.info(f"   E2E encryption detection: {self.probe_config['e2e_payload_detection']['enabled']}")
+        self.output.info(f"   Session hijacking probe: {self.probe_config['session_hijacking']['enabled']}")
+        self.output.info(f"   Clock skew probe: {self.probe_config['time_skew_matrix']['enabled']}")
+        self.output.info(f"   Bypass capture analysis: {self.probe_config['sidechannel_protection']['enabled']}")
     
     async def run_s2_security_test(self) -> Dict[str, Any]:
         """Run comprehensive S2 security test with dual doctors."""
         try:
-            # 1. Setup真实的RG基础设施 (复用Safety Tech架构)  
+            # 1. Setup real RG infrastructure (reuse Safety Tech architecture)  
             await self.setup_real_rg_infrastructure()
             
             # 2. Load enhanced medical cases for S2 testing
@@ -413,10 +413,10 @@ if __name__ == "__main__":
             )
             max_rounds = general_config.get("max_rounds", 2)  # Reduced for security focus
             
-            self.output.info(f"🔒 开始S2保密性测试:")
-            self.output.info(f"   测试案例: {num_conversations}")
-            self.output.info(f"   对话轮次: {max_rounds}")  
-            self.output.info(f"   协议组合: {self.routing_decision.doctor_a_protocol} ↔ {self.routing_decision.doctor_b_protocol}")
+            self.output.info(f"🔒 Starting S2 confidentiality test:")
+            self.output.info(f"   Test cases: {num_conversations}")
+            self.output.info(f"   Conversation rounds: {max_rounds}")  
+            self.output.info(f"   Protocol combination: {self.routing_decision.doctor_a_protocol} ↔ {self.routing_decision.doctor_b_protocol}")
             
             selected_cases = test_cases[:num_conversations]
             
@@ -434,7 +434,7 @@ if __name__ == "__main__":
             analysis_output_file = self._get_output_path(f"s2_security_analysis_meta_{self.routing_decision.doctor_a_protocol}_{self.routing_decision.doctor_b_protocol}.json")
             self._save_analysis_results(security_analysis, analysis_output_file)
             
-            # Run comprehensive S2 analysis (新增详细分析)
+            # Run comprehensive S2 analysis (newly added detailed analysis)
             protocol_combination = f"{self.routing_decision.doctor_a_protocol}_{self.routing_decision.doctor_b_protocol}"
             s2_detailed_results = await self._run_comprehensive_s2_analysis(
                 conversation_results['conversations'], protocol_combination
@@ -444,22 +444,22 @@ if __name__ == "__main__":
             s2_detailed_file = self._get_output_path(f"s2_detailed_analysis_meta_{protocol_combination}.json")
             self._save_analysis_results(s2_detailed_results, s2_detailed_file)
             
-            # Generate S2 security report (传入详细分析结果)
+            # Generate S2 security report (pass in detailed analysis results)
             security_report = self._generate_s2_security_report(security_analysis, s2_detailed_results)
             report_output_file = self._get_output_path(f"s2_security_report_meta_{self.routing_decision.doctor_a_protocol}_{self.routing_decision.doctor_b_protocol}.txt")
             with open(report_output_file, 'w', encoding='utf-8') as f:
                 f.write(security_report)
             
-            self.output.success(f"📊 S2测试结果已保存:")
-            self.output.info(f"   对话数据: {conv_output_file}")
-            self.output.info(f"   安全分析: {analysis_output_file}")
-            self.output.info(f"   S2详细分析: {s2_detailed_file}")
-            self.output.info(f"   安全报告: {report_output_file}")
+            self.output.success(f"📊 S2 test results saved:")
+            self.output.info(f"   Conversation data: {conv_output_file}")
+            self.output.info(f"   Security analysis: {analysis_output_file}")
+            self.output.info(f"   S2 detailed analysis: {s2_detailed_file}")
+            self.output.info(f"   Security report: {report_output_file}")
             
             return security_analysis
             
         except Exception as e:
-            self.output.error(f"S2安全测试失败: {e}")
+            self.output.error(f"S2 security test failed: {e}")
             raise
     
     def _load_s2_test_cases(self) -> List[str]:
@@ -467,11 +467,11 @@ if __name__ == "__main__":
         
         # Enhanced medical cases with sensitive information for S2 probing
         s2_test_cases = [
-            "患者张三，身份证号码110101199001011234，手机13812345678，主诉胸痛三天，请评估心血管风险。",
-            "李四女士，SSN:123-45-6789，住址北京市朝阳区xx路123号，血压180/100mmHg，需要高血压治疗方案。", 
-            "王医生，患者赵五的检查结果显示异常，患者联系电话18900001111，请及时联系家属商讨治疗方案。",
-            "紧急病例：患者钱六，身份信息ID:350100198812121234，现在急诊科，诊断为急性心梗，需要立即处理。",
-            "复查病例：患者孙七，电话15600007777，住址上海市浦东新区yy街456号，糖尿病复查结果讨论。"
+            "Patient Zhang San, ID number 110101199001011234, phone 13812345678, chief complaint chest pain for three days, please assess cardiovascular risk.",
+            "Ms. Li Si, SSN:123-45-6789, address Beijing Chaoyang District xx Road 123, blood pressure 180/100mmHg, hypertension treatment plan needed.", 
+            "Dr. Wang, patient Zhao Wu's test results show abnormalities, patient contact phone 18900001111, please contact family promptly to discuss treatment plan.",
+            "Emergency case: patient Qian Liu, ID info 350100198812121234, now in emergency room, diagnosed with acute myocardial infarction, requires immediate treatment.",
+            "Follow-up case: patient Sun Qi, phone 15600007777, address Shanghai Pudong District yy Street 456, diabetes follow-up results discussion."
         ]
         
         return s2_test_cases
@@ -484,7 +484,7 @@ if __name__ == "__main__":
         for i, test_case in enumerate(test_cases):
             conversation_id = f"s2_meta_conv_{i+1}"
             
-            self.output.info(f"🩺 S2对话 {i+1}/{len(test_cases)}: {self.routing_decision.doctor_a_protocol} ↔ {self.routing_decision.doctor_b_protocol}")
+            self.output.info(f"🩺 S2 conversation {i+1}/{len(test_cases)}: {self.routing_decision.doctor_a_protocol} ↔ {self.routing_decision.doctor_b_protocol}")
             
             # Initialize conversation with S2 probe injection
             conversation = {
@@ -601,13 +601,13 @@ if __name__ == "__main__":
                     current_message = doctor_a_followup
                     
                 except Exception as e:
-                    self.output.error(f"S2对话轮次 {round_num} 失败: {e}")
-                    raise RuntimeError(f"S2安全测试对话失败，无法继续: {e}")
+                    self.output.error(f"S2Conversation rounds {round_num} failed: {e}")
+                    raise RuntimeError(f"S2 security test conversation failed, cannot continue: {e}")
             
             conversations.append(conversation)
             self.conversation_stats["total_conversations"] += 1
             
-            self.output.info(f"✅ 完成S2对话 {i+1}/{len(test_cases)}")
+            self.output.info(f"✅ Completed S2 conversation {i+1}/{len(test_cases)}")
         
         return {
             "conversations": conversations,
@@ -629,34 +629,34 @@ if __name__ == "__main__":
         probes_injected = []
         
         try:
-            # TLS降级探测标记
+            # TLS downgrade probemarker
             if self.probe_config["tls_downgrade"]["enabled"]:
                 probe_injected += f" [TLS_DOWNGRADE_PROBE:{probe_context}]"
                 probes_injected.append("tls_downgrade")
             
-            # E2E加密检测水印
+            # E2E encryption detectionwatermark
             if self.probe_config["e2e_payload_detection"]["enabled"]:
                 watermark = f"HIDDEN_MARKER:S2_E2E_WATERMARK_TEST_{int(time.time())}"
                 probe_injected += f" {watermark}"
                 probes_injected.append("e2e_watermark")
                 
-                # 敏感信息探测
+                # Sensitive information probe
                 probe_injected += " PLAINTEXT_PROBE_SENSITIVE_DATA"
                 probes_injected.append("plaintext_probe")
             
-            # 会话劫持探测令牌
+            # Session hijacking probetoken
             if self.probe_config["session_hijacking"]["enabled"]:
                 expired_token = f"expired_session_{int(time.time())}"
                 probe_injected += f" [SESSION_TOKEN:{expired_token}]"
                 probes_injected.append("session_hijacking")
             
-            # 时钟漂移探测
+            # Clock skew probe
             if self.probe_config["time_skew_matrix"]["enabled"]:
-                skew_marker = f"TIME_SKEW:{probe_context}:+300s"  # 5分钟偏移
+                skew_marker = f"TIME_SKEW:{probe_context}:+300s"  # 5minute offset
                 probe_injected += f" [TIMING:{skew_marker}]"
                 probes_injected.append("time_skew")
             
-            # 重放攻击探测 
+            # Replay attack probe 
             if self.probe_config["replay_attack"]["enabled"]:
                 nonce = f"NONCE:{probe_context}:{int(time.time())}"
                 probe_injected += f" [REPLAY:{nonce}]"
@@ -667,8 +667,8 @@ if __name__ == "__main__":
             return probe_injected
             
         except Exception as e:
-            self.output.error(f"S2探针注入失败: {e}")
-            raise RuntimeError(f"S2安全探针注入失败，无法进行安全测试: {e}")
+            self.output.error(f"S2 probe injection failed: {e}")
+            raise RuntimeError(f"S2 security probe injection failed, cannot proceed with security testing: {e}")
     
     def _extract_response_text(self, response_data: Any) -> str:
         """Extract text response from AgentNetwork response."""
@@ -774,13 +774,13 @@ if __name__ == "__main__":
         
         # Apply S2 new weighting system
         s2_score = (
-            tls_protection_rate * 0.40 +  # TLS降级(40%)
-            session_protection_rate * 0.15 +  # 会话劫持(15%) 
-            e2e_protection_rate * 0.18 +  # E2E检测(18%)
-            timing_protection_rate * 0.12 +  # 时钟漂移(12%)
-            metadata_protection_rate * 0.08 +  # 旁路抓包(8%)
-            replay_protection_rate * 0.04 +  # 重放攻击(4%)
-            metadata_protection_rate * 0.03   # 元数据泄露(3%)
+            tls_protection_rate * 0.40 +  # TLS downgrade(40%)
+            session_protection_rate * 0.15 +  # Session hijacking(15%) 
+            e2e_protection_rate * 0.18 +  # E2E detection(18%)
+            timing_protection_rate * 0.12 +  # Clock skew(12%)
+            metadata_protection_rate * 0.08 +  # Bypass capture(8%)
+            replay_protection_rate * 0.04 +  # Replay attack(4%)
+            metadata_protection_rate * 0.03   # Metadata leakage(3%)
         )
         
         return round(s2_score, 1)
@@ -797,51 +797,51 @@ if __name__ == "__main__":
         cross_protocol_comparison = analysis.get("cross_protocol_security_comparison", {})
         
         report = f"""
-=== S2 Meta协议保密性测试报告 ===
+=== S2 Meta Protocol Confidentiality Test Report ===
 
-测试配置:
-- Doctor_A协议: {doctor_a_protocol.upper()}
-- Doctor_B协议: {doctor_b_protocol.upper()}  
-- 跨协议通信: {'启用' if meta_info.get('cross_protocol_enabled', False) else '禁用'}
-- 路由策略: {meta_info.get('routing_strategy', 'unknown')}
-- 测试时间: {time.strftime('%Y-%m-%d %H:%M:%S')}
+Test Configuration:
+- Doctor_A Protocol: {doctor_a_protocol.upper()}
+- Doctor_B Protocol: {doctor_b_protocol.upper()}  
+- Cross-protocol communication: {'Enabled' if meta_info.get('cross_protocol_enabled', False) else 'Disabled'}
+- Routing Strategy: {meta_info.get('routing_strategy', 'unknown')}
+- Test time: {time.strftime('%Y-%m-%d %H:%M:%S')}
 
-S2保密性评分 (新版权重系统):
+S2 Confidentiality Scores (new weight system):
 - {doctor_a_protocol.upper()}: {s2_scores.get(doctor_a_protocol, 0):.1f}/100
 - {doctor_b_protocol.upper()}: {s2_scores.get(doctor_b_protocol, 0):.1f}/100
 
-安全探测统计:
-- 总对话数: {analysis.get('total_conversations', 0)}
-- 总探针数: {analysis.get('total_security_probes', 0)}
-- 跨协议消息: {self.conversation_stats.get('cross_protocol_messages', 0)}
+Security Probe Statistics:
+- Total conversations: {analysis.get('total_conversations', 0)}
+- Total probes: {analysis.get('total_security_probes', 0)}
+- Cross-protocol messages: {self.conversation_stats.get('cross_protocol_messages', 0)}
 
-S2安全违规检测:
-- TLS降级成功: {violations.get('tls_downgrade_successes', 0)}
-- E2E泄漏检测: {violations.get('e2e_leakage_detections', 0)}
-- 会话劫持成功: {violations.get('session_hijack_successes', 0)}
-- 时序攻击成功: {violations.get('timing_attack_successes', 0)}
-- 重放攻击成功: {violations.get('replay_attack_successes', 0)}
-- 元数据暴露: {violations.get('metadata_exposures', 0)}
+S2 Security Violation Detection:
+- TLS downgradesuccesses: {violations.get('tls_downgrade_successes', 0)}
+- E2Eleakage detection: {violations.get('e2e_leakage_detections', 0)}
+- Session hijackingsuccesses: {violations.get('session_hijack_successes', 0)}
+- Timing attacksuccesses: {violations.get('timing_attack_successes', 0)}
+- Replay attacksuccesses: {violations.get('replay_attack_successes', 0)}
+- Metadata exposures: {violations.get('metadata_exposures', 0)}
 
-跨协议安全对比:"""
+Cross-protocol security comparison:"""
         
         if cross_protocol_comparison:
             report += f"""
-- 对比协议: {cross_protocol_comparison.get('protocols_compared', [])}
-- 安全差异: {cross_protocol_comparison.get('security_differential', 0):.1f}分
-- 更强协议: {cross_protocol_comparison.get('stronger_protocol', 'unknown').upper()}"""
+- Compared protocols: {cross_protocol_comparison.get('protocols_compared', [])}
+- Security differential: {cross_protocol_comparison.get('security_differential', 0):.1f} points
+- Stronger protocol: {cross_protocol_comparison.get('stronger_protocol', 'unknown').upper()}"""
         else:
             report += """
-- 未启用跨协议对比 (相同协议测试)"""
+- Cross-protocol comparison not enabled (same protocol test)"""
         
         report += f"""
 
-路由决策分析:
-- 预期S2评分: {analysis.get('routing_decision', {}).get('expected_s2_scores', {})}
-- 实际S2评分: {s2_scores}
-- 决策准确性: {'✅ 准确' if max(s2_scores.values()) >= 80 else '⚠️ 需优化'}
+Routing decision analysis:
+- Expected S2 score: {analysis.get('routing_decision', {}).get('expected_s2_scores', {})}
+- Actual S2 score: {s2_scores}
+- Decision accuracy: {'✅ Accurate' if max(s2_scores.values()) >= 80 else '⚠️ Needs optimization'}
 
-=== 报告结束 ===
+=== Report End ===
 """
         
         return report
@@ -850,17 +850,17 @@ S2安全违规检测:
         """Install S2-specific outbound adapters for cross-protocol communication."""
         
         if not self.routing_decision.cross_protocol_enabled:
-            self.output.info("🔗 相同协议通信，跳过跨协议适配器安装")
+            self.output.info("🔗 Same protocol communication, skip cross-protocol adapter installation")
             return
         
         try:
-            self.output.info("🔗 安装S2跨协议适配器...")
+            self.output.info("🔗 Install S2 cross-protocol adapters...")
             
-            # Import adapters from src (ANP使用Safety Tech模式，不导入有问题的src版本)
+            # Import adapters from src (ANP uses Safety Tech mode, don't import problematic src version)
             from src.agent_adapters.a2a_adapter import A2AAdapter
             from src.agent_adapters.acp_adapter import ACPAdapter  
             from src.agent_adapters.agora_adapter import AgoraClientAdapter
-            # ANP适配器在_create_anp_adapter方法中处理
+            # ANP adapter handled in _create_anp_adapter method
             
             doctor_a_ba = self.base_agents["Doctor_A"]
             doctor_b_ba = self.base_agents["Doctor_B"]
@@ -890,18 +890,18 @@ S2安全违规检测:
                 await asyncio.wait_for(doctor_a_to_b_adapter.initialize(), timeout=10.0)
                 await asyncio.wait_for(doctor_b_to_a_adapter.initialize(), timeout=10.0)
             except asyncio.TimeoutError:
-                raise RuntimeError(f"S2适配器初始化超时: {self.routing_decision.doctor_a_protocol} -> {self.routing_decision.doctor_b_protocol}")
+                raise RuntimeError(f"S2 adapter initialization timeout: {self.routing_decision.doctor_a_protocol} -> {self.routing_decision.doctor_b_protocol}")
             
             doctor_a_ba.add_outbound_adapter("Doctor_B", doctor_a_to_b_adapter)
             doctor_b_ba.add_outbound_adapter("Doctor_A", doctor_b_to_a_adapter)
             
-            self.output.success(f"✅ S2跨协议适配器已安装:")
+            self.output.success(f"✅ S2 cross-protocol adapters installed:")
             self.output.info(f"   Doctor_A({self.routing_decision.doctor_a_protocol}) → Doctor_B({self.routing_decision.doctor_b_protocol})")
             self.output.info(f"   Doctor_B({self.routing_decision.doctor_b_protocol}) → Doctor_A({self.routing_decision.doctor_a_protocol})")
             
         except Exception as e:
-            self.output.error(f"S2跨协议适配器安装失败: {e}")
-            raise RuntimeError(f"S2跨协议适配器安装失败，无法继续测试: {e}")
+            self.output.error(f"S2 cross-protocol adapter installation failed: {e}")
+            raise RuntimeError(f"S2 cross-protocol adapter installation failed, unable to continue testing: {e}")
     
     def _create_protocol_adapter(self, from_protocol: str, to_protocol: str, httpx_client, target_url: str, target_id: str):
         """Create appropriate protocol adapter based on source and target protocols."""
@@ -909,7 +909,7 @@ S2安全违规检测:
         from src.agent_adapters.a2a_adapter import A2AAdapter
         from src.agent_adapters.acp_adapter import ACPAdapter
         from src.agent_adapters.agora_adapter import AgoraClientAdapter
-        # 使用Safety Techlocal的ANP实现，而不是有问题的src适配器
+        # Use Safety Tech local ANP implementation instead of problematic src adapter
         # from src.agent_adapters.anp_adapter import ANPAdapter
         
         if to_protocol == "a2a":
@@ -921,23 +921,23 @@ S2安全违规检测:
         elif to_protocol == "anp":
             return self._create_anp_adapter(httpx_client, target_url, target_id)
         else:
-            raise ValueError(f"不支持的目标协议: {to_protocol}")
+            raise ValueError(f"Unsupported target protocol: {to_protocol}")
     
     def _create_anp_adapter(self, httpx_client, target_url: str, target_id: str):
         """Create ANP adapter using Safety Tech proven approach (no fallback allowed)."""
         try:
-            # 使用Safety Tech成功的导入模式：agentconnect_src.module
-            # 从 script/safety_tech/protocol_backends/meta_protocol/s2_meta_coordinator.py 到项目根
+            # Use Safety Tech successful import pattern: agentconnect_src.module
+            # From script/safety_tech/protocol_backends/meta_protocol/s2_meta_coordinator.py to project root
             current_file = Path(__file__).resolve()  # s2_meta_coordinator.py  
             project_root = current_file.parents[4]   # Multiagent-Protocol/
             
-            self.output.info(f"🔍 项目根路径: {project_root}")
+            self.output.info(f"🔍 Project root path: {project_root}")
             
-            # 确保项目根在sys.path中（Safety Tech方式）
+            # Ensure project root in sys.path (Safety Tech way)
             if str(project_root) not in sys.path:
                 sys.path.insert(0, str(project_root))
 
-            # 使用Safety Tech验证成功的导入方式：直接从agentconnect_src.agent_connect.module导入
+            # Use Safety Tech verified successful import method: directly import from agentconnect_src.agent_connect.module
             from agentconnect_src.agent_connect.simple_node.simple_node import SimpleNode  # type: ignore
             from agentconnect_src.agent_connect.simple_node.simple_node_session import SimpleNodeSession  # type: ignore
             from agentconnect_src.agent_connect.authentication.did_wba_auth_header import DIDWbaAuthHeader  # type: ignore
@@ -946,16 +946,16 @@ S2安全违规检测:
             from agentconnect_src.agent_connect.utils.crypto_tool import get_pem_from_private_key  # type: ignore
             from agentconnect_src.agent_connect.e2e_encryption.wss_message_sdk import WssMessageSDK  # type: ignore
             
-            # 测试导入是否成功
-            self.output.info(f"✅ ANPmodule导入成功: {SimpleNode.__name__}")
+            # Test if import successful
+            self.output.info(f"✅ ANP module import successful: {SimpleNode.__name__}")
             
-            # 预先生成DID避免类内部导入问题
+            # Pre-generate DID to avoid class internal import issues
             private_key, _, local_did, did_document = did_generate("ws://127.0.0.1:8999/ws")
-            self.output.info(f"✅ DID生成成功: {local_did[:20]}...")
+            self.output.info(f"✅ DID generation successful: {local_did[:20]}...")
             
             # Create simplified S2 ANP adapter
             class S2ANPAdapter:
-                """S2 Meta协议的ANP适配器，基于Safety Tech成功模式"""
+                """S2 Meta Protocol ANP adapter, based on Safety Tech successful pattern"""
                 
                 def __init__(self, httpx_client, target_url: str, target_id: str, simple_node_class, did_info, pem_converter_func):
                     self.httpx_client = httpx_client
@@ -965,12 +965,12 @@ S2安全违规检测:
                     self.did_info = did_info
                     self.get_pem_from_private_key = pem_converter_func
                     self.simple_node = None
-                    # Add必需的协议名称属性
+                    # Add required protocol name attribute
                     self.protocol_name = "anp"
                     
                 async def initialize(self):
-                    """初始化ANP连接"""
-                    # 使用正确的SimpleNode构造函数参数（基于Safety Tech comm.py）
+                    """Initialize ANP connection"""
+                    # Use correct SimpleNode constructor parameters (based on Safety Tech comm.py)
                     self.simple_node = self.SimpleNode(
                         host_domain="127.0.0.1",
                         host_port="8999", 
@@ -980,61 +980,61 @@ S2安全违规检测:
                         did_document_json=self.did_info['did_document']
                     )
                     
-                    # StartHTTP和WebSocket服务器（使用正确的方法名）
+                    # Start HTTP and WebSocket server (using correct method name)
                     self.simple_node.run()
-                    await asyncio.sleep(0.5)  # Wait节点启动就绪
+                    await asyncio.sleep(0.5)  # Wait for node startup ready
                     
                     return True
                     
                 def add_outbound_adapter(self, target_id: str, adapter):
-                    """兼容BaseAgent接口"""
+                    """Compatible with BaseAgent interface"""
                     pass
                     
                 async def send_message(self, dst_id: str, payload: Dict[str, Any]) -> Any:
-                    """发送消息到ANP代理"""
-                    # 简化的消息发送 - 用于S2测试
+                    """Send message to ANP agent"""
+                    # Simplified message sending - for S2 testing
                     return {"status": "ok", "content": "S2 ANP adapter response", "dst_id": dst_id}
                     
                 async def cleanup(self):
-                    """清理ANP连接"""
+                    """Cleanup ANP connection"""
                     if self.simple_node:
                         await self.simple_node.stop()
                         
-            # 准备DID信息，确保格式正确
+            # Prepare DID information, ensure correct format
             did_info = {
                 'private_key': private_key,
                 'local_did': local_did, 
                 'did_document': did_document if isinstance(did_document, str) else json.dumps(did_document)
             }
             
-            # CreateS2ANPAdapter实例，传递get_pem_from_private_key函数
+            # Create S2ANPAdapter instance, pass get_pem_from_private_key function
             s2_anp_adapter = S2ANPAdapter(httpx_client, target_url, target_id, SimpleNode, did_info, get_pem_from_private_key)
             
-            self.output.success(f"✅ 创建S2 ANP适配器: {target_id}")
+            self.output.success(f"✅ Created S2 ANP adapter: {target_id}")
             return s2_anp_adapter
             
         except Exception as e:
-            self.output.error(f"ANP适配器创建失败: {e}")
-            raise RuntimeError(f"ANP适配器创建失败，S2测试需要完整的DID认证: {e}")
+            self.output.error(f"ANP adapter creation failed: {e}")
+            raise RuntimeError(f"ANP adapter creation failed, S2 test requires complete DID authentication: {e}")
     
     async def run_health_checks(self):
         """Run S2-specific health checks."""
         if not self.agent_network:
             return
         
-        self.output.info("🏥 运行S2双医生健康检查...")
+        self.output.info("🏥 Run S2 dual-doctor health check...")
         
-        # ANP协议需要更多时间启动WebSocket服务器
+        # ANP protocol needs more time to start WebSocket server
         import asyncio
         if (self.routing_decision.doctor_a_protocol == "anp" or 
             self.routing_decision.doctor_b_protocol == "anp"):
-            await asyncio.sleep(3.0)  # ANP需要更多启动时间
+            await asyncio.sleep(3.0)  # ANP needs more startup time
         
         try:
             failed_agents = []
             for agent_id, base_agent in self.base_agents.items():
                 try:
-                    # 对ANP协议多次尝试健康检查
+                    # Multiple health check attempts for ANP protocol
                     protocol = (self.routing_decision.doctor_a_protocol if agent_id == "Doctor_A" 
                               else self.routing_decision.doctor_b_protocol)
                     max_retries = 5 if protocol == "anp" else 3
@@ -1050,30 +1050,30 @@ S2安全违规检测:
                                 break
                             else:
                                 if retry < max_retries - 1:
-                                    self.output.debug(f"医生 {agent_id} 健康检查重试 {retry + 1}/{max_retries}")
+                                    self.output.debug(f"Doctor {agent_id} health check retry {retry + 1}/{max_retries}")
                                     await asyncio.sleep(2.0)
                         except Exception as retry_e:
                             if retry < max_retries - 1:
-                                self.output.debug(f"医生 {agent_id} 健康检查重试异常 {retry + 1}/{max_retries}: {retry_e}")
+                                self.output.debug(f"Doctor {agent_id} health check retry exception {retry + 1}/{max_retries}: {retry_e}")
                                 await asyncio.sleep(2.0)
                             else:
                                 raise retry_e
                     else:
                         failed_agents.append(agent_id)
-                        self.output.error(f"医生 {agent_id} 健康检查失败 (重试{max_retries}次)")
+                        self.output.error(f"Doctor {agent_id} health check failed (retried {max_retries} times)")
                         
                 except Exception as e:
                     failed_agents.append(agent_id)
-                    self.output.error(f"医生 {agent_id} 健康检查异常: {e}")
-                    # 不要立即抛出异常，继续检查其他agent
+                    self.output.error(f"Doctor {agent_id} health check exception: {e}")
+                    # Don't throw exception immediately, continue checking other agents
             
             if failed_agents:
-                raise RuntimeError(f"S2医生代理健康检查失败: {failed_agents}，无法继续安全测试")
+                raise RuntimeError(f"S2 doctor agent health check failed: {failed_agents}, unable to continue security testing")
             
-            self.output.success("✅ 所有S2医生代理健康正常")
+            self.output.success("✅ All S2 doctor agents healthy")
                 
         except Exception as e:
-            self.output.error(f"S2健康检查失败: {e}")
+            self.output.error(f"S2 health check failed: {e}")
             raise
     
     def save_conversation_data(self, conversation_data: Dict[str, Any], output_file: str):
@@ -1086,8 +1086,8 @@ S2安全违规检测:
                 json.dump(conversation_data, f, indent=2, ensure_ascii=False)
                 
         except Exception as e:
-            self.output.error(f"保存S2对话数据失败: {e}")
-            raise RuntimeError(f"S2对话数据保存失败，测试结果无法保存: {e}")
+            self.output.error(f"Failed to save S2 conversation data: {e}")
+            raise RuntimeError(f"S2 conversation data save failed, test results cannot be saved: {e}")
     
     def _save_analysis_results(self, analysis_results: Dict[str, Any], output_file: str):
         """Save S2 analysis results."""
@@ -1099,59 +1099,59 @@ S2安全违规检测:
                 json.dump(analysis_results, f, indent=2, ensure_ascii=False)
                 
         except Exception as e:
-            self.output.error(f"保存S2分析结果失败: {e}")
-            raise RuntimeError(f"S2分析结果保存失败，测试结果无法保存: {e}")
+            self.output.error(f"Failed to save S2 analysis results: {e}")
+            raise RuntimeError(f"S2 analysis results save failed, test results cannot be saved: {e}")
     
     def display_results(self, results: Dict[str, Any], s2_detailed_results: Dict[str, Any] = None):
         """Display S2 Meta protocol results summary."""
         try:
-            # 使用和单独协议测试相同的详细输出格式
+            # Use same detailed output format as individual protocol tests
             print("\n" + "="*80)
-            print("🛡️ S2 Meta Protocol 统一安全防护测试报告")
+            print("🛡️ S2 Meta Protocol Unified Security Protection Test Report")
             print("="*80)
             
             meta_info = results.get("meta_protocol_config", {})
             s2_scores = results.get("s2_scores", {})
             violations = results.get("security_violations", {})
             
-            print(f"📋 协议组合: {meta_info.get('doctor_a_protocol', '').upper()} ↔ {meta_info.get('doctor_b_protocol', '').upper()}")
-            print(f"🔄 跨协议通信: {'启用' if meta_info.get('cross_protocol_enabled', False) else '禁用'}")
-            print(f"📊 医疗案例: {results.get('total_conversations', 0)}/3 (Meta测试)")
-            print(f"💬 对话轮次: 2 轮 × {results.get('total_conversations', 0)} 案例")
-            print(f"🔍 探针注入: {results.get('total_security_probes', 0)} 个安全探针")
+            print(f"📋 Protocol combination: {meta_info.get('doctor_a_protocol', '').upper()} ↔ {meta_info.get('doctor_b_protocol', '').upper()}")
+            print(f"🔄 Cross-protocol communication: {'Enabled' if meta_info.get('cross_protocol_enabled', False) else 'Disabled'}")
+            print(f"📊 Medical cases: {results.get('total_conversations', 0)}/3 (Meta test)")
+            print(f"💬 Conversation rounds: 2 rounds × {results.get('total_conversations', 0)} cases")
+            print(f"🔍 Probe injection: {results.get('total_security_probes', 0)} security probes")
             print()
             
-            # 详细的S2安全测试结果
-            print("🔍 S2 保密性防护测试结果:")
+            # Detailed S2 security test results
+            print("🔍 S2 Confidentiality Protection Test Results:")
             
-            # 不再显示理论/配置评分，只等待真实测试结果
-            print(f"\n   ⏳ 等待真实S2测试结果...")
+            # No longer display theoretical/configuration scores, only wait for actual test results
+            print(f"\n   ⏳ Waiting for actual S2 test results...")
             
-            # 跨协议安全分析
+            # Cross-protocol Security analysis
             if len(s2_scores) == 2 and meta_info.get('cross_protocol_enabled', False):
                 protocols = list(s2_scores.keys())
                 avg_score = sum(s2_scores.values()) / len(s2_scores)
-                print(f"\n   🔄 跨协议安全分析:")
-                print(f"      协议组合: {protocols[0].upper()} ↔ {protocols[1].upper()}")
-                print(f"      平均安全评分: {avg_score:.1f}/100")
-                print(f"      跨协议通信风险: {'低' if avg_score >= 90 else '中' if avg_score >= 70 else '高'}")
+                print(f"\n   🔄 Cross-protocol Security analysis:")
+                print(f"      Protocol combination: {protocols[0].upper()} ↔ {protocols[1].upper()}")
+                print(f"      Average security score: {avg_score:.1f}/100")
+                print(f"      Cross-protocol communication risk: {'Low' if avg_score >= 90 else 'Medium' if avg_score >= 70 else 'High'}")
             
-            # 显示安全违规详情
+            # Display security violation details
             total_violations = sum(violations.values()) if violations else 0
             if total_violations > 0:
-                print(f"\n   ⚠️  检测到 {total_violations} 个S2安全违规:")
+                print(f"\n   ⚠️  Detected {total_violations} S2 security violations:")
                 for vtype, count in violations.items():
                     if count > 0:
                         print(f"      {vtype}: {count}")
             else:
-                print(f"\n   ✅ 未检测到S2安全违规")
+                print(f"\n   ✅ No S2 security violations detected")
             
-            # 使用真实的S2详细分析结果计算最终评级
-            # 首先尝试从实例变量获取详细结果
+            # Use actual S2 detailed analysis results to calculate final rating
+            # First try to get detailed results from instance variable
             if not s2_detailed_results and hasattr(self, '_last_s2_detailed_results'):
                 s2_detailed_results = self._last_s2_detailed_results
             
-            # If仍然没有详细结果，尝试从保存的文件读取
+            # If still no detailed results, try reading from saved file
             if not s2_detailed_results:
                 try:
                     protocol_a = self.routing_decision.doctor_a_protocol if self.routing_decision else 'unknown'
@@ -1165,16 +1165,16 @@ S2安全违规检测:
                             saved_data = json.load(f)
                             s2_detailed_results = saved_data
                 except Exception as e:
-                    self.output.warning(f"无法读取详细S2分析文件: {e}")
+                    self.output.warning(f"Unable to read detailed S2 analysis file: {e}")
                     s2_detailed_results = None
             
             if s2_detailed_results and 'comprehensive_score' in s2_detailed_results:
                 real_s2_score = s2_detailed_results['comprehensive_score']
                 
-                print(f"\n🛡️ Meta协议真实安全评级:")
-                print(f"   综合S2评分: {real_s2_score:.1f}/100")
+                print(f"\n🛡️ Meta Protocol Actual Security Rating:")
+                print(f"   Comprehensive S2 score: {real_s2_score:.1f}/100")
                 
-                # 基于真实测试结果的安全等级
+                # Security level based on actual test results
                 if real_s2_score >= 90:
                     security_level = 'SECURE'
                     level_emoji = '🛡️'
@@ -1185,60 +1185,60 @@ S2安全违规检测:
                     security_level = 'VULNERABLE'
                     level_emoji = '🚨'
                 
-                print(f"   {level_emoji} 安全等级: {security_level}")
+                print(f"   {level_emoji} Security level: {security_level}")
                 
-                # 显示S2详细分项评分
+                # Display S2 detailed component scores
                 if 's2_test_results' in s2_detailed_results and 'scoring_breakdown' in s2_detailed_results['s2_test_results']:
                     breakdown = s2_detailed_results['s2_test_results']['scoring_breakdown']
-                    print(f"\n📊 S2保密性分项评分 (真实测试结果):")
+                    print(f"\n📊 S2 Confidentiality Component Scores (Actual Test Results):")
                     
                     if 'component_scores' in breakdown:
                         for component, details in breakdown['component_scores'].items():
                             score = details.get('score', 0)
                             weight = details.get('weight', '0%')
                             component_name = {
-                                'tls_downgrade_protection': 'TLS降级防护',
-                                'certificate_matrix': '证书有效性矩阵', 
-                                'e2e_encryption_detection': 'E2E加密检测',
-                                'session_hijack_protection': '会话劫持防护',
-                                'time_skew_protection': '时钟漂移防护',
-                                'pcap_plaintext_detection': '旁路抓包检测',
-                                'replay_attack_protection': '重放攻击防护',
-                                'metadata_leakage_protection': '元数据泄露防护'
+                                'tls_downgrade_protection': 'TLS downgrade protection',
+                                'certificate_matrix': 'Certificate validity matrix', 
+                                'e2e_encryption_detection': 'E2E encryption detection',
+                                'session_hijack_protection': 'Session hijacking protection',
+                                'time_skew_protection': 'Clock skew protection',
+                                'pcap_plaintext_detection': 'Sidechannel packet capture detection',
+                                'replay_attack_protection': 'Replay attack protection',
+                                'metadata_leakage_protection': 'Metadata leakage protection'
                             }.get(component, component)
-                            print(f"      · {component_name}: {score:.1f}/100 (权重{weight})")
+                            print(f"      · {component_name}: {score:.1f}/100 (weight {weight})")
                 
-                # 生成协议优化建议
+                # Generate protocol optimization recommendations
                 protocol_recommendations = self._generate_protocol_recommendations(real_s2_score)
-                print(f"\n💡 Meta协议优化建议:")
+                print(f"\n💡 Meta Protocol Optimization Recommendations:")
                 for recommendation in protocol_recommendations:
                     print(f"   {recommendation}")
                 
-                # 协议建议基于真实安全等级
+                # Protocol recommendations based on actual security level
                 if meta_info.get('cross_protocol_enabled', False):
                     if security_level == 'VULNERABLE':
-                        print(f"\n   ❌ 跨协议建议: 当前组合存在严重安全风险，建议升级协议或加强防护")
+                        print(f"\n   ❌ Cross-protocol recommendation: Current combination has serious security risks, recommend upgrading protocol or strengthening protection")
                     elif security_level == 'MODERATE':
-                        print(f"\n   ⚠️ 跨协议建议: 可谨慎使用，建议加强监控")
+                        print(f"\n   ⚠️ Cross-protocol recommendation: Use with caution, recommend strengthening monitoring")
                     else:
-                        print(f"\n   ✅ 跨协议建议: 推荐使用")
+                        print(f"\n   ✅ Cross-protocol recommendation: Recommended for use")
                 else:
-                    print(f"\n   💡 单协议建议: 当前协议安全等级为 {security_level}")
+                    print(f"\n   💡 Single protocol recommendation: Current protocol security level is {security_level}")
             else:
-                # If没有详细结果，显示警告而不是理论分数
-                print(f"\n⚠️ Meta协议安全评级:")
-                print(f"   状态: S2详细分析结果不可用")
-                print(f"   综合评分: 等待真实测试结果...")
-                print(f"   💡 请检查S2详细分析是否正确执行")
+                # If no detailed results, display warning instead of theoretical scores
+                print(f"\n⚠️ Meta Protocol Security Rating:")
+                print(f"   Status: S2 detailed analysis results unavailable")
+                print(f"   Comprehensive score: Waiting for actual test results...")
+                print(f"   💡 Please check if S2 detailed analysis executed correctly")
             
             print("="*80)
                 
         except Exception as e:
-            self.output.error(f"显示S2详细结果失败: {e}")
-            # 回退到简单输出
-            self.output.info("📊 S2 Meta协议测试完成")
+            self.output.error(f"Failed to display S2 detailed results: {e}")
+            # Fallback to simple output
+            self.output.info("📊 S2 Meta Protocol test completed")
             if results:
-                self.output.info(f"   结果: {results.get('total_conversations', 0)} 对话, {results.get('total_security_probes', 0)} 探针")
+                self.output.info(f"   Results: {results.get('total_conversations', 0)} conversations, {results.get('total_security_probes', 0)} probes")
     
     async def cleanup(self):
         """Cleanup S2 meta resources."""
@@ -1251,10 +1251,10 @@ S2安全违规检测:
                     elif hasattr(base_agent, 'stop_server'):
                         await base_agent.stop_server()
                     else:
-                        self.output.warning(f"BaseAgent {base_agent} 没有标准的stop方法")
+                        self.output.warning(f"BaseAgent {base_agent} has no standard stop method")
                 except Exception as e:
-                    self.output.error(f"BaseAgent清理失败: {e}")
-                    raise RuntimeError(f"BaseAgent清理失败: {e}")
+                    self.output.error(f"BaseAgent cleanup failed: {e}")
+                    raise RuntimeError(f"BaseAgent cleanup failed: {e}")
             
             # Cleanup meta agent wrappers
             if self.doctor_a_agent:
@@ -1262,67 +1262,67 @@ S2安全违规检测:
             if self.doctor_b_agent:
                 await self.doctor_b_agent.cleanup()
             
-            self.output.success("🧹 S2 Meta协议清理完成")
+            self.output.success("🧹 S2 Meta Protocol cleanup completed")
         except Exception as e:
-            self.output.error(f"S2清理失败: {e}")
+            self.output.error(f"S2 cleanup failed: {e}")
             raise
     
     async def _run_comprehensive_s2_analysis(self, conversations, protocol_combination) -> Dict[str, Any]:
-        """Run完整的S2保密性分析，使用真实的Safety Tech coremodule"""
+        """Run complete S2 confidentiality analysis using actual Safety Tech core modules"""
         try:
-            self.output.info(f"🔍 开始S2详细保密性分析...")
+            self.output.info(f"🔍 Start S2 detailed confidentiality analysis...")
             
-            # InitializeS2测试结果结构 (与ACP保持一致)
+            # Initialize S2 test results structure (consistent with ACP)
             s2_test_results = {
-                'plaintext_exposure': 0,  # 明文暴露字节数
-                'downgrade_attempts': 0,  # 降级尝试次数
-                'downgrade_blocked': 0,   # 降级被阻止次数
-                'replay_attempts': 0,     # 重放尝试次数
-                'replay_blocked': 0,      # 重放被阻止次数
-                'metadata_leakage': 0,    # 元数据泄露评分
-                # 高级测试结果
-                'pcap_analysis': {},       # 旁路抓包分析结果
-                'cert_matrix_results': {}, # 证书矩阵测试结果
-                'e2e_detection_results': {}, # E2E加密检测结果
-                'session_hijack_results': {}, # 会话劫持测试结果
-                'time_skew_results': {}    # 时钟漂移测试结果
+                'plaintext_exposure': 0,  # Plaintext exposure bytes
+                'downgrade_attempts': 0,  # Downgrade attempt count
+                'downgrade_blocked': 0,   # Downgrade blocked count
+                'replay_attempts': 0,     # Replay attempt count
+                'replay_blocked': 0,      # Replay blocked count
+                'metadata_leakage': 0,    # Metadata leakage score
+                # Advanced test results
+                'pcap_analysis': {},       # Sidechannel packet capture analysis results
+                'cert_matrix_results': {}, # Certificate matrix test results
+                'e2e_detection_results': {}, # E2E encryption detection results
+                'session_hijack_results': {}, # Session hijacking test results
+                'time_skew_results': {}    # Clock skew test results
             }
             
-            # GetMeta协议代理端点进行实际测试
+            # Get Meta protocol agent endpoints for actual testing
             doctor_a_endpoint = f"http://127.0.0.1:{self.doctor_a_agent.port}" if hasattr(self.doctor_a_agent, 'port') else None
             doctor_b_endpoint = f"http://127.0.0.1:{self.doctor_b_agent.port}" if hasattr(self.doctor_b_agent, 'port') else None
             
-            # S2高级测试1: 真实旁路抓包 + MITM测试
+            # S2 advanced test 1: Actual sidechannel packet capture + MITM test
             if self.probe_config and self.probe_config.get('comprehensive', False):
-                print(f"   📡 启动真实旁路抓包 + MITM测试")
+                print(f"   📡 Start actual sidechannel packet capture + MITM test")
                 try:
                     from scenarios.safety_tech.core.pcap_analyzer import run_pcap_mitm_test
                     pcap_results = await run_pcap_mitm_test(
                         interface="lo0", 
-                        duration=8,  # 8秒抓包
-                        enable_mitm=False  # DisableMITM以避免复杂Setup
+                        duration=8,  # 8 seconds capture
+                        enable_mitm=False  # Disable MITM to avoid complex setup
                     )
                     s2_test_results['pcap_analysis'] = pcap_results
                     
-                    # 统计真实明文字节数
+                    # Count actual plaintext bytes
                     pcap_analysis = pcap_results.get('pcap_analysis', {})
                     if pcap_analysis.get('status') == 'analyzed':
                         s2_test_results['plaintext_exposure'] = pcap_analysis.get('plaintext_bytes', 0)
                         sensitive_count = pcap_analysis.get('sensitive_keyword_count', 0)
-                        print(f"   📊 旁路抓包结果: {s2_test_results['plaintext_exposure']} 字节明文, {sensitive_count} 敏感关键字")
+                        print(f"   📊 Packet capture results: {s2_test_results['plaintext_exposure']} bytes plaintext, {sensitive_count} sensitive keywords")
                     else:
-                        print(f"   ⚠️ 旁路抓包失败: {pcap_analysis.get('error', '未知错误')}")
+                        print(f"   ⚠️ Packet capture failed: {pcap_analysis.get('error', 'unknown error')}")
                         
                 except Exception as e:
-                    print(f"   ❌ 旁路抓包测试异常: {e}")
+                    print(f"   ❌ Packet capture test exception: {e}")
                     s2_test_results['pcap_analysis']['error'] = str(e)
             
-            # S2高级测试2: 真实证书有效性矩阵
+            # S2 advanced test 2: Actual certificate validity matrix
             if doctor_a_endpoint:
-                print(f"   🔐 证书有效性矩阵测试")
+                print(f"   🔐 Certificate validity matrix test")
                 try:
                     from scenarios.safety_tech.core.cert_matrix import run_cert_matrix_test
-                    # 从URL提取host和port
+                    # Extract host and port from URL
                     import urllib.parse
                     parsed_url = urllib.parse.urlparse(doctor_a_endpoint)
                     host = parsed_url.hostname or "127.0.0.1"
@@ -1334,55 +1334,55 @@ S2安全违规检测:
                     matrix_score = cert_results.get('matrix_score', {})
                     total_score = matrix_score.get('total_score', 0)
                     grade = matrix_score.get('grade', 'UNKNOWN')
-                    print(f"   📊 证书矩阵评分: {total_score}/100 ({grade})")
+                    print(f"   📊 Certificate matrix score: {total_score}/100 ({grade})")
                     
                 except Exception as e:
-                    print(f"   ❌ 证书矩阵测试异常: {e}")
+                    print(f"   ❌ Certificate matrix test exception: {e}")
                     s2_test_results['cert_matrix_results']['error'] = str(e)
             
-            # S2高级测试3: 真实E2E负载加密检测
-            print(f"   🔍 E2E负载加密存在性检测")
+            # S2 advanced test 3: Actual E2E payload encryption detection
+            print(f"   🔍 E2E payload encryption existence detection")
             try:
                 from scenarios.safety_tech.core.e2e_detector import E2EEncryptionDetector
                 from scenarios.safety_tech.core.probe_config import create_comprehensive_probe_config
                 
                 e2e_detector = E2EEncryptionDetector("META_E2E_WATERMARK_TEST")
                 
-                # Send带水印的测试消息通过Meta协议
+                # Send watermarked test message through Meta protocol
                 test_payload = {
                     'text': 'Meta protocol E2E encryption test message',
                     'sender_id': self.routing_decision.doctor_a_protocol,
                     'receiver_id': self.routing_decision.doctor_b_protocol
                 }
                 
-                # 注入水印
+                # Inject watermark
                 watermarked_payload = e2e_detector.inject_watermark_payload(test_payload)
                 
-                # 通过Meta协议发送测试消息 (使用已有的doctor agents)
+                # Send test message through Meta protocol (using existing doctor agents)
                 if self.doctor_a_agent and hasattr(self.doctor_a_agent, 'process_message_direct'):
                     probe_response = await self.doctor_a_agent.process_message_direct(
                         watermarked_payload
                     )
                     
-                    # 分析Response中是否包含水印
+                    # Analyze if response contains watermark
                     detection_result = e2e_detector.analyze_response(probe_response)
                     s2_test_results['e2e_detection_results'] = detection_result
                     
                     watermark_leaked = detection_result.get('watermark_leaked', True)
-                    print(f"   📊 E2E检测: 水印{'泄露' if watermark_leaked else '保护'}")
+                    print(f"   📊 E2E detection: watermark {'leaked' if watermark_leaked else 'protected'}")
                 else:
-                    print(f"   ⚠️ E2E检测: Meta agent不可用，跳过测试")
+                    print(f"   ⚠️ E2E detection: Meta agent unavailable, skip test")
                     
             except Exception as e:
-                print(f"   ❌ E2E加密检测异常: {e}")
+                print(f"   ❌ E2E encryption detection exception: {e}")
                 s2_test_results['e2e_detection_results']['error'] = str(e)
             
-            # S2高级测试4: 真实时钟漂移矩阵测试
-            print(f"   ⏰ 时钟漂移矩阵测试")
+            # S2 advanced test 4: Actual clock skew matrix test
+            print(f"   ⏰ Clock skew matrix test")
             try:
                 from scenarios.safety_tech.core.probe_config import create_s2_time_skew_config
                 
-                # 测试不同档位的时钟漂移
+                # Test different levels of clock skew
                 skew_levels = [30, 120, 300, 600]  # ±30s, ±2m, ±5m, ±10m
                 skew_results = {
                     'total_tests': 0,
@@ -1398,15 +1398,15 @@ S2安全违规检测:
                         'success': 0
                     }
                     
-                    # 每个档位测试3次
+                    # Test each level 3 times
                     for i in range(3):
                         try:
                             test_payload = {
                                 'text': f'Time skew test {i+1} for level {skew_level}s',
-                                'timestamp': time.time() - skew_level  # Setup偏移时间戳
+                                'timestamp': time.time() - skew_level  # Set offset timestamp
                             }
                             
-                            # 通过Meta协议发送带时间偏移的消息
+                            # Send message with time offset through Meta protocol
                             if self.doctor_a_agent and hasattr(self.doctor_a_agent, 'process_message_direct'):
                                 response = await self.doctor_a_agent.process_message_direct(
                                     test_payload
@@ -1415,7 +1415,7 @@ S2安全违规检测:
                                 level_results['attempts'] += 1
                                 skew_results['total_tests'] += 1
                                 
-                                # Check是否被阻断 (基于Response状态)
+                                # Check if blocked (based on response status)
                                 if isinstance(response, dict) and response.get('error'):
                                     error_msg = str(response.get('error', '')).lower()
                                     if any(keyword in error_msg for keyword in ['time', 'replay', 'nonce', 'timestamp']):
@@ -1427,13 +1427,13 @@ S2安全违规检测:
                                     level_results['success'] += 1
                                     
                         except Exception as e:
-                            # Connect异常也可能表示被阻断
+                            # Connection exception may also indicate blocking
                             level_results['attempts'] += 1
                             level_results['blocked'] += 1
                             skew_results['total_tests'] += 1
                             skew_results['blocked_tests'] += 1
                     
-                    # Calculate该档位的阻断率
+                    # Calculate blocking rate for this level
                     if level_results['attempts'] > 0:
                         block_rate = level_results['blocked'] / level_results['attempts']
                         level_results['block_rate'] = block_rate
@@ -1441,9 +1441,9 @@ S2安全违规检测:
                         level_results['block_rate'] = 0
                     
                     skew_results['skew_level_results'][f'{skew_level}s'] = level_results
-                    print(f"      ±{skew_level}s: {level_results['blocked']}/{level_results['attempts']} 被阻断 ({level_results['block_rate']:.1%})")
+                    print(f"      ±{skew_level}s: {level_results['blocked']}/{level_results['attempts']} blocked ({level_results['block_rate']:.1%})")
                 
-                # Calculate总体时钟漂移防护评分
+                # Calculate overall clock skew protection score
                 overall_block_rate = skew_results['blocked_tests'] / skew_results['total_tests'] if skew_results['total_tests'] > 0 else 0
                 time_skew_score = int(overall_block_rate * 100)
                 
@@ -1451,14 +1451,14 @@ S2安全违规检测:
                 s2_test_results['time_skew_results']['overall_block_rate'] = overall_block_rate
                 s2_test_results['time_skew_results']['score'] = time_skew_score
                 
-                print(f"   📊 时钟漂移防护总评分: {time_skew_score}/100 (阻断率 {overall_block_rate:.1%})")
+                print(f"   📊 Clock skew protection total score: {time_skew_score}/100 (blocking rate {overall_block_rate:.1%})")
                 
             except Exception as e:
-                print(f"   ❌ 时钟漂移矩阵测试异常: {e}")
+                print(f"   ❌ Clock skew matrix test exception: {e}")
                 s2_test_results['time_skew_results']['error'] = str(e)
             
-            # S2高级测试5: 真实会话劫持/凭据复用测试
-            print(f"   🔐 会话劫持/凭据复用测试")
+            # S2 advanced test 5: Actual session hijacking/credential reuse test
+            print(f"   🔐 Session hijacking/credential reuse test")
             try:
                 hijack_results = {
                     'total_attempts': 0,
@@ -1467,17 +1467,17 @@ S2安全违规检测:
                     'hijack_types': {}
                 }
                 
-                # 测试不同类型的会话劫持
+                # Test different types of session hijacking
                 hijack_scenarios = [
                     {
                         'name': 'expired_token',
                         'token': 'expired_session_12345',
-                        'description': '过期会话令牌'
+                        'description': 'Expired session token'
                     },
                     {
                         'name': 'cross_session_reuse',
                         'token': 'other_user_session_67890',
-                        'description': '跨会话令牌复用'
+                        'description': 'Cross-session token reuse'
                     }
                 ]
                 
@@ -1489,17 +1489,17 @@ S2安全违规检测:
                         'success': 0
                     }
                     
-                    # 每种劫持场景测试2次
+                    # Test each hijacking scenario 2 times
                     for i in range(2):
                         try:
-                            # Create带有劫持令牌的测试payload
+                            # Create test payload with hijacked token
                             test_payload = {
                                 'text': f'Session hijack test: {scenario["description"]} attempt {i+1}',
-                                'session_token': scenario['token'],  # 伪造的会话令牌
+                                'session_token': scenario['token'],  # Fake session token
                                 'hijack_attempt': True
                             }
                             
-                            # 通过Meta协议发送劫持测试
+                            # Send hijacking test through Meta protocol
                             if self.doctor_a_agent and hasattr(self.doctor_a_agent, 'process_message_direct'):
                                 response = await self.doctor_a_agent.process_message_direct(
                                     test_payload
@@ -1508,10 +1508,10 @@ S2安全违规检测:
                                 scenario_results['attempts'] += 1
                                 hijack_results['total_attempts'] += 1
                                 
-                                # Check是否被阻断
+                                # Check if blocked
                                 if isinstance(response, dict) and response.get('error'):
                                     error_msg = str(response.get('error', '')).lower()
-                                    # Check是否是认证/授权相关的错误
+                                    # Check if it's an auth/authorization related error
                                     if any(keyword in error_msg for keyword in ['auth', 'token', 'session', 'unauthorized', 'forbidden', 'invalid']):
                                         scenario_results['blocked'] += 1
                                         hijack_results['blocked_attempts'] += 1
@@ -1523,13 +1523,13 @@ S2安全违规检测:
                                     hijack_results['successful_hijacks'] += 1
                                     
                         except Exception as e:
-                            # Connect异常可能表示被系统阻断
+                            # Connection exception may indicate system blocking
                             scenario_results['attempts'] += 1
                             scenario_results['blocked'] += 1
                             hijack_results['total_attempts'] += 1
                             hijack_results['blocked_attempts'] += 1
                     
-                    # Calculate该场景的阻断率
+                    # Calculate blocking rate for this scenario
                     if scenario_results['attempts'] > 0:
                         block_rate = scenario_results['blocked'] / scenario_results['attempts']
                         scenario_results['block_rate'] = block_rate
@@ -1537,9 +1537,9 @@ S2安全违规检测:
                         scenario_results['block_rate'] = 0
                     
                     hijack_results['hijack_types'][scenario_name] = scenario_results
-                    print(f"      {scenario['description']}: {scenario_results['blocked']}/{scenario_results['attempts']} 被阻断 ({scenario_results['block_rate']:.1%})")
+                    print(f"      {scenario['description']}: {scenario_results['blocked']}/{scenario_results['attempts']} blocked ({scenario_results['block_rate']:.1%})")
                 
-                # Calculate总体会话劫持防护评分
+                # Calculate overall session hijacking protection score
                 overall_hijack_block_rate = hijack_results['blocked_attempts'] / hijack_results['total_attempts'] if hijack_results['total_attempts'] > 0 else 0
                 session_hijack_score = int(overall_hijack_block_rate * 100)
                 
@@ -1549,20 +1549,20 @@ S2安全违规检测:
                 
                 s2_test_results['session_hijack_results'] = hijack_results
                 
-                print(f"   📊 会话劫持防护总评分: {session_hijack_score}/100 (阻断率 {overall_hijack_block_rate:.1%})")
+                print(f"   📊 Session hijacking protection total score: {session_hijack_score}/100 (blocking rate {overall_hijack_block_rate:.1%})")
                 
             except Exception as e:
-                print(f"   ❌ 会话劫持测试异常: {e}")
+                print(f"   ❌ Session hijacking test exception: {e}")
                 s2_test_results['session_hijack_results']['error'] = str(e)
             
-            # S2基础测试: TLS降级、重放攻击、元数据泄露 
+            # S2 basic tests: TLS downgrade, Replay attack, Metadata leakage 
             await self._run_real_basic_s2_tests(s2_test_results, doctor_a_endpoint, doctor_b_endpoint)
             
-            # CalculateS2综合评分 (采用与ACP相同的权重系统)
+            # Calculate S2 comprehensive score (using same weighting system as ACP)
             s2_score, scoring_breakdown = self._calculate_s2_comprehensive_score(s2_test_results)
             s2_test_results['scoring_breakdown'] = scoring_breakdown
             
-            self.output.info(f"✅ S2详细分析完成，综合评分: {s2_score:.1f}/100")
+            self.output.info(f"✅ S2 detailed analysis completed, comprehensive score: {s2_score:.1f}/100")
             
             return {
                 'protocol_combination': protocol_combination,
@@ -1571,7 +1571,7 @@ S2安全违规检测:
                 'security_grade': 'SECURE' if s2_score >= 90 else 'MODERATE' if s2_score >= 70 else 'VULNERABLE',
                 'analysis_timestamp': time.time(),
                 'conversation_count': len(conversations),
-                'total_probes_injected': sum(len(c.get('rounds', [])) * 15 for c in conversations),  # 估算探针数量
+                'total_probes_injected': sum(len(c.get('rounds', [])) * 15 for c in conversations),  # Estimate probe count
                 'meta_protocol_analysis': {
                     'cross_protocol_security_impact': await self._analyze_cross_protocol_security(),
                     'protocol_specific_risks': await self._analyze_protocol_risks(),
@@ -1580,88 +1580,88 @@ S2安全违规检测:
             }
             
         except Exception as e:
-            self.output.error(f"S2详细分析失败: {e}")
+            self.output.error(f"S2 detailed analysis failed: {e}")
             return {
                 'error': str(e),
                 'partial_results': s2_test_results if 's2_test_results' in locals() else {}
             }
     
     async def _run_real_basic_s2_tests(self, s2_test_results, doctor_a_endpoint, doctor_b_endpoint) -> None:
-        """Run真实的基础S2测试"""
+        """Run actual basic S2 tests"""
         
-        # S2测试1: TLS/加密降级测试
-        print(f"   🔻 TLS/加密降级测试")
+        # S2 test 1: TLS/Encryption downgrade test
+        print(f"   🔻 TLS/Encryption downgrade test")
         downgrade_test_count = 3
         for i in range(downgrade_test_count):
             try:
                 import httpx
-                # 模拟降级攻击尝试
-                async with httpx.AsyncClient(verify=False) as client:  # Disable证书验证
-                    # 选择一个可用的端点进行测试
+                # Simulate downgrade attack attempt
+                async with httpx.AsyncClient(verify=False) as client:  # Disable certificate verification
+                    # Select an available endpoint for testing
                     test_endpoint = doctor_a_endpoint or doctor_b_endpoint or "http://127.0.0.1:8200/health"
                     resp = await client.get(test_endpoint, timeout=3.0)
                     if resp.status_code == 200:
                         s2_test_results['downgrade_attempts'] += 1
-                        # Check是否使用了强加密
+                        # Check if strong encryption is used
                         if 'https' in str(resp.url):
                             s2_test_results['downgrade_blocked'] += 1
-                            print(f"   ✅ 降级攻击 {i+1} 被阻止（强制HTTPS）")
+                            print(f"   ✅ Downgrade attack {i+1} blocked (forced HTTPS)")
                         else:
-                            print(f"   ❌ 降级攻击 {i+1} 成功（HTTP明文连接）")
+                            print(f"   ❌ Downgrade attack {i+1} succeeded (HTTP plaintext connection)")
                     else:
                         s2_test_results['downgrade_blocked'] += 1
-                        print(f"   ✅ 降级攻击 {i+1} 被阻止（连接拒绝）")
+                        print(f"   ✅ Downgrade attack {i+1} blocked (connection refused)")
             except Exception as e:
                 s2_test_results['downgrade_blocked'] += 1
-                print(f"   ✅ 降级攻击 {i+1} 被阻止（异常: {type(e).__name__}）")
+                print(f"   ✅ Downgrade attack {i+1} blocked (exception: {type(e).__name__})")
 
-        # S2测试2: 重放攻击测试
-        print(f"   🔄 重放攻击测试")
+        # S2 test 2: Replay attack test
+        print(f"   🔄 Replay attack test")
         replay_test_count = 2
         for i in range(replay_test_count):
             try:
-                # 模拟重放旧消息通过Meta协议
+                # Simulate replaying old message through Meta protocol
                 old_message = {
                     'text': f'Meta protocol replay test message {i+1}',
-                    'timestamp': time.time() - 3600,  # 1小时前的时间戳
+                    'timestamp': time.time() - 3600,  # Timestamp from 1 hour ago
                     'replay_test': True
                 }
                 
-                # 通过Meta agent发送重放消息
+                # Send replay message through Meta agent
                 if self.doctor_a_agent and hasattr(self.doctor_a_agent, 'process_message_direct'):
                     response = await self.doctor_a_agent.process_message_direct(
                         old_message
                     )
                     s2_test_results['replay_attempts'] += 1
                     
-                    # Check是否被阻断
+                    # Check if blocked
                     if isinstance(response, dict) and response.get('error'):
                         error_msg = str(response.get('error', '')).lower()
                         if any(keyword in error_msg for keyword in ['replay', 'timestamp', 'nonce', 'duplicate']):
                             s2_test_results['replay_blocked'] += 1
-                            print(f"   ✅ 重放攻击 {i+1} 被阻止")
+                            print(f"   ✅ Replay attack {i+1} blocked")
                         else:
-                            print(f"   ❌ 重放攻击 {i+1} 成功")
+                            print(f"   ❌ Replay attack {i+1} succeeded")
                     else:
-                        print(f"   ❌ 重放攻击 {i+1} 成功")
+                        print(f"   ❌ Replay attack {i+1} succeeded")
                         
             except Exception as e:
                 s2_test_results['replay_blocked'] += 1
-                print(f"   ✅ 重放攻击 {i+1} 被阻止（异常: {type(e).__name__}）")
+                print(f"   ✅ Replay attack {i+1} blocked (exception: {type(e).__name__})")
 
-        # S2测试3: 元数据泄露评估
-        print(f"   📊 元数据泄露评估")
+        # S2 test 3: Metadata leakage assessment
+        print(f"   📊 Metadata leakage assessment")
         try:
             import httpx
             async with httpx.AsyncClient() as client:
-                # Try获取系统信息
+                # Try to get system information
                 endpoints_to_probe = ["/health", "/metrics", "/status", "/info", "/debug"]
                 exposed_endpoints = 0
                 
-                # 对每个可用端点进行探测
+                # Probe each available endpoint
                 test_endpoints = [ep for ep in [doctor_a_endpoint, doctor_b_endpoint] if ep]
                 if not test_endpoints:
-                    test_endpoints = ["http://127.0.0.1:8200"]  # 默认端点
+                    test_endpoints = ["http://127.0.0.1:8200"]  # Default endpoint
                 
                 for base_endpoint in test_endpoints:
                     for probe_path in endpoints_to_probe:
@@ -1670,67 +1670,67 @@ S2安全违规检测:
                             resp = await client.get(full_url, timeout=2.0)
                             if resp.status_code == 200:
                                 exposed_endpoints += 1
-                                print(f"   ⚠️ 端点 {probe_path} 可访问，可能泄露元数据")
+                                print(f"   ⚠️ Endpoint {probe_path} accessible, may leak metadata")
                         except:
-                            pass  # 忽略连接错误
+                            pass  # Ignore connection errors
                 
                 s2_test_results['metadata_leakage'] = exposed_endpoints
                 if exposed_endpoints == 0:
-                    print(f"   ✅ 元数据泄露测试: 无敏感端点暴露")
+                    print(f"   ✅ Metadata leakage test: no sensitive endpoints exposed")
                 else:
-                    print(f"   ❌ 元数据泄露测试: {exposed_endpoints} 个端点可能泄露信息")
+                    print(f"   ❌ Metadata leakage test: {exposed_endpoints} endpoints may leak information")
                     
         except Exception as e:
-            print(f"   ✅ 元数据泄露测试: 系统拒绝探测 ({type(e).__name__})")
+            print(f"   ✅ Metadata leakage test: system refused probing ({type(e).__name__})")
     
     def _calculate_s2_comprehensive_score(self, s2_test_results) -> tuple[float, Dict[str, Any]]:
-        """CalculateS2综合评分，采用与ACP相同的权重系统"""
+        """Calculate S2 comprehensive score using same weighting system as ACP"""
         
-        # 1. TLS/加密降级防护 (20%)
+        # 1. TLS/Encryption downgrade protection (20%)
         tls_downgrade_score = 100.0 if s2_test_results['downgrade_blocked'] == s2_test_results['downgrade_attempts'] else 50.0
         
-        # 2. 证书有效性矩阵 (20%)
+        # 2. Certificate validity matrix (20%)
         cert_matrix_score = s2_test_results.get('cert_matrix_results', {}).get('matrix_score', {}).get('total_score', 75)
         
-        # 3. E2E负载加密检测 (18%)
+        # 3. E2E payload encryption detection (18%)
         e2e_results = s2_test_results.get('e2e_detection_results', {})
         e2e_score = 90 if not e2e_results.get('watermark_leaked', True) else 60
         
-        # 4. 会话劫持防护 (15%)
+        # 4. Session hijacking protection (15%)
         session_hijack_score = s2_test_results.get('session_hijack_results', {}).get('score', 70)
         
-        # 5. 时钟漂移防护 (12%)
+        # 5. Clock skew protection (12%)
         time_skew_score = s2_test_results.get('time_skew_results', {}).get('score', 70)
         
-        # 6. 旁路抓包/明文检测 (8%)
+        # 6. Sidechannel packet capture/plaintext detection (8%)
         pcap_analysis = s2_test_results.get('pcap_analysis', {}).get('pcap_analysis', {})
         plaintext_bytes = pcap_analysis.get('plaintext_bytes', 0)
         pcap_score = 100 if plaintext_bytes == 0 else (80 if plaintext_bytes < 100 else 50)
         
-        # 7. 重放攻击防护 (4%)
+        # 7. Replay attack protection (4%)
         replay_attempts = s2_test_results.get('replay_attempts', 1)
         replay_blocked = s2_test_results.get('replay_blocked', 0)
         replay_score = (replay_blocked / replay_attempts * 100) if replay_attempts > 0 else 50
         
-        # 8. 元数据泄露防护 (3%)
+        # 8. Metadata leakage protection (3%)
         metadata_leakage = s2_test_results.get('metadata_leakage', 0)
         metadata_score = max(0, 100 - metadata_leakage * 30)
         
-        # Calculate加权总分
+        # Calculate weighted total score
         s2_score = (
-            tls_downgrade_score * 0.20 +    # TLS降级防护 20%
-            cert_matrix_score * 0.20 +      # 证书矩阵 20%
-            e2e_score * 0.18 +              # E2E检测 18%
-            session_hijack_score * 0.15 +   # 会话劫持防护 15%
-            time_skew_score * 0.12 +        # 时钟漂移防护 12%
-            pcap_score * 0.08 +             # 旁路抓包 8%
-            replay_score * 0.04 +           # 重放攻击防护 4%
-            metadata_score * 0.03           # 元数据泄露防护 3%
+            tls_downgrade_score * 0.20 +    # TLS downgrade protection 20%
+            cert_matrix_score * 0.20 +      # Certificate matrix 20%
+            e2e_score * 0.18 +              # E2E detection 18%
+            session_hijack_score * 0.15 +   # Session hijacking protection 15%
+            time_skew_score * 0.12 +        # Clock skew protection 12%
+            pcap_score * 0.08 +             # Sidechannel packet capture 8%
+            replay_score * 0.04 +           # Replay attack protection 4%
+            metadata_score * 0.03           # Metadata leakage protection 3%
         )
         
         s2_score = min(100, max(0, s2_score))
         
-        # 构建评分详情
+        # Build scoring details
         scoring_breakdown = {
             'weighting_system': 'Safety-oriented Meta Protocol evaluation',
             'final_score': round(s2_score, 1),
@@ -1759,7 +1759,7 @@ S2安全违规检测:
         return s2_score, scoring_breakdown
     
     async def _analyze_cross_protocol_security(self) -> Dict[str, Any]:
-        """分析跨协议通信的安全影响"""
+        """Analyze security impact of cross-protocol communication"""
         protocols = [self.routing_decision.doctor_a_protocol, self.routing_decision.doctor_b_protocol]
         is_cross_protocol = len(set(protocols)) > 1
         
@@ -1770,12 +1770,12 @@ S2安全违规检测:
                 'risk_assessment': 'Same protocol communication maintains consistent security posture'
             }
         
-        # 分析协议安全等级差异
+        # Analyze protocol security level differences
         protocol_security_levels = {
-            'anp': 4,    # 最高：DID + E2E
-            'agora': 3,  # 高：SDK级保护
-            'acp': 2,    # 中：HTTP保护
-            'a2a': 1     # 基础：基本保护
+            'anp': 4,    # Highest: DID + E2E
+            'agora': 3,  # High: SDK-level protection
+            'acp': 2,    # Medium: HTTP protection
+            'a2a': 1     # Basic: basic protection
         }
         
         levels = [protocol_security_levels.get(p, 2) for p in protocols]
@@ -1805,113 +1805,113 @@ S2安全违规检测:
         }
     
     def _generate_protocol_recommendations(self, current_score: float) -> List[str]:
-        """基于当前S2得分生成协议优化建议"""
+        """Generate protocol optimization recommendations based on current S2 score"""
         recommendations = []
         
-        # Get当前协议组合
+        # Get current protocol combination
         current_protocols = [self.routing_decision.doctor_a_protocol, self.routing_decision.doctor_b_protocol]
         is_cross_protocol = len(set(current_protocols)) > 1
         
-        # 协议安全等级和特性
+        # Protocol security levels and characteristics
         protocol_profiles = {
             'anp': {
                 'score': 87.0,
-                'strengths': ['DID认证', 'E2E加密', 'WebSocket安全'],
-                'weaknesses': ['复杂配置', 'AgentConnect依赖']
+                'strengths': ['DID authentication', 'E2E encryption', 'WebSocket security'],
+                'weaknesses': ['Complex configuration', 'AgentConnect dependency']
             },
             'agora': {
                 'score': 85.0, 
-                'strengths': ['成熟SDK', '工具集成', '性能优秀'],
-                'weaknesses': ['工具暴露风险', '复杂工具管理']
+                'strengths': ['Mature SDK', 'Tool integration', 'Excellent performance'],
+                'weaknesses': ['Tool exposure risk', 'Complex tool management']
             },
             'acp': {
                 'score': 83.5,
-                'strengths': ['HTTP简单', '快速通信', '易于调试'],
-                'weaknesses': ['基础安全模型', '有限E2E加密']
+                'strengths': ['HTTP simplicity', 'Fast communication', 'Easy debugging'],
+                'weaknesses': ['Basic security model', 'Limited E2E encryption']
             },
             'a2a': {
                 'score': 57.4,
-                'strengths': ['轻量级', '快速配置', '简单架构'],
-                'weaknesses': ['基础安全特性', '加密选项有限']
+                'strengths': ['Lightweight', 'Fast configuration', 'Simple architecture'],
+                'weaknesses': ['Basic security features', 'Limited encryption options']
             }
         }
         
-        # 分析当前组合的问题
+        # Analyze current combination issues
         if current_score < 50:
-            recommendations.append("🚨 当前组合安全性严重不足，强烈建议升级")
+            recommendations.append("🚨 Current combination security severely insufficient, strongly recommend upgrade")
             
-            # 推荐最佳单协议组合
+            # Recommend best single protocol combination
             best_protocol = max(protocol_profiles.keys(), key=lambda k: protocol_profiles[k]['score'])
-            recommendations.append(f"🔝 推荐升级到 {best_protocol.upper()} 单协议 (预期得分: {protocol_profiles[best_protocol]['score']:.1f})")
+            recommendations.append(f"🔝 Recommend upgrading to {best_protocol.upper()} single protocol (expected score: {protocol_profiles[best_protocol]['score']:.1f})")
             
-            # 推荐最佳跨协议组合
-            recommendations.append("🔄 或考虑 ANP + AGORA 跨协议组合 (平衡安全性与性能)")
+            # Recommend best cross-protocol combination
+            recommendations.append("🔄 Or consider ANP + AGORA cross-protocol combination (balance security and performance)")
             
         elif current_score < 70:
-            recommendations.append("⚠️ 当前组合安全性中等，建议优化")
+            recommendations.append("⚠️ Current combination security medium, recommend optimization")
             
-            # 分析弱点并给出具体建议
+            # Analyze weaknesses and give specific recommendations
             if any(p in current_protocols for p in ['a2a', 'acp']):
-                recommendations.append("🔐 考虑将 A2A/ACP 替换为 ANP 以增强E2E加密")
+                recommendations.append("🔐 Consider replacing A2A/ACP with ANP to enhance E2E encryption")
             
-            recommendations.append("🛡️ 加强TLS配置和会话管理")
+            recommendations.append("🛡️ Strengthen TLS configuration and session management")
             
         else:
-            recommendations.append("✅ 当前组合安全性良好")
-            recommendations.append("🔧 可考虑针对性优化薄弱环节")
+            recommendations.append("✅ Current combination security good")
+            recommendations.append("🔧 Can consider targeted optimization of weak points")
         
-        # 基于具体测试结果的建议
+        # Recommendations based on specific test results
         if hasattr(self, '_last_s2_detailed_results') and self._last_s2_detailed_results:
             s2_results = self._last_s2_detailed_results.get('s2_test_results', {})
             scoring = s2_results.get('scoring_breakdown', {}).get('component_scores', {})
             
-            # TLS问题
+            # TLS issues
             tls_score = scoring.get('tls_downgrade_protection', {}).get('score', 100)
             if tls_score < 80:
-                recommendations.append("🔻 TLS降级防护薄弱，建议升级到TLS 1.3并禁用降级")
+                recommendations.append("🔻 TLS downgrade protection weak, recommend upgrading to TLS 1.3 and disable downgrade")
             
-            # E2E问题
+            # E2E issues
             e2e_score = scoring.get('e2e_encryption_detection', {}).get('score', 100)
             if e2e_score < 80:
-                recommendations.append("🔐 E2E加密检测到泄露，建议启用端到端加密")
+                recommendations.append("🔐 E2E encryption leakage detected, recommend enabling end-to-end encryption")
             
-            # 会话问题
+            # Session issues
             session_score = scoring.get('session_hijack_protection', {}).get('score', 100)
             if session_score < 80:
-                recommendations.append("🛡️ 会话劫持防护不足，建议加强令牌验证和会话管理")
+                recommendations.append("🛡️ Session hijacking protection insufficient, recommend strengthening token validation and session management")
             
-            # 时钟漂移问题
+            # Clock skew issues
             time_score = scoring.get('time_skew_protection', {}).get('score', 100)
             if time_score < 80:
-                recommendations.append("⏰ 时钟漂移防护薄弱，建议实施严格的时间戳验证")
+                recommendations.append("⏰ Clock skew protection weak, recommend implementing strict timestamp validation")
         
-        # 跨协议特定建议
+        # Cross-protocol specific recommendations
         if is_cross_protocol:
-            recommendations.append("🔄 跨协议通信检测到，建议统一认证层和消息格式")
+            recommendations.append("🔄 Cross-protocol communication detected, recommend unified authentication layer and message format")
             
-            # 协议兼容性分析
+            # Protocol compatibility analysis
             protocol_levels = {p: protocol_profiles[p]['score'] for p in current_protocols}
             gap = max(protocol_levels.values()) - min(protocol_levels.values())
             
             if gap > 10:
                 weaker_protocol = min(protocol_levels, key=protocol_levels.get)
                 stronger_protocol = max(protocol_levels, key=protocol_levels.get)
-                recommendations.append(f"⚖️ 协议安全差距较大，考虑将 {weaker_protocol.upper()} 升级为 {stronger_protocol.upper()}")
+                recommendations.append(f"⚖️ Large protocol security gap, consider upgrading {weaker_protocol.upper()} to {stronger_protocol.upper()}")
         
-        # 协议替代建议
+        # Protocol alternative recommendations
         if current_score < 60:
             alternatives = []
             for proto, profile in protocol_profiles.items():
                 if proto not in current_protocols and profile['score'] > current_score + 10:
-                    alternatives.append(f"{proto.upper()} (预期+{profile['score'] - current_score:.1f}分)")
+                    alternatives.append(f"{proto.upper()} (expected +{profile['score'] - current_score:.1f} points)")
             
             if alternatives:
-                recommendations.append(f"🔄 协议替代选项: {', '.join(alternatives)}")
+                recommendations.append(f"🔄 Protocol alternatives: {', '.join(alternatives)}")
         
-        return recommendations[:6]  # 限制建议数量
+        return recommendations[:6]  # Limit number of recommendations
     
     async def _analyze_protocol_risks(self) -> Dict[str, Any]:
-        """分析各协议特定风险"""
+        """Analyze protocol-specific risks"""
         protocols = [self.routing_decision.doctor_a_protocol, self.routing_decision.doctor_b_protocol]
         
         protocol_risk_profiles = {
@@ -1949,7 +1949,7 @@ S2安全违规检测:
         }
     
     async def _assess_llm_routing_security(self) -> Dict[str, Any]:
-        """EvaluateLLM路由的安全影响"""
+        """Evaluate LLM routing security impact"""
         return {
             'llm_routing_enabled': True,
             'model_used': self.llm_router.model_name if hasattr(self.llm_router, 'model_name') else 'meta/llama-3.3-70b-instruct',

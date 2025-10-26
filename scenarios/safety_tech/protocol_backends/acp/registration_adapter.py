@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ACP Protocol Registration Adapter
-使用原生 ACP 服务器接口进行注册/订阅配合（无 mock / 无 fallback）
+Uses native ACP server interface for registration/subscription coordination (no mock / no fallback)
 """
 
 from __future__ import annotations
@@ -16,12 +16,12 @@ import httpx
 
 
 class ACPRegistrationAdapter:
-    """ACP 协议注册适配器（配合 RegistrationGateway）
+    """ACP protocol registration adapter (works with RegistrationGateway)
 
-    设计目标：
-    - 使用原生 ACP 服务接口进行端点探测与证明构造（/agents, /ping）
-    - 不使用任何 mock、fallback 或虚拟模式
-    - 与 AgoraRegistrationAdapter 提供一致的外部方法签名
+    Design goals:
+    - Use native ACP service interface for endpoint probing and proof construction (/agents, /ping)
+    - Do not use any mock, fallback or virtual mode
+    - Provide consistent external method signature with AgoraRegistrationAdapter
     """
 
     def __init__(self, config: Dict[str, Any]):
@@ -36,11 +36,11 @@ class ACPRegistrationAdapter:
         role: str = "doctor",
         acp_probe_endpoint: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """注册 ACP Agent 到 RG
+        """Register ACP Agent to RG
 
-        要求：endpoint 必须是原生 ACP 服务器根地址（可直接访问 /agents 与 /ping）
+        Requirements: endpoint must be native ACP server root address (can directly access /agents and /ping)
         """
-        # 探测 ACP 端点，获取可用的 agent 名称
+        # Probe ACP endpoint to get available agent names
         base = (acp_probe_endpoint or endpoint).rstrip("/")
         async with httpx.AsyncClient() as client:
             agents_resp = await client.get(f"{base}/agents", timeout=10.0)
@@ -55,7 +55,7 @@ class ACPRegistrationAdapter:
             if ping_resp.status_code != 200:
                 raise RuntimeError(f"ACP /ping probe failed: {ping_resp.status_code}")
 
-        # 选择一个 ACP agent 名称用于证明（优先同名，其次第一个）
+        # Select an ACP agent name for proof (prefer same name, otherwise first one)
         acp_agent_name = agent_id if agent_id in agent_names else agent_names[0]
 
         proof = {
@@ -95,7 +95,7 @@ class ACPRegistrationAdapter:
         conversation_id: str,
         endpoint: str = "",
     ) -> Dict[str, Any]:
-        """订阅 Observer 到 RG（独立于 ACP 服务器）"""
+        """Subscribe Observer to RG (independent of ACP server)"""
         proof = {
             "timestamp": time.time(),
             "nonce": str(uuid.uuid4()),
@@ -132,9 +132,9 @@ class ACPRegistrationAdapter:
             return resp.json()
 
     def _extract_agent_names(self, agents_payload: Any) -> List[str]:
-        """从 /agents Response中提取 agent 名称列表（兼容 acp_sdk 的模型结构）"""
+        """Extract agent name list from /agents response (compatible with acp_sdk model structure)"""
         try:
-            # acp_sdk /agents 返回形如 {"agents":[{"name": "...", ...}, ...]}
+            # acp_sdk /agents returns format like {"agents":[{"name": "...", ...}, ...]}
             agents = agents_payload.get("agents", []) if isinstance(agents_payload, dict) else []
             names = []
             for item in agents:

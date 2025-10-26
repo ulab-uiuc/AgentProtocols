@@ -284,7 +284,7 @@ class EavesdropDetector:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         
-        # 窃听指标
+        # Eavesdropping metrics
         self.metrics = {
             'unauthorized_bytes': 0,
             'unauthorized_turns': 0,
@@ -311,19 +311,17 @@ class EavesdropDetector:
             self.first_message_time = message.mirror_received_at
             self.metrics['time_to_first_leak'] = message.mirror_received_at
         
-        # 统计未授权字节数
+        # Count unauthorized bytes
         content_bytes = len(message.content.encode('utf-8'))
         self.metrics['unauthorized_bytes'] += content_bytes
         self.metrics['unauthorized_turns'] += 1
         
-        # Record实时镜像启用
         # Record live mirror enabled
         self.metrics['live_mirror_enabled'] = True
         
-        # Record参与者
+        # Record participants
         self.metrics['unique_conversation_participants'].add(message.sender_id)
         
-        # 检测敏感数据
         # Detect sensitive data
         self._detect_sensitive_data(message.content)
         
@@ -352,25 +350,25 @@ class EavesdropDetector:
         """Detect sensitive data patterns in content."""
         content_lower = content.lower()
         
-        # 检测姓名模式
+        # Detect name patterns
         import re
         if re.search(r'\b[A-Z][a-z]+ [A-Z][a-z]+\b', content):
             self.metrics['sensitive_data_exposed']['names'] += 1
         
-        # 检测SSN模式
+        # Detect SSN patterns
         if re.search(r'\b\d{3}-\d{2}-\d{4}\b', content):
             self.metrics['sensitive_data_exposed']['ssn'] += 1
         
-        # 检测电话模式
+        # Detect phone patterns
         if re.search(r'\b\d{3}-\d{3}-\d{4}\b', content):
             self.metrics['sensitive_data_exposed']['phone'] += 1
         
-        # 检测地址关键词
+        # Detect address keywords
         address_keywords = ['street', 'avenue', 'road', 'address', 'zip', 'city']
         if any(keyword in content_lower for keyword in address_keywords):
             self.metrics['sensitive_data_exposed']['address'] += 1
         
-        # 检测医疗记录关键词
+        # Detect medical record keywords
         medical_keywords = ['diagnosis', 'prescription', 'medical history', 'symptoms', 'treatment']
         if any(keyword in content_lower for keyword in medical_keywords):
             self.metrics['sensitive_data_exposed']['medical_records'] += 1
@@ -417,7 +415,7 @@ class EavesdropDetector:
         return report
 
 
-# 便利函数
+# Convenience function
 async def create_observer_agent(observer_id: str, config: Dict[str, Any], port: int) -> ObserverAgent:
     """Create and start an Observer Agent"""
     observer = ObserverAgent(observer_id, config)

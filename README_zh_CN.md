@@ -73,7 +73,6 @@ python -m script.safety_tech.runners.run_unified_security_test_acp
 - **A2A (智能体对智能体)**: 直接点对点通信与消息路由
 - **ACP (智能体通信协议)**: 基于会话的对话管理
 - **Agora**: 基于工具的智能体编排与LangChain集成
-- **Dummy**: 用于测试和开发的模拟协议
 
 **使用方法**:
 ```bash
@@ -85,16 +84,15 @@ python -m script.gaia.runners.run_anp        # ANP协议
 python -m script.gaia.runners.run_a2a        # A2A协议
 python -m script.gaia.runners.run_acp        # ACP协议
 python -m script.gaia.runners.run_agora      # Agora协议
-python -m script.gaia.runners.run_dummy      # Dummy协议
 
-# 元协议协调
+# Router
 python -m script.gaia.runners.run_meta_protocol
 ```
 
 ### 2. 📡 流式队列 (Streaming Queue)
 **目的**: 高吞吐量消息处理，采用协调器-工作器模式
 
-**支持协议**: ANP、A2A、ACP、Agora、元协议
+**支持协议**: ANP、A2A、ACP、Agora、Router
 
 **使用方法**:
 ```bash
@@ -113,7 +111,7 @@ python -m script.streaming_queue.runner.run_meta_network
 ### 3. 🛡️ 安全技术 (Safety Tech)
 **目的**: 隐私保护的智能体通信和安全测试
 
-**支持协议**: ANP、A2A、ACP、Agora、S2-Meta
+**支持协议**: ANP、A2A、ACP、Agora、Router
 
 **使用方法**:
 ```bash
@@ -125,14 +123,14 @@ python -m script.safety_tech.runners.run_unified_security_test_a2a
 python -m script.safety_tech.runners.run_unified_security_test_acp
 python -m script.safety_tech.runners.run_unified_security_test_agora
 
-# S2元协议安全分析
+# Router安全分析
 python -m script.safety_tech.runners.run_s2_meta
 ```
 
 ### 4. 🔄 故障风暴恢复 (Fail Storm Recovery)
 **目的**: 具有自动恢复机制的容错系统
 
-**支持协议**: ANP、A2A、ACP、Agora、Simple JSON、元协议
+**支持协议**: ANP、A2A、ACP、Agora、Router
 
 **使用方法**:
 ```bash
@@ -145,24 +143,10 @@ python -m script.fail_storm_recovery.runners.run_acp
 python -m script.fail_storm_recovery.runners.run_agora
 python -m script.fail_storm_recovery.runners.run_simple_json
 
-# 元协议协调
+# Router
 python -m script.fail_storm_recovery.runners.run_meta
 python -m script.fail_storm_recovery.runners.run_meta_network
 ```
-
-### 5. 🗺️ 异步MAPF (多智能体路径规划)
-**目的**: 分布式路径规划和协调
-
-**支持协议**: A2A
-
-**使用方法**:
-```bash
-export OPENAI_API_KEY='sk-your-key-here'
-
-# 多智能体路径规划
-python -m script.async_mapf.runners.run_a2a
-```
-
 ## 🔧 协议指南
 
 ### ANP (智能体网络协议)
@@ -185,7 +169,7 @@ python -m script.async_mapf.runners.run_a2a
 - **使用场景**: 工具增强智能体、LLM驱动工作流
 - **依赖**: `agora-protocol`, `langchain`
 
-### 元协议
+### Router
 - **特性**: 协议抽象、自适应路由、多协议支持
 - **使用场景**: 协议无关应用、无缝迁移
 

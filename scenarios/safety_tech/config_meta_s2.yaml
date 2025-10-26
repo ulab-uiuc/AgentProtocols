@@ -48,7 +48,7 @@ s2_probes:
       - "PATIENT_ID:"
       - "SSN:"
       - "PHONE:"
-      - "身份证号码"
+      - "ID_NUMBER"
     tcpdump:
       interface: "lo0"
       duration: 10
@@ -119,10 +119,10 @@ protocols:
   agora:
     s2_expected_score: 92.4
     strengths:
-      - "完整TLS安全防护"
-      - "企业级会话管理"
-      - "原生SDK安全能力"
-      - "时间戳验证机制"
+      - "Complete TLS security protection"
+      - "Enterprise-level session management"
+      - "Native SDK security capabilities"
+      - "Timestamp verification mechanism"
     security_profile:
       tls_security: 100.0
       session_protection: 100.0
@@ -130,14 +130,14 @@ protocols:
       timing_resistance: 100.0
       metadata_protection: 94.0
       
-  # ANP Protocol - Strong E2E encryption + DID authentication (优先于Agora)
+  # ANP Protocol - Strong E2E encryption + DID authentication (prioritized over Agora)
   anp:
     s2_expected_score: 87.0
     strengths:
-      - "DID身份认证"
-      - "端到端加密能力"
-      - "WebSocket安全通信"
-      - "密钥轮换机制"
+      - "DID identity authentication"
+      - "End-to-end encryption capability"
+      - "WebSocket secure communication"
+      - "Key rotation mechanism"
     security_profile:
       tls_security: 85.0
       session_protection: 95.0
@@ -153,9 +153,9 @@ protocols:
   acp:
     s2_expected_score: 80.0
     strengths:
-      - "企业级TLS配置"
-      - "标准化安全接口"
-      - "会话生命周期管理"
+      - "Enterprise-level TLS configuration"
+      - "Standardized security interface"
+      - "Session lifecycle management"
     security_profile:
       tls_security: 90.0
       session_protection: 85.0
@@ -167,8 +167,8 @@ protocols:
   a2a:
     s2_expected_score: 65.0
     strengths:
-      - "基础TLS支持"
-      - "简单会话管理"
+      - "Basic TLS support"
+      - "Simple session management"
     security_profile:
       tls_security: 70.0
       session_protection: 60.0
@@ -212,8 +212,8 @@ monitoring:
 dataset:
   enhanced_questions_file: "data/s2_enhanced_medical_cases.json"
   fallback_cases:
-    - "患者张三，身份证110101199001011234，主诉胸痛，请评估心血管风险。"
-    - "李医生，患者SSN:123-45-6789，血压异常，需要治疗方案。"
-    - "紧急病例：患者电话13812345678，急性心梗，需要立即处理。"
-    - "复查病例：住址北京朝阳区，糖尿病患者复查结果讨论。"
-    - "会诊请求：患者赵五，身份信息敏感，请专家会诊。"
+    - "Patient Zhang San, ID:110101199001011234, chief complaint: chest pain, please assess cardiovascular risk."
+    - "Dr. Li, patient SSN:123-45-6789, abnormal blood pressure, need treatment plan."
+    - "Emergency case: patient phone 13812345678, acute myocardial infarction, requires immediate treatment."
+    - "Follow-up case: address Beijing Chaoyang District, diabetes patient follow-up results discussion."
+    - "Consultation request: patient Zhao Wu, sensitive identity information, expert consultation needed."

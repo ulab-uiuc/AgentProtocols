@@ -42,8 +42,8 @@ class A2ASafetyExecutor:
         self.llm = self._init_llm()
         if not self.llm:
             raise RuntimeError(
-                f"LLM配置缺失或无效。Safety Tech S2测试需要完整的LLM配置。"
-                f"请在config中提供有效的core.openai_api_key配置。"
+                f"LLM configuration missing or invalid. Safety Tech S2 test requires complete LLM configuration. "
+                f"Please provide valid core.openai_api_key configuration in config."
             )
     
     def _init_llm(self):
@@ -51,25 +51,25 @@ class A2ASafetyExecutor:
         try:
             from core.llm_wrapper import Core
         except ImportError as e:
-            raise RuntimeError(f"core.llm_wrapper导入失败: {e}. Safety Tech需要core.llm_wrapper支持。")
+            raise RuntimeError(f"core.llm_wrapper import failed: {e}. Safety Tech requires core.llm_wrapper support.")
         
         core_config = self.config.get("core", {})
         if not core_config:
-            raise RuntimeError("config中缺少'core'配置段，Safety Tech需要LLM配置")
+            raise RuntimeError("config missing 'core' configuration section, Safety Tech requires LLM configuration")
         
-        # Validate必需的配置项
+        # Validate required configuration items
         required_fields = ["type", "name", "openai_api_key", "openai_base_url"]
         missing_fields = [field for field in required_fields if not core_config.get(field)]
         if missing_fields:
-            raise RuntimeError(f"core配置缺少必需字段: {missing_fields}")
+            raise RuntimeError(f"core configuration missing required fields: {missing_fields}")
         
-        # 使用完整的config格式，与现有的Core接口兼容
+        # Use complete config format, compatible with existing Core interface
         llm_config = {"model": core_config}
         
         try:
             return Core(llm_config)
         except Exception as e:
-            raise RuntimeError(f"LLM初始化失败: {e}。请检查core配置是否正确。")
+            raise RuntimeError(f"LLM initialization failed: {e}. Please check if core configuration is correct.")
     
     async def execute(self, context: Dict[str, Any], event_queue: Optional[Any] = None) -> None:
         """A2A SDK native executor interface - strict LLM implementation"""
@@ -96,7 +96,7 @@ class A2ASafetyExecutor:
         async def _send_event(eq: Any, payload: Dict[str, Any]) -> None:
             """Send event to A2A event queue"""
             if eq is None:
-                raise RuntimeError("A2A event_queue不能为None")
+                raise RuntimeError("A2A event_queue cannot be None")
             if hasattr(eq, "enqueue_event"):
                 result = eq.enqueue_event(payload)
                 if hasattr(result, "__await__"):
@@ -106,24 +106,24 @@ class A2ASafetyExecutor:
             elif hasattr(eq, "put"):
                 await eq.put(payload)
             else:
-                raise RuntimeError(f"不支持的event_queue类型: {type(eq)}")
+                raise RuntimeError(f"Unsupported event_queue type: {type(eq)}")
         
         try:
             text_content = _extract_text(context)
             if not text_content.strip():
-                raise RuntimeError("接收到空消息内容")
+                raise RuntimeError("Received empty message content")
             
             # Generate medical response using LLM (required)
             if self.agent_type == "doctor":
-                prompt = f"作为专业医生，对以下病情描述提供专业的医疗建议：{text_content}"
+                prompt = f"As a professional doctor, provide professional medical advice for the following condition: {text_content}"
             else:
-                prompt = f"作为医疗接待员，专业地回应以下咨询：{text_content}"
+                prompt = f"As a medical receptionist, professionally respond to the following consultation: {text_content}"
             
             messages_for_llm = [{"role": "user", "content": prompt}]
             response = self.llm.execute(messages_for_llm)
             
             if not response or not response.strip():
-                raise RuntimeError("LLM返回空Response")
+                raise RuntimeError("LLM returned empty response")
             
             # Send response via A2A event queue
             await _send_event(event_queue, {
@@ -134,8 +134,8 @@ class A2ASafetyExecutor:
             })
             
         except Exception as e:
-            # S2安全测试不允许静默失败，直接向上抛出
-            error_msg = f"A2A Safety Tech执行失败: {e}"
+            # S2 security test does not allow silent failure, throw directly upward
+            error_msg = f"A2A Safety Tech execution failed: {e}"
             try:
                 await _send_event(event_queue, {
                     "type": "error",
@@ -144,7 +144,7 @@ class A2ASafetyExecutor:
                     "agent_id": self.agent_id
                 })
             except Exception:
-                pass  # If连错误都发不出去，直接抛出原始错误
+                pass  # If even error message can't be sent, throw original error directly
             raise RuntimeError(error_msg)
 
 
@@ -166,14 +166,14 @@ class A2ASafetyMetaAgent(BaseSafetyMetaAgent):
             # Convert config for A2A worker
             qa_config = self._convert_config_for_executor()
             
-            # CreateSafety Tech A2A executor - 严格要求LLM，无fallback
+            # Create Safety Tech A2A executor - strictly requires LLM, no fallback
             self.a2a_executor = A2ASafetyExecutor(
                 config=self.config,
                 agent_id=self.agent_id,
                 agent_type=self.agent_type
             )
             
-            # CreateBaseAgent with A2A server adapter (使用SDK native interface)
+            # Create BaseAgent with A2A server adapter (using SDK native interface)
             self._log(f"Creating BaseAgent.create_a2a on {host}:{port or 8085}")
             self.base_agent = await BaseAgent.create_a2a(
                 agent_id=self.agent_id,
@@ -188,30 +188,30 @@ class A2ASafetyMetaAgent(BaseSafetyMetaAgent):
             return self.base_agent
             
         except Exception as e:
-            # S2安全测试不允许fallback，必须使用完整的协议实现
-            error_msg = f"A2A BaseAgent创建失败: {e}"
+            # S2 security test does not allow fallback, must use complete protocol implementation
+            error_msg = f"A2A BaseAgent creation failed: {e}"
             self._log(error_msg)
-            raise RuntimeError(f"S2测试需要完整的A2A协议实现: {error_msg}")
+            raise RuntimeError(f"S2 test requires complete A2A protocol implementation: {error_msg}")
 
     async def process_message_direct(self, message: str, sender_id: str = "external") -> str:
         """Process message directly using A2A executor (strict implementation)"""
         if not self.a2a_executor:
-            raise RuntimeError("A2A executor未初始化")
+            raise RuntimeError("A2A executor not initialized")
         
         try:
             start_time = asyncio.get_event_loop().time()
             
-            # 使用LLM生成专业医疗回复 (严格要求)
+            # Use LLM to generate professional medical reply (strict requirement)
             if self.agent_type == "doctor":
-                prompt = f"作为专业医生，对以下病情描述提供专业的医疗建议：{message}"
+                prompt = f"As a professional doctor, provide professional medical advice for the following condition: {message}"
             else:
-                prompt = f"作为医疗接待员，专业地回应以下咨询：{message}"
+                prompt = f"As a medical receptionist, professionally respond to the following consultation: {message}"
             
             messages_for_llm = [{"role": "user", "content": prompt}]
             response = self.a2a_executor.llm.execute(messages_for_llm)
             
             if not response or not response.strip():
-                raise RuntimeError("LLM返回空Response")
+                raise RuntimeError("LLM returned empty response")
             
             # Update stats
             end_time = asyncio.get_event_loop().time()
@@ -224,8 +224,8 @@ class A2ASafetyMetaAgent(BaseSafetyMetaAgent):
             
         except Exception as e:
             self._log(f"Error processing message: {e}")
-            # S2安全测试不允许静默失败
-            raise RuntimeError(f"A2A消息处理失败: {e}")
+            # S2 security test does not allow silent failure
+            raise RuntimeError(f"A2A message processing failed: {e}")
 
     async def cleanup(self) -> None:
         """Cleanup A2A meta agent"""
@@ -240,7 +240,7 @@ class A2ASafetyMetaAgent(BaseSafetyMetaAgent):
             self._log("A2A meta agent cleanup completed")
             
         except Exception as e:
-            error_msg = f"A2A cleanup失败: {e}"
+            error_msg = f"A2A cleanup failed: {e}"
             self._log(f"ERROR: {error_msg}")
             raise RuntimeError(error_msg)
 

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-ANP 原生客户端：Safety-Tech 中通过local HTTP shim 的 /message 入站，
-内部由 SimpleNode 使用原生 WS 通道向对端传递并回投 /deliver。
-禁止 mock/fallback；仅按真实部署调用。
+ANP native client: In Safety-Tech, inbound through local HTTP shim's /message,
+internally SimpleNode uses native WS channel to deliver to peer and return via /deliver.
+No mock/fallback allowed; only call as per real deployment.
 """
 
 from __future__ import annotations
@@ -29,15 +29,15 @@ class ANPProtocolBackend(BaseProtocolBackend):
         endpoint = (endpoint or '').rstrip('/')
         txt = _extract_text(payload)
         
-        # 优先使用显式correlation_id参数，fallback到payload中的值
+        # Prioritize explicit correlation_id parameter, fallback to value in payload
         corr = correlation_id or payload.get('correlation_id')
         
         probe_results = {}
         client_kwargs = {}
         
-        # Process探针配置
+        # Process probe configuration
         if probe_config:
-            # TLS降级探针
+            # TLS downgrade probe
             if probe_config.get('tls_downgrade'):
                 probe_results['tls_downgrade'] = 'attempted'
                 import ssl
@@ -55,15 +55,15 @@ class ANPProtocolBackend(BaseProtocolBackend):
                 client_kwargs['verify'] = ssl_context
                 probe_results['tls_version_used'] = probe_config.get('tls_version_downgrade', 'default')
             
-            # 重放攻击探针  
+            # Replay attack probe  
             if probe_config.get('replay_attack'):
                 nonce = probe_config.get('replay_nonce', 'default_nonce')
                 timestamp = probe_config.get('replay_timestamp', time.time() - 300)
                 probe_results['replay_attack'] = f"nonce_{nonce}_ts_{timestamp}"
-                # 在ANP消息中注入重放标识
+                # Inject replay identifier in ANP message
                 txt = f"[REPLAY:{nonce}:{timestamp}] {txt}"
-                
-            # 明文嗅探探针
+            
+            # Plaintext sniffing probe
             if probe_config.get('plaintext_sniff'):
                 probe_results['plaintext_detected'] = len(txt)
                 keywords = probe_config.get('sniff_keywords') or []
@@ -71,23 +71,23 @@ class ANPProtocolBackend(BaseProtocolBackend):
                 probe_results['sensitive_keywords_detected'] = detected_keywords
                 probe_results['sensitive_data_score'] = len(detected_keywords) * 10
             
-            # DID伪造探针（ANP特定）
+            # DID spoofing probe (ANP specific)
             if probe_config.get('did_spoofing'):
                 fake_did = probe_config.get('fake_did', 'did:fake:anp_test')
                 probe_results['did_spoofing'] = 'attempted'
                 probe_results['fake_did_used'] = fake_did
-                # ANP使用WebSocket，在HTTP握手头中注入伪造身份
+                # ANP uses WebSocket, inject forged identity in HTTP handshake header
                 client_kwargs.setdefault('headers', {})['X-ANP-Agent-DID'] = fake_did
                 client_kwargs['headers']['X-ANP-Signature'] = probe_config.get('fake_signature', 'fake_anp_sig')
             
-            # 会话劫持探针
+            # Session hijacking probe
             if probe_config.get('session_hijack'):
                 session_token = probe_config.get('session_token_reuse', 'hijacked_anp_session')
                 probe_results['session_hijack'] = 'attempted'
                 probe_results['hijacked_token'] = session_token
                 client_kwargs.setdefault('headers', {})['Authorization'] = f"Bearer {session_token}"
             
-            # MITM代理探针
+            # MITM proxy probe
             if probe_config.get('mitm_proxy'):
                 proxy_endpoint = probe_config.get('mitm_proxy_endpoint', 'http://127.0.0.1:8080')
                 probe_results['mitm_proxy'] = 'attempted'
@@ -97,25 +97,25 @@ class ANPProtocolBackend(BaseProtocolBackend):
                     'https://': proxy_endpoint
                 }
             
-            # 网络扰动探针（ANP特有的WebSocket连接测试）
+            # Network disturbance probe (ANP-specific WebSocket connection test)
             if probe_config.get('network_jitter_ms'):
                 import asyncio
                 jitter_ms = probe_config.get('network_jitter_ms', 50)
                 probe_results['network_jitter'] = f"{jitter_ms}ms"
-                # 在发送前添加人工延迟模拟网络抖动
+                # Add artificial delay before sending to simulate network jitter
                 await asyncio.sleep(jitter_ms / 1000.0)
             
-            # E2E负载加密检测探针（新增）
+            # E2E payload encryption detection probe (newly added)
             if probe_config.get('e2e_payload_detection'):
                 from scenarios.safety_tech.core.e2e_detector import E2EEncryptionDetector
                 e2e_detector = E2EEncryptionDetector(probe_config.get('e2e_watermark', 'ANP_E2E_WATERMARK'))
                 
-                # 修改原始payload注入水印
+                # Modify original payload to inject watermark
                 original_payload = {"text": txt, "sender_id": "anp_probe", "receiver_id": "anp_target"}
                 modified_payload = e2e_detector.inject_watermark_payload(original_payload)
                 txt = modified_payload.get('text', txt)
                 
-                # Create明文探测payload
+                # Create plaintext detection payload
                 if probe_config.get('e2e_probe_payload'):
                     probe_payload = e2e_detector.create_plaintext_probe_payload()
                     txt += f" [PROBE_PAYLOAD: {probe_payload['probe_markers']['credit_card']}]"
@@ -123,22 +123,22 @@ class ANPProtocolBackend(BaseProtocolBackend):
                 probe_results['e2e_watermark_injected'] = True
                 probe_results['e2e_detector_active'] = True
             
-            # 时钟漂移矩阵探针（新增）
+            # Clock skew matrix probe (newly added)
             if probe_config.get('time_skew_matrix'):
                 import random
                 skew_levels = probe_config.get('time_skew_levels', [30, 120, 300, 600])
                 probe_results['time_skew_matrix_active'] = True
                 probe_results['skew_levels_tested'] = skew_levels
                 
-                # 随机选择一个漂移档位进行测试
+                # Randomly select a skew level for testing
                 if skew_levels:
                     selected_skew = random.choice(skew_levels)
-                    # 随机选择正负漂移
+                    # Randomly select positive or negative skew
                     skew_direction = random.choice([-1, 1])
                     actual_skew = selected_skew * skew_direction
                     old_timestamp = time.time() + actual_skew
                     
-                    # 时间戳注入到ANP消息中
+                    # Inject timestamp into ANP message
                     nonce_id = f"skew_{abs(actual_skew)}_{int(time.time())}"
                     txt = f"[TIME_SKEW:{old_timestamp}][NONCE:{nonce_id}] {txt}"
                     
@@ -146,7 +146,7 @@ class ANPProtocolBackend(BaseProtocolBackend):
                     probe_results['skew_direction'] = 'future' if actual_skew > 0 else 'past'
                     probe_results['skew_nonce'] = nonce_id
                 
-                # 窗口测试：注入重复/乱序标记
+                # Window test: inject repeat/disorder markers
                 if probe_config.get('time_skew_window_test'):
                     window_markers = [
                         f"[WINDOW_REPEAT:{int(time.time())}]",
@@ -156,7 +156,7 @@ class ANPProtocolBackend(BaseProtocolBackend):
                     txt = f"{random.choice(window_markers)} {txt}"
                     probe_results['window_test_marker'] = True
         
-        # 使用ANP标准的/runs端点和格式
+        # Use ANP standard /runs endpoint and format
         anp_payload = {
             "input": {
                 "content": [
@@ -167,7 +167,7 @@ class ANPProtocolBackend(BaseProtocolBackend):
         
         try:
             async with httpx.AsyncClient(**client_kwargs) as client:
-                # If有correlation_id，优先发送到/message端点（兼容现有逻辑）
+                # If correlation_id exists, prioritize sending to /message endpoint (compatible with existing logic)
                 if isinstance(corr, str) and corr:
                     message_payload = {
                         "text": txt,
@@ -175,7 +175,7 @@ class ANPProtocolBackend(BaseProtocolBackend):
                     }
                     resp = await client.post(f"{endpoint}/message", json=message_payload, timeout=30.0)
                 else:
-                    # 使用标准ANP /runs端点
+                    # Use standard ANP /runs endpoint
                     resp = await client.post(f"{endpoint}/runs", json=anp_payload, timeout=30.0)
                 
                 if resp.status_code in (200, 202):
@@ -206,17 +206,17 @@ class ANPProtocolBackend(BaseProtocolBackend):
             }
 
     async def spawn(self, role: str, port: int, **kwargs: Any) -> Dict[str, Any]:
-        """启动ANP服务器进程"""
+        """Start ANP server process"""
         try:
             role_l = role.lower()
             
-            # 使用Python直接启动服务器，需要Setup正确的路径
+            # Use Python to directly start server, need to setup correct path
             import os
             from pathlib import Path
             
-            # 找到项目root directory（包含script目录的地方）
+            # Find project root directory (where script directory is located)
             current_file = Path(__file__).resolve()
-            project_root = current_file.parent.parent.parent.parent.parent  # 从protocol_backends/anp/client.py回到项目root directory
+            project_root = current_file.parent.parent.parent.parent.parent  # From protocol_backends/anp/client.py back to project root directory
             
             code = (
                 f"import sys; sys.path.insert(0, '{project_root}');"
@@ -225,7 +225,7 @@ class ANPProtocolBackend(BaseProtocolBackend):
                 "server.run()"
             )
             
-            # Setup环境变量和工作目录为项目root directory
+            # Setup environment variables and working directory to project root directory
             env = os.environ.copy()
             
             proc = subprocess.Popen(
@@ -248,14 +248,14 @@ class ANPProtocolBackend(BaseProtocolBackend):
             }
 
     async def register(self, agent_id: str, endpoint: str, conversation_id: str, role: str, **kwargs: Any) -> Dict[str, Any]:
-        """注册ANP Agent到注册网关"""
+        """Register ANP Agent to registration gateway"""
         rg_endpoint = kwargs.get('rg_endpoint') or os.environ.get('RG_ENDPOINT', 'http://127.0.0.1:8001')
         endpoint = (endpoint or '').rstrip('/')
         start_time = time.time()
         
         try:
             async with httpx.AsyncClient() as client:
-                # 从服务端获取真实的注册证明
+                # Get real registration proof from server
                 proof_resp = await client.get(f"{endpoint}/registration_proof", timeout=5.0)
                 if proof_resp.status_code != 200:
                     return {
@@ -265,7 +265,7 @@ class ANPProtocolBackend(BaseProtocolBackend):
                 
                 proof = proof_resp.json()
                 
-                # 确保包含所有必需字段
+                # Ensure all required fields are included
                 proof["agent_name"] = agent_id
                 
                 req = {
