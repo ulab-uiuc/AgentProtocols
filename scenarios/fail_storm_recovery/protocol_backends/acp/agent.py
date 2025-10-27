@@ -11,6 +11,7 @@ import json
 import logging
 import threading
 import time
+from datetime import datetime
 from typing import Any, Dict, Optional, List, AsyncGenerator
 from pathlib import Path
 import sys
@@ -22,10 +23,24 @@ sys.path.insert(0, str(agent_network_src))
 # Import ACP SDK (required) - use agent_network environment
 from acp_sdk.models import Message, MessagePart, RunCreateRequest
 from acp_sdk.server import Context, RunYield
-from acp_sdk.server import Server, AgentManifest
+from acp_sdk.server import Server
+from acp_sdk.client import Client
 
 # HTTP client for inter-agent communication
 import httpx
+
+
+def serialize_for_json(obj):
+    """Helper function to serialize objects containing datetime for JSON."""
+    if isinstance(obj, dict):
+        return {k: serialize_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [serialize_for_json(item) for item in obj]
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    else:
+        return obj
+
 
 class ACPExecutorWrapper:
     """Wrapper to adapt ShardWorkerExecutor to ACP AgentManifest interface."""
@@ -46,44 +61,6 @@ class ACPExecutorWrapper:
             self.logger.error(f"Error processing message: {e}")
             return f"Error processing message: {str(e)}"
 
-class ACPAgentManifest(AgentManifest):
-    """ACP AgentManifest implementation following A2A patterns."""
-    
-    def __init__(self, executor_wrapper, agent_id: str):
-        super().__init__()
-        self.executor_wrapper = executor_wrapper
-        self.agent_id = agent_id
-        self.logger = logging.getLogger(f"ACPAgentManifest.{agent_id}")
-    
-    async def run(self, messages: List[Message], context: Context) -> AsyncGenerator[RunYield, None]:
-        """Handle incoming ACP messages using official SDK patterns."""
-        try:
-            # Extract text content from ACP messages
-            content = ""
-            for message in messages:
-                for part in message.parts:
-                    if part.type == "text":
-                        content += part.text
-            
-            # Process through executor
-            result = await self.executor_wrapper.process_message("acp_client", content, {})
-            
-            # Return ACP-formatted response
-            response_msg = Message(
-                role="assistant",
-                parts=[MessagePart(type="text", text=str(result))]
-            )
-            
-            yield RunYield(output={"messages": [response_msg]})
-            
-        except Exception as e:
-            self.logger.error(f"Error in ACP manifest run: {e}")
-            error_msg = Message(
-                role="assistant", 
-                parts=[MessagePart(type="text", text=f"Error: {str(e)}")]
-            )
-            yield RunYield(output={"messages": [error_msg]})
-
 class ACPNativeServer:
     """ACP native server following A2A server patterns."""
     
@@ -94,7 +71,6 @@ class ACPNativeServer:
         self.agent_id = agent_id
         self.server_thread = None
         self.acp_server = None
-        self.agent_manifest = None
         self.logger = logging.getLogger(f"ACPNativeServer.{agent_id}")
         self._started = False  # Prevent duplicate starts
     
@@ -102,23 +78,38 @@ class ACPNativeServer:
         """Create native ACP server using official SDK."""
         acp_server = Server()
 
-        # Create native AgentManifest with our executor
-        self.agent_manifest = ACPAgentManifest(executor, self.agent_id)
-
-        # Register the AgentManifest with ACP SDK
-        acp_server.register(self.agent_manifest)
-        self.logger.info("Registered native AgentManifest with ACP SDK Server")
-
-        # Add /health endpoint for debugging
-        try:
-            app = acp_server.app  # FastAPI app
-            @app.get("/health")
-            async def _health():
-                return {"status": "ok", "agent_id": self.agent_id}
-        except Exception:
-            # Older SDKs may not expose .app; ignore silently
-            pass
-
+        # Register agent using decorator pattern (correct ACP SDK API)
+        @acp_server.agent()
+        async def agent_handler(messages: List[Message], context: Context) -> AsyncGenerator[RunYield, None]:
+            """Handle incoming ACP messages."""
+            try:
+                # Extract text content from ACP messages
+                content = ""
+                for message in messages:
+                    for part in message.parts:
+                        if part.type == "text":
+                            content += part.text
+                
+                # Process through executor
+                result = await executor.process_message("acp_client", content, {})
+                
+                # Return ACP-formatted response
+                response_msg = Message(
+                    role="assistant",
+                    parts=[MessagePart(type="text", text=str(result))]
+                )
+                
+                yield RunYield(output={"messages": [response_msg]})
+                
+            except Exception as e:
+                self.logger.error(f"Error in ACP agent handler: {e}")
+                error_msg = Message(
+                    role="assistant", 
+                    parts=[MessagePart(type="text", text=f"Error: {str(e)}")]
+                )
+                yield RunYield(output={"messages": [error_msg]})
+        
+        self.logger.info(f"Registered ACP agent handler for {self.agent_id}")
         return acp_server
     
     def serve(self):
@@ -164,9 +155,8 @@ class ACPAgent:
         self.native_server = None
         self.acp_executor = None
         
-        # HTTP client management (following A2A pattern)
+        # Endpoint management
         self._endpoints: Dict[str, str] = {}
-        self._clients: Dict[str, httpx.AsyncClient] = {}
         
         # Server management
         self._startup_complete = asyncio.Event()
@@ -200,11 +190,6 @@ class ACPAgent:
             if self.native_server:
                 self.native_server.shutdown()
             
-            # Close HTTP clients
-            for client in self._clients.values():
-                await client.aclose()
-            self._clients.clear()
-            
             self._shutdown_complete.set()
             self.logger.info(f"ACP Agent {self.agent_id} stopped successfully")
             
@@ -233,12 +218,8 @@ class ACPAgent:
             raise
     
     async def register_endpoint(self, agent_id: str, base_url: str) -> None:
-        """Register endpoint for another agent (following A2A pattern)."""
+        """Register endpoint for another agent."""
         self._endpoints[agent_id] = base_url
-        
-        # Create HTTP client for this endpoint
-        self._clients[agent_id] = httpx.AsyncClient(base_url=base_url, timeout=10.0)
-        
         self.logger.info(f"Registered endpoint for {agent_id}: {base_url}")
     
     async def send_message(self, target_agent_id: str, message: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -250,14 +231,10 @@ class ACPAgent:
             return None
     
     async def send(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Any:
-        """Send message using ACP SDK-native RunCreateRequest schema."""
+        """Send message using ACP SDK Client."""
         endpoint = self._endpoints.get(dst_id)
         if not endpoint:
             raise RuntimeError(f"unknown dst_id={dst_id}")
-
-        client = self._clients.get(dst_id)
-        if client is None:
-            raise RuntimeError(f"http client for {dst_id} not initialized")
 
         # Build text content
         text_in = (
@@ -266,52 +243,40 @@ class ACPAgent:
             or (json.dumps(payload, ensure_ascii=False) if isinstance(payload, dict) else str(payload))
         )
 
-        # Use ACP SDK models to build request body
+        # Use ACP SDK Client to send message
         try:
-            # Message MUST have a role
+            # Create ACP client pointing to target agent
+            acp_client = Client(base_url=endpoint)
+            
+            # Create message
             msg = Message(
                 role="user",
                 parts=[MessagePart(type="text", text=str(text_in))]
             )
-            run = RunCreateRequest(
-                messages=[msg],
-                input={"meta": {"src": src_id, "dst": dst_id}}
+            
+            # Call agent using SDK (agent name is "agent_handler" by default)
+            # Use run_sync since we're in async context already
+            run = acp_client.run_sync(
+                agent="agent_handler",
+                input=[msg]
             )
-
-            # Pydantic v2 vs v1 compatibility
-            try:
-                body = run.model_dump(by_alias=True, exclude_none=True)  # pydantic v2
-            except AttributeError:
-                body = run.dict(by_alias=True, exclude_none=True)        # pydantic v1
-
-            # Send to ACP server
-            resp = await client.post("/runs", json=body)
-
-            # For older/newer variants that mount at /v1/runs
-            if resp.status_code == 404:
-                resp = await client.post("/v1/runs", json=body)
-
-            resp.raise_for_status()
-            raw = resp.json()
-
-            # Extract text from ACP response
+            
+            # Extract response
             text_out = ""
-            if isinstance(raw, dict) and "output" in raw and "messages" in raw["output"]:
-                for m in raw["output"]["messages"]:
-                    for p in m.get("parts", []):
-                        if p.get("type") == "text":
-                            text_out += p.get("text", "")
-
+            if hasattr(run, 'messages') and run.messages:
+                for msg in run.messages:
+                    if hasattr(msg, 'parts'):
+                        for part in msg.parts:
+                            if hasattr(part, 'text'):
+                                text_out += part.text
+            
             if not text_out:
-                text_out = json.dumps(raw, ensure_ascii=False)
+                text_out = str(run)
+            
+            return {"raw": run, "text": text_out}
 
-            return {"raw": raw, "text": text_out}
-
-        except httpx.HTTPStatusError as e:
-            # Surface FastAPI/Pydantic validation details to logs
-            details = e.response.text if e.response is not None else ""
-            raise RuntimeError(f"ACP protocol send failed: {e} | details={details}")
         except Exception as e:
+            self.logger.error(f"ACP protocol send failed: {e}")
             raise RuntimeError(f"ACP protocol send failed: {e}")
 
     async def health_check(self, agent_id: str) -> bool:

@@ -16,7 +16,7 @@ scenario:
 
 llm:
   type: "openai"
-  model: "Qwen2.5-VL-72B-Instruct"
+  model: "gpt-4o"
   openai_api_key: "dummy-key"
   openai_base_url: "https://api.openai.com/v1"  # Local OpenAI-compatible endpoint
   temperature: 0.2
