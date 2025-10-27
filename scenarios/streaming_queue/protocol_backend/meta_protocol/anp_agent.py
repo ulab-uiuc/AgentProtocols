@@ -5,6 +5,7 @@ Production-ready ANP agent integration with src/core/base_agent.py Meta-Protocol
 Uses AgentConnect SDK for DID authentication and E2E encryption.
 """
 
+import os
 import asyncio
 import uuid
 import logging
@@ -160,12 +161,15 @@ class ANPMetaAgent:
         """Convert config for ANPQAWorker"""
         core = self.config.get("core", {})
         if core.get("type") == "openai":
+            # Prioritize environment variables
+            api_key = os.getenv("OPENAI_API_KEY") or core.get("openai_api_key")
+            base_url = os.getenv("OPENAI_BASE_URL") or core.get("openai_base_url")
             return {
                 "model": {
                     "type": "openai",
                     "name": core.get("name", "gpt-4o"),
-                    "openai_api_key": core.get("openai_api_key"),
-                    "openai_base_url": core.get("openai_base_url"),
+                    "openai_api_key": api_key,
+                    "openai_base_url": base_url,
                     "temperature": core.get("temperature", 0.0)
                 }
             }

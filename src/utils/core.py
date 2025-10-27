@@ -47,13 +47,17 @@ class Core:
             import httpx
             from openai import OpenAI
             
+            # Prioritize environment variables
+            api_key = os.getenv("OPENAI_API_KEY") or self.config["model"]["openai_api_key"]
+            base_url = os.getenv("OPENAI_BASE_URL") or self.config["model"].get("openai_base_url", "https://api.openai.com/v1")
+            
             # Create a clean httpx client without passing any proxy configuration
             http_client = httpx.Client()
             
             try:
                 client = OpenAI(
-                    api_key=self.config["model"]["openai_api_key"],
-                    base_url=self.config["model"].get("openai_base_url", "https://api.openai.com/v1"),
+                    api_key=api_key,
+                    base_url=base_url,
                     http_client=http_client
                 )
                 print(f"[Core] OpenAI client initialized with custom httpx client")
@@ -61,7 +65,6 @@ class Core:
                 print(f"[Core] Failed with custom httpx client: {e}")
                 # Try to avoid httpx client customization entirely
                 try:
-                    import os
                     # Temporarily clear possible proxy environment variables
                     old_env = {}
                     proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']
@@ -70,8 +73,8 @@ class Core:
                             old_env[var] = os.environ.pop(var)
                     
                     client = OpenAI(
-                        api_key=self.config["model"]["openai_api_key"],
-                        base_url=self.config["model"].get("openai_base_url", "https://api.openai.com/v1"),
+                        api_key=api_key,
+                        base_url=base_url,
                     )
                     
                     # Restore environment variables

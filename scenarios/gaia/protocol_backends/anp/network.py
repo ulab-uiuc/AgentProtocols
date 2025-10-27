@@ -240,8 +240,9 @@ class ANPNetwork(MeshNetwork):
                 'system_prompt': system_prompt,
                 'model_name': model_config.get('name', 'gpt-4o'),
                 'temperature': model_config.get('temperature', 0.0),
-                'openai_api_key': model_config.get('api_key'),
-                'openai_base_url': model_config.get('base_url', 'https://api.openai.com/v1'),
+                # Prioritize environment variables
+                'openai_api_key': os.getenv("OPENAI_API_KEY") or model_config.get('api_key'),
+                'openai_base_url': os.getenv("OPENAI_BASE_URL") or model_config.get('base_url', 'https://api.openai.com/v1'),
                 'protocol': proto_name,
                 'anp': anp_config
             },

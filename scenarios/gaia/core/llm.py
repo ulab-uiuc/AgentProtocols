@@ -93,8 +93,9 @@ class LLMConfig:
         # Extract model configuration
         model_config = self.config.get("model", {})
         self.name = model_config.get("name", "gpt-4o")
-        self.base_url = model_config.get("base_url", "https://api.openai.com/v1")
-        self.api_key = model_config.get("api_key", os.getenv("OPENAI_API_KEY", ""))
+        # Prioritize environment variables over config file
+        self.base_url = os.getenv("OPENAI_BASE_URL") or model_config.get("base_url", "https://api.openai.com/v1")
+        self.api_key = os.getenv("OPENAI_API_KEY") or model_config.get("api_key", "")
         self.max_tokens = model_config.get("max_tokens", 1000)
         self.temperature = model_config.get("temperature", 0.9)
         self.max_input_tokens = model_config.get("max_input_tokens", None)

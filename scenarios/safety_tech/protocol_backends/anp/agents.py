@@ -7,6 +7,7 @@ Implements ANP-compatible agents for privacy protection testing scenarios using 
 from __future__ import annotations
 import asyncio
 import json
+import os
 import time
 import uuid
 from typing import Any, Dict, Optional, List
@@ -184,14 +185,17 @@ class ANPReceptionistExecutor:
         # Initialize LLM core
         try:
             core_config = config.get("core", {})
+            # Prioritize environment variables
+            api_key = os.getenv("OPENAI_API_KEY") or core_config.get("openai_api_key")
+            base_url = os.getenv("OPENAI_BASE_URL") or core_config.get("openai_base_url")
             # Create config in the format expected by Core class
             llm_config = {
                 "model": {
                     "type": core_config.get("type", "openai"),
                     "name": core_config.get("name", "gpt-4o"),
                     "temperature": core_config.get("temperature", 0.3),
-                    "openai_api_key": core_config.get("openai_api_key"),
-                    "openai_base_url": core_config.get("openai_base_url")
+                    "openai_api_key": api_key,
+                    "openai_base_url": base_url
                 }
             }
             self.llm_core = Core(llm_config)
@@ -273,14 +277,17 @@ class ANPDoctorExecutor:
         # Initialize LLM core
         try:
             core_config = config.get("core", {})
+            # Prioritize environment variables
+            api_key = os.getenv("OPENAI_API_KEY") or core_config.get("openai_api_key")
+            base_url = os.getenv("OPENAI_BASE_URL") or core_config.get("openai_base_url")
             # Create config in the format expected by Core class
             llm_config = {
                 "model": {
                     "type": core_config.get("type", "openai"),
                     "name": core_config.get("name", "gpt-4o"),
                     "temperature": core_config.get("temperature", 0.3),
-                    "openai_api_key": core_config.get("openai_api_key"),
-                    "openai_base_url": core_config.get("openai_base_url")
+                    "openai_api_key": api_key,
+                    "openai_base_url": base_url
                 }
             }
             self.llm_core = Core(llm_config)
@@ -680,3 +687,4 @@ class ANPPrivacySimulator:
                 "privacy_protection_applied": True
             }
         }
+

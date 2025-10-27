@@ -141,12 +141,15 @@ class AgoraRunner(RunnerBase):
             return None
         core = config.get("core", {})
         if core.get("type") == "openai":
+            # Prioritize environment variables
+            api_key = os.getenv("OPENAI_API_KEY") or core.get("openai_api_key")
+            base_url = os.getenv("OPENAI_BASE_URL") or core.get("openai_base_url", "https://api.openai.com/v1")
             return {
                 "model": {
                     "type": "openai",
                     "name": core.get("name", "gpt-4o"),
-                    "openai_api_key": core.get("openai_api_key"),
-                    "openai_base_url": core.get("openai_base_url", "https://api.openai.com/v1"),
+                    "openai_api_key": api_key,
+                    "openai_base_url": base_url,
                     "temperature": core.get("temperature", 0.0),
                 }
             }

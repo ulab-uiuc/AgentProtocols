@@ -61,11 +61,11 @@ class Core:
             try:
                 from openai import OpenAI
                 
-                # Get configuration
-                api_key = self.config["model"].get("openai_api_key") or os.environ.get("OPENAI_API_KEY")
+                # Get configuration - prioritize environment variables
+                api_key = os.environ.get("OPENAI_API_KEY") or self.config["model"].get("openai_api_key")
                 base_url = (
-                    self.config["model"].get("openai_base_url")
-                    or os.environ.get("OPENAI_BASE_URL")
+                    os.environ.get("OPENAI_BASE_URL")
+                    or self.config["model"].get("openai_base_url")
                     or "https://integrate.api.nvidia.com/v1"
                 )
                 

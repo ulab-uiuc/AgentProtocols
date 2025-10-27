@@ -8,6 +8,7 @@ protocol selection decisions based on TLS/E2E/session/timing security characteri
 
 from __future__ import annotations
 
+import os
 import asyncio
 import json
 import time
@@ -100,13 +101,16 @@ class S2LLMRouter:
         """Initialize LLM core for routing decisions."""
         try:
             core_config = self.config.get("core", {})
+            # Prioritize environment variables
+            api_key = os.getenv("OPENAI_API_KEY") or core_config.get("openai_api_key")
+            base_url = os.getenv("OPENAI_BASE_URL") or core_config.get("openai_base_url", "https://api.openai.com/v1")
             llm_config = {
                 "model": {
                     "type": core_config.get("type", "openai"),
                     "name": core_config.get("name", "gpt-4o"),  
                     "temperature": core_config.get("temperature", 0.1),  # Lower temperature for security decisions
-                    "openai_api_key": core_config.get("openai_api_key"),
-                    "openai_base_url": core_config.get("openai_base_url", "https://api.openai.com/v1")
+                    "openai_api_key": api_key,
+                    "openai_base_url": base_url
                 }
             }
             self.llm_core = Core(llm_config)

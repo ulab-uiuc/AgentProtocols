@@ -4,7 +4,7 @@ Meta-Protocol Coordinator with LLM-based Intelligent Routing
 Unified coordinator that uses LLM to intelligently select protocols based on task requirements.
 Integrates with BaseAgent meta-protocol system and supports dynamic protocol selection.
 """
-
+import os
 import asyncio
 import uuid
 import logging
@@ -113,8 +113,9 @@ class MetaProtocolCoordinator(QACoordinatorBase):
                 config = yaml.safe_load(f)
             
             core_config = config.get("core", {})
-            api_key = core_config.get("openai_api_key", "")
-            base_url = core_config.get("openai_base_url", "https://api.openai.com/v1")
+            # Prioritize environment variables
+            api_key = os.getenv("OPENAI_API_KEY") or core_config.get("openai_api_key", "")
+            base_url = os.getenv("OPENAI_BASE_URL") or core_config.get("openai_base_url", "https://api.openai.com/v1")
             model = core_config.get("name", "gpt-4o")
             
             if not api_key:

@@ -1,3 +1,4 @@
+import os
 import asyncio
 import json
 import time
@@ -189,12 +190,15 @@ class ShardWorker:
         # Try reading from 'llm' field (new format)
         llm_config = self.config.get('llm')
         if llm_config:
+            # Prioritize environment variables
+            api_key = os.getenv("OPENAI_API_KEY") or llm_config.get('openai_api_key', '')
+            base_url = os.getenv("OPENAI_BASE_URL") or llm_config.get('openai_base_url', 'https://api.openai.com/v1')
             return {
                 "model": {
                     "type": llm_config.get('type', 'openai'),
                     "name": llm_config.get('model', llm_config.get('name', 'gpt-4o')),
-                    "openai_api_key": llm_config.get('openai_api_key', ''),
-                    "openai_base_url": llm_config.get('openai_base_url', 'https://api.openai.com/v1'),
+                    "openai_api_key": api_key,
+                    "openai_base_url": base_url,
                     "temperature": llm_config.get('temperature', 0.0),
                     "max_tokens": llm_config.get('max_tokens', 4096)
                 }

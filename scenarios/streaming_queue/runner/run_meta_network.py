@@ -4,7 +4,7 @@ Meta Protocol Runner - BaseAgent integration with streaming_queue protocols
 Uses src/core/base_agent.py and src/core/network.py to create a unified
 network with workers from different protocols (ACP, ANP, Agora, A2A).
 """
-
+import os
 import asyncio
 import sys
 import yaml
@@ -135,19 +135,23 @@ class MetaProtocolRunner(RunnerBase):
         
         # Check if type is explicitly set to "openai" or if openai_api_key is present
         model_type = core.get("type", "").strip().strip('"')
-        has_openai_key = core.get("openai_api_key", "").strip()
+        # Prioritize environment variable OPENAI_API_KEY
+        has_openai_key = os.getenv("OPENAI_API_KEY") or core.get("openai_api_key", "").strip()
         
         if model_type == "openai" or has_openai_key:
-            # Use openai_base_url from config, fallback to default if empty
-            base_url = core.get("openai_base_url", "").strip().strip('"')
+            # Prioritize environment variable OPENAI_BASE_URL
+            base_url = os.getenv("OPENAI_BASE_URL") or core.get("openai_base_url", "").strip().strip('"')
             if not base_url:
                 base_url = "https://api.openai.com/v1"
+            
+            # Prioritize environment variable OPENAI_API_KEY
+            api_key = os.getenv("OPENAI_API_KEY") or core.get("openai_api_key", "").strip()
             
             return {
                 "model": {
                     "type": "openai",
                     "name": core.get("name", "gpt-4o").strip().strip('"'),
-                    "openai_api_key": core.get("openai_api_key", "").strip(),
+                    "openai_api_key": api_key,
                     "openai_base_url": base_url,
                     "temperature": core.get("temperature", 0.0),
                 }
@@ -168,8 +172,9 @@ class MetaProtocolRunner(RunnerBase):
         """Create LLM client for routing decisions."""
         try:
             core_config = self.config.get("core", {})
-            api_key = core_config.get("openai_api_key", "")
-            base_url = core_config.get("openai_base_url", "https://api.openai.com/v1")
+            # Prioritize environment variables
+            api_key = os.getenv("OPENAI_API_KEY") or core_config.get("openai_api_key", "")
+            base_url = os.getenv("OPENAI_BASE_URL") or core_config.get("openai_base_url", "https://api.openai.com/v1")
             model = core_config.get("name", "gpt-4o")
             
             if not api_key:
