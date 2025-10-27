@@ -20,10 +20,10 @@ def _get_backend(protocol: str):
     # Ensure all protocol backends are imported to trigger their registration code
     # Handle each protocol import in an isolated try/except so one failure won't affect others
     protocols_to_import = [
-        ('anp', 'scenario.safety_tech.protocol_backends.anp'),
-        ('acp', 'scenario.safety_tech.protocol_backends.acp'),
-        ('a2a', 'scenario.safety_tech.protocol_backends.a2a'),
-        ('agora', 'scenario.safety_tech.protocol_backends.agora'),
+        ('anp', 'scenarios.safety_tech.protocol_backends.anp'),
+        ('acp', 'scenarios.safety_tech.protocol_backends.acp'),
+        ('a2a', 'scenarios.safety_tech.protocol_backends.a2a'),
+        ('agora', 'scenarios.safety_tech.protocol_backends.agora'),
     ]
     
     for proto_name, module_path in protocols_to_import:

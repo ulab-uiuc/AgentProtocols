@@ -329,22 +329,29 @@ def _build_doctor_context(role: str) -> str:
 
 
 def _read_env_model_config() -> dict:
-    """Unified NVIDIA LLaMA configuration reader."""
+    """Unified model configuration reader with environment variable priority."""
     import os as _os
     
-    # NVIDIA LLaMA configuration - unified defaults
-    api_key = _os.environ.get('NVIDIA_API_KEY', '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')
-    base_url = _os.environ.get('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1')
-    model_name = _os.environ.get('NVIDIA_MODEL', 'meta/llama-3.3-70b-instruct')
-    temperature = float(_os.environ.get('NVIDIA_TEMPERATURE', '0.3'))
+    # Prioritize OPENAI_* environment variables, fallback to NVIDIA_* for backward compatibility
+    api_key = _os.environ.get('OPENAI_API_KEY') or _os.environ.get('NVIDIA_API_KEY', 'EMPTY')
+    base_url = _os.environ.get('OPENAI_BASE_URL') or _os.environ.get('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1')
     
-    print(f"[LLM-CONFIG] Using NVIDIA LLaMA: {model_name}")
+    # Auto-detect model name based on base_url
+    if 'nvidia' in base_url.lower():
+        default_model = 'meta/llama-3.3-70b-instruct'
+    else:
+        default_model = 'gpt-4o'
+    
+    model_name = _os.environ.get('OPENAI_MODEL') or _os.environ.get('NVIDIA_MODEL', default_model)
+    temperature = float(_os.environ.get('OPENAI_TEMPERATURE') or _os.environ.get('NVIDIA_TEMPERATURE', '0.3'))
+    
+    print(f"[LLM-CONFIG] Using model: {model_name}")
     print(f"[LLM-CONFIG] Base URL: {base_url}")
-    print(f"[LLM-CONFIG] API Key: {api_key[:20]}...")
+    print(f"[LLM-CONFIG] API Key: {api_key[:20]}..." if api_key else "[LLM-CONFIG] No API key")
     
     return {
         'model': {
-            'type': 'openai',  # Use OpenAI-compatible client to connect to NVIDIA
+            'type': 'openai',  # Use OpenAI-compatible client
             'name': model_name,
             'temperature': temperature,
             'openai_api_key': api_key,

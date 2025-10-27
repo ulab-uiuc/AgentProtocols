@@ -1,6 +1,8 @@
 # 🤖 Multiagent-Protocol
 
-[Website](https://example.com) | [Paper (placeholder)](#) | [Licenses](LICENSE)
+[![Paper](https://img.shields.io/badge/📄_arXiv-Paper-b31b1b?style=flat-square&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2510.17149)
+[![License](https://img.shields.io/badge/📜_License-MIT-blue?style=flat-square)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org)
 
 A comprehensive multi-agent communication framework supporting multiple protocols for distributed AI systems. This framework enables seamless interaction between AI agents across different communication paradigms with built-in security, monitoring, and scalability features.
 
@@ -52,24 +54,13 @@ pip install -r requirements.txt
 
 # Set environment variables
 export OPENAI_API_KEY='sk-your-openai-api-key-here'
+export OPENAI_BASE_URL='https://your-base-url-here'
 ```
 
 ## 🎯 Supported Scenarios & Getting Started
 
 ### 1. 🌍 GAIA (General AI Agent) Framework
 **Purpose**: Task execution and coordination across distributed AI agents
-
-**Quick Start**:
-```bash
-# 1. Set up environment
-export OPENAI_API_KEY='sk-your-key'
-
-# 2. Run GAIA with ANP protocol
-python -m scenarios.gaia.runners.run_anp
-
-# 3. Monitor output for agent interactions
-# Expected: Multiple agents collaborating on tasks with DID authentication
-```
 
 **All Available Runners**:
 ```bash

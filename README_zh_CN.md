@@ -1,6 +1,9 @@
 # 🤖 Multiagent-Protocol（简体中文）
 
-[网站 (占位)](https://example.com) | [论文 (占位)](#) | [许可证](LICENSE)
+
+[![Paper](https://img.shields.io/badge/📄_arXiv-论文-b31b1b?style=flat-square&logo=arxiv&logoColor=white)](#)
+[![License](https://img.shields.io/badge/📜_许可证-MIT-blue?style=flat-square)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org)
 
 项目中文说明。此文档为 README 的中文翻译与补充，更多原始英文内容请参见：[README.md](README.md)。
 

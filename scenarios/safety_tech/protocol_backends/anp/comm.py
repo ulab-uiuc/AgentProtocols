@@ -17,25 +17,18 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Callable, Set, List
 from urllib.parse import urlparse
 
-# Add local agentconnect_src to path (authoritative source)
-PROJECT_ROOT = Path(__file__).resolve().parents[4]
-agentconnect_path = PROJECT_ROOT / "agentconnect_src"
-if str(agentconnect_path) not in sys.path:
-    sys.path.insert(0, str(agentconnect_path))
-
 try:
-    # Import from local agentconnect_src (no fallback to external package)
-    from simple_node.simple_node import SimpleNode  # type: ignore
-    from simple_node.simple_node_session import SimpleNodeSession  # type: ignore
-    from authentication.did_wba_auth_header import DIDWbaAuthHeader  # type: ignore
-    from authentication.did_wba_verifier import DidWbaVerifier  # type: ignore
-    from utils.did_generate import did_generate  # type: ignore
-    from utils.crypto_tool import get_pem_from_private_key  # type: ignore
-    from e2e_encryption.wss_message_sdk import WssMessageSDK  # type: ignore
-    print("[ANP Privacy] Using local agentconnect_src modules")
+    # Import from installed agent_connect package
+    from agent_connect.simple_node import SimpleNode, SimpleNodeSession  # type: ignore
+    from agent_connect.authentication import DIDWbaAuthHeader, verify_auth_header_signature  # type: ignore
+    from agent_connect.utils.did_generate import did_generate  # type: ignore
+    from agent_connect.utils.crypto_tool import get_pem_from_private_key  # type: ignore
+    print("[ANP Privacy] Using installed agent_connect package")
 except ImportError as e:
-    # Do not fallback; abort immediately
-    raise
+    raise ImportError(
+        f"agent_connect package is required for ANP privacy features: {e}. "
+        "Please install with: pip install agent-connect"
+    )
 
 # Import base classes
 try:

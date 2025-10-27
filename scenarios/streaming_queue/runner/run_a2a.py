@@ -20,10 +20,12 @@ import httpx
 # PathSetup
 HERE = Path(__file__).resolve()
 STREAMING_Q = HERE.parents[1]  # .../streaming_queue
-A2A_DIR = STREAMING_Q / "protocol_backend" / "a2a"
+
+# Add paths (NOTE: Do NOT add protocol_backend/a2a/ to sys.path as it contains
+# comm.py which conflicts with the comm/ package when network_base.py tries to
+# import comm.base.BaseCommBackend)
 sys.path.insert(0, str(STREAMING_Q))
 sys.path.insert(0, str(HERE.parent))   # runner/
-sys.path.insert(0, str(A2A_DIR))
 
 from runner_base import RunnerBase, ColoredOutput  # type: ignore
 

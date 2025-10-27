@@ -17,12 +17,12 @@ from typing import Dict, List, Any, Optional
 HERE = Path(__file__).resolve()
 STREAMING_Q = HERE.parents[1]  # .../streaming_queue
 PROJECT_ROOT = STREAMING_Q.parent.parent  # .../Multiagent-Protocol
-ANP_DIR = STREAMING_Q / "protocol_backend" / "anp"
 
-# Add paths
+# Add paths (NOTE: Do NOT add protocol_backend/anp/ to sys.path as it contains
+# comm.py which conflicts with the comm/ package when network_base.py tries to
+# import comm.base.BaseCommBackend)
 sys.path.insert(0, str(STREAMING_Q))
 sys.path.insert(0, str(HERE.parent))   # runner/
-sys.path.insert(0, str(ANP_DIR))
 
 # ================= AgentConnect imports =================
 agentconnect_path = PROJECT_ROOT / "agentconnect_src"

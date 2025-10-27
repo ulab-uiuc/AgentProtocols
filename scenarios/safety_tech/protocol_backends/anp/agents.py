@@ -31,24 +31,18 @@ except ImportError as e:
         "Please ensure script/safety_tech/core/llm_wrapper.py is available."
     )
 
-# AgentConnect ANP imports for agent execution (local only; no fallback)
+# AgentConnect ANP imports for agent execution
 try:
-    PROJECT_ROOT = Path(__file__).resolve().parents[4]
-    agentconnect_path = PROJECT_ROOT / "agentconnect_src"
-    if str(agentconnect_path) not in sys.path:
-        sys.path.insert(0, str(agentconnect_path))
-
     from agent_connect.simple_node import SimpleNode, SimpleNodeSession  # type: ignore
-    from agent_connect.authentication.did_wba_auth_header import DIDWbaAuthHeader  # type: ignore
-    from agent_connect.authentication.did_wba_verifier import DidWbaVerifier  # type: ignore
+    from agent_connect.authentication import DIDWbaAuthHeader, verify_auth_header_signature  # type: ignore
     from agent_connect.utils.did_generate import did_generate  # type: ignore
     from agent_connect.utils.crypto_tool import get_pem_from_private_key  # type: ignore
-    print("[ANP Privacy] Using local agentconnect_src for ANP agent execution")
+    print("[ANP Privacy] Using installed agent_connect package for ANP agent execution")
 except ImportError as e:
     raise ImportError(
-        f"AgentConnect SDK is required but not available: {e}. "
+        f"agent_connect package is required for ANP privacy features: {e}. "
         "ANP protocol requires DID authentication and E2E encryption. "
-        "Please ensure agentconnect_src is available."
+        "Please install with: pip install agent-connect"
     )
 
 

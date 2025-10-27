@@ -31,10 +31,15 @@ streaming_queue_path = current_file.parent.parent.parent  # Go up from a2a -> pr
 if str(streaming_queue_path) not in sys.path:
     sys.path.insert(0, str(streaming_queue_path))
 
+# Add comm path to avoid naming conflict with current file (same as ACP/ANP)
+comm_path = streaming_queue_path / "comm"
+if str(comm_path) not in sys.path:
+    sys.path.insert(0, str(comm_path))
+
 try:
-    from comm.base import BaseCommBackend  # type: ignore
+    from base import BaseCommBackend  # type: ignore
 except ImportError as e:
-    raise ImportError(f"Cannot import BaseCommBackend from comm.base: {e}")
+    raise ImportError(f"Cannot import BaseCommBackend from base: {e}")
 
 
 # ==========================
@@ -317,30 +322,51 @@ class A2ACommBackend(BaseCommBackend):
 # ==========================
 # A2A Network (concrete)
 # ==========================
-from typing import Optional
+# NOTE: Using lazy import pattern to avoid circular dependency with core.network_base
+# This is necessary because network_base.py imports comm.base, and if this file
+# imports NetworkBase at module level, it creates a circular import chain.
 
-try:
-    from core.network_base import NetworkBase  # type: ignore
-except ImportError as e:
-    raise ImportError(f"Cannot import NetworkBase from core.network_base: {e}")
-
-
-class A2ANetwork(NetworkBase):
+def get_a2a_network_class():
     """
-    Concrete A2A implementation of NetworkBase:
-      - injects A2ACommBackend for communication capability
-      - additionally provides spawn_local_agent() convenience to start an in-process HTTP service for an executor and auto-register it
+    Lazy constructor for A2ANetwork class to avoid circular imports.
+    Only imports NetworkBase when the class is actually needed.
     """
-    def __init__(self, httpx_client: Optional[httpx.AsyncClient] = None, request_timeout: float = 60.0):
-        backend = A2ACommBackend(httpx_client=httpx_client, request_timeout=request_timeout)
-        super().__init__(comm_backend=backend)
+    from typing import Optional
+    try:
+        from core.network_base import NetworkBase  # type: ignore
+    except ImportError as e:
+        raise ImportError(f"Cannot import NetworkBase from core.network_base: {e}")
+    
+    class A2ANetwork(NetworkBase):
+        """
+        Concrete A2A implementation of NetworkBase:
+          - injects A2ACommBackend for communication capability
+          - additionally provides spawn_local_agent() convenience to start an in-process HTTP service for an executor and auto-register it
+        """
+        def __init__(self, httpx_client: Optional[httpx.AsyncClient] = None, request_timeout: float = 60.0):
+            backend = A2ACommBackend(httpx_client=httpx_client, request_timeout=request_timeout)
+            super().__init__(comm_backend=backend)
 
-    async def spawn_local_agent(self, agent_id: str, host: str, port: int, executor: AgentExecutor) -> A2AAgentHandle:
-        """
-        Convenience: start a FastAPI+Uvicorn host in-process to host the executor,
-        and automatically register it with the current network.
-        """
-        # self._comm is of type A2ACommBackend
-        handle = await self._comm.spawn_local_agent(agent_id, host, port, executor)  # type: ignore[attr-defined]
-        await self.register_agent(agent_id, handle.base_url)
-        return handle
+        async def spawn_local_agent(self, agent_id: str, host: str, port: int, executor: AgentExecutor) -> A2AAgentHandle:
+            """
+            Convenience: start a FastAPI+Uvicorn host in-process to host the executor,
+            and automatically register it with the current network.
+            """
+            # self._comm is of type A2ACommBackend
+            handle = await self._comm.spawn_local_agent(agent_id, host, port, executor)  # type: ignore[attr-defined]
+            await self.register_agent(agent_id, handle.base_url)
+            return handle
+    
+    return A2ANetwork
+
+# Make A2ANetwork available via module attribute access (lazy loading)
+_A2ANetwork_class = None
+
+def __getattr__(name):
+    """Module-level __getattr__ for lazy imports."""
+    global _A2ANetwork_class
+    if name == "A2ANetwork":
+        if _A2ANetwork_class is None:
+            _A2ANetwork_class = get_a2a_network_class()
+        return _A2ANetwork_class
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
