@@ -1,7 +1,7 @@
 from openai import OpenAI
 
 # The client gets the API key from the environment variable `GEMINI_API_KEY`.
-api_key = "AIzaSyDj-mHZwUWkuNuvSzr_dIPlW8bzkNMXVMM"
+api_key = ""
 base_url = "https://generativelanguage.googleapis.com/v1beta"
 client = OpenAI(api_key=api_key, base_url=base_url)
 

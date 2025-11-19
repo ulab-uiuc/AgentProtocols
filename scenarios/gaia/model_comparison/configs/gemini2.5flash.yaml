@@ -82,7 +82,7 @@ model:
   api_type: "google"
   name: "gemini-2.0-flash-exp"
   base_url: "https://generativelanguage.googleapis.com/v1beta"
-  api_key: "AIzaSyDj-mHZwUWkuNuvSzr_dIPlW8bzkNMXVMM"
+  api_key: ""  # Set via GOOGLE_API_KEY environment variable
   max_tokens: 4096
   temperature: 0.0
   timeout: 30
