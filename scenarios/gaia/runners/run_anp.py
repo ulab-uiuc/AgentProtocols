@@ -33,8 +33,10 @@ from .runner_base import RunnerBase
 
 class ANPRunner(RunnerBase):
     """ANP protocol runner implementing the create_network hook."""
-    def __init__(self, config_path: str = "anp.yaml") -> None:
-        super().__init__(config_path, protocol_name="anp")
+    def __init__(self, protocol_config_path: str = "anp.yaml", general_config_path: Optional[str] = None) -> None:
+        super().__init__(protocol_config_path=protocol_config_path,
+                         general_config_path=general_config_path,
+                         protocol_name="anp")
 
     def create_network(self, general_config: Dict[str, Any]) -> ANPNetwork:
         """Create and return an ANP network instance."""
@@ -62,7 +64,19 @@ class ANPRunner(RunnerBase):
 
 async def main():
     """Entry point for ANP runner."""
-    runner = ANPRunner()
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Run GAIA benchmark with ANP protocol")
+    parser.add_argument("--protocol-config", type=str, default="anp.yaml",
+                        help="Path to protocol config file (default: anp.yaml)")
+    parser.add_argument("--general-config", type=str, default=None,
+                        help="Path to general config file (default: scenarios/gaia/config/general.yaml)")
+    
+    args = parser.parse_args()
+    
+    runner = ANPRunner(protocol_config_path=args.protocol_config,
+                       general_config_path=args.general_config)
+    
     try:
         await runner.run()
     except KeyboardInterrupt:

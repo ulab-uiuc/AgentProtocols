@@ -10,16 +10,16 @@ llm:
   default:
     model: "gpt-4o"          # Primary model
     base_url: "https://api.openai.com/v1"     # API base URL
-    api_key: "sk-your-openai-api-key"                 # Replace with a real key
-    max_tokens: 8192                               # Maximum output tokens
-    temperature: 0.0                               # Temperature (controls randomness)
-    # api_type: ""                                 # Optional: aws / azure / ollama, etc.
-    # api_version: ""                              # Azure OpenAI version (only for api_type=azure)
+    api_key: ""              # Set via OPENAI_API_KEY environment variable
+    max_tokens: 8192         # Maximum output tokens
+    temperature: 0.0         # Temperature (controls randomness)
+    # api_type: ""           # Optional: aws / azure / ollama, etc.
+    # api_version: ""        # Azure OpenAI version (only for api_type=azure)
 
   vision:
     model: "gpt-4o"          # Vision model (remove this block if not needed)
     base_url: "https://api.openai.com/v1"
-    api_key: "sk-your-openai-api-key"
+    api_key: ""              # Set via OPENAI_API_KEY environment variable
     max_tokens: 8192
     temperature: 0.0
 
@@ -93,9 +93,10 @@ logging:
   packet_logs: true
 
 model:
+  api_type: "openai"       # API type: openai, anthropic, or google
   name: "gpt-4o"
   base_url: "https://api.openai.com/v1"
-  api_key: "sk-your-openai-api-key"
+  api_key: ""              # Set via OPENAI_API_KEY environment variable
   max_tokens: 4096
   temperature: 0.0
   timeout: 30

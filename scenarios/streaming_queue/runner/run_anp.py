@@ -25,12 +25,9 @@ sys.path.insert(0, str(STREAMING_Q))
 sys.path.insert(0, str(HERE.parent))   # runner/
 
 # ================= AgentConnect imports =================
-agentconnect_path = PROJECT_ROOT / "agentconnect_src"
-sys.path.insert(0, str(agentconnect_path))
-
 try:
     from agent_connect.utils.did_generate import did_generate
-    from agent_connect.simple_node import SimpleNode, SimpleNodeSession
+    # from agent_connect.simple_node import SimpleNode, SimpleNodeSession
     print("[ANP Runner] AgentConnect SDK available")
 except ImportError as e:
     raise ImportError(f"AgentConnect SDK is required for ANP runner. Please install the agent_connect package. Error: {e}")
@@ -263,7 +260,8 @@ class ANPRunner(RunnerBase):
             import httpx
             # Use no read timeout to avoid premature Runner cleanup during long-running dispatch
             timeout = httpx.Timeout(connect=10.0, read=None, write=60.0, pool=None)
-            async with httpx.AsyncClient(timeout=timeout) as client:
+            limits = httpx.Limits(max_connections=1000, max_keepalive_connections=200)
+            async with httpx.AsyncClient(timeout=timeout, limits=limits) as client:
                 
                 # Add DID authentication header
                 headers = {"Content-Type": "application/json"}

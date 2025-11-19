@@ -44,32 +44,63 @@ class AgoraQACoordinator(QACoordinatorBase):
             dst_id=worker_id,
             payload=payload
         )
+        
+        print(f"[AgoraCoordinator] Received response for {worker_id}: {response}")
 
-
-
-        # Adapt the response to the format expected by QACoordinatorBase
-        # Based on the actual response structure, the answer is in response['raw']['body']
         answer = None
-        
-        # First try to get from the correct raw structure (this is where the actual answer is)
-        try:
-            if response and "raw" in response and "body" in response["raw"]:
-                answer = response["raw"]["body"]
-        except (KeyError, TypeError):
-            pass
-        
-        # Fallback: try to get from response['text']
-        if not answer:
-            answer = (response or {}).get("text")
+        request_timing = {}
+        llm_timing = None
+        raw_payload: Dict[str, Any] = {}
+        raw_response = response if isinstance(response, dict) else {"response": response}
 
-        # Ensure the response structure has the text field populated with the same content as body
-        if response and "raw" in response and answer:
-            response["text"] = answer
+        if isinstance(response, dict):
+            raw_payload = response.get("raw", response)
+            request_timing = response.get("timing", {}) or {}
+            llm_timing = response.get("llm_timing")
+            try:
+                if raw_payload and isinstance(raw_payload, dict) and "body" in raw_payload:
+                    answer = raw_payload.get("body")
+            except Exception:
+                answer = None
+            if not answer:
+                answer = response.get("text")
+            if not llm_timing:
+                llm_timing = self._extract_llm_timing(raw_payload)
+            if response and answer:
+                response["text"] = answer
+        else:
+            raw_payload = {"response": response}
+            answer = str(response)
 
-        return {
+        adapter_time = None
+        if request_timing and llm_timing:
+            adapter_time = (
+                request_timing.get("total_request_time", 0.0)
+                - llm_timing.get("llm_execution_time", 0.0)
+            )
+        
+        final_result = {
             "answer": answer,
-            "raw": response
+            "raw": raw_response,
+            "timing": {
+                "request_timing": request_timing,
+                "llm_timing": llm_timing,
+                "adapter_time": adapter_time
+            }
         }
+        print(f"[AgoraCoordinator] Final result for {worker_id}: answer={answer[:50] if answer else None}, timing present={bool(llm_timing)}")
+
+        return final_result
+
+    def _extract_llm_timing(self, raw_payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        if not isinstance(raw_payload, dict):
+            return None
+        if raw_payload.get("llm_timing"):
+            return raw_payload.get("llm_timing")
+        inner = raw_payload.get("raw")
+        if isinstance(inner, dict) and inner.get("llm_timing"):
+            return inner.get("llm_timing")
+        return None
     
 class AgoraCoordinatorExecutor:
     """Agora native Executor used for conversational coordinator control.

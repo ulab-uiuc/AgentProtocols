@@ -33,8 +33,10 @@ from runners.runner_base import RunnerBase
 
 class A2ARunner(RunnerBase):
     """A2A protocol runner implementing the create_network hook."""
-    def __init__(self, config_path: str = "a2a.yaml") -> None:
-        super().__init__(config_path, protocol_name="a2a")
+    def __init__(self, protocol_config_path: str = "a2a.yaml", general_config_path: Optional[str] = None) -> None:
+        super().__init__(protocol_config_path=protocol_config_path,
+                         general_config_path=general_config_path,
+                         protocol_name="a2a")
 
     # # Only print key info (other logic lives inside the network)
     # print("🔧 A2A runner initialized")
@@ -62,10 +64,20 @@ class A2ARunner(RunnerBase):
 
 async def main():
     """Entry point for A2A runner."""
-    runner = A2ARunner()
-
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Run GAIA benchmark with A2A protocol")
+    parser.add_argument("--protocol-config", type=str, default="a2a.yaml",
+                        help="Path to protocol config file (default: a2a.yaml)")
+    parser.add_argument("--general-config", type=str, default=None,
+                        help="Path to general config file (default: scenarios/gaia/config/general.yaml)")
+    
+    args = parser.parse_args()
+    
+    runner = A2ARunner(protocol_config_path=args.protocol_config,
+                       general_config_path=args.general_config)
+    
     try:        
-        runner = A2ARunner()
         await runner.run()
     except KeyboardInterrupt:
         print("\n🛑 Testing interrupted by user")

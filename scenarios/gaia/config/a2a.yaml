@@ -50,14 +50,3 @@ logging:
   format: "[%(asctime)s] %(levelname)s: %(message)s"
   agent_logs: true
   packet_logs: true
-
-model:
-  name: "gpt-4o"
-  base_url: "https://api.openai.com/v1"
-  api_key: "sk-your-openai-api-key"
-  max_tokens: 4096
-  temperature: 0.0
-  timeout: 30
-  top_p: 1.0
-  frequency_penalty: 0.0
-  presence_penalty: 0.0

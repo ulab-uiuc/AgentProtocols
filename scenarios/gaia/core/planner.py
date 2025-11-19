@@ -25,14 +25,27 @@ class TaskPlanner:
     _port_offset = 0
     _max_ports_per_task = 20  # Reserve 20 ports per task
 
-    def __init__(self, config_path: Optional[str] = None, task_id: Optional[List[str]] = None, level: Optional[int] = 1, protocol_name: Optional[str] = None):
+    def __init__(self, config_path: Optional[str] = None, task_id: Optional[List[str]] = None, level: Optional[int] = 1, protocol_name: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
         # Ensure protocol_name is established before loading config so load_config
         # can pick a protocol-specific default file (e.g. config/meta_protocol.yaml).
         self.protocol_name = protocol_name or "dummy"
         self.tool_registry = ToolRegistry()
-        self.llm = call_llm()
+        
+        # Load config first to get the right LLM config
+        self.config = config or self.load_config(config_path)
+        
+        # Create LLM with the loaded config's model settings
+        # Save config to a temporary file to pass to LLM
+        if config:
+            import tempfile
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+                yaml.dump(config, f)
+                temp_config_path = f.name
+            self.llm = call_llm(config_path=temp_config_path)
+        else:
+            self.llm = call_llm(config_path=config_path)
+            
         self.prompt_builder = PromptBuilder()
-        self.config = self.load_config(config_path)
 
         # Get level-based agent recommendation
         agents_config = self.config.get("agents", {})

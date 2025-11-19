@@ -103,8 +103,10 @@ class QAWorkerBase:
         }
 
     # --------------------- public API ---------------------
-    async def answer(self, question: str) -> str:
-        """Unified QA interface. Must use the real Core LLM; mock is forbidden."""
+    async def answer(self, question: str) -> Dict[str, Any]:
+        """Unified QA interface. Must use the real Core LLM; mock is forbidden.
+        Returns dict with 'answer' and 'llm_timing' information.
+        """
         if self.core is None:
             raise RuntimeError("Core is not initialized. Mock answers are not allowed.")
             
@@ -122,12 +124,22 @@ class QAWorkerBase:
 
             loop = asyncio.get_event_loop()
             # Core.execute is synchronous; run it in a thread pool
+            # Record LLM execution time
+            llm_start = asyncio.get_event_loop().time()
             result: str = await loop.run_in_executor(None, self.core.execute, messages)
+            llm_end = asyncio.get_event_loop().time()
             
             if not result or result.strip() == "":
                 raise RuntimeError("Core returned empty response")
-                
-            return result.strip()
+            
+            return {
+                "answer": result.strip(),
+                "llm_timing": {
+                    "llm_start": llm_start,
+                    "llm_end": llm_end,
+                    "llm_execution_time": llm_end - llm_start
+                }
+            }
         except Exception as e:
             self._log(f"[QAWorkerBase] Core execution error: {e}")
             raise RuntimeError(f"LLM execution failed: {e}. Mock answers are not allowed.")

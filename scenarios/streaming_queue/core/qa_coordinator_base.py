@@ -126,7 +126,7 @@ class QACoordinatorBase(ABC):
                     qid = item.get("id", str(len(questions) + 1))
                     if q:
                         questions.append({"id": qid, "question": q})
-                    if self.first_50 and len(questions) >= 50:
+                    if self.first_50 and len(questions) >= 100:
                         break
                 except json.JSONDecodeError as e:
                     self._o("error", f"JSON parsing failed: {line[:50]}... Error: {e}")
@@ -202,12 +202,22 @@ class QACoordinatorBase(ABC):
                 status = "success" if answer and answer != "No answer received" else "failed"
                 err = None
                 
+                # Extract detailed timing information
+                timing_info = (resp or {}).get("timing", {})
+                request_timing = timing_info.get("request_timing", {})
+                llm_timing = timing_info.get("llm_timing", {})
+                adapter_time = timing_info.get("adapter_time")
+                
                 # Record successful completion
                 self.metrics_collector.record_task_completion(worker_id, start, status == "success", err)
                 
             except Exception as e:
                 answer, status, err = None, "failed", str(e)
                 resp = None
+                timing_info = {}
+                request_timing = {}
+                llm_timing = {}
+                adapter_time = None
                 
                 # Record failed completion and check for network errors
                 self.metrics_collector.record_task_completion(worker_id, start, False, str(e))
@@ -228,6 +238,16 @@ class QACoordinatorBase(ABC):
                 "status": status,
                 "error": err,
                 "raw": resp,
+                "detailed_timing": {
+                    "total_time": end - start,
+                    "request_time": request_timing.get("total_request_time"),
+                    "llm_time": llm_timing.get("llm_execution_time"),
+                    "adapter_time": adapter_time,
+                    "request_start": request_timing.get("request_start"),
+                    "request_end": request_timing.get("request_end"),
+                    "llm_start": llm_timing.get("llm_start"),
+                    "llm_end": llm_timing.get("llm_end")
+                }
             })
             q_queue.task_done()
 
@@ -292,6 +312,26 @@ class QACoordinatorBase(ABC):
             times = [r["response_time"] for r in results if r.get("response_time")]
             avg_rt = (sum(times) / len(times)) if times else 0.0
             
+            # Calculate detailed timing statistics
+            request_times = [r.get("detailed_timing", {}).get("request_time") for r in results 
+                           if r.get("detailed_timing", {}).get("request_time")]
+            llm_times = [r.get("detailed_timing", {}).get("llm_time") for r in results 
+                        if r.get("detailed_timing", {}).get("llm_time")]
+            adapter_times = [r.get("detailed_timing", {}).get("adapter_time") for r in results 
+                           if r.get("detailed_timing", {}).get("adapter_time")]
+            
+            timing_stats = {
+                "average_request_time": (sum(request_times) / len(request_times)) if request_times else 0.0,
+                "average_llm_time": (sum(llm_times) / len(llm_times)) if llm_times else 0.0,
+                "average_adapter_time": (sum(adapter_times) / len(adapter_times)) if adapter_times else 0.0,
+                "max_request_time": max(request_times) if request_times else 0.0,
+                "max_llm_time": max(llm_times) if llm_times else 0.0,
+                "max_adapter_time": max(adapter_times) if adapter_times else 0.0,
+                "min_request_time": min(request_times) if request_times else 0.0,
+                "min_llm_time": min(llm_times) if llm_times else 0.0,
+                "min_adapter_time": min(adapter_times) if adapter_times else 0.0,
+            }
+            
             # Get comprehensive performance metrics
             performance_report = self.metrics_collector.get_comprehensive_report()
             
@@ -304,19 +344,20 @@ class QACoordinatorBase(ABC):
                     "timestamp": time.time(),
                     "network_type": self.__class__.__name__,
                 },
+                "timing_breakdown": timing_stats,
                 "detailed_performance_metrics": performance_report,
                 "results": results,
             }
             p.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
             self._o("success", f"Results saved to: {p}")
             
-            # Print performance summary
-            self._print_performance_summary(performance_report)
+            # Print performance summary including timing breakdown
+            self._print_performance_summary(performance_report, timing_stats)
             
         except Exception as e:
             self._o("error", f"Failed to save results: {e}")
     
-    def _print_performance_summary(self, performance_report: Dict[str, Any]) -> None:
+    def _print_performance_summary(self, performance_report: Dict[str, Any], timing_stats: Dict[str, Any] = None) -> None:
         """Print a detailed performance summary"""
         self._o("info", "=== Detailed Performance Summary ===")
         
@@ -327,7 +368,25 @@ class QACoordinatorBase(ABC):
         self._o("system", f"Total Retries: {summary.get('total_retries', 0)}")
         self._o("system", f"Network Errors: {summary.get('total_network_errors', 0)}")
         
-    # Response time statistics
+        # Timing breakdown analysis
+        if timing_stats:
+            self._o("info", "=== Timing Breakdown Analysis (API Bottleneck Detection) ===")
+            avg_req = timing_stats.get('average_request_time', 0)
+            avg_llm = timing_stats.get('average_llm_time', 0)
+            avg_adapter = timing_stats.get('average_adapter_time', 0)
+            
+            self._o("progress", f"Average Request Time: {avg_req:.3f}s")
+            self._o("progress", f"  - LLM Time: {avg_llm:.3f}s ({avg_llm / avg_req * 100 if avg_req > 0 else 0:.1f}%)")
+            self._o("progress", f"  - Adapter Overhead: {avg_adapter:.3f}s ({avg_adapter / avg_req * 100 if avg_req > 0 else 0:.1f}%)")
+            self._o("progress", f"Max Times - Request: {timing_stats.get('max_request_time', 0):.3f}s, LLM: {timing_stats.get('max_llm_time', 0):.3f}s, Adapter: {timing_stats.get('max_adapter_time', 0):.3f}s")
+            self._o("progress", f"Min Times - Request: {timing_stats.get('min_request_time', 0):.3f}s, LLM: {timing_stats.get('min_llm_time', 0):.3f}s, Adapter: {timing_stats.get('min_adapter_time', 0):.3f}s")
+            
+            # 检测API速率瓶颈的指标
+            if avg_adapter > avg_llm * 0.5:  # 如果adapter时间超过LLM时间的50%
+                self._o("warning", f"⚠️  High adapter overhead detected! Adapter time ({avg_adapter:.3f}s) is significant compared to LLM time ({avg_llm:.3f}s)")
+                self._o("warning", "   This may indicate API rate limiting or network bottlenecks.")
+        
+        # Response time statistics
         if "global_average_response_time" in summary:
             self._o("info", "=== Response Time Analysis ===")
             self._o("progress", f"Average: {summary.get('global_average_response_time', 0):.2f}s")
@@ -336,7 +395,7 @@ class QACoordinatorBase(ABC):
             self._o("progress", f"Std Dev: {summary.get('global_response_time_std', 0):.2f}s")
             self._o("progress", f"Median: {summary.get('global_median_response_time', 0):.2f}s")
         
-    # Protocol-level statistics
+        # Protocol-level statistics
         protocols = performance_report.get("protocols", {})
         if protocols:
             self._o("info", "=== Protocol Performance ===")
@@ -349,7 +408,7 @@ class QACoordinatorBase(ABC):
                 self._o("progress", f"  Network Errors: {stats.get('total_network_errors', 0)}")
                 self._o("progress", f"  Retries: {stats.get('total_retries', 0)}")
         
-    # Worker-level statistics
+        # Worker-level statistics
         workers = performance_report.get("workers", {})
         if workers:
             self._o("info", "=== Worker Performance ===")

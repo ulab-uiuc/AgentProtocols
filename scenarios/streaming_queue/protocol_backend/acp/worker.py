@@ -7,6 +7,7 @@ This implementation uses the official ACP SDK which provides full Agent Communic
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -69,13 +70,27 @@ class ACPWorkerExecutor:
             if hasattr(self._worker, 'answer'):
                 result = await self._worker.answer(text_content)
             else:
-                result = f"Error: Worker has no answer method"
+                result = {"answer": "Error: Worker has no answer method", "llm_timing": None}
+            
+            answer_text: str
+            llm_timing: Optional[Dict[str, Any]]
+            if isinstance(result, dict):
+                answer_text = result.get("answer", str(result))
+                llm_timing = result.get("llm_timing")
+            else:
+                answer_text = str(result)
+                llm_timing = None
+            
+            response_payload = {
+                "answer": answer_text,
+                "llm_timing": llm_timing
+            }
             
             # Return response message with strongly typed MessagePart
             response_id = str(uuid.uuid4())
             return Message(
                 id=response_id,
-                parts=[MessagePart(type="text", text=str(result))]
+                parts=[MessagePart(type="text", text=json.dumps(response_payload))]
             )
         except Exception as e:
             error_id = str(uuid.uuid4())

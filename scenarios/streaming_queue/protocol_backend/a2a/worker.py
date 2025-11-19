@@ -8,7 +8,7 @@ A2A Worker (protocol-specific)
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 import sys
 from pathlib import Path
@@ -53,19 +53,18 @@ class QAAgentExecutor(AgentExecutor):
             user_input = context.get_user_input() if hasattr(context, "get_user_input") else None
             question = self._extract_text(user_input) or "What is artificial intelligence?"
 
-            result = await self.worker.answer(question)
+            result_dict = await self.worker.answer(question)
             
-            # Try both sync and async enqueue_event
-            try:
-                # First try async (correct way based on RuntimeWarning)
-                await event_queue.enqueue_event(new_agent_text_message(result))
-            except Exception as async_error:
-                try:
-                    # Fallback to sync
-                    event_queue.enqueue_event(new_agent_text_message(result))
-                except Exception:
-                    # Last resort - try simple text event
-                    event_queue.enqueue_event(new_agent_text_message(f"A2A result: {result}"))
+            # Extract answer and timing info
+            if isinstance(result_dict, dict):
+                answer_text = result_dict.get("answer", str(result_dict))
+                llm_timing = result_dict.get("llm_timing")
+            else:
+                answer_text = str(result_dict)
+                llm_timing = None
+
+            event_payload = self._build_event_payload(answer_text, llm_timing)
+            await event_queue.enqueue_event(event_payload)
         except Exception as e:
             event_queue.enqueue_event(new_agent_text_message(f"[QAAgentExecutor] failed: {e}"))
 
@@ -113,3 +112,26 @@ class QAAgentExecutor(AgentExecutor):
             return str(payload)
         except Exception:
             return ""
+
+    def _build_event_payload(self, answer_text: str, llm_timing: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """Create a serializable event carrying timing metadata."""
+        try:
+            event = new_agent_text_message(answer_text)
+            if hasattr(event, "model_dump"):
+                event_dict = event.model_dump(mode="json")
+            elif hasattr(event, "dict"):
+                event_dict = event.dict()
+            else:
+                event_dict = {
+                    "type": getattr(event, "type", "agent_text_message"),
+                    "data": getattr(event, "data", answer_text)
+                }
+        except Exception:
+            event_dict = {
+                "type": "agent_text_message",
+                "data": answer_text
+            }
+
+        if llm_timing:
+            event_dict["llm_timing"] = llm_timing
+        return event_dict

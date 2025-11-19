@@ -38,6 +38,13 @@ class BaseCommBackend(abc.ABC):
 
     @abc.abstractmethod
     async def send(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Any:
+        """
+        Send message and return response with timing information.
+        Response should include:
+        - raw: protocol-native response
+        - text: extracted text
+        - timing: dict with 'request_start', 'request_end', 'total_time'
+        """
         ...
 
     @abc.abstractmethod

@@ -56,27 +56,52 @@ class A2AQACoordinator(QACoordinatorBase):
         # Send via A2A router (interface compatible with original code)
         response = await self.agent_network.route_message(self.coordinator_id, worker_id, payload)
 
-        # Parse A2A event stream and extract the text answer
+        # Parse A2A event stream and extract the text answer and timing info
         answer: Optional[str] = None
+        llm_timing: Optional[Dict[str, Any]] = None
+        request_timing: Optional[Dict[str, Any]] = None
+        
         try:
-            # Process nested response structure, check for "raw" key
+            # Extract timing information from response
             if isinstance(response, dict):
+                request_timing = response.get("timing", {})
+                
                 actual_response = response.get("raw", response)
                 events = actual_response.get("events") if isinstance(actual_response, dict) else None
                 
                 if events:
                     for ev in events:
-                        if ev.get("kind") == "message" and "parts" in ev:
-                            parts = ev.get("parts") or []
-                            if parts and isinstance(parts[0], dict) and "text" in parts[0]:
-                                answer = parts[0]["text"]
-                                break
+                        if isinstance(ev, dict):
+                            if llm_timing is None and ev.get("llm_timing"):
+                                llm_timing = ev.get("llm_timing")
+                            if ev.get("kind") == "message" and "parts" in ev:
+                                parts = ev.get("parts") or []
+                                if parts and isinstance(parts[0], dict) and "text" in parts[0]:
+                                    answer = parts[0]["text"]
+                                    if llm_timing:
+                                        break
+                            elif ev.get("type") == "agent_text_message" and ev.get("data"):
+                                answer = ev.get("data")
+                                if llm_timing:
+                                    break
         except Exception:
             answer = None
+
+        # Calculate adapter time: total_request_time - llm_execution_time
+        adapter_time = None
+        if request_timing and llm_timing:
+            total_time = request_timing.get("total_request_time", 0)
+            llm_time = llm_timing.get("llm_execution_time", 0)
+            adapter_time = total_time - llm_time
 
         return {
             "answer": answer or "No answer received",
             "raw": response,
+            "timing": {
+                "request_timing": request_timing,
+                "llm_timing": llm_timing,
+                "adapter_time": adapter_time
+            }
         }
 
 

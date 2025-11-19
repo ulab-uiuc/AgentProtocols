@@ -80,28 +80,39 @@ class AgoraQAWorker(QAWorkerBase):
             # Create a basic protocol stub for fallback
             self.agora_protocol = None
     
-    async def answer(self, question: str) -> str:
-        """Override the answer method to use Agora native SDK."""
+    async def answer(self, question: str) -> Dict[str, Any]:
+        """Override the answer method to use Agora native SDK and return timing info."""
         try:
-            # Use base QAWorkerBase for LLM call first
-            base_answer = await super().answer(question)
-            
-            # Enhance with Agora Protocol if available
-            if self.agora_protocol:
-                try:
-                    # Use Agora Protocol for message structuring
-                    enhanced_answer = f"[Agora Enhanced] {base_answer}"
-                    print(f"[AgoraWorker] Enhanced response using native Agora SDK")
-                    return enhanced_answer
-                except Exception as e:
-                    print(f"[AgoraWorker] Agora enhancement failed: {e}")
-            
-            return base_answer
-                
+            base_result = await super().answer(question)
         except Exception as e:
             print(f"[AgoraWorker] Error in answer method: {e}")
-            # Fallback to base implementation
-            return await super().answer(question)
+            now = asyncio.get_event_loop().time()
+            return {
+                "answer": f"Agora worker error: {e}",
+                "llm_timing": {
+                    "llm_start": now,
+                    "llm_end": now,
+                    "llm_execution_time": 0.0
+                }
+            }
+
+        if not isinstance(base_result, dict):
+            base_result = {"answer": str(base_result), "llm_timing": None}
+
+        answer_text = base_result.get("answer", "")
+        llm_timing = base_result.get("llm_timing")
+
+        if self.agora_protocol:
+            try:
+                answer_text = f"[Agora Enhanced] {answer_text}"
+                print("[AgoraWorker] Enhanced response using native Agora SDK")
+            except Exception as e:
+                print(f"[AgoraWorker] Agora enhancement failed: {e}")
+
+        return {
+            "answer": answer_text,
+            "llm_timing": llm_timing
+        }
 
 
 class AgoraWorkerExecutor:
@@ -142,10 +153,22 @@ class AgoraWorkerExecutor:
 
             if not text:
                 raise ValueError("No input text provided")
-            answer = await asyncio.wait_for(self.worker.answer(text), timeout=30.0)
+            answer_payload = await asyncio.wait_for(self.worker.answer(text), timeout=30.0)
+            if isinstance(answer_payload, dict):
+                answer_text = answer_payload.get("answer")
+                llm_timing = answer_payload.get("llm_timing")
+            else:
+                answer_text = str(answer_payload)
+                llm_timing = None
 
-            # Return in Agora format
-            return {"status": "success", "body": answer}
+            # Return in Agora format with timing metadata
+            result = {
+                "status": "success",
+                "body": answer_text,
+                "llm_timing": llm_timing
+            }
+            print(f"[AgoraWorkerExecutor] Returning result: {result}")
+            return result
 
         except asyncio.TimeoutError:
             return {"status": "error", "body": "Error: Request timed out after 30 seconds"}

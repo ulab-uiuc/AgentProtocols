@@ -92,10 +92,20 @@ class LLMConfig:
         
         # Extract model configuration
         model_config = self.config.get("model", {})
+        self.api_type = model_config.get("api_type", "openai")
         self.name = model_config.get("name", "gpt-4o")
-        # Prioritize environment variables over config file
-        self.base_url = os.getenv("OPENAI_BASE_URL") or model_config.get("base_url", "https://api.openai.com/v1")
-        self.api_key = os.getenv("OPENAI_API_KEY") or model_config.get("api_key", "")
+        
+        # Set API key and base URL based on API type
+        if self.api_type == "anthropic":
+            self.api_key = os.getenv("ANTHROPIC_API_KEY") or model_config.get("api_key", "")
+            self.base_url = model_config.get("base_url", "https://api.anthropic.com/v1")
+        elif self.api_type == "google":
+            self.api_key = os.getenv("GOOGLE_API_KEY") or model_config.get("api_key", "")
+            self.base_url = model_config.get("base_url", "https://generativelanguage.googleapis.com/v1beta")
+        else:  # openai or default
+            self.api_key = os.getenv("OPENAI_API_KEY") or model_config.get("api_key", "")
+            self.base_url = os.getenv("OPENAI_BASE_URL") or model_config.get("base_url", "https://api.openai.com/v1")
+        
         self.max_tokens = model_config.get("max_tokens", 1000)
         self.temperature = model_config.get("temperature", 0.9)
         self.max_input_tokens = model_config.get("max_input_tokens", None)
@@ -135,11 +145,14 @@ class LLM:
     _instances: Dict[str, "LLM"] = {}
 
     def __new__(cls, config_name: str = "default", config_path: Optional[str] = None):
-        if config_name not in cls._instances:
+        # Create a unique cache key based on both config_name and config_path
+        cache_key = f"{config_name}:{config_path}" if config_path else config_name
+        
+        if cache_key not in cls._instances:
             instance = super().__new__(cls)
             instance.__init__(config_name, config_path)
-            cls._instances[config_name] = instance
-        return cls._instances[config_name]
+            cls._instances[cache_key] = instance
+        return cls._instances[cache_key]
 
     def __init__(self, config_name: str = "default", config_path: Optional[str] = None):
         if not hasattr(self, "config"):  # Only initialize if not already initialized
@@ -150,6 +163,7 @@ class LLM:
             self.api_key = self.config.api_key
             self.base_url = self.config.base_url
             self.max_input_tokens = self.config.max_input_tokens
+            self.api_type = self.config.api_type  # Store api_type for reference
 
             # Token tracking
             self.total_input_tokens = 0
@@ -343,10 +357,22 @@ class LLM:
             raise
 
     async def _call_api(self, params: Dict[str, Any], stream: bool = False) -> Union[str, dict]:
-        """Make the actual API call."""
+        """Make the actual API call (supports OpenAI, Anthropic, Google)."""
         if not self.config.api_key:
-            raise ToolError("API key not configured. Set api_key in config or OPENAI_API_KEY environment variable.")
+            raise ToolError(f"API key not configured for {self.config.api_type}. Set appropriate environment variable.")
 
+        api_type = self.config.api_type
+        
+        # Route to appropriate API handler
+        if api_type == "anthropic":
+            return await self._call_anthropic_api(params, stream)
+        elif api_type == "google":
+            return await self._call_google_api(params, stream)
+        else:  # openai or default
+            return await self._call_openai_api(params, stream)
+    
+    async def _call_openai_api(self, params: Dict[str, Any], stream: bool = False) -> Union[str, dict]:
+        """Make OpenAI API call."""
         headers = {
             "Authorization": f"Bearer {self.config.api_key}",
             "Content-Type": "application/json"
@@ -364,12 +390,11 @@ class LLM:
                     raise ToolError(f"API call failed with status {response.status}: {error_text}")
 
                 if stream:
-                    # Handle streaming response
                     collected_messages = []
                     async for line in response.content:
                         line = line.decode('utf-8').strip()
                         if line.startswith('data: '):
-                            line = line[6:]  # Remove 'data: ' prefix
+                            line = line[6:]
                             if line == '[DONE]':
                                 break
                             try:
@@ -382,13 +407,159 @@ class LLM:
                                         print(content, end="", flush=True)
                             except json.JSONDecodeError:
                                 continue
-                    
-                    print()  # Newline after streaming
+                    print()
                     return "".join(collected_messages)
                 else:
-                    # Handle non-streaming response
                     result = await response.json()
                     return result
+    
+    async def _call_anthropic_api(self, params: Dict[str, Any], stream: bool = False) -> Union[str, dict]:
+        """Make Anthropic Claude API call."""
+        headers = {
+            "x-api-key": self.config.api_key,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json"
+        }
+        
+        # Convert OpenAI format to Anthropic format
+        messages = params["messages"]
+        system_msg = None
+        anthropic_messages = []
+        
+        for msg in messages:
+            if msg["role"] == "system":
+                system_msg = msg["content"]
+            else:
+                anthropic_messages.append({
+                    "role": msg["role"],
+                    "content": msg["content"]
+                })
+        
+        anthropic_params = {
+            "model": params["model"],
+            "messages": anthropic_messages,
+            "max_tokens": params.get("max_tokens", 4096),
+            "temperature": params.get("temperature", 0.0),
+            "stream": stream
+        }
+        
+        if system_msg:
+            anthropic_params["system"] = system_msg
+        
+        endpoint = f"{self.config.base_url.rstrip('/')}/messages"
+        timeout = aiohttp.ClientTimeout(total=self.config.timeout)
+        
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(endpoint, headers=headers, json=anthropic_params) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise ToolError(f"Anthropic API error {response.status}: {error_text}")
+                
+                if stream:
+                    collected_messages = []
+                    async for line in response.content:
+                        line = line.decode('utf-8').strip()
+                        if line.startswith('data: '):
+                            line = line[6:]
+                            try:
+                                chunk = json.loads(line)
+                                if chunk.get("type") == "content_block_delta":
+                                    delta = chunk.get("delta", {})
+                                    text = delta.get("text", "")
+                                    if text:
+                                        collected_messages.append(text)
+                                        print(text, end="", flush=True)
+                            except json.JSONDecodeError:
+                                continue
+                    print()
+                    return "".join(collected_messages)
+                else:
+                    result = await response.json()
+                    # Convert Anthropic response to OpenAI format
+                    return {
+                        "choices": [{
+                            "message": {
+                                "role": "assistant",
+                                "content": result["content"][0]["text"]
+                            }
+                        }],
+                        "usage": {
+                            "prompt_tokens": result.get("usage", {}).get("input_tokens", 0),
+                            "completion_tokens": result.get("usage", {}).get("output_tokens", 0)
+                        }
+                    }
+    
+    async def _call_google_api(self, params: Dict[str, Any], stream: bool = False) -> Union[str, dict]:
+        """Make Google Gemini API call."""
+        # Convert OpenAI format to Gemini format
+        messages = params["messages"]
+        system_instruction = None
+        gemini_contents = []
+        
+        for msg in messages:
+            if msg["role"] == "system":
+                system_instruction = msg["content"]
+            else:
+                role = "user" if msg["role"] == "user" else "model"
+                gemini_contents.append({
+                    "role": role,
+                    "parts": [{"text": msg["content"]}]
+                })
+        
+        gemini_params = {
+            "contents": gemini_contents,
+            "generationConfig": {
+                "temperature": params.get("temperature", 0.0),
+                "maxOutputTokens": params.get("max_tokens", 8192),
+                "topP": params.get("top_p", 1.0),
+            }
+        }
+        
+        if system_instruction:
+            gemini_params["systemInstruction"] = {
+                "parts": [{"text": system_instruction}]
+            }
+        
+        model_name = params["model"]
+        endpoint = f"{self.config.base_url.rstrip('/')}/models/{model_name}:generateContent"
+        url = f"{endpoint}?key={self.config.api_key}"
+        
+        timeout = aiohttp.ClientTimeout(total=self.config.timeout)
+        headers = {"Content-Type": "application/json"}
+        
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(url, headers=headers, json=gemini_params) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise ToolError(f"Google API error {response.status}: {error_text}")
+                
+                result = await response.json()
+                
+                if "candidates" not in result or not result["candidates"]:
+                    raise ToolError("No candidates in Gemini response")
+                
+                candidate = result["candidates"][0]
+                content = candidate.get("content", {})
+                parts = content.get("parts", [])
+                
+                if not parts:
+                    raise ToolError("No parts in Gemini response")
+                
+                text = parts[0].get("text", "")
+                
+                # Convert to OpenAI format
+                return {
+                    "choices": [{
+                        "message": {
+                            "role": "assistant",
+                            "content": text
+                        }
+                    }],
+                    "usage": {
+                        "prompt_tokens": result.get("usageMetadata", {}).get("promptTokenCount", 0),
+                        "completion_tokens": result.get("usageMetadata", {}).get("candidatesTokenCount", 0)
+                    }
+                }
     
     @retry(
         wait=wait_random_exponential(min=1, max=60),
@@ -491,9 +662,18 @@ class LLM:
             raise
 
     async def _call_api_with_tools(self, params: Dict[str, Any], timeout: int = 300) -> dict:
-        """Make API call with tools support."""
+        """Make API call with tools support (currently only OpenAI-compatible)."""
         if not self.config.api_key:
-            raise ToolError("API key not configured. Set api_key in config or OPENAI_API_KEY environment variable.")
+            raise ToolError(f"API key not configured for {self.config.api_type}.")
+
+        # For now, only OpenAI supports tools in the expected format
+        # Anthropic and Google have different tool calling mechanisms
+        api_type = self.config.api_type
+        
+        if api_type in ("anthropic", "google"):
+            # For non-OpenAI APIs, fall back to regular completion without tools
+            print(f"⚠️  Warning: Tool calling not yet implemented for {api_type}, using regular completion")
+            return await self._call_api(params, stream=False)
 
         headers = {
             "Authorization": f"Bearer {self.config.api_key}",

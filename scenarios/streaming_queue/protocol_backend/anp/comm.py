@@ -76,40 +76,51 @@ class ANPAgentHandle:
     _websocket_task: Optional[asyncio.Task]
 
     async def stop(self) -> None:
-        """Stop both HTTP and WebSocket servers"""
+        """Stop both HTTP and WebSocket servers gracefully"""
         try:
-            # Close ANP node session
+            # Close ANP node session first
             if self.node_session:
-                await self.node_session.close()
+                try:
+                    await self.node_session.close()
+                except Exception:
+                    pass
             
             # Stop HTTP server gracefully
             if self._http_server:
+                # Signal shutdown
                 self._http_server.should_exit = True
-                # Give server time to shutdown gracefully
-                await asyncio.sleep(0.1)
-                if self._http_task and not self._http_task.done():
-                    self._http_task.cancel()
-                    try:
-                        await asyncio.wait_for(self._http_task, timeout=1.0)
-                    except (asyncio.CancelledError, asyncio.TimeoutError):
-                        pass
+                # Give server time to finish pending requests
+                await asyncio.sleep(0.2)
+                
+            # Cancel HTTP task if still running (suppress CancelledError)
+            if self._http_task and not self._http_task.done():
+                self._http_task.cancel()
+                try:
+                    await self._http_task
+                except (asyncio.CancelledError, Exception):
+                    pass  # Expected during shutdown
             
             # Stop WebSocket server gracefully
             if self._websocket_server:
                 self._websocket_server.close()
                 try:
                     await asyncio.wait_for(self._websocket_server.wait_closed(), timeout=1.0)
-                except asyncio.TimeoutError:
+                except (asyncio.TimeoutError, Exception):
                     pass
-                if self._websocket_task and not self._websocket_task.done():
-                    self._websocket_task.cancel()
-                    try:
-                        await asyncio.wait_for(self._websocket_task, timeout=1.0)
-                    except (asyncio.CancelledError, asyncio.TimeoutError):
-                        pass
+                    
+            # Cancel WebSocket task if still running
+            if self._websocket_task and not self._websocket_task.done():
+                self._websocket_task.cancel()
+                try:
+                    await self._websocket_task
+                except (asyncio.CancelledError, Exception):
+                    pass  # Expected during shutdown
                         
         except Exception as e:
-            print(f"[ANP] Error stopping agent {self.agent_id}: {e}")
+            # Only log unexpected errors
+            import sys
+            if not isinstance(e, (asyncio.CancelledError, KeyboardInterrupt)):
+                print(f"[ANP] Error stopping agent {self.agent_id}: {e}", file=sys.stderr)
 
 
 async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_port: int, executor: Any) -> ANPAgentHandle:
@@ -302,17 +313,55 @@ async def _start_anp_host(agent_id: str, host: str, http_port: int, websocket_po
         Route("/message", message_endpoint, methods=["POST"]),
     ]
     
-    app = Starlette(routes=routes)
+    # Add lifespan context manager to handle startup and shutdown gracefully
+    from contextlib import asynccontextmanager
+    
+    @asynccontextmanager
+    async def lifespan(app):
+        # --- Startup ---
+        print(f"[ANP HTTP Server] Starting up on {host}:{http_port}...")
+        yield
+        
+        # --- Shutdown ---
+        print(f"[ANP HTTP Server] Shutting down gracefully...")
+        try:
+            # Cleanup logic here if needed
+            await asyncio.sleep(0.1)  # Allow pending requests to complete
+            print(f"[ANP HTTP Server] Shutdown complete.")
+        except asyncio.CancelledError:
+            print(f"[ANP HTTP Server] Shutdown was cancelled, but cleanup in progress.")
+            # Don't re-raise, just log and continue
+    
+    app = Starlette(routes=routes, lifespan=lifespan)
+    
+    # Suppress uvicorn's internal lifespan CancelledError logs
+    import logging
+    uvicorn_error_logger = logging.getLogger("uvicorn.error")
+    original_level = uvicorn_error_logger.level
+    uvicorn_error_logger.setLevel(logging.CRITICAL)  # Only show critical errors
+    
     config = uvicorn.Config(
         app=app,
         host=host,
         port=http_port,
-        log_level="error"  # Reduce noise
-        , lifespan="off"
+        log_level="critical",  # Suppress all uvicorn logs except critical
+        access_log=False  # Disable access logs
     )
     
     http_server = uvicorn.Server(config)
-    http_task = asyncio.create_task(http_server.serve())
+    
+    async def serve_http():
+        """Wrapper to handle server cancellation gracefully"""
+        try:
+            await http_server.serve()
+        except asyncio.CancelledError:
+            # Suppress CancelledError during shutdown
+            pass
+        except Exception as e:
+            # Log unexpected errors
+            print(f"[ANP HTTP Server] Unexpected error: {e}")
+    
+    http_task = asyncio.create_task(serve_http())
     
     # Wait for HTTP server to start
     await asyncio.sleep(0.5)
@@ -570,7 +619,8 @@ class ANPCommBackend(BaseCommBackend):
     
     async def send(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Any:
         """
-        Send message via ANP protocol
+        Send message via ANP protocol with timing.
+        Records timing to detect API rate limit bottlenecks.
         Supports both HTTP and WebSocket delivery
         """
         dst_url = self._addr.get(dst_id)
@@ -582,7 +632,8 @@ class ANPCommBackend(BaseCommBackend):
                 return {
                     "raw": {"error": f"[ANP] Unknown destination: {dst_id}"},
                     "text": f"ANP communication error: [ANP] Unknown destination: {dst_id}",
-                    "anp_metadata": {"error": True}
+                    "anp_metadata": {"error": True},
+                    "timing": {"error": True}
                 }
         
         # Get source DID for authentication
@@ -600,13 +651,19 @@ class ANPCommBackend(BaseCommBackend):
                 if auth_token:
                     headers["Authorization"] = f"Bearer {auth_token}"
             
+            # Record API request timing to detect rate limits
+            request_start = time.time()
             response = await self._client.post(
                 f"{dst_url}/message",
                 json=anp_message,
                 headers=headers
             )
-            response.raise_for_status()
+            request_end = time.time()
             
+            # Check for rate limit indicator
+            rate_limited = (response.status_code == 429)
+            
+            response.raise_for_status()
             data = response.json()
             
             # Extract text for streaming_queue compatibility
@@ -615,29 +672,23 @@ class ANPCommBackend(BaseCommBackend):
             return {
                 "raw": data,
                 "text": text,
-                "anp_metadata": data.get("anp_metadata", {})
+                "anp_metadata": data.get("anp_metadata", {}),
+                "timing": {
+                    "request_start": request_start,
+                    "request_end": request_end,
+                    "total_request_time": request_end - request_start,
+                    "rate_limited": rate_limited
+                }
             }
             
         except Exception as e:
             print(f"[ANP] Send error {src_id} -> {dst_id}: {e}")
-            # Simple retry once
-            try:
-                await asyncio.sleep(0.1)
-                response = await self._client.post(
-                    f"{dst_url}/message",
-                    json=anp_message,
-                    headers=headers
-                )
-                response.raise_for_status()
-                data = response.json()
-                text = self._extract_response_text(data)
-                return {"raw": data, "text": text, "anp_metadata": data.get("anp_metadata", {})}
-            except Exception as e2:
-                return {
-                    "raw": {"error": str(e2)},
-                    "text": f"ANP send failed: {e2}",
-                    "anp_metadata": {"error": True}
-                }
+            return {
+                "raw": {"error": str(e)},
+                "text": f"ANP send failed: {e}",
+                "anp_metadata": {"error": True},
+                "timing": {"error": True}
+            }
     
     async def health_check(self, agent_id: str) -> bool:
         """Check ANP agent health"""

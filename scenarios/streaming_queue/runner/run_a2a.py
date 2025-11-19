@@ -45,7 +45,11 @@ class A2ARunner(RunnerBase):
     def __init__(self, config_path: str = "config/a2a.yaml"):
         super().__init__(config_path)
         # Reuse a global httpx client (also provided to the backend to avoid duplicate connection pools)
-        self.httpx_client = httpx.AsyncClient(timeout=30.0)
+        # Long-running dispatches can exceed a minute; disable read timeout to avoid aborting the coordinator request
+        long_timeout = httpx.Timeout(connect=10.0, read=None, write=None, pool=None)
+        # Configure connection pool limits to match ANP for fair comparison
+        limits = httpx.Limits(max_connections=1000, max_keepalive_connections=200)
+        self.httpx_client = httpx.AsyncClient(timeout=long_timeout, limits=limits)
         self._handles: List[Any] = []          # Handles for A2A Hosts started in this process (optional)
         self._backend: Optional[A2ACommBackend] = None  # Keep a reference to the backend for spawn/close
 
@@ -114,7 +118,7 @@ class A2ARunner(RunnerBase):
         }
 
         try:
-            resp = await self.httpx_client.post(url, json=payload, timeout=60.0)
+            resp = await self.httpx_client.post(url, json=payload)
             resp.raise_for_status()
             data = resp.json()
             # Support two possible event formats

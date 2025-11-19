@@ -61,13 +61,20 @@ class A2AAgentHandle:
     _task: asyncio.Task | None
 
     async def stop(self) -> None:
-        if self._server:
-            self._server.should_exit = True
-        if self._task:
-            try:
-                await self._task
-            except asyncio.CancelledError:
-                pass
+        """Stop the A2A host gracefully"""
+        try:
+            if self._server:
+                self._server.should_exit = True
+                # Give server time to finish pending requests
+                await asyncio.sleep(0.2)
+            if self._task and not self._task.done():
+                self._task.cancel()
+                try:
+                    await self._task
+                except (asyncio.CancelledError, Exception):
+                    pass  # Expected during shutdown
+        except Exception:
+            pass  # Suppress any unexpected errors during shutdown
 
 
 async def _start_a2a_host(agent_id: str, host: str, port: int, executor: AgentExecutor) -> A2AAgentHandle:
@@ -128,7 +135,11 @@ async def _start_a2a_host(agent_id: str, host: str, port: int, executor: AgentEx
         ctx = RequestContext(params)
         eq = EventQueue()
         
-        await executor.execute(context=ctx, event_queue=eq)
+        try:
+            await executor.execute(context=ctx, event_queue=eq)
+        except asyncio.CancelledError:
+            # Request was cancelled during shutdown; signal success so the runner does not treat it as a failure
+            return JSONResponse({"status": "cancelled"}, status_code=200)
 
         # Retrieve all events from the A2A EventQueue
         serializable_events = []
@@ -158,13 +169,38 @@ async def _start_a2a_host(agent_id: str, host: str, port: int, executor: AgentEx
         Route("/message", message_endpoint, methods=["POST"]),
         Route("/health", health_endpoint, methods=["GET"]),
     ]
-    app = Starlette(routes=routes)
+    
+    # Add lifespan context manager to handle shutdown gracefully
+    from contextlib import asynccontextmanager
+    
+    @asynccontextmanager
+    async def lifespan(app):
+        # Startup
+        yield
+        # Shutdown - suppress cancellation errors
+        try:
+            pass  # Cleanup handled in stop() method
+        except asyncio.CancelledError:
+            pass  # Expected during shutdown
+    
+    app = Starlette(routes=routes, lifespan=lifespan)
 
-    config = uvicorn.Config(app=app, host=host, port=port, log_level="info")
+    config = uvicorn.Config(
+        app=app,
+        host=host,
+        port=port,
+        log_level="error",  # Reduce noise
+        access_log=False,  # Disable access logs
+        lifespan="off",
+    )
     server = uvicorn.Server(config)
 
     async def _serve():
-        await server.serve()
+        """Wrapper to handle server cancellation gracefully"""
+        try:
+            await server.serve()
+        except asyncio.CancelledError:
+            pass  # Expected during shutdown
 
     task = asyncio.create_task(_serve())
     await asyncio.sleep(0.3)  # Wait for the port to come up
@@ -188,10 +224,16 @@ class A2ACommBackend(BaseCommBackend):
     - Maintains agent_id -> base_url mapping
     - Responsible for /message calls (send/receive)
     - Can spawn a local A2A host in-process (spawn_local_agent)
+    - Records API timing to detect rate limit bottlenecks
     """
 
     def __init__(self, httpx_client: httpx.AsyncClient | None = None, request_timeout: float = 60.0):
-        self._client = httpx_client or httpx.AsyncClient(timeout=request_timeout)
+        if httpx_client is None:
+            # Configure connection pool limits to match ANP for fair comparison
+            limits = httpx.Limits(max_connections=1000, max_keepalive_connections=200)
+            self._client = httpx.AsyncClient(timeout=request_timeout, limits=limits)
+        else:
+            self._client = httpx_client
         self._own_client = httpx_client is None
         self._addr: Dict[str, str] = {}        # agent_id -> base_url
         self._hosts: Dict[str, A2AAgentHandle] = {}  # If started in-process, keep handle for shutdown
@@ -222,6 +264,7 @@ class A2ACommBackend(BaseCommBackend):
     async def send(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Any:
         """
         Send a message to the dst's A2A /message endpoint.
+        Records timing to detect API rate limit bottlenecks.
         payload supports:
           1) {"text":"..."} or {"parts":[{"kind":"text","text":"..."}]}
           2) Full A2A message structure (including role/parts) which will be forwarded as params.message
@@ -237,12 +280,27 @@ class A2ACommBackend(BaseCommBackend):
                 "message": msg
             }
         }
+        
+        # Record API request timing to detect rate limits
+        request_start = time.time()
         resp = await self._client.post(f"{base}/message", json=req)
+        request_end = time.time()
+        
+        # Check for rate limit indicator
+        rate_limited = (resp.status_code == 429)
+        
         resp.raise_for_status()
         data = resp.json()
+        
         return {
             "raw": data,
-            "text": self._extract_text_from_events(data)
+            "text": self._extract_text_from_events(data),
+            "timing": {
+                "request_start": request_start,
+                "request_end": request_end,
+                "total_request_time": request_end - request_start,
+                "rate_limited": rate_limited
+            }
         }
 
     # ---------- health check ----------

@@ -34,8 +34,10 @@ from runners.runner_base import RunnerBase
 
 class AgoraRunner(RunnerBase):
     """Agora protocol Runner, implements the create_network hook."""
-    def __init__(self, config_path: str = "agora.yaml") -> None:
-        super().__init__(config_path, protocol_name="agora")
+    def __init__(self, protocol_config_path: str = "agora.yaml", general_config_path: Optional[str] = None) -> None:
+        super().__init__(protocol_config_path=protocol_config_path,
+                         general_config_path=general_config_path,
+                         protocol_name="agora")
 
     # # Print only key information (other logic is inside the network)
     # print("🔧 Agora Runner initialized")
@@ -59,10 +61,20 @@ class AgoraRunner(RunnerBase):
 
 async def main():
     """Agora Runner entry point."""
-    runner = AgoraRunner()
-
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Run GAIA benchmark with Agora protocol")
+    parser.add_argument("--protocol-config", type=str, default="agora.yaml",
+                        help="Path to protocol config file (default: agora.yaml)")
+    parser.add_argument("--general-config", type=str, default=None,
+                        help="Path to general config file (default: scenarios/gaia/config/general.yaml)")
+    
+    args = parser.parse_args()
+    
+    runner = AgoraRunner(protocol_config_path=args.protocol_config,
+                         general_config_path=args.general_config)
+    
     try:        
-        runner = AgoraRunner()
         await runner.run()
     except KeyboardInterrupt:
         print("\n🛑 Testing interrupted by user")

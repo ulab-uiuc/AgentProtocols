@@ -45,15 +45,26 @@ class Tee:
 class RunnerBase(abc.ABC):
     """Abstract GAIA runner with stepwise hooks and health check."""
 
-    def __init__(self, config_path: str, protocol_name: str = "base") -> None:
+    def __init__(self, protocol_config_path: str, general_config_path: Optional[str] = None, protocol_name: str = "base") -> None:
         self.protocol_name = protocol_name
-        # Preserve the original config path so downstream components (TaskPlanner)
-        # can load the same file if they need to. Keep as Path for easy resolution.
+        
+        # Set default general config path if not provided
+        if general_config_path is None:
+            general_config_path = str(GAIA_ROOT / "config" / "general.yaml")
+        
+        # Preserve the original config paths
         try:
-            self._config_path = Path(config_path) if config_path else None
+            self._protocol_config_path = Path(protocol_config_path) if protocol_config_path else None
+            self._general_config_path = Path(general_config_path) if general_config_path else None
         except Exception:
-            self._config_path = None
-        self.config = self._load_config(config_path)
+            self._protocol_config_path = None
+            self._general_config_path = None
+        
+        # Load and merge configurations using OmegaConf
+        self.config = self._load_and_merge_configs(general_config_path, protocol_config_path)
+        
+        # For backward compatibility, keep _config_path as protocol_config_path
+        self._config_path = self._protocol_config_path
         
         # Initialize runtime configuration
         self.mode = self.config.get("mode", "normal")  # normal | debug | mm
@@ -229,50 +240,97 @@ class RunnerBase(abc.ABC):
             self._log_file = None
 
     # -------------------- Config Loading Helpers --------------------
+    def _load_and_merge_configs(self, general_config_path: str, protocol_config_path: str) -> Dict[str, Any]:
+        """
+        Load and merge general and protocol-specific configurations using OmegaConf.
+        
+        Args:
+            general_config_path: Path to general configuration (contains LLM, agents, etc.)
+            protocol_config_path: Path to protocol-specific configuration
+            
+        Returns:
+            Merged configuration dictionary
+        """
+        # Load general config
+        general_conf = OmegaConf.create(self._load_config(general_config_path))
+        
+        # Load protocol config
+        protocol_conf = OmegaConf.create(self._load_config(protocol_config_path))
+        
+        # Merge: protocol_conf takes precedence over general_conf
+        merged = OmegaConf.merge(general_conf, protocol_conf)
+        
+        # Convert back to dict for compatibility
+        result = OmegaConf.to_container(merged, resolve=True)
+        
+        print(f"✅ Loaded general config from: {general_config_path}")
+        print(f"✅ Loaded protocol config from: {protocol_config_path}")
+        if 'model' in result:
+            model_name = result['model'].get('name', 'unknown')
+            api_type = result['model'].get('api_type', 'openai')
+            print(f"🤖 Using model: {model_name} (API: {api_type})")
+        
+        return result
+    
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         """Internal helper to load a YAML config with flexible relative resolution.
         Search order (first hit wins):
           1. Absolute path (if given)
-          2. <gaia_root>/config/<config_path>
-          3. <gaia_root>/<config_path>
-          4. <runners_dir>/<config_path>
+          2. Path as-is (relative to current directory)
+          3. <gaia_root>/config/<filename> (for simple filenames like 'acp.yaml')
+          4. <gaia_root>/<path or file>
+          5. <runners_dir>/<path or file>
         Where:
-          - runners_dir = .../script/gaia/runners
+          - runners_dir = .../gaia/runners
           - gaia_root   = runners_dir.parent
         Args:
-            config_path: relative filename or path (e.g. 'a2a.yaml' / 'config/a2a.yaml').
+            config_path: relative filename or path (e.g. 'a2a.yaml' / 'config/a2a.yaml' / 'model_comparison/configs/gpt4o.yaml').
         """
         p = Path(config_path)
+        
+        # Absolute path: use as-is
         if p.is_absolute():
             candidate_list = [p]
         else:
             runners_dir = Path(__file__).parent
             gaia_root = runners_dir.parent
-            # If user already passes 'config/xxx.yaml' keep it; still try with explicit config dir
-            candidate_list = [
-                gaia_root / 'config' / p.name if p.parent == Path('.') else gaia_root / 'config' / p,  # ensure config/<file>
-                gaia_root / p,               # gaia_root/<path or file>
-                runners_dir / p,             # runners/<path or file>
+            
+            candidates = [
+                p,  # Try as-is first (relative to cwd, or if running from project root)
             ]
+            
+            # Only add config/<filename> if it's a simple filename (no directory part)
+            if p.parent == Path('.'):
+                candidates.append(gaia_root / 'config' / p.name)
+            
+            # Always try with gaia_root and runners_dir as base
+            candidates.append(gaia_root / p)
+            candidates.append(runners_dir / p)
+            
             # Avoid duplicates while preserving order
             seen = set()
-            uniq = []
-            for c in candidate_list:
+            candidate_list = []
+            for c in candidates:
                 if c not in seen:
-                    uniq.append(c)
+                    candidate_list.append(c)
                     seen.add(c)
-            candidate_list = uniq
+        
+        # Find first existing file
         target = None
         for cand in candidate_list:
             if cand.exists():
                 target = cand
                 break
+        
         if target is None:
             raise FileNotFoundError("Config file not found; tried:\n" + "\n".join(str(c) for c in candidate_list))
+        
         with target.open('r', encoding='utf-8') as f:
             data = yaml.safe_load(f) or {}
+        
         if not isinstance(data, dict):
             raise ValueError(f"Config root must be a mapping, got {type(data).__name__}")
+        
         return data
 
     def load_tasks(self, task_file: str) -> List[Dict[str, Any]]:
@@ -472,10 +530,14 @@ class RunnerBase(abc.ABC):
             Path: Agent configuration file path (GAIA_ROOT/workspaces/agent_config.<task_id>.json)
         """
     # Pass the current Runner's protocol name and workspace path to the Planner
-        # Pass through the runner's actual config path so the planner loads the
-        # exact same configuration file instead of falling back to defaults.
-        planner_cfg_path = str(self._config_path) if getattr(self, '_config_path', None) else None
-        planner = TaskPlanner(config_path=planner_cfg_path, task_id=task_id, level=level, protocol_name=self.protocol_name)
+        # Pass through the runner's merged config directly to ensure planner uses
+        # the exact same configuration (including model settings from general_config)
+        planner = TaskPlanner(
+            config=self.config,  # Pass merged config directly
+            task_id=task_id, 
+            level=level, 
+            protocol_name=self.protocol_name
+        )
     # Let the planner work in this directory and return the generated config (path or content)
         planner_result = await planner.plan_agents(task_doc, workspace_dir=workspace_dir)
 

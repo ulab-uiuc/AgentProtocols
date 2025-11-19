@@ -123,6 +123,14 @@ class ANPQACoordinator(QACoordinatorBase):
             
             # Extract answer from ANP response
             answer = self._extract_anp_answer(response)
+            request_timing = response.get("timing", {}) if isinstance(response, dict) else {}
+            llm_timing = self._extract_llm_timing(response)
+            adapter_time = None
+            if request_timing and llm_timing:
+                adapter_time = (
+                    request_timing.get("total_request_time", 0.0)
+                    - llm_timing.get("llm_execution_time", 0.0)
+                )
             
             return {
                 "answer": answer,
@@ -132,6 +140,11 @@ class ANPQACoordinator(QACoordinatorBase):
                     "response_authenticated": self._verify_anp_response(response),
                     "worker_id": worker_id,
                     "protocol": "anp"
+                },
+                "timing": {
+                    "request_timing": request_timing,
+                    "llm_timing": llm_timing,
+                    "adapter_time": adapter_time
                 }
             }
             
@@ -145,8 +158,36 @@ class ANPQACoordinator(QACoordinatorBase):
                     "error": True,
                     "worker_id": worker_id,
                     "protocol": "anp"
+                },
+                "timing": {
+                    "request_timing": {},
+                    "llm_timing": {},
+                    "adapter_time": None
                 }
             }
+
+    def _extract_llm_timing(self, response: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        """Extract llm timing data from ANP events."""
+        if not isinstance(response, dict):
+            return None
+        raw = response.get("raw")
+        if isinstance(raw, dict):
+            events = raw.get("events") or []
+            for ev in events:
+                if not isinstance(ev, dict):
+                    continue
+                if "llm_timing" in ev and ev["llm_timing"]:
+                    return ev["llm_timing"]
+                meta = ev.get("anp_metadata")
+                if isinstance(meta, dict) and meta.get("llm_timing"):
+                    return meta.get("llm_timing")
+        # fallback: check top-level metadata
+        timing = response.get("timing") if isinstance(response, dict) else None
+        if timing:
+            llm = timing.get("llm_timing")
+            if llm:
+                return llm
+        return None
 
     def _extract_anp_answer(self, response: Optional[Dict[str, Any]]) -> str:
         """Extract answer from ANP response"""

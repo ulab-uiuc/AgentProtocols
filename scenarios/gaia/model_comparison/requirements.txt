@@ -1,0 +1,17 @@
+# Requirements for GAIA Model Comparison Experiments
+
+# Core dependencies (already in main requirements.txt)
+pyyaml>=6.0
+aiohttp>=3.9.0
+tiktoken>=0.5.0
+tenacity>=8.2.0
+tqdm>=4.66.0
+omegaconf>=2.3.0
+
+# Model-specific API clients
+openai>=1.12.0          # For GPT-4o
+anthropic>=0.18.0       # For Claude 3.5 Sonnet
+google-generativeai>=0.3.0  # For Gemini 2.5 Flash
+
+# Optional but recommended
+python-dotenv>=1.0.0    # For .env file support

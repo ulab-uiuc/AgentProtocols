@@ -8,7 +8,9 @@ This implementation uses the official ACP SDK which provides full Agent Communic
 from __future__ import annotations
 
 import asyncio
+import json
 import sys
+import time
 from pathlib import Path
 from typing import Any, Dict, Optional, List
 import logging
@@ -113,8 +115,8 @@ class ACPCommBackend(BaseCommBackend):
         # In ACP, connections are managed through sessions and runs
         pass
     
-    async def send_message(self, src_id: str, dst_id: str, message: str) -> Optional[str]:
-        """Send a message from one agent to another."""
+    async def send_message(self, src_id: str, dst_id: str, message: str) -> Optional[Dict[str, Any]]:
+        """Send a message from one agent to another and return serialized response."""
         if dst_id not in self._agents:
             return None
         
@@ -136,17 +138,19 @@ class ACPCommBackend(BaseCommBackend):
         # Send message
         try:
             # Get run_id from run or use the created one
-            current_run_id = run_id if 'run_id' in locals() else next(iter([rid for rid, r in dst_handle._runs.items() if r == run]), None)
+            current_run_id = run_id if 'run_id' in locals() else next(
+                (rid for rid, r in dst_handle._runs.items() if r == run),
+                None
+            )
             response_msg = await dst_handle.send_message(current_run_id, message)
-            if hasattr(response_msg, 'parts') and response_msg.parts:
-                # Extract text from parts
-                for part in response_msg.parts:
-                    if hasattr(part, 'type') and part.type == "text":
-                        return getattr(part, 'text', "")
-            return str(response_msg)
+            return self._serialize_message(response_msg)
         except Exception as e:
             logging.error(f"Failed to send message to {dst_id}: {e}")
-            return None
+            return {
+                "error": str(e),
+                "dst_id": dst_id,
+                "message": message
+            }
     
     async def spawn_local_agent(self, agent_id: str, host: str, port: int, executor: Any) -> ACPAgentHandle:
         """Spawn a local ACP agent."""
@@ -164,9 +168,39 @@ class ACPCommBackend(BaseCommBackend):
         
         return handle
     
-    async def send(self, src_id: str, dst_id: str, message: str) -> Optional[str]:
-        """Send a message between agents (required by BaseCommBackend)."""
-        return await self.send_message(src_id, dst_id, message)
+    async def send(self, src_id: str, dst_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Send a message between agents with timing instrumentation."""
+        message_text = self._extract_message_text(payload)
+        request_start = time.time()
+        raw_response = await self.send_message(src_id, dst_id, message_text)
+        request_end = time.time()
+
+        request_timing = {
+            "request_start": request_start,
+            "request_end": request_end,
+            "total_request_time": request_end - request_start,
+            "rate_limited": False
+        }
+
+        if not raw_response:
+            return {
+                "raw": raw_response,
+                "text": None,
+                "error": "No response",
+                "timing": request_timing
+            }
+        
+        answer_text = raw_response.get("text") if isinstance(raw_response, dict) else None
+        llm_timing = None
+        if isinstance(raw_response, dict):
+            llm_timing = raw_response.get("llm_timing")
+        
+        return {
+            "raw": raw_response,
+            "text": answer_text,
+            "llm_timing": llm_timing,
+            "timing": request_timing
+        }
     
     async def health_check(self, agent_id: str) -> bool:
         """Check if an agent is healthy (required by BaseCommBackend)."""
@@ -178,3 +212,60 @@ class ACPCommBackend(BaseCommBackend):
             await handle.stop()
         self._agents.clear()
         self._sessions.clear()
+
+    def _serialize_message(self, response_msg: Any) -> Dict[str, Any]:
+        """Convert ACP SDK Message to serializable dict with parsed timing metadata."""
+        if response_msg is None:
+            return {}
+        parts: List[Dict[str, Any]] = []
+        first_text: Optional[str] = None
+        for part in getattr(response_msg, 'parts', []) or []:
+            part_dict = {
+                "type": getattr(part, 'type', None),
+                "text": getattr(part, 'text', None)
+            }
+            parts.append(part_dict)
+            if first_text is None and isinstance(part_dict.get("text"), str):
+                first_text = part_dict["text"]
+        payload = {
+            "id": getattr(response_msg, 'id', None),
+            "parts": parts,
+            "text": first_text
+        }
+
+        # Attempt to parse JSON payload for structured data (answer + llm timing)
+        if first_text and isinstance(first_text, str):
+            try:
+                decoded = json.loads(first_text)
+                if isinstance(decoded, dict) and "answer" in decoded:
+                    payload["text"] = decoded.get("answer")
+                    payload["llm_timing"] = decoded.get("llm_timing")
+                    payload["payload"] = decoded
+            except json.JSONDecodeError:
+                pass
+        return payload
+
+    def _extract_message_text(self, payload: Any) -> str:
+        """Normalize coordinator payloads into plain text messages."""
+        if isinstance(payload, str):
+            return payload
+        if isinstance(payload, dict):
+            for key in ("text", "message", "content"):
+                if key in payload and isinstance(payload[key], str):
+                    return payload[key]
+            if "params" in payload:
+                params = payload.get("params", {})
+                if isinstance(params, dict):
+                    msg = params.get("message")
+                    if isinstance(msg, dict):
+                        parts = msg.get("parts") or []
+                        if parts and isinstance(parts[0], dict):
+                            txt = parts[0].get("text") or parts[0].get("data")
+                            if isinstance(txt, str):
+                                return txt
+            # As a fallback, serialize to json for traceability
+            try:
+                return json.dumps(payload)
+            except TypeError:
+                pass
+        return str(payload)

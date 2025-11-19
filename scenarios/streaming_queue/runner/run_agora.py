@@ -33,7 +33,8 @@ class AgoraRunner(RunnerBase):
         self._backend: Optional[AgoraCommBackend] = None
         self._handles: List[Any] = []  # Handles for Agora Hosts started by this process
         import httpx
-        self.httpx_client = httpx.AsyncClient(timeout=60.0)
+        limits = httpx.Limits(max_connections=1000, max_keepalive_connections=200)
+        self.httpx_client = httpx.AsyncClient(timeout=60.0, limits=limits)
 
     # ---------- Protocol injection: create network ----------
     async def create_network(self) -> NetworkBase:
@@ -99,7 +100,8 @@ class AgoraRunner(RunnerBase):
             # Use a timeout that allows long-running dispatch (no read timeout)
             import httpx
             timeout = httpx.Timeout(connect=60.0, read=None, write=60.0, pool=None)
-            async with httpx.AsyncClient(timeout=timeout) as client:  # allow long server processing
+            limits = httpx.Limits(max_connections=1000, max_keepalive_connections=200)
+            async with httpx.AsyncClient(timeout=timeout, limits=limits) as client:  # allow long server processing
                 response = await client.post(
                     f"{coordinator_url}/",
                     json=agora_payload,
