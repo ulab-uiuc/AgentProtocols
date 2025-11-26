@@ -15,11 +15,11 @@ qa:
     count: 1
     start_port: 9999
     data_file: "data/top1000_simplified.jsonl"
-    result_file: "/root/AgentProtocols/scenarios/streaming_queue/results_32agents/qa_results_acp.json"
+    result_file: "results/qa_results_acp.json"
     batch_size: 100
     first_50: true
   worker:
-    count: 32
+    count: 4
     start_port: 10101
   network:
     topology: "star"

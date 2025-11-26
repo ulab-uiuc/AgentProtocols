@@ -15,11 +15,11 @@ qa:
     count: 1
     start_port: 9900
     data_file: "data/top1000_simplified.jsonl"
-    result_file: "/root/AgentProtocols/scenarios/streaming_queue/results_32agents/qa_results_agora.json"
+    result_file: "results/qa_results_agora.json"
     batch_size: 100
     first_50: true
   worker:
-    count: 32
+    count: 4
     start_port: 10201
   network:
     topology: "star"
