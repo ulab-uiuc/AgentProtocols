@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, AsyncGenerator
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s:%(message)s')
+logging.basicConfig(level=logging.WARNING, format='%(levelname)s:%(name)s:%(message)s')
 
 # Setup paths for imports - follow streaming_queue pattern
 current_file = Path(__file__).resolve()

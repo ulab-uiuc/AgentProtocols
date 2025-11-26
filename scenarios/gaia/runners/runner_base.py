@@ -52,6 +52,9 @@ class RunnerBase(abc.ABC):
         if general_config_path is None:
             general_config_path = str(GAIA_ROOT / "config" / "general.yaml")
         
+        # Extract model name for workspace naming (will be set after config loading)
+        self.model_name = None
+        
         # Preserve the original config paths
         try:
             self._protocol_config_path = Path(protocol_config_path) if protocol_config_path else None
@@ -63,6 +66,15 @@ class RunnerBase(abc.ABC):
         # Load and merge configurations using OmegaConf
         self.config = self._load_and_merge_configs(general_config_path, protocol_config_path)
         
+        # Set global LLM config so all LLM instances (including tools/agents) use this config
+        from core.llm import set_global_llm_config
+        set_global_llm_config(self.config)
+        
+        # Extract model name for workspace directory naming
+        self.model_name = self.config.get('model', {}).get('name', 'unknown_model')
+        # Clean model name for use in paths (remove special characters)
+        self.model_name = self.model_name.replace('/', '_').replace(':', '_').replace('.', '_')
+        
         # For backward compatibility, keep _config_path as protocol_config_path
         self._config_path = self._protocol_config_path
         
@@ -73,6 +85,34 @@ class RunnerBase(abc.ABC):
         # Special multimodal mode: override task file to multimodal.jsonl
         if self.mode == "mm":
             task_file = './scenario/gaia/dataset/2023/validation/multimodal.jsonl'
+        
+        # Resolve task file path relative to project root
+        task_file_path = Path(task_file)
+        if not task_file_path.is_absolute():
+            # Try multiple resolution strategies
+            # GAIA_ROOT.parent.parent is /root/AgentProtocols (project root)
+            project_root = GAIA_ROOT.parent.parent
+            candidates = [
+                task_file_path,  # As-is (relative to cwd)
+                project_root / task_file_path,  # Relative to project root (/root/AgentProtocols)
+                GAIA_ROOT / task_file_path,  # Relative to GAIA_ROOT (scenarios/gaia)
+            ]
+            
+            # Find first existing file
+            resolved_path = None
+            for candidate in candidates:
+                if candidate.exists():
+                    resolved_path = candidate
+                    break
+            
+            if resolved_path is None:
+                # If none exist, use default resolution but warn
+                resolved_path = task_file_path.resolve()
+                print(f"⚠️  Task file not found at any of: {[str(c) for c in candidates]}")
+                print(f"⚠️  Using: {resolved_path}")
+            
+            task_file = str(resolved_path)
+        
         # Store resolved task file path for later env wiring
         self._task_file_path = str(Path(task_file).resolve())
         self.tasks = self.load_tasks(task_file)
@@ -88,14 +128,15 @@ class RunnerBase(abc.ABC):
     def _resolve_output_file(self, runtime_config: Dict[str, Any]) -> str:
         """Resolve the output file path for results.
         Rules:
-          - Default: GAIA_ROOT/workspaces/<protocol_name>/gaia_<protocol_name>_results.json
+          - Default: GAIA_ROOT/workspaces/<protocol_name>_<model_name>/gaia_<protocol_name>_results.json
           - If runtime.output_file is provided:
               * Absolute path: use as-is
               * Relative path:
                   - If starts with 'workspaces': GAIA_ROOT/<path>
-                  - Otherwise: GAIA_ROOT/workspaces/<protocol_name>/<path>
+                  - Otherwise: GAIA_ROOT/workspaces/<protocol_name>_<model_name>/<path>
         """
-        default_output = GAIA_ROOT / 'workspaces' / self.protocol_name / f'gaia_{self.protocol_name}_results.json'
+        workspace_dir_name = f"{self.protocol_name}_{self.model_name}"
+        default_output = GAIA_ROOT / 'workspaces' / workspace_dir_name / f'gaia_{self.protocol_name}_results.json'
         cfg_output = runtime_config.get('output_file')
 
         def _append_mode_suffix(p: Path) -> Path:
@@ -118,7 +159,8 @@ class RunnerBase(abc.ABC):
             first_part = cfg_path.parts[0] if cfg_path.parts else ''
             if first_part == 'workspaces':
                 return str(_append_mode_suffix(GAIA_ROOT / cfg_path))  # avoid duplicate workspaces/workspaces
-            return str(_append_mode_suffix(GAIA_ROOT / 'workspaces' / self.protocol_name / cfg_path))
+            workspace_dir_name = f"{self.protocol_name}_{self.model_name}"
+            return str(_append_mode_suffix(GAIA_ROOT / 'workspaces' / workspace_dir_name / cfg_path))
         return str(_append_mode_suffix(default_output))
 
     def _setup_task_workspace(self, task_id: str, task: Dict[str, Any]) -> Path:
@@ -130,10 +172,11 @@ class RunnerBase(abc.ABC):
             task: Task data dictionary
             
         Returns:
-            Path: Task workspace path (workspaces/<protocol_name>/<task_id>)
+            Path: Task workspace path (workspaces/<protocol_name>_<model_name>/<task_id>)
         """
         # Create the task workspace directory
-        workspace_dir = GAIA_ROOT / 'workspaces' / self.protocol_name / task_id
+        workspace_dir_name = f"{self.protocol_name}_{self.model_name}"
+        workspace_dir = GAIA_ROOT / 'workspaces' / workspace_dir_name / task_id
         workspace_dir.mkdir(parents=True, exist_ok=True)
         
         # Copy required task files into the workspace and set up environment variables
@@ -257,8 +300,9 @@ class RunnerBase(abc.ABC):
         # Load protocol config
         protocol_conf = OmegaConf.create(self._load_config(protocol_config_path))
         
-        # Merge: protocol_conf takes precedence over general_conf
-        merged = OmegaConf.merge(general_conf, protocol_conf)
+        # Merge: general_conf takes precedence over protocol_conf
+        # This allows experiment-specific configs (general) to override protocol defaults
+        merged = OmegaConf.merge(protocol_conf, general_conf)
         
         # Convert back to dict for compatibility
         result = OmegaConf.to_container(merged, resolve=True)
@@ -666,7 +710,9 @@ class RunnerBase(abc.ABC):
             except Exception:
                 pass
 
-            # Create network (abstract)
+            # Create network (abstract) - inject protocol_name and model_name into config for workspace paths
+            general_config['protocol'] = self.protocol_name
+            general_config['model_name'] = self.model_name
             network = self.create_network(general_config)
 
             # Persist reference to the last created network for metadata inspection
@@ -687,7 +733,10 @@ class RunnerBase(abc.ABC):
 
                 # Get judge timeout from config
                 judge_timeout = general_config.get("evaluation", {}).get("judge_timeout", 30)
-                judge = create_llm_judge(judge_timeout=judge_timeout)
+                judge_config = general_config.get("evaluation", {}).get("judge_model", None)
+                if not judge_config:
+                    judge_config = general_config.get("model", {})
+                judge = create_llm_judge(judge_timeout=judge_timeout, judge_config=judge_config)
 
                 # Determine network log path for this task and pass to judge
                 try:
@@ -738,7 +787,10 @@ class RunnerBase(abc.ABC):
                 # Use enhanced LLM judge for timeout case
                 from core.llm_judge import create_llm_judge
                 judge_timeout = general_config.get("evaluation", {}).get("judge_timeout", 30)
-                judge = create_llm_judge(judge_timeout=judge_timeout)
+                judge_config = general_config.get("evaluation", {}).get("judge_model", None)
+                if not judge_config:
+                    judge_config = general_config.get("model", {})
+                judge = create_llm_judge(judge_timeout=judge_timeout, judge_config=judge_config)
 
                 # Determine network log path for this task and pass to judge
                 try:
@@ -793,7 +845,10 @@ class RunnerBase(abc.ABC):
             # Use enhanced LLM judge for error case
             from core.llm_judge import create_llm_judge
             judge_timeout = general_config.get("evaluation", {}).get("judge_timeout", 30)
-            judge = create_llm_judge(judge_timeout=judge_timeout)
+            judge_config = general_config.get("evaluation", {}).get("judge_model", None)
+            if not judge_config:
+                judge_config = general_config.get("model", {})
+            judge = create_llm_judge(judge_timeout=judge_timeout, judge_config=judge_config)
 
             # Determine network log path for this task and pass to judge
             try:

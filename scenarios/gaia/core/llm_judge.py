@@ -35,22 +35,39 @@ class JudgmentOutput:
 class EnhancedLLMJudge:
     """Enhanced LLM as Judge with robust timeout and error handling."""
     
-    def __init__(self, config_path: Optional[str] = None, judge_timeout: int = 30):
+    def __init__(self, config_path: Optional[str] = None, judge_timeout: int = 30, 
+                 judge_config: Optional[Dict[str, Any]] = None):
         """
         Initialize the enhanced LLM judge.
         
         Args:
-            config_path: Path to LLM configuration
+            config_path: Path to LLM configuration (deprecated, use judge_config instead)
             judge_timeout: Timeout for judge evaluation in seconds
+            judge_config: Judge-specific LLM configuration (model, base_url, temperature, etc.)
         """
         self.judge_timeout = judge_timeout
         self.config_path = config_path
+        self.judge_config = judge_config
         self._llm_instance = None
         
     def _get_llm(self) -> LLM:
-        """Get or create LLM instance."""
+        """Get or create LLM instance for judge using judge-specific config."""
         if self._llm_instance is None:
-            self._llm_instance = call_llm(config_path=self.config_path)
+            if self.judge_config:
+                # Use judge-specific configuration
+                from .llm import LLMConfig
+                import tempfile
+                import yaml
+                
+                # Create temporary config file with judge settings
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+                    yaml.dump({'model': self.judge_config}, f)
+                    temp_config_path = f.name
+                
+                self._llm_instance = call_llm(config_path=temp_config_path)
+            else:
+                # Fall back to provided config_path or default
+                self._llm_instance = call_llm(config_path=self.config_path)
         return self._llm_instance
         
     def _create_judge_prompt(self, question: str, ground_truth: str, 
@@ -420,9 +437,20 @@ Be thorough but fair in your evaluation. Provide specific reasoning for your jud
 
 # Utility function to create judge instance
 def create_llm_judge(config_path: Optional[str] = None, 
-                    judge_timeout: int = 30) -> EnhancedLLMJudge:
-    """Create an enhanced LLM judge instance."""
-    return EnhancedLLMJudge(config_path=config_path, judge_timeout=judge_timeout)
+                    judge_timeout: int = 30,
+                    judge_config: Optional[Dict[str, Any]] = None) -> EnhancedLLMJudge:
+    """Create an enhanced LLM judge instance.
+    
+    Args:
+        config_path: Path to LLM configuration (deprecated)
+        judge_timeout: Timeout for judge evaluation
+        judge_config: Judge-specific configuration dict with keys:
+            - name: model name (e.g., "qwen-vl-72b-instruct")
+            - base_url: API endpoint (e.g., "http://localhost:8000/v1")
+            - temperature: sampling temperature (default 0.0)
+            - api_key: API key if required
+    """
+    return EnhancedLLMJudge(config_path=config_path, judge_timeout=judge_timeout, judge_config=judge_config)
 
 
 # Test function

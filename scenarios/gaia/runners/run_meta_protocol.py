@@ -23,8 +23,8 @@ from runners.runner_base import RunnerBase
 class MetaProtocolRunner(RunnerBase):
     """Meta Protocol runner implementing the create_network hook."""
     
-    def __init__(self, config_path: str = "meta_protocol.yaml") -> None:
-        super().__init__(config_path, protocol_name="meta_protocol")
+    def __init__(self, protocol_config_path: str = "meta_protocol.yaml", general_config_path: str = None) -> None:
+        super().__init__(protocol_config_path, general_config_path, protocol_name="meta_protocol")
 
     def create_network(self, general_config: Dict[str, Any]) -> MetaProtocolNetwork:
         """
@@ -56,26 +56,34 @@ class MetaProtocolRunner(RunnerBase):
 # Main execution
 async def main():
     """Main execution for Meta Protocol runner."""
-    import sys
+    import argparse
     
-    # Determine config path
-    if len(sys.argv) > 1:
-        config_path = sys.argv[1]
-    else:
-        config_path = GAIA_ROOT / "config" / "meta_protocol.yaml"
+    parser = argparse.ArgumentParser(description="Run GAIA Meta Protocol Runner")
+    parser.add_argument(
+        "--protocol-config",
+        type=str,
+        default="meta_protocol.yaml",
+        help="Path to protocol-specific configuration file"
+    )
+    parser.add_argument(
+        "--general-config",
+        type=str,
+        default=None,
+        help="Path to general configuration file (model, runtime, etc.)"
+    )
     
-    # Determine log file name
-    if len(sys.argv) > 2:
-        log_file_name = sys.argv[2]
-    else:
-        log_file_name = None
+    args = parser.parse_args()
     
     print(f"🚀 Starting GAIA Meta Protocol Runner")
-    print(f"📋 Config: {config_path}")
+    print(f"📋 Protocol Config: {args.protocol_config}")
+    print(f"📋 General Config: {args.general_config or 'default'}")
     print(f"📊 Meta Protocol: Intelligent routing enabled")
     
     # Create and run
-    runner = MetaProtocolRunner(str(config_path))
+    runner = MetaProtocolRunner(
+        protocol_config_path=args.protocol_config,
+        general_config_path=args.general_config
+    )
     await runner.run()
 
 

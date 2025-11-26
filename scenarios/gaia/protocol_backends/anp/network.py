@@ -32,7 +32,7 @@ from core.schema import Colors
 
 # Setup logger
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 
 # Import ANP-SDK components
 try:

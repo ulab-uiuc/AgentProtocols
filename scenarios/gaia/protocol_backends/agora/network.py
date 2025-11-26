@@ -28,7 +28,7 @@ except ImportError as e:
 
 # Setup logger
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 
 
 class AgoraCommBackend:

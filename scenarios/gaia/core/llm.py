@@ -22,6 +22,23 @@ from tools.base import BaseTool, ToolResult
 from tools.exceptions import ToolError
 
 
+# Global configuration cache for LLM instances
+_GLOBAL_LLM_CONFIG: Optional[Dict[str, Any]] = None
+
+
+def set_global_llm_config(config: Dict[str, Any]) -> None:
+    """Set global LLM configuration to be used by all LLM instances without explicit config."""
+    global _GLOBAL_LLM_CONFIG
+    _GLOBAL_LLM_CONFIG = config
+    print(f"🌐 Global LLM config set: model={config.get('model', {}).get('name', 'unknown')}, "
+          f"api_type={config.get('model', {}).get('api_type', 'unknown')}")
+
+
+def get_global_llm_config() -> Optional[Dict[str, Any]]:
+    """Get global LLM configuration."""
+    return _GLOBAL_LLM_CONFIG
+
+
 class TokenLimitExceeded(Exception):
     """Exception raised when token limits are exceeded."""
     pass
@@ -82,13 +99,23 @@ class TokenCounter:
 class LLMConfig:
     """Configuration class for LLM parameters."""
     
-    def __init__(self, config_path: Optional[str] = None):
-        """Initialize LLM configuration from YAML file."""
-        if config_path is None:
+    def __init__(self, config_path: Optional[str] = None, config_dict: Optional[Dict[str, Any]] = None):
+        """Initialize LLM configuration from YAML file or dict."""
+        # Priority: config_dict > config_path > global config > default file
+        if config_dict:
+            self.config = config_dict
+            self.config_path = None
+        elif config_path is not None:
+            self.config_path = Path(config_path)
+            self.config = self._load_config()
+        elif _GLOBAL_LLM_CONFIG is not None:
+            self.config = _GLOBAL_LLM_CONFIG
+            self.config_path = None
+            print("📋 Using global LLM config")
+        else:
             config_path = Path(__file__).parent.parent / "config" / "general.yaml"
-        
-        self.config_path = Path(config_path)
-        self.config = self._load_config()
+            self.config_path = Path(config_path)
+            self.config = self._load_config()
         
         # Extract model configuration
         model_config = self.config.get("model", {})
@@ -356,23 +383,39 @@ class LLM:
             print(f"Error in ask: {str(e)}")
             raise
 
+    def _filter_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Filter parameters based on API type to remove unsupported fields.
+        
+        Different API providers support different parameters:
+        - OpenAI: supports all parameters
+        - Google: does NOT support frequency_penalty, presence_penalty
+        - Anthropic: does NOT support frequency_penalty, presence_penalty
+        """
+        filtered = params.copy()
+        
+        # Remove unsupported parameters for Google and Anthropic
+        if self.config.api_type in ("google", "anthropic"):
+            filtered.pop("frequency_penalty", None)
+            filtered.pop("presence_penalty", None)
+        
+        return filtered
+    
     async def _call_api(self, params: Dict[str, Any], stream: bool = False) -> Union[str, dict]:
-        """Make the actual API call (supports OpenAI, Anthropic, Google)."""
+        """Make the actual API call using OpenAI-compatible format.
+        
+        All API providers (OpenAI, Anthropic, Google) should use OpenAI-compatible endpoints.
+        For Anthropic and Google, configure base_url to point to OpenAI-compatible proxy endpoints.
+        """
         if not self.config.api_key:
             raise ToolError(f"API key not configured for {self.config.api_type}. Set appropriate environment variable.")
 
-        api_type = self.config.api_type
+        # Filter out unsupported parameters based on API type
+        filtered_params = self._filter_params(params)
         
-        # Route to appropriate API handler
-        if api_type == "anthropic":
-            return await self._call_anthropic_api(params, stream)
-        elif api_type == "google":
-            return await self._call_google_api(params, stream)
-        else:  # openai or default
-            return await self._call_openai_api(params, stream)
+        return await self._call_openai_compatible_api(filtered_params, stream)
     
-    async def _call_openai_api(self, params: Dict[str, Any], stream: bool = False) -> Union[str, dict]:
-        """Make OpenAI API call."""
+    async def _call_openai_compatible_api(self, params: Dict[str, Any], stream: bool = False) -> Union[str, dict]:
+        """Make OpenAI-compatible API call (works with OpenAI, Anthropic via proxy, Google via proxy)."""
         headers = {
             "Authorization": f"Bearer {self.config.api_key}",
             "Content-Type": "application/json"
@@ -413,153 +456,10 @@ class LLM:
                     result = await response.json()
                     return result
     
-    async def _call_anthropic_api(self, params: Dict[str, Any], stream: bool = False) -> Union[str, dict]:
-        """Make Anthropic Claude API call."""
-        headers = {
-            "x-api-key": self.config.api_key,
-            "anthropic-version": "2023-06-01",
-            "Content-Type": "application/json"
-        }
-        
-        # Convert OpenAI format to Anthropic format
-        messages = params["messages"]
-        system_msg = None
-        anthropic_messages = []
-        
-        for msg in messages:
-            if msg["role"] == "system":
-                system_msg = msg["content"]
-            else:
-                anthropic_messages.append({
-                    "role": msg["role"],
-                    "content": msg["content"]
-                })
-        
-        anthropic_params = {
-            "model": params["model"],
-            "messages": anthropic_messages,
-            "max_tokens": params.get("max_tokens", 4096),
-            "temperature": params.get("temperature", 0.0),
-            "stream": stream
-        }
-        
-        if system_msg:
-            anthropic_params["system"] = system_msg
-        
-        endpoint = f"{self.config.base_url.rstrip('/')}/messages"
-        timeout = aiohttp.ClientTimeout(total=self.config.timeout)
-        
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.post(endpoint, headers=headers, json=anthropic_params) as response:
-                if response.status != 200:
-                    error_text = await response.text()
-                    raise ToolError(f"Anthropic API error {response.status}: {error_text}")
-                
-                if stream:
-                    collected_messages = []
-                    async for line in response.content:
-                        line = line.decode('utf-8').strip()
-                        if line.startswith('data: '):
-                            line = line[6:]
-                            try:
-                                chunk = json.loads(line)
-                                if chunk.get("type") == "content_block_delta":
-                                    delta = chunk.get("delta", {})
-                                    text = delta.get("text", "")
-                                    if text:
-                                        collected_messages.append(text)
-                                        print(text, end="", flush=True)
-                            except json.JSONDecodeError:
-                                continue
-                    print()
-                    return "".join(collected_messages)
-                else:
-                    result = await response.json()
-                    # Convert Anthropic response to OpenAI format
-                    return {
-                        "choices": [{
-                            "message": {
-                                "role": "assistant",
-                                "content": result["content"][0]["text"]
-                            }
-                        }],
-                        "usage": {
-                            "prompt_tokens": result.get("usage", {}).get("input_tokens", 0),
-                            "completion_tokens": result.get("usage", {}).get("output_tokens", 0)
-                        }
-                    }
+    # NOTE: Anthropic and Google APIs should be accessed via OpenAI-compatible proxies
+    # This ensures consistent tool calling support and token usage reporting
     
-    async def _call_google_api(self, params: Dict[str, Any], stream: bool = False) -> Union[str, dict]:
-        """Make Google Gemini API call."""
-        # Convert OpenAI format to Gemini format
-        messages = params["messages"]
-        system_instruction = None
-        gemini_contents = []
-        
-        for msg in messages:
-            if msg["role"] == "system":
-                system_instruction = msg["content"]
-            else:
-                role = "user" if msg["role"] == "user" else "model"
-                gemini_contents.append({
-                    "role": role,
-                    "parts": [{"text": msg["content"]}]
-                })
-        
-        gemini_params = {
-            "contents": gemini_contents,
-            "generationConfig": {
-                "temperature": params.get("temperature", 0.0),
-                "maxOutputTokens": params.get("max_tokens", 8192),
-                "topP": params.get("top_p", 1.0),
-            }
-        }
-        
-        if system_instruction:
-            gemini_params["systemInstruction"] = {
-                "parts": [{"text": system_instruction}]
-            }
-        
-        model_name = params["model"]
-        endpoint = f"{self.config.base_url.rstrip('/')}/models/{model_name}:generateContent"
-        url = f"{endpoint}?key={self.config.api_key}"
-        
-        timeout = aiohttp.ClientTimeout(total=self.config.timeout)
-        headers = {"Content-Type": "application/json"}
-        
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.post(url, headers=headers, json=gemini_params) as response:
-                if response.status != 200:
-                    error_text = await response.text()
-                    raise ToolError(f"Google API error {response.status}: {error_text}")
-                
-                result = await response.json()
-                
-                if "candidates" not in result or not result["candidates"]:
-                    raise ToolError("No candidates in Gemini response")
-                
-                candidate = result["candidates"][0]
-                content = candidate.get("content", {})
-                parts = content.get("parts", [])
-                
-                if not parts:
-                    raise ToolError("No parts in Gemini response")
-                
-                text = parts[0].get("text", "")
-                
-                # Convert to OpenAI format
-                return {
-                    "choices": [{
-                        "message": {
-                            "role": "assistant",
-                            "content": text
-                        }
-                    }],
-                    "usage": {
-                        "prompt_tokens": result.get("usageMetadata", {}).get("promptTokenCount", 0),
-                        "completion_tokens": result.get("usageMetadata", {}).get("candidatesTokenCount", 0)
-                    }
-                }
+
     
     @retry(
         wait=wait_random_exponential(min=1, max=60),
@@ -662,18 +562,16 @@ class LLM:
             raise
 
     async def _call_api_with_tools(self, params: Dict[str, Any], timeout: int = 300) -> dict:
-        """Make API call with tools support (currently only OpenAI-compatible)."""
+        """Make API call with tools support using OpenAI-compatible format.
+        
+        All API providers (OpenAI, Anthropic, Google) should use OpenAI-compatible endpoints.
+        For Anthropic and Google, configure base_url to point to OpenAI-compatible proxy endpoints.
+        """
         if not self.config.api_key:
             raise ToolError(f"API key not configured for {self.config.api_type}.")
 
-        # For now, only OpenAI supports tools in the expected format
-        # Anthropic and Google have different tool calling mechanisms
-        api_type = self.config.api_type
-        
-        if api_type in ("anthropic", "google"):
-            # For non-OpenAI APIs, fall back to regular completion without tools
-            print(f"⚠️  Warning: Tool calling not yet implemented for {api_type}, using regular completion")
-            return await self._call_api(params, stream=False)
+        # Filter out unsupported parameters based on API type
+        filtered_params = self._filter_params(params)
 
         headers = {
             "Authorization": f"Bearer {self.config.api_key}",
@@ -683,15 +581,27 @@ class LLM:
         endpoint = f"{self.config.base_url.rstrip('/')}/chat/completions"
         timeout_config = aiohttp.ClientTimeout(total=timeout)
 
-        params["stream"] = False  # always use non-streaming for tool requests
+        filtered_params["stream"] = False  # always use non-streaming for tool requests
 
         async with aiohttp.ClientSession(timeout=timeout_config) as session:
-            async with session.post(endpoint, headers=headers, json=params) as response:
+            async with session.post(endpoint, headers=headers, json=filtered_params) as response:
                 if response.status != 200:
                     error_text = await response.text()
                     raise ToolError(f"API call failed with status {response.status}: {error_text}")
 
                 result = await response.json()
+                
+                # Enhanced token usage tracking for tool calls
+                # Note: Some proxies may not return accurate tool token counts
+                # We track this in our own counter as well
+                if "usage" in result:
+                    usage = result["usage"]
+                    # Some APIs report total_tokens which includes tool definitions
+                    if "total_tokens" in usage and "prompt_tokens" not in usage:
+                        # Fallback: estimate from total if breakdown not available
+                        usage["prompt_tokens"] = usage.get("total_tokens", 0) // 2
+                        usage["completion_tokens"] = usage.get("total_tokens", 0) - usage["prompt_tokens"]
+                
                 return result
 
 

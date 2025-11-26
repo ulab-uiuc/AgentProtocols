@@ -20,7 +20,7 @@ GAIA_ROOT = Path(__file__).resolve().parent.parent
 
 # Setup logger for core network
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 
 
 class AgentTaskTimeout(Exception):
@@ -439,7 +439,10 @@ class MeshNetwork(ABC):
         try:
             task_id = self.config.get("task_id", "unknown") if isinstance(self.config, dict) else "unknown"
             protocol_name = (self.config.get("protocol") if isinstance(self.config, dict) else None) or "general"
-            logs_dir = GAIA_ROOT / "workspaces" / protocol_name / task_id
+            model_name = (self.config.get("model_name") if isinstance(self.config, dict) else None) or "unknown_model"
+            
+            # Use the new naming convention: workspaces/<protocol_name>_<model_name>/<task_id>
+            logs_dir = GAIA_ROOT / "workspaces" / f"{protocol_name}_{model_name}" / task_id
             logs_dir.mkdir(parents=True, exist_ok=True)
             
             # Save network memory with step-based structure
@@ -502,8 +505,9 @@ class MeshNetwork(ABC):
         """Archive workspace artifacts (under GAIA root)."""
         task_id = self.config.get("task_id", "unknown") if isinstance(self.config, dict) else "unknown"
         protocol_name = (self.config.get("protocol") if isinstance(self.config, dict) else None) or "default"
+        model_name = (self.config.get("model_name") if isinstance(self.config, dict) else None) or "unknown_model"
         try:
-            workspaces_path = GAIA_ROOT / "workspaces" / protocol_name / task_id
+            workspaces_path = GAIA_ROOT / "workspaces" / f"{protocol_name}_{model_name}" / task_id
             if workspaces_path.exists():
                 with tarfile.open("run_artifacts.tar.gz", "w:gz") as tar:
                     for workspace in workspaces_path.iterdir():

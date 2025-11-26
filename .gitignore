@@ -3,13 +3,15 @@
 scenarios/*/results/*
 scenarios/*/local_results/*
 scenarios/gaia/workspaces/**
+scenarios/gaia/workspaces_old
 scenarios/fail_storm_recovery/workspaces/**
 scenarios/streaming_queue/workspaces/**
 scenarios/safety_tech/output/*
 scenarios/safety_tech/test_output/*
 scenarios/gaia/logs/*
 results/
-/root/Multiagent-Protocol/scenarios/safety_tech/test_output/*
+scenarios/safety_tech/test_output/*
+scenarios/streaming_queue/results_multi_agent
 
 # LLM outputs and debug files
 llm_outputs/

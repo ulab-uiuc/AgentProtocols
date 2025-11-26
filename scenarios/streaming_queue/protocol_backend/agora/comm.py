@@ -136,6 +136,8 @@ class AgoraCommBackend(BaseCommBackend):
         # Official SDK clients cache
         self._agora_client = None
         self._agora_sender = None
+        # Track toolformer creation times
+        self._toolformer_creation_times: List[float] = []
     
     async def _maybe_await(self, value):
         """Await if awaitable; otherwise return value."""
@@ -220,23 +222,35 @@ class AgoraCommBackend(BaseCommBackend):
         for srv in self._servers.values():
             if hasattr(srv, "shutdown"):
                 srv.shutdown()
+    
+    def get_average_toolformer_creation_time(self) -> float:
+        """Get average toolformer creation time across all spawned agents."""
+        if not self._toolformer_creation_times:
+            return 0.0
+        return sum(self._toolformer_creation_times) / len(self._toolformer_creation_times)
 
     async def spawn_local_agent(self, agent_id: str, host: str, port: int, executor: Any) -> Any:
         """Start a local Agora Agent HTTP service."""
         
-        # 1. Create Toolformer
+        # 1. Create Toolformer (with timing)
+        toolformer_start = time.time()
         try:
             from langchain_openai import ChatOpenAI
             # Import real Agora SDK toolformers
             from agora.common.toolformers import LangChainToolformer
             # This requires OPENAI_API_KEY to be set in the environment.
-            model = ChatOpenAI(model="gpt-4o-mini", api_key=os.getenv("OPENAI_API_KEY"), temperature=0.0, base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"))
+            model = ChatOpenAI(model=os.getenv("TOOLFORMERS_MODEL", "gpt-4o-mini"), api_key=os.getenv("OPENAI_API_KEY"), temperature=0.0, base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"))
             toolformer = LangChainToolformer(model)
         except ImportError:
             raise RuntimeError("LangChain/OpenAI dependencies not found. Please install langchain-openai.")
         except Exception as e:
             print(f"[-] Failed to create Toolformer. Ensure OPENAI_API_KEY is set. Error: {e}")
             raise RuntimeError(f"Failed to create Toolformer. Ensure OPENAI_API_KEY is set. Error: {e}")
+        
+        toolformer_end = time.time()
+        toolformer_creation_time = toolformer_end - toolformer_start
+        self._toolformer_creation_times.append(toolformer_creation_time)
+        print(f"⏱️  [Agora] Toolformer creation time for {agent_id}: {toolformer_creation_time:.4f}s")
 
         # 2. Create Tools for Agora's toolformer feature
         loop = asyncio.get_running_loop()
